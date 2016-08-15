@@ -23,7 +23,7 @@ from oslo_serialization import jsonutils
 import six
 import six.moves.urllib.parse as urlparse
 
-from jacket.compute.cloud import rpcapi as compute_rpcapi
+from jacket.worker import rpcapi as jacket_rpcapi
 from jacket.compute import exception
 from jacket.i18n import _, _LE
 from jacket.compute.virt.xenapi import pool_states
@@ -51,7 +51,7 @@ class ResourcePool(object):
         self._host_uuid = host_rec['uuid']
         self._session = session
         self._virtapi = virtapi
-        self.compute_rpcapi = compute_rpcapi.ComputeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.ComputeAPI()
 
     def undo_aggregate_operation(self, context, op, aggregate,
                                   host, set_error):
@@ -109,7 +109,7 @@ class ResourcePool(object):
                 # host with specified credentials.
                 slave_info = self._create_slave_info()
 
-                self.compute_rpcapi.add_aggregate_host(
+                self.jacket_rpcapi.add_aggregate_host(
                     context, aggregate, host, master_compute, slave_info)
 
     def remove_from_aggregate(self, context, aggregate, host, slave_info=None):
@@ -151,7 +151,7 @@ class ResourcePool(object):
             # A master exists -> forward pool-eject request to master
             slave_info = self._create_slave_info()
 
-            self.compute_rpcapi.remove_aggregate_host(
+            self.jacket_rpcapi.remove_aggregate_host(
                 context, aggregate.id, host, master_compute, slave_info)
         else:
             # this shouldn't have happened

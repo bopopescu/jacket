@@ -37,7 +37,7 @@ CONF.register_opt(migrate_opt)
 
 class LiveMigrationTask(base.TaskBase):
     def __init__(self, context, instance, destination,
-                 block_migration, disk_over_commit, migration, compute_rpcapi,
+                 block_migration, disk_over_commit, migration, jacket_rpcapi,
                  servicegroup_api, scheduler_client, request_spec=None):
         super(LiveMigrationTask, self).__init__(context, instance)
         self.destination = destination
@@ -47,7 +47,7 @@ class LiveMigrationTask(base.TaskBase):
         self.source = instance.host
         self.migrate_data = None
 
-        self.compute_rpcapi = compute_rpcapi
+        self.jacket_rpcapi = jacket_rpcapi
         self.servicegroup_api = servicegroup_api
         self.scheduler_client = scheduler_client
         self.request_spec = request_spec
@@ -65,13 +65,13 @@ class LiveMigrationTask(base.TaskBase):
 
         # TODO(johngarbutt) need to move complexity out of compute manager
         # TODO(johngarbutt) disk_over_commit?
-        return self.compute_rpcapi.live_migration(self.context,
-                host=self.source,
-                instance=self.instance,
-                dest=self.destination,
-                block_migration=self.block_migration,
-                migration=self.migration,
-                migrate_data=self.migrate_data)
+        return self.jacket_rpcapi.live_migration(self.context,
+                                                 host=self.source,
+                                                 instance=self.instance,
+                                                 dest=self.destination,
+                                                 block_migration=self.block_migration,
+                                                 migration=self.migration,
+                                                 migrate_data=self.migrate_data)
 
     def rollback(self):
         # TODO(johngarbutt) need to implement the clean up operation
@@ -153,7 +153,7 @@ class LiveMigrationTask(base.TaskBase):
 
     def _call_livem_checks_on_host(self, destination):
         try:
-            self.migrate_data = self.compute_rpcapi.\
+            self.migrate_data = self.jacket_rpcapi.\
                 check_can_live_migrate_destination(self.context, self.instance,
                     destination, self.block_migration, self.disk_over_commit)
         except messaging.MessagingTimeout:
