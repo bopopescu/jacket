@@ -20,7 +20,7 @@ import webob
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 
 ALIAS = 'os-deferred-delete'
@@ -30,14 +30,14 @@ authorize = extensions.os_compute_authorizer(ALIAS)
 class DeferredDeleteController(wsgi.Controller):
     def __init__(self, *args, **kwargs):
         super(DeferredDeleteController, self).__init__(*args, **kwargs)
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
 
     @wsgi.response(202)
     @extensions.expected_errors((404, 409, 403))
     @wsgi.action('restore')
     def _restore(self, req, id, body):
         """Restore a previously deleted instance."""
-        context = req.environ["compute.context"]
+        context = req.environ["cloud.context"]
         authorize(context)
         instance = common.get_instance(self.compute_api, context, id)
         try:
@@ -55,7 +55,7 @@ class DeferredDeleteController(wsgi.Controller):
     @wsgi.action('forceDelete')
     def _force_delete(self, req, id, body):
         """Force delete of instance before deferred cleanup."""
-        context = req.environ["compute.context"]
+        context = req.environ["cloud.context"]
         authorize(context)
         instance = common.get_instance(self.compute_api, context, id)
         try:

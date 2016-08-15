@@ -15,14 +15,14 @@ import copy
 import mock
 from oslo_utils import units
 
-from jacket.compute.compute import arch
-from jacket.compute.compute import claims
-from jacket.compute.compute import hv_type
-from jacket.compute.compute import power_state
-from jacket.compute.compute import resource_tracker
-from jacket.compute.compute import task_states
-from jacket.compute.compute import vm_mode
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import arch
+from jacket.compute.cloud import claims
+from jacket.compute.cloud import hv_type
+from jacket.compute.cloud import power_state
+from jacket.compute.cloud import resource_tracker
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import vm_mode
+from jacket.compute.cloud import vm_states
 from jacket.compute import exception as exc
 from jacket.objects import compute
 from jacket.objects.compute import base as obj_base

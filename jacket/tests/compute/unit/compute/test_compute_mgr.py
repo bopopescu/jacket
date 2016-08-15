@@ -30,12 +30,12 @@ from oslo_utils import uuidutils
 import six
 
 from jacket import compute
-from jacket.compute.compute import build_results
-from jacket.compute.compute import manager
-from jacket.compute.compute import power_state
-from jacket.compute.compute import task_states
-from jacket.compute.compute import utils as compute_utils
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import build_results
+from jacket.compute.cloud import manager
+from jacket.compute.cloud import power_state
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import utils as compute_utils
+from jacket.compute.cloud import vm_states
 from jacket.compute.conductor import api as conductor_api
 from jacket.compute import context
 from jacket.db import compute

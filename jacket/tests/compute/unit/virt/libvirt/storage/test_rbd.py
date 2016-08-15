@@ -13,7 +13,7 @@
 
 import mock
 
-from jacket.compute.compute import task_states
+from jacket.compute.cloud import task_states
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.compute import test

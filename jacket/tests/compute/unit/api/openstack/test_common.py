@@ -25,8 +25,8 @@ import webob.exc
 import webob.multidict
 
 from jacket.api.compute.openstack import common
-from jacket.compute.compute import task_states
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import vm_states
 from jacket.compute import exception
 from jacket.compute import test
 from jacket.tests.compute.unit.api.openstack import fakes

@@ -18,7 +18,7 @@ from webob import exc
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.i18n import _
 from jacket.compute import utils
 
@@ -35,8 +35,8 @@ class InstanceActionsController(wsgi.Controller):
 
     def __init__(self):
         super(InstanceActionsController, self).__init__()
-        self.compute_api = compute.API()
-        self.action_api = compute.InstanceActionAPI()
+        self.compute_api = cloud.API()
+        self.action_api = cloud.InstanceActionAPI()
 
     def _format_action(self, action_raw):
         action = {}
@@ -62,7 +62,7 @@ class InstanceActionsController(wsgi.Controller):
     @extensions.expected_errors(404)
     def index(self, req, server_id):
         """Returns the list of actions recorded for a given instance."""
-        context = req.environ["compute.context"]
+        context = req.environ["cloud.context"]
         instance = self._get_instance(req, context, server_id)
         authorize(context, target=instance)
         actions_raw = self.action_api.actions_get(context, instance)
@@ -72,7 +72,7 @@ class InstanceActionsController(wsgi.Controller):
     @extensions.expected_errors(404)
     def show(self, req, server_id, id):
         """Return data about the given instance action."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         instance = self._get_instance(req, context, server_id)
         authorize(context, target=instance)
         action = self.action_api.action_get_by_request_id(context, instance,

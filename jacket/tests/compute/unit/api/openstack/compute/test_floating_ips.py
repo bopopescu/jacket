@@ -24,8 +24,8 @@ from jacket.api.compute.openstack.compute import floating_ips as fips_v21
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import floating_ips \
         as fips_v2
 from jacket.api.compute.openstack import extensions
-from jacket.compute import compute
-from jacket.compute.compute import utils as compute_utils
+from jacket.compute import cloud
+from jacket.compute.cloud import utils as compute_utils
 from jacket.compute import context
 from jacket.db import compute
 from jacket.compute import exception
@@ -42,32 +42,32 @@ WRONG_INST = 9999
 
 
 def network_api_get_floating_ip(self, context, id):
-    return {'id': 1, 'address': '10.10.10.10', 'pool': 'compute',
+    return {'id': 1, 'address': '10.10.10.10', 'pool': 'cloud',
             'fixed_ip_id': None}
 
 
 def network_api_get_floating_ip_by_address(self, context, address):
-    return {'id': 1, 'address': '10.10.10.10', 'pool': 'compute',
+    return {'id': 1, 'address': '10.10.10.10', 'pool': 'cloud',
             'fixed_ip_id': 10}
 
 
 def network_api_get_floating_ips_by_project(self, context):
     return [{'id': 1,
              'address': '10.10.10.10',
-             'pool': 'compute',
+             'pool': 'cloud',
              'fixed_ip': {'address': '10.0.0.1',
                           'instance_uuid': FAKE_UUID,
-                          'instance': compute.Instance(
+                          'instance': cloud.Instance(
                               **{'uuid': FAKE_UUID})}},
             {'id': 2,
-             'pool': 'compute', 'interface': 'eth0',
+             'pool': 'cloud', 'interface': 'eth0',
              'address': '10.10.10.11',
              'fixed_ip': None}]
 
 
 def compute_api_get(self, context, instance_id, expected_attrs=None,
                     want_objects=False):
-    return compute.Instance(uuid=FAKE_UUID, id=instance_id,
+    return cloud.Instance(uuid=FAKE_UUID, id=instance_id,
                             instance_type_id=1, host='bob')
 
 
@@ -92,7 +92,7 @@ def network_api_disassociate(self, context, instance, floating_address):
 
 
 def fake_instance_get(context, instance_id):
-        return compute.Instance(**{
+        return cloud.Instance(**{
         "id": 1,
         "uuid": uuid.uuid4(),
         "name": 'fake',
@@ -184,17 +184,17 @@ class FloatingIpTestV21(test.TestCase):
         elif not isinstance(floating_ips, (list, tuple)):
             floating_ips = [floating_ips]
 
-        dict_ = {'pool': 'compute', 'host': 'fake_host'}
-        return compute.floating_ip_bulk_create(
+        dict_ = {'pool': 'cloud', 'host': 'fake_host'}
+        return cloud.floating_ip_bulk_create(
             self.context, [dict(address=ip, **dict_) for ip in floating_ips],
         )
 
     def _delete_floating_ip(self):
-        compute.floating_ip_destroy(self.context, self.floating_ip)
+        cloud.floating_ip_destroy(self.context, self.floating_ip)
 
     def setUp(self):
         super(FloatingIpTestV21, self).setUp()
-        self.stubs.Set(compute.api.API, "get",
+        self.stubs.Set(cloud.api.API, "get",
                        compute_api_get)
         self.stubs.Set(network.api.API, "get_floating_ip",
                        network_api_get_floating_ip)
@@ -212,7 +212,7 @@ class FloatingIpTestV21(test.TestCase):
                        stub_nw_info(self))
 
         fake_network.stub_out_nw_api_get_instance_nw_info(self)
-        self.stub_out('compute.compute.instance_get',
+        self.stub_out('cloud.cloud.instance_get',
                       fake_instance_get)
 
         self.context = context.get_admin_context()
@@ -268,10 +268,10 @@ class FloatingIpTestV21(test.TestCase):
 
     def test_translate_floating_ip_view(self):
         floating_ip_address = self.floating_ip
-        floating_ip = compute.floating_ip_get_by_address(self.context,
+        floating_ip = cloud.floating_ip_get_by_address(self.context,
                                                     floating_ip_address)
         # NOTE(vish): network_get uses the id not the address
-        floating_ip = compute.floating_ip_get(self.context, floating_ip['id'])
+        floating_ip = cloud.floating_ip_get(self.context, floating_ip['id'])
         view = self.floating_ips._translate_floating_ip_view(floating_ip)
         self.assertIn('floating_ip', view)
         self.assertTrue(view['floating_ip']['id'])
@@ -280,7 +280,7 @@ class FloatingIpTestV21(test.TestCase):
         self.assertIsNone(view['floating_ip']['instance_id'])
 
     def test_translate_floating_ip_view_dict(self):
-        floating_ip = {'id': 0, 'address': '10.0.0.10', 'pool': 'compute',
+        floating_ip = {'id': 0, 'address': '10.0.0.10', 'pool': 'cloud',
                        'fixed_ip': None}
         view = self.floating_ips._translate_floating_ip_view(floating_ip)
         self.assertIn('floating_ip', view)
@@ -290,12 +290,12 @@ class FloatingIpTestV21(test.TestCase):
 
         response = {'floating_ips': [{'instance_id': FAKE_UUID,
                                       'ip': '10.10.10.10',
-                                      'pool': 'compute',
+                                      'pool': 'cloud',
                                       'fixed_ip': '10.0.0.1',
                                       'id': 1},
                                      {'instance_id': None,
                                       'ip': '10.10.10.11',
-                                      'pool': 'compute',
+                                      'pool': 'cloud',
                                       'fixed_ip': None,
                                       'id': 2}]}
         self.assertEqual(res_dict, response)
@@ -358,7 +358,7 @@ class FloatingIpTestV21(test.TestCase):
 
     def test_show_associated_floating_ip(self):
         def get_floating_ip(self, context, id):
-            return {'id': 1, 'address': '10.10.10.10', 'pool': 'compute',
+            return {'id': 1, 'address': '10.10.10.10', 'pool': 'cloud',
                     'fixed_ip': {'address': '10.0.0.1',
                                  'instance_uuid': FAKE_UUID,
                                  'instance': {'uuid': FAKE_UUID}}}
@@ -380,7 +380,7 @@ class FloatingIpTestV21(test.TestCase):
         self._delete_floating_ip()
 
         self._create_floating_ips([self.floating_ip, self.floating_ip_2])
-        all_ips = compute.floating_ip_get_all(self.context)
+        all_ips = cloud.floating_ip_get_all(self.context)
         ip_list = [ip['address'] for ip in all_ips]
         self.assertIn(self.floating_ip, ip_list)
         self.assertIn(self.floating_ip_2, ip_list)
@@ -389,7 +389,7 @@ class FloatingIpTestV21(test.TestCase):
         self.assertRaises(exception.FloatingIpExists,
                           self._create_floating_ips,
                           [self.floating_ip, self.floating_ip_2])
-        all_ips = compute.floating_ip_get_all(self.context)
+        all_ips = cloud.floating_ip_get_all(self.context)
         ip_list = [ip['address'] for ip in all_ips]
         self.assertIn(self.floating_ip, ip_list)
         self.assertNotIn(self.floating_ip_2, ip_list)
@@ -430,7 +430,7 @@ class FloatingIpTestV21(test.TestCase):
         self.assertIn("does not contain any IPv4 subnet",
                       six.text_type(ex))
 
-    @mock.patch('compute.network.api.API.allocate_floating_ip',
+    @mock.patch('cloud.network.api.API.allocate_floating_ip',
                 side_effect=exception.FloatingIpLimitExceeded())
     def test_floating_ip_allocate_over_quota(self, allocate_mock):
         ex = self.assertRaises(webob.exc.HTTPForbidden,
@@ -438,7 +438,7 @@ class FloatingIpTestV21(test.TestCase):
 
         self.assertIn('IP allocation over quota', ex.explanation)
 
-    @mock.patch('compute.network.api.API.allocate_floating_ip',
+    @mock.patch('cloud.network.api.API.allocate_floating_ip',
                 side_effect=exception.FloatingIpLimitExceeded())
     def test_floating_ip_allocate_quota_exceed_in_pool(self, allocate_mock):
         ex = self.assertRaises(webob.exc.HTTPForbidden,
@@ -448,7 +448,7 @@ class FloatingIpTestV21(test.TestCase):
         self.assertIn('IP allocation over quota in pool non_existent_pool.',
                       ex.explanation)
 
-    @mock.patch('compute.network.api.API.allocate_floating_ip',
+    @mock.patch('cloud.network.api.API.allocate_floating_ip',
                 side_effect=exception.FloatingIpPoolNotFound())
     def test_floating_ip_create_with_unknown_pool(self, allocate_mock):
         ex = self.assertRaises(webob.exc.HTTPNotFound,
@@ -462,7 +462,7 @@ class FloatingIpTestV21(test.TestCase):
             pass
 
         def fake2(*args, **kwargs):
-            return {'id': 1, 'address': '10.10.10.10', 'pool': 'compute'}
+            return {'id': 1, 'address': '10.10.10.10', 'pool': 'cloud'}
 
         self.stubs.Set(network.api.API, "allocate_floating_ip",
                        fake1)
@@ -478,7 +478,7 @@ class FloatingIpTestV21(test.TestCase):
             "instance_id": None,
             "ip": "10.10.10.10",
             "fixed_ip": None,
-            "pool": 'compute'}
+            "pool": 'cloud'}
         self.assertEqual(ip, expected)
 
     def test_floating_ip_release(self):
@@ -520,7 +520,7 @@ class FloatingIpTestV21(test.TestCase):
                      want_objects=False):
             raise exception.InstanceNotFound(instance_id=id)
 
-        self.stubs.Set(compute.api.API, "get", fake_get)
+        self.stubs.Set(cloud.api.API, "get", fake_get)
 
         body = dict(addFloatingIp=dict(address=self.floating_ip))
 
@@ -651,7 +651,7 @@ class FloatingIpTestV21(test.TestCase):
 
     def test_floating_ip_disassociate_auto_assigned(self):
         def fake_get_floating_ip_addr_auto_assigned(self, context, address):
-            return {'id': 1, 'address': '10.10.10.10', 'pool': 'compute',
+            return {'id': 1, 'address': '10.10.10.10', 'pool': 'cloud',
             'fixed_ip_id': 10, 'auto_assigned': 1}
 
         def get_instance_by_floating_ip_addr(self, context, address):
@@ -675,7 +675,7 @@ class FloatingIpTestV21(test.TestCase):
 
     def test_floating_ip_disassociate_map_authorization_exc(self):
         def fake_get_floating_ip_addr_auto_assigned(self, context, address):
-            return {'id': 1, 'address': '10.10.10.10', 'pool': 'compute',
+            return {'id': 1, 'address': '10.10.10.10', 'pool': 'cloud',
             'fixed_ip_id': 10, 'auto_assigned': 1}
 
         def get_instance_by_floating_ip_addr(self, context, address):
@@ -759,17 +759,17 @@ class ExtendedFloatingIpTestV21(test.TestCase):
         elif not isinstance(floating_ips, (list, tuple)):
             floating_ips = [floating_ips]
 
-        dict_ = {'pool': 'compute', 'host': 'fake_host'}
-        return compute.floating_ip_bulk_create(
+        dict_ = {'pool': 'cloud', 'host': 'fake_host'}
+        return cloud.floating_ip_bulk_create(
             self.context, [dict(address=ip, **dict_) for ip in floating_ips],
         )
 
     def _delete_floating_ip(self):
-        compute.floating_ip_destroy(self.context, self.floating_ip)
+        cloud.floating_ip_destroy(self.context, self.floating_ip)
 
     def setUp(self):
         super(ExtendedFloatingIpTestV21, self).setUp()
-        self.stubs.Set(compute.api.API, "get",
+        self.stubs.Set(cloud.api.API, "get",
                        compute_api_get)
         self.stubs.Set(network.api.API, "get_floating_ip",
                        network_api_get_floating_ip)
@@ -787,7 +787,7 @@ class ExtendedFloatingIpTestV21(test.TestCase):
                        stub_nw_info(self))
 
         fake_network.stub_out_nw_api_get_instance_nw_info(self)
-        self.stub_out('compute.compute.instance_get',
+        self.stub_out('cloud.cloud.instance_get',
                       fake_instance_get)
 
         self.context = context.get_admin_context()

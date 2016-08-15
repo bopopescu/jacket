@@ -19,7 +19,7 @@ from jacket.api.compute.openstack.compute import attach_interfaces \
         as attach_interfaces_v21
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import attach_interfaces \
         as attach_interfaces_v2
-from jacket.compute.compute import api as compute_api
+from jacket.compute.cloud import api as compute_api
 from jacket.compute import exception
 from jacket.compute.network import api as network_api
 from jacket.objects import compute

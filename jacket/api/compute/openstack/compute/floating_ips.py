@@ -25,8 +25,8 @@ from jacket.api.compute.openstack.compute.schemas import floating_ips
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
-from jacket.compute import compute
-from jacket.compute.compute import utils as compute_utils
+from jacket.compute import cloud
+from jacket.compute.cloud import utils as compute_utils
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.i18n import _LW
@@ -89,14 +89,14 @@ class FloatingIPController(object):
     """The Floating IPs API controller for the OpenStack API."""
 
     def __init__(self):
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
         self.network_api = network.API(skip_policy_check=True)
         super(FloatingIPController, self).__init__()
 
     @extensions.expected_errors((400, 404))
     def show(self, req, id):
         """Return data about the given floating IP."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         try:
@@ -112,7 +112,7 @@ class FloatingIPController(object):
     @extensions.expected_errors(())
     def index(self, req):
         """Return a list of floating IPs allocated to a project."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         floating_ips = self.network_api.get_floating_ips_by_project(context)
@@ -121,7 +121,7 @@ class FloatingIPController(object):
 
     @extensions.expected_errors((400, 403, 404))
     def create(self, req, body=None):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         pool = None
@@ -152,7 +152,7 @@ class FloatingIPController(object):
     @wsgi.response(202)
     @extensions.expected_errors((400, 403, 404, 409))
     def delete(self, req, id):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         # get the floating ip object
@@ -181,7 +181,7 @@ class FloatingIPController(object):
 class FloatingIPActionController(wsgi.Controller):
     def __init__(self, *args, **kwargs):
         super(FloatingIPActionController, self).__init__(*args, **kwargs)
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
         self.network_api = network.API(skip_policy_check=True)
 
     @extensions.expected_errors((400, 403, 404))
@@ -189,7 +189,7 @@ class FloatingIPActionController(wsgi.Controller):
     @validation.schema(floating_ips.add_floating_ip)
     def _add_floating_ip(self, req, id, body):
         """Associate floating_ip to an instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         address = body['addFloatingIp']['address']
@@ -267,7 +267,7 @@ class FloatingIPActionController(wsgi.Controller):
     @validation.schema(floating_ips.remove_floating_ip)
     def _remove_floating_ip(self, req, id, body):
         """Dissociate floating_ip from an instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         address = body['removeFloatingIp']['address']

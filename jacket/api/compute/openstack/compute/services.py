@@ -19,7 +19,7 @@ from jacket.api.compute.openstack.compute.schemas import services
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.compute import servicegroup
@@ -32,16 +32,16 @@ authorize = extensions.os_compute_authorizer(ALIAS)
 class ServiceController(wsgi.Controller):
 
     def __init__(self):
-        self.host_api = compute.HostAPI()
+        self.host_api = cloud.HostAPI()
         self.servicegroup_api = servicegroup.API()
         self.actions = {"enable": self._enable,
                         "disable": self._disable,
                         "disable-log-reason": self._disable_log_reason}
 
     def _get_services(self, req):
-        api_services = ('compute-osapi_compute', 'compute-ec2', 'compute-metadata')
+        api_services = ('cloud-osapi_compute', 'cloud-ec2', 'cloud-metadata')
 
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         _services = [
@@ -154,7 +154,7 @@ class ServiceController(wsgi.Controller):
 
     def _perform_action(self, req, id, body, actions):
         """Calculate action dictionary dependent on provided fields"""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         try:
@@ -169,7 +169,7 @@ class ServiceController(wsgi.Controller):
     @extensions.expected_errors((400, 404))
     def delete(self, req, id):
         """Deletes the specified service."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         try:

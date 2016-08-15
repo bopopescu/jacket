@@ -34,7 +34,7 @@ from oslo_utils import encodeutils
 from oslo_utils import excutils
 from oslo_utils import importutils
 
-from jacket.compute.compute import power_state
+from jacket.compute.cloud import power_state
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.i18n import _LE

@@ -23,7 +23,7 @@ from jacket.api.compute.openstack.compute import keypairs as keypairs_v21
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import keypairs \
         as keypairs_v2
 from jacket.api.compute.openstack import wsgi as os_wsgi
-from jacket.compute.compute import api as compute_api
+from jacket.compute.cloud import api as compute_api
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.compute import policy

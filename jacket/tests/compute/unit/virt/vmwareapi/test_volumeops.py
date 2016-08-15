@@ -16,7 +16,7 @@ import mock
 from oslo_vmware import exceptions as oslo_vmw_exceptions
 from oslo_vmware import vim_util as vutil
 
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import vm_states
 from jacket.compute import context
 from jacket.compute import exception
 from jacket.compute import test

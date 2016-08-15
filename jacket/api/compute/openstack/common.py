@@ -26,9 +26,9 @@ import six.moves.urllib.parse as urlparse
 import webob
 from webob import exc
 
-from jacket.compute.compute import task_states
-from jacket.compute.compute import utils as compute_utils
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import utils as compute_utils
+from jacket.compute.cloud import vm_states
 import jacket.compute.conf
 from jacket.compute import exception
 from jacket.i18n import _

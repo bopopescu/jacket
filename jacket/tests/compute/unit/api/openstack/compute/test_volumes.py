@@ -31,9 +31,9 @@ from jacket.api.compute.openstack.compute.legacy_v2.contrib import \
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import volumes
 from jacket.api.compute.openstack.compute import volumes as volumes_v21
 from jacket.api.compute.openstack import extensions
-from jacket.compute.compute import api as compute_api
-from jacket.compute.compute import flavors
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import api as compute_api
+from jacket.compute.cloud import flavors
+from jacket.compute.cloud import vm_states
 from jacket.compute import context
 from jacket.compute import exception
 from jacket.objects import compute

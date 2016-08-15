@@ -37,9 +37,9 @@ from oslo_vmware.objects import datastore as ds_obj
 from oslo_vmware import vim_util as vutil
 
 from jacket.api.compute.metadata import base as instance_metadata
-from jacket.compute import compute
-from jacket.compute.compute import power_state
-from jacket.compute.compute import task_states
+from jacket.compute import cloud
+from jacket.compute.cloud import power_state
+from jacket.compute.cloud import task_states
 import jacket.compute.conf
 from jacket.compute.console import type as ctype
 from jacket.compute import context as nova_context
@@ -67,17 +67,17 @@ vmops_opts = [
                help='The prefix for where cached images are stored. This is '
                     'NOT the full path - just a folder prefix. '
                     'This should only be used when a datastore cache should '
-                    'be shared between compute nodes. Note: this should only '
-                    'be used when the compute nodes have a shared file '
+                    'be shared between cloud nodes. Note: this should only '
+                    'be used when the cloud nodes have a shared file '
                     'system.'),
     ]
 
 CONF = jacket.compute.conf.CONF
 CONF.register_opts(vmops_opts, 'vmware')
 
-CONF.import_opt('image_cache_subdirectory_name', 'compute.virt.imagecache')
-CONF.import_opt('remove_unused_base_images', 'compute.virt.imagecache')
-CONF.import_opt('my_ip', 'compute.netconf')
+CONF.import_opt('image_cache_subdirectory_name', 'cloud.virt.imagecache')
+CONF.import_opt('remove_unused_base_images', 'cloud.virt.imagecache')
+CONF.import_opt('my_ip', 'cloud.netconf')
 
 LOG = logging.getLogger(__name__)
 
@@ -122,7 +122,7 @@ class VirtualMachineInstanceConfigInfo(object):
         return self.cache_image_folder.join(cached_image_file_name)
 
 
-# Note(vui): See https://bugs.launchpad.net/compute/+bug/1363349
+# Note(vui): See https://bugs.launchpad.net/cloud/+bug/1363349
 # for cases where mocking time.sleep() can have unintended effects on code
 # not under test. For now, unblock the affected test cases by providing
 # a wrapper function to work around needing to mock time.sleep()
@@ -151,7 +151,7 @@ class VMwareVMOps(object):
     def __init__(self, session, virtapi, volumeops, cluster=None,
                  datastore_regex=None):
         """Initializer."""
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
         self._session = session
         self._virtapi = virtapi
         self._volumeops = volumeops
@@ -167,11 +167,11 @@ class VMwareVMOps(object):
         self._network_api = network.API()
 
     def _get_base_folder(self):
-        # Enable more than one compute node to run on the same host
+        # Enable more than one cloud node to run on the same host
         if CONF.vmware.cache_prefix:
             base_folder = '%s%s' % (CONF.vmware.cache_prefix,
                                     CONF.image_cache_subdirectory_name)
-        # Ensure that the base folder is unique per compute node
+        # Ensure that the base folder is unique per cloud node
         elif CONF.remove_unused_base_images:
             base_folder = '%s%s' % (CONF.my_ip,
                                     CONF.image_cache_subdirectory_name)
@@ -330,7 +330,7 @@ class VMwareVMOps(object):
         return vm_ref
 
     def _get_extra_specs(self, flavor, image_meta=None):
-        image_meta = image_meta or compute.ImageMeta.from_dict({})
+        image_meta = image_meta or cloud.ImageMeta.from_dict({})
         extra_specs = vm_util.ExtraSpecs()
         for resource in ['cpu', 'memory', 'disk_io', 'vif']:
             for (key, type) in (('limit', int),
@@ -601,7 +601,7 @@ class VMwareVMOps(object):
         LOG.debug("Processing image %s", vi.ii.image_id, instance=vi.instance)
 
         with lockutils.lock(str(vi.cache_image_path),
-                            lock_file_prefix='compute-vmware-fetch_image'):
+                            lock_file_prefix='cloud-vmware-fetch_image'):
             self.check_cache_folder(vi.datastore.name, vi.datastore.ref)
             ds_browser = self._get_ds_browser(vi.datastore.ref)
             if not ds_util.file_exists(self._session, ds_browser,
@@ -1235,7 +1235,7 @@ class VMwareVMOps(object):
     def power_off(self, instance):
         """Power off the specified instance.
 
-        :param instance: compute.compute.instance.Instance
+        :param instance: cloud.cloud.instance.Instance
         """
         vm_util.power_off_instance(self._session, instance)
 
@@ -1501,7 +1501,7 @@ class VMwareVMOps(object):
                                               vm_ref,
                                               lst_properties)
         data = {}
-        # All of values received are compute. Convert them to dictionaries
+        # All of values received are cloud. Convert them to dictionaries
         for value in vm_props.values():
             prop_dict = vim_util.object_to_dict(value, list_depth=1)
             data.update(prop_dict)
@@ -1721,7 +1721,7 @@ class VMwareVMOps(object):
         vm_ref = vm_util.get_vm_ref(self._session, instance)
         # Ensure that there is not a race with the port index management
         with lockutils.lock(instance.uuid,
-                            lock_file_prefix='compute-vmware-hot-plug'):
+                            lock_file_prefix='cloud-vmware-hot-plug'):
             port_index = vm_util.get_attach_port_index(self._session, vm_ref)
             client_factory = self._session.vim.client.factory
             attach_config_spec = vm_util.get_network_attach_config_spec(
@@ -1749,7 +1749,7 @@ class VMwareVMOps(object):
         vm_ref = vm_util.get_vm_ref(self._session, instance)
         # Ensure that there is not a race with the port index management
         with lockutils.lock(instance.uuid,
-                            lock_file_prefix='compute-vmware-hot-plug'):
+                            lock_file_prefix='cloud-vmware-hot-plug'):
             port_index = vm_util.get_vm_detach_port_index(self._session,
                                                           vm_ref,
                                                           vif['id'])
@@ -1836,12 +1836,12 @@ class VMwareVMOps(object):
         # will be serialized, with only the first actually creating
         # the copy.
         #
-        # Note that the object is in a per-compute cache directory,
-        # so inter-compute locking is not a concern. Consequently we
+        # Note that the object is in a per-cloud cache directory,
+        # so inter-cloud locking is not a concern. Consequently we
         # can safely use simple thread locks.
 
         with lockutils.lock(str(sized_disk_ds_loc),
-                            lock_file_prefix='compute-vmware-image'):
+                            lock_file_prefix='cloud-vmware-image'):
 
             if not self._sized_image_exists(sized_disk_ds_loc,
                                             vi.datastore.ref):

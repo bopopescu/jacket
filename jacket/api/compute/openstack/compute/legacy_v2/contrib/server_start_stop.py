@@ -17,7 +17,7 @@ import webob
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.objects import compute
@@ -26,12 +26,12 @@ from jacket.objects import compute
 class ServerStartStopActionController(wsgi.Controller):
     def __init__(self, *args, **kwargs):
         super(ServerStartStopActionController, self).__init__(*args, **kwargs)
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
 
     def _get_instance(self, context, instance_uuid):
         try:
             attrs = ['system_metadata', 'metadata']
-            return compute.Instance.get_by_uuid(context, instance_uuid,
+            return cloud.Instance.get_by_uuid(context, instance_uuid,
                                                 expected_attrs=attrs)
         except exception.NotFound:
             msg = _("Instance not found")
@@ -40,7 +40,7 @@ class ServerStartStopActionController(wsgi.Controller):
     @wsgi.action('os-start')
     def _start_server(self, req, id, body):
         """Start an instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         instance = self._get_instance(context, id)
         extensions.check_compute_policy(context, 'start', instance)
 
@@ -56,7 +56,7 @@ class ServerStartStopActionController(wsgi.Controller):
     @wsgi.action('os-stop')
     def _stop_server(self, req, id, body):
         """Stop an instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         instance = self._get_instance(context, id)
         extensions.check_compute_policy(context, 'stop', instance)
 
@@ -71,11 +71,11 @@ class ServerStartStopActionController(wsgi.Controller):
 
 
 class Server_start_stop(extensions.ExtensionDescriptor):
-    """Start/Stop instance compute API support."""
+    """Start/Stop instance cloud API support."""
 
     name = "ServerStartStop"
     alias = "os-server-start-stop"
-    namespace = "http://docs.openstack.org/compute/ext/servers/api/v1.1"
+    namespace = "http://docs.openstack.org/cloud/ext/servers/api/v1.1"
     updated = "2012-01-23T00:00:00Z"
 
     def get_controller_extensions(self):

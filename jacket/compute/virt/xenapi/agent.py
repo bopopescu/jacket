@@ -27,7 +27,7 @@ from oslo_serialization import jsonutils
 from oslo_utils import strutils
 
 from jacket.api.compute.metadata import password
-from jacket.compute.compute import utils as compute_utils
+from jacket.compute.cloud import utils as compute_utils
 from jacket.compute import context
 from jacket.compute import crypto
 from jacket.compute import exception

@@ -24,7 +24,7 @@ from webob import exc
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.i18n import _
 from jacket.compute import utils
 
@@ -33,14 +33,14 @@ ALIAS = "os-fping"
 authorize = extensions.os_compute_authorizer(ALIAS)
 
 CONF = cfg.CONF
-CONF.import_opt('fping_path', 'compute.api.openstack.compute.legacy_v2.contrib.'
+CONF.import_opt('fping_path', 'cloud.api.openstack.cloud.legacy_v2.contrib.'
                 'fping')
 
 
 class FpingController(wsgi.Controller):
 
     def __init__(self, network_api=None):
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
         self.last_call = {}
 
     def check_fping(self):
@@ -72,7 +72,7 @@ class FpingController(wsgi.Controller):
 
     @extensions.expected_errors(503)
     def index(self, req):
-        context = req.environ["compute.context"]
+        context = req.environ["cloud.context"]
         search_opts = dict(deleted=False)
         if "all_tenants" in req.GET:
             authorize(context, action='all_tenants')
@@ -122,7 +122,7 @@ class FpingController(wsgi.Controller):
 
     @extensions.expected_errors((404, 503))
     def show(self, req, id):
-        context = req.environ["compute.context"]
+        context = req.environ["cloud.context"]
         authorize(context)
         self.check_fping()
         instance = common.get_instance(self.compute_api, context, id)

@@ -27,8 +27,8 @@ from oslo_concurrency import processutils
 from oslo_config import cfg
 from oslo_log import log as logging
 
-from jacket.compute.compute import arch
-from jacket.compute.compute import vm_mode
+from jacket.compute.cloud import arch
+from jacket.compute.cloud import vm_mode
 from jacket.i18n import _
 from jacket.i18n import _LI
 from jacket.compute import utils

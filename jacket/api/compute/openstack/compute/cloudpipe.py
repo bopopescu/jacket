@@ -23,9 +23,9 @@ from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
 from jacket.compute.cloudpipe import pipelib
-from jacket.compute import compute
-from jacket.compute.compute import utils as compute_utils
-from jacket.compute.compute import vm_states
+from jacket.compute import cloud
+from jacket.compute.cloud import utils as compute_utils
+from jacket.compute.cloud import vm_states
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.compute import network
@@ -33,7 +33,7 @@ from jacket.objects import compute
 from jacket.compute import utils
 
 CONF = cfg.CONF
-CONF.import_opt('keys_path', 'compute.crypto')
+CONF.import_opt('keys_path', 'cloud.crypto')
 
 ALIAS = 'os-cloudpipe'
 authorize = extensions.os_compute_authorizer(ALIAS)
@@ -43,7 +43,7 @@ class CloudpipeController(wsgi.Controller):
     """Handle creating and listing cloudpipe instances."""
 
     def __init__(self):
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
         self.network_api = network.API(skip_policy_check=True)
         self.cloudpipe = pipelib.CloudPipe(skip_policy_check=True)
         self.setup()
@@ -114,7 +114,7 @@ class CloudpipeController(wsgi.Controller):
         Parameters: {cloudpipe: {'project_id': ''}}
         """
 
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         params = body.get('cloudpipe', {})
         project_id = params.get('project_id', context.project_id)
@@ -138,7 +138,7 @@ class CloudpipeController(wsgi.Controller):
     @extensions.expected_errors((400, 403, 404))
     def index(self, req):
         """List running cloudpipe instances."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         vpns = [self._vpn_dict(context, x['project_id'], x)
                 for x in self._get_all_cloudpipes(context)]
@@ -150,7 +150,7 @@ class CloudpipeController(wsgi.Controller):
     def update(self, req, id, body):
         """Configure cloudpipe parameters for the project."""
 
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         if id != "configure-project":
@@ -158,7 +158,7 @@ class CloudpipeController(wsgi.Controller):
             raise exc.HTTPBadRequest(explanation=msg)
 
         project_id = context.project_id
-        networks = compute.NetworkList.get_by_project(context, project_id)
+        networks = cloud.NetworkList.get_by_project(context, project_id)
 
         params = body['configure_project']
         vpn_ip = params['vpn_ip']

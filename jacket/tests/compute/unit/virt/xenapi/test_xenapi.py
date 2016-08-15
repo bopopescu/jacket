@@ -33,13 +33,13 @@ from oslo_utils import importutils
 import six
 import testtools
 
-from jacket.compute.compute import api as compute_api
-from jacket.compute.compute import arch
-from jacket.compute.compute import hv_type
-from jacket.compute.compute import power_state
-from jacket.compute.compute import task_states
-from jacket.compute.compute import utils as compute_utils
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import api as compute_api
+from jacket.compute.cloud import arch
+from jacket.compute.cloud import hv_type
+from jacket.compute.cloud import power_state
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import utils as compute_utils
+from jacket.compute.cloud import vm_states
 import jacket.compute.conf
 from jacket.compute import context
 from jacket.compute import crypto
@@ -2784,7 +2784,7 @@ class XenAPIDom0IptablesFirewallTestCase(stubs.XenAPITestBase):
 
         network_model = fake_network.fake_get_instance_nw_info(self, 1)
 
-        from jacket.compute.compute import utils as compute_utils  # noqa
+        from jacket.compute.cloud import utils as compute_utils  # noqa
         self.stubs.Set(compute_utils, 'get_nw_info_for_instance',
                        lambda instance: network_model)
 

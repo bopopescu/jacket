@@ -10,8 +10,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from jacket.compute.compute import arch
-from jacket.compute.compute import cpumodel
+from jacket.compute.cloud import arch
+from jacket.compute.cloud import cpumodel
 from jacket.objects import compute
 from jacket.tests.compute.unit.objects import test_objects
 

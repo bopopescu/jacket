@@ -23,8 +23,8 @@ from jacket.api.compute.openstack.compute import evacuate as evacuate_v21
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import evacuate \
         as evacuate_v2
 from jacket.api.compute.openstack import extensions
-from jacket.compute.compute import api as compute_api
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import api as compute_api
+from jacket.compute.cloud import vm_states
 from jacket.compute import exception
 from jacket.compute import test
 from jacket.tests.compute.unit.api.openstack import fakes

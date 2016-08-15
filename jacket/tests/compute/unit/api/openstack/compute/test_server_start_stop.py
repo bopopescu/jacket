@@ -23,7 +23,7 @@ from jacket.api.compute.openstack.compute.legacy_v2.contrib import server_start_
         as server_v2
 from jacket.api.compute.openstack.compute import servers \
         as server_v21
-from jacket.compute.compute import api as compute_api
+from jacket.compute.cloud import api as compute_api
 from jacket.compute import exception
 from jacket.compute import policy
 from jacket.compute import test

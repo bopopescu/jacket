@@ -20,31 +20,31 @@ from oslo_config import cfg
 import webob.exc
 
 from jacket.api.compute.openstack import extensions
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import context as nova_context
 from jacket.i18n import _
 from jacket.compute import utils
 
 CONF = cfg.CONF
-CONF.import_opt('compute_topic', 'compute.compute.rpcapi')
+CONF.import_opt('compute_topic', 'cloud.cloud.rpcapi')
 
 
-authorize = extensions.extension_authorizer('compute',
+authorize = extensions.extension_authorizer('cloud',
                            'instance_usage_audit_log')
 
 
 class InstanceUsageAuditLogController(object):
     def __init__(self):
-        self.host_api = compute.HostAPI()
+        self.host_api = cloud.HostAPI()
 
     def index(self, req):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         task_log = self._get_audit_task_logs(context)
         return {'instance_usage_audit_logs': task_log}
 
     def show(self, req, id):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         try:
             if '.' in id:
@@ -86,7 +86,7 @@ class InstanceUsageAuditLogController(object):
         task_logs = self.host_api.task_log_get_all(context,
                                                    "instance_usage_audit",
                                                    begin, end)
-        # We do this this way to include disabled compute services,
+        # We do this this way to include disabled cloud services,
         # which can have instances on them. (mdragon)
         filters = {'topic': CONF.compute_topic}
         services = self.host_api.service_get_all(context, filters=filters)

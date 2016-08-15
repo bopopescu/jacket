@@ -23,7 +23,7 @@ from jacket.api.compute.openstack.compute.schemas import console_output
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 
 ALIAS = "os-console-output"
@@ -33,14 +33,14 @@ authorize = extensions.os_compute_authorizer(ALIAS)
 class ConsoleOutputController(wsgi.Controller):
     def __init__(self, *args, **kwargs):
         super(ConsoleOutputController, self).__init__(*args, **kwargs)
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
 
     @extensions.expected_errors((404, 409, 501))
     @wsgi.action('os-getConsoleOutput')
     @validation.schema(console_output.get_console_output)
     def get_console_output(self, req, id, body):
         """Get text console output."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         instance = common.get_instance(self.compute_api, context, id)

@@ -25,7 +25,7 @@ from jacket.api.compute.openstack.compute import extension_info
 from jacket.api.compute.openstack.compute.legacy_v2 import extensions
 from jacket.api.compute.openstack.compute.legacy_v2 import servers as servers_v2
 from jacket.api.compute.openstack.compute import servers as servers_v21
-from jacket.compute.compute import api as compute_api
+from jacket.compute.cloud import api as compute_api
 from jacket.db import compute
 from jacket.compute import exception
 from jacket.compute import test

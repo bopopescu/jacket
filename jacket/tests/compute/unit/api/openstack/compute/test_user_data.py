@@ -25,8 +25,8 @@ from oslo_serialization import jsonutils
 from jacket.api.compute.openstack.compute import extension_info
 from jacket.api.compute.openstack.compute import servers
 from jacket.api.compute.openstack.compute import user_data
-from jacket.compute.compute import api as compute_api
-from jacket.compute.compute import flavors
+from jacket.compute.cloud import api as compute_api
+from jacket.compute.cloud import flavors
 from jacket.compute import exception
 from jacket.compute.network import manager
 from jacket.compute import test

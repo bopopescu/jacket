@@ -17,7 +17,7 @@
 
 """Handles all processes relating to instances (guest vms).
 
-The :py:class:`ComputeManager` class is a :py:class:`compute.manager.Manager` that
+The :py:class:`ComputeManager` class is a :py:class:`cloud.manager.Manager` that
 handles RPC calls relating to creating instances.  It is responsible for
 building a disk image, launching it via the underlying virtualization driver,
 responding to calls to check its state, attaching persistent storage, and
@@ -56,15 +56,15 @@ from six.moves import range
 from jacket.compute import block_device
 from jacket.compute.cells import rpcapi as cells_rpcapi
 from jacket.compute.cloudpipe import pipelib
-from jacket.compute import compute
-from jacket.compute.compute import build_results
-from jacket.compute.compute import claims
-from jacket.compute.compute import power_state
-from jacket.compute.compute import resource_tracker
-from jacket.compute.compute import rpcapi as jacket_rpcapi
-from jacket.compute.compute import task_states
-from jacket.compute.compute import utils as compute_utils
-from jacket.compute.compute import vm_states
+from jacket.compute import cloud
+from jacket.compute.cloud import build_results
+from jacket.compute.cloud import claims
+from jacket.compute.cloud import power_state
+from jacket.compute.cloud import resource_tracker
+from jacket.compute.cloud import rpcapi as compute_rpcapi
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import utils as compute_utils
+from jacket.compute.cloud import vm_states
 from jacket.compute import conductor
 import jacket.compute.conf
 from jacket.compute import consoleauth
@@ -118,7 +118,7 @@ compute_opts = [
                help='Where instances are stored on disk'),
     cfg.BoolOpt('instance_usage_audit',
                 default=False,
-                help="Generate periodic compute.instance.exists"
+                help="Generate periodic cloud.instance.exists"
                      " notifications"),
     cfg.IntOpt('live_migration_retry_count',
                default=30,
@@ -197,12 +197,12 @@ interval_opts = [
                default=120,
                help='Waiting time interval (seconds) between sending the '
                     'scheduler a list of current instance UUIDs to verify '
-                    'that its view of instances is in sync with compute. If the '
+                    'that its view of instances is in sync with cloud. If the '
                     'CONF option `scheduler_tracks_instance_changes` is '
                     'False, changing this option will have no effect.'),
     cfg.IntOpt('update_resources_interval',
                default=0,
-               help='Interval in seconds for updating compute resources. A '
+               help='Interval in seconds for updating cloud resources. A '
                     'number less than 0 means to disable the task completely. '
                     'Leaving this at the default of 0 will cause this to run '
                     'at the default periodic interval. Setting it to any '
@@ -264,21 +264,21 @@ CONF.register_opts(interval_opts)
 CONF.register_opts(timeout_opts)
 CONF.register_opts(running_deleted_opts)
 CONF.register_opts(instance_cleaning_opts)
-CONF.import_opt('console_topic', 'compute.console.rpcapi')
-CONF.import_opt('host', 'compute.netconf')
-CONF.import_opt('enabled', 'compute.spice', group='spice')
-CONF.import_opt('image_cache_manager_interval', 'compute.virt.imagecache')
-CONF.import_opt('enabled', 'compute.rdp', group='rdp')
-CONF.import_opt('html5_proxy_base_url', 'compute.rdp', group='rdp')
-CONF.import_opt('enabled', 'compute.mks', group='mks')
-CONF.import_opt('mksproxy_base_url', 'compute.mks', group='mks')
-CONF.import_opt('destroy_after_evacuate', 'compute.utils', group='workarounds')
+CONF.import_opt('console_topic', 'cloud.console.rpcapi')
+CONF.import_opt('host', 'cloud.netconf')
+CONF.import_opt('enabled', 'cloud.spice', group='spice')
+CONF.import_opt('image_cache_manager_interval', 'cloud.virt.imagecache')
+CONF.import_opt('enabled', 'cloud.rdp', group='rdp')
+CONF.import_opt('html5_proxy_base_url', 'cloud.rdp', group='rdp')
+CONF.import_opt('enabled', 'cloud.mks', group='mks')
+CONF.import_opt('mksproxy_base_url', 'cloud.mks', group='mks')
+CONF.import_opt('destroy_after_evacuate', 'cloud.utils', group='workarounds')
 CONF.import_opt('scheduler_tracks_instance_changes',
-                'compute.scheduler.host_manager')
+                'cloud.scheduler.host_manager')
 
 LOG = logging.getLogger(__name__)
 
-get_notifier = functools.partial(rpc.get_notifier, service='compute')
+get_notifier = functools.partial(rpc.get_notifier, service='cloud')
 wrap_exception = functools.partial(exception.wrap_exception,
                                    get_notifier=get_notifier)
 
@@ -414,7 +414,7 @@ def wrap_instance_event(function):
 @utils.expects_func_args('image_id', 'instance')
 def delete_image_on_error(function):
     """Used for snapshot related method to ensure the image created in
-    compute.api is deleted when an error occurs.
+    cloud.api is deleted when an error occurs.
     """
 
     @functools.wraps(function)
@@ -457,8 +457,8 @@ def object_compat(function):
                 # those fields joined
                 metas = [meta for meta in ('metadata', 'system_metadata')
                          if meta in instance_or_dict]
-                instance = compute.Instance._from_db_object(
-                    context, compute.Instance(), instance_or_dict,
+                instance = cloud.Instance._from_db_object(
+                    context, cloud.Instance(), instance_or_dict,
                     expected_attrs=metas)
                 instance._context = context
                 return instance
@@ -471,8 +471,8 @@ def object_compat(function):
 
         migration = kwargs.get('migration')
         if isinstance(migration, dict):
-            migration = compute.Migration._from_db_object(
-                    context.elevated(), compute.Migration(),
+            migration = cloud.Migration._from_db_object(
+                    context.elevated(), cloud.Migration(),
                     migration)
             kwargs['migration'] = migration
 
@@ -523,7 +523,7 @@ class InstanceEvents(object):
         can be used to signal the waiters to wake up.
 
         :param instance: the instance for which the event was generated
-        :param event: the compute.compute.external_event.InstanceExternalEvent
+        :param event: the cloud.cloud.external_event.InstanceExternalEvent
                       that describes the event
         :returns: the eventlet.event.Event object on which the waiters
                   are blocked
@@ -595,7 +595,7 @@ class InstanceEvents(object):
                           {'event': event_name,
                            'instance_uuid': instance_uuid})
                 name, tag = event_name.rsplit('-', 1)
-                event = compute.InstanceExternalEvent(
+                event = cloud.InstanceExternalEvent(
                     instance_uuid=instance_uuid,
                     name=name, status='failed',
                     tag=tag, data={})
@@ -603,9 +603,9 @@ class InstanceEvents(object):
 
 
 class ComputeVirtAPI(virtapi.VirtAPI):
-    def __init__(self, compute):
+    def __init__(self, cloud):
         super(ComputeVirtAPI, self).__init__()
-        self._compute = compute
+        self._compute = cloud
 
     def _default_error_callback(self, event_name, instance):
         raise exception.NovaException(_('Instance event failed'))
@@ -650,7 +650,7 @@ class ComputeVirtAPI(virtapi.VirtAPI):
         for event_name in event_names:
             if isinstance(event_name, tuple):
                 name, tag = event_name
-                event_name = compute.InstanceExternalEvent.make_key(
+                event_name = cloud.InstanceExternalEvent.make_key(
                     name, tag)
             try:
                 events[event_name] = (
@@ -693,8 +693,8 @@ class ComputeManager(manager.Manager):
         self._last_bw_usage_poll = 0
         self._bw_usage_supported = True
         self._last_bw_usage_cell_update = 0
-        self.compute_api = compute.API()
-        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
+        self.compute_api = cloud.API()
+        self.compute_rpcapi = compute_rpcapi.ComputeAPI()
         self.conductor_api = conductor.API()
         self.compute_task_api = conductor.ComputeTaskAPI()
         self.is_neutron_security_groups = (
@@ -718,20 +718,20 @@ class ComputeManager(manager.Manager):
         else:
             self._live_migration_semaphore = compute_utils.UnlimitedSemaphore()
 
-        super(ComputeManager, self).__init__(service_name="compute",
+        super(ComputeManager, self).__init__(service_name="cloud",
                                              *args, **kwargs)
 
         # NOTE(russellb) Load the driver last.  It may call back into the
-        # compute manager via the virtapi, so we want it to be fully
+        # cloud manager via the virtapi, so we want it to be fully
         # initialized before that happens.
         self.driver = driver.load_compute_driver(self.virtapi, compute_driver)
         self.use_legacy_block_device_info = \
                             self.driver.need_legacy_block_device_info
 
     def reset(self):
-        LOG.info(_LI('Reloading compute RPC API'))
-        jacket_rpcapi.LAST_VERSION = None
-        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
+        LOG.info(_LI('Reloading cloud RPC API'))
+        compute_rpcapi.LAST_VERSION = None
+        self.compute_rpcapi = compute_rpcapi.ComputeAPI()
 
     def _get_resource_tracker(self, nodename):
         rt = self._resource_tracker_dict.get(nodename)
@@ -739,7 +739,7 @@ class ComputeManager(manager.Manager):
             if not self.driver.node_is_available(nodename):
                 raise exception.NovaException(
                         _("%s is not a valid node managed by this "
-                          "compute host.") % nodename)
+                          "cloud host.") % nodename)
 
             rt = resource_tracker.ResourceTracker(self.host,
                                                   self.driver,
@@ -794,9 +794,9 @@ class ComputeManager(manager.Manager):
             driver_uuids = self.driver.list_instance_uuids()
             if len(driver_uuids) == 0:
                 # Short circuit, don't waste a DB call
-                return compute.InstanceList()
+                return cloud.InstanceList()
             filters['uuid'] = driver_uuids
-            local_instances = compute.InstanceList.get_by_filters(
+            local_instances = cloud.InstanceList.get_by_filters(
                 context, filters, use_slave=True)
             return local_instances
         except NotImplementedError:
@@ -805,7 +805,7 @@ class ComputeManager(manager.Manager):
         # The driver doesn't support uuids listing, so we'll have
         # to brute force.
         driver_instances = self.driver.list_instances()
-        instances = compute.InstanceList.get_by_filters(context, filters,
+        instances = cloud.InstanceList.get_by_filters(context, filters,
                                                         use_slave=True)
         name_map = {instance.name: instance for instance in instances}
         local_instances = []
@@ -819,7 +819,7 @@ class ComputeManager(manager.Manager):
     def _destroy_evacuated_instances(self, context):
         """Destroys evacuated instances.
 
-        While compute-compute was down, the instances running on it could be
+        While cloud-cloud was down, the instances running on it could be
         evacuated to another host. Check that the instances reported
         by the driver are still associated with this host.  If they are
         not, destroy them, with the exception of instances which are in
@@ -831,7 +831,7 @@ class ComputeManager(manager.Manager):
             'status': ['accepted', 'done'],
             'migration_type': 'evacuation',
         }
-        evacuations = compute.MigrationList.get_by_filters(context, filters)
+        evacuations = cloud.MigrationList.get_by_filters(context, filters)
         if not evacuations:
             return
         evacuations = {mig.instance_uuid: mig for mig in evacuations}
@@ -872,7 +872,7 @@ class ComputeManager(manager.Manager):
             data = self.driver.check_instance_shared_storage_local(context,
                                                        instance)
             if data:
-                shared_storage = (self.jacket_rpcapi.
+                shared_storage = (self.compute_rpcapi.
                                   check_instance_shared_storage(context,
                                   instance, data, host=host))
         except NotImplementedError:
@@ -896,10 +896,10 @@ class ComputeManager(manager.Manager):
         """
         system_meta = instance.system_metadata
         instance.destroy()
-        bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
                 context, instance.uuid)
-        quotas = compute.Quotas(context=context)
-        project_id, user_id = compute.quotas.ids_from_instance(context,
+        quotas = cloud.Quotas(context=context)
+        project_id, user_id = cloud.quotas.ids_from_instance(context,
                                                                instance)
         quotas.reserve(project_id=project_id, user_id=user_id, instances=-1,
                        cores=-instance.vcpus, ram=-instance.memory_mb)
@@ -929,7 +929,7 @@ class ComputeManager(manager.Manager):
         vcpus = instance.vcpus
         mem_mb = instance.memory_mb
 
-        quotas = compute.Quotas(context=context)
+        quotas = cloud.Quotas(context=context)
         quotas.reserve(project_id=project_id,
                        user_id=user_id,
                        instances=-1,
@@ -980,7 +980,7 @@ class ComputeManager(manager.Manager):
                                     task_states.BLOCK_DEVICE_MAPPING,
                                     task_states.NETWORKING,
                                     task_states.SPAWNING]):
-            # NOTE(dave-mcnally) compute stopped before instance was fully
+            # NOTE(dave-mcnally) cloud stopped before instance was fully
             # spawned so set to ERROR state. This is safe to do as the state
             # may be set by the api but the host is not so if we get here the
             # instance has already been scheduled to this particular host.
@@ -995,7 +995,7 @@ class ComputeManager(manager.Manager):
             instance.task_state in [task_states.REBUILDING,
                                     task_states.REBUILD_BLOCK_DEVICE_MAPPING,
                                     task_states.REBUILD_SPAWNING]):
-            # NOTE(jichenjc) compute stopped before instance was fully
+            # NOTE(jichenjc) cloud stopped before instance was fully
             # spawned so set to ERROR state. This is consistent to BUILD
             LOG.debug("Instance failed to rebuild correctly, "
                       "setting to ERROR state", instance=instance)
@@ -1036,9 +1036,9 @@ class ComputeManager(manager.Manager):
                              ' the deletion now.'), instance=instance)
                 instance.obj_load_attr('metadata')
                 instance.obj_load_attr('system_metadata')
-                bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+                bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
                         context, instance.uuid)
-                project_id, user_id = compute.quotas.ids_from_instance(
+                project_id, user_id = cloud.quotas.ids_from_instance(
                     context, instance)
                 quotas = self._create_reservations(context, instance,
                                                    project_id, user_id)
@@ -1187,7 +1187,7 @@ class ComputeManager(manager.Manager):
                   instance=instance)
 
         if expect_running and CONF.resume_guests_state_on_host_boot:
-            LOG.info(_LI('Rebooting instance after compute-compute restart.'),
+            LOG.info(_LI('Rebooting instance after cloud-cloud restart.'),
                      instance=instance)
 
             block_device_info = \
@@ -1241,7 +1241,7 @@ class ComputeManager(manager.Manager):
                  {'state': event.get_name()},
                  instance_uuid=event.get_instance_uuid())
         context = jacket.compute.context.get_admin_context(read_deleted='yes')
-        instance = compute.Instance.get_by_uuid(context,
+        instance = cloud.Instance.get_by_uuid(context,
                                                 event.get_instance_uuid(),
                                                 expected_attrs=[])
         vm_power_state = None
@@ -1295,24 +1295,24 @@ class ComputeManager(manager.Manager):
             # NOTE(mriedem): If the _sync_power_states periodic task is
             # disabled we should emit a warning in the logs.
             if CONF.sync_power_state_interval < 0:
-                LOG.warning(_LW('Instance lifecycle events from the compute '
+                LOG.warning(_LW('Instance lifecycle events from the cloud '
                              'driver have been disabled. Note that lifecycle '
-                             'changes to an instance outside of the compute '
+                             'changes to an instance outside of the cloud '
                              'service will not be synchronized '
                              'automatically since the _sync_power_states '
                              'periodic task is also disabled.'))
             else:
-                LOG.info(_LI('Instance lifecycle events from the compute '
+                LOG.info(_LI('Instance lifecycle events from the cloud '
                              'driver have been disabled. Note that lifecycle '
-                             'changes to an instance outside of the compute '
+                             'changes to an instance outside of the cloud '
                              'service will only be synchronized by the '
                              '_sync_power_states periodic task.'))
 
     def init_host(self):
-        """Initialization for a standalone compute service."""
+        """Initialization for a standalone cloud service."""
         self.driver.init_host(host=self.host)
         context = jacket.compute.context.get_admin_context()
-        instances = compute.InstanceList.get_by_host(
+        instances = cloud.InstanceList.get_by_host(
             context, self.host, expected_attrs=['info_cache', 'metadata'])
 
         if CONF.defer_iptables_apply:
@@ -1353,7 +1353,7 @@ class ComputeManager(manager.Manager):
     def get_console_topic(self, context):
         """Retrieves the console host for a project on this host.
 
-        Currently this is just set in the flags for each compute host.
+        Currently this is just set in the flags for each cloud host.
 
         """
         # TODO(mdragon): perhaps make this variable by console_type?
@@ -1462,7 +1462,7 @@ class ComputeManager(manager.Manager):
 
         @utils.synchronized(group_hint)
         def _do_validation(context, instance, group_hint):
-            group = compute.InstanceGroup.get_by_hint(context, group_hint)
+            group = cloud.InstanceGroup.get_by_hint(context, group_hint)
             if 'anti-affinity' in group.policies:
                 group_hosts = group.get_hosts(exclude=[instance.uuid])
                 if self.host in group_hosts:
@@ -1488,7 +1488,7 @@ class ComputeManager(manager.Manager):
     def _reschedule(self, context, request_spec, filter_properties,
             instance, reschedule_method, method_args, task_state,
             exc_info=None):
-        """Attempt to re-schedule a compute operation."""
+        """Attempt to re-schedule a cloud operation."""
 
         instance_uuid = instance.uuid
         retry = filter_properties.get('retry')
@@ -1528,7 +1528,7 @@ class ComputeManager(manager.Manager):
         filters = {'vm_state': vm_states.BUILDING,
                    'host': self.host}
 
-        building_insts = compute.InstanceList.get_by_filters(context,
+        building_insts = cloud.InstanceList.get_by_filters(context,
                            filters, expected_attrs=[], use_slave=True)
 
         for instance in building_insts:
@@ -1775,18 +1775,18 @@ class ComputeManager(manager.Manager):
         configdrive.update_instance(instance)
 
     def _update_scheduler_instance_info(self, context, instance):
-        """Sends an InstanceList with created or updated Instance compute to
+        """Sends an InstanceList with created or updated Instance cloud to
         the Scheduler client.
 
         In the case of init_host, the value passed will already be an
-        InstanceList. Other calls will send individual Instance compute that
+        InstanceList. Other calls will send individual Instance cloud that
         have been created or resized. In this case, we create an InstanceList
         object containing that Instance.
         """
         if not self.send_instance_updates:
             return
         if isinstance(instance, obj_instance.Instance):
-            instance = compute.InstanceList(compute=[instance])
+            instance = cloud.InstanceList(cloud=[instance])
         context = context.elevated()
         self.scheduler_client.update_instance_info(context, self.host,
                                                    instance)
@@ -1804,7 +1804,7 @@ class ComputeManager(manager.Manager):
         if not self.send_instance_updates:
             return
         context = context.elevated()
-        instances = compute.InstanceList.get_by_host(context, self.host,
+        instances = cloud.InstanceList.get_by_host(context, self.host,
                                                      expected_attrs=[],
                                                      use_slave=True)
         uuids = [instance.uuid for instance in instances]
@@ -1825,7 +1825,7 @@ class ComputeManager(manager.Manager):
         with timeutils.StopWatch() as timer:
             self.network_api.deallocate_for_instance(
                 context, instance, requested_networks=requested_networks)
-        # compute-network does an rpc call so we're OK tracking time spent here
+        # cloud-network does an rpc call so we're OK tracking time spent here
         LOG.info(_LI('Took %0.2f seconds to deallocate network for instance.'),
                  timer.elapsed(), instance=instance)
 
@@ -1835,7 +1835,7 @@ class ComputeManager(manager.Manager):
         """Transform block devices to the driver block_device format."""
 
         if not bdms:
-            bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+            bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
                     context, instance.uuid)
         block_device_info = driver.get_block_device_info(instance, bdms)
 
@@ -2042,7 +2042,7 @@ class ComputeManager(manager.Manager):
                 # the host is set on the instance.
                 self._validate_instance_group_policy(context, instance,
                         filter_properties)
-                image_meta = compute.ImageMeta.from_dict(image)
+                image_meta = cloud.ImageMeta.from_dict(image)
                 with self._build_resources(context, instance,
                         requested_networks, security_groups, image_meta,
                         block_device_mapping) as resources:
@@ -2297,7 +2297,7 @@ class ComputeManager(manager.Manager):
         """Shutdown an instance on this host.
 
         :param:context: security context
-        :param:instance: a compute.compute.Instance object
+        :param:instance: a cloud.cloud.Instance object
         :param:bdms: the block devices for the instance to be torn
                      down
         :param:requested_networks: the networks on which the instance
@@ -2412,10 +2412,10 @@ class ComputeManager(manager.Manager):
         """Delete an instance on this host.  Commit or rollback quotas
         as necessary.
 
-        :param context: compute request context
-        :param instance: compute.compute.instance.Instance object
-        :param bdms: compute.compute.block_device.BlockDeviceMappingList object
-        :param quotas: compute.compute.quotas.Quotas object
+        :param context: cloud request context
+        :param instance: cloud.cloud.instance.Instance object
+        :param bdms: cloud.cloud.block_device.BlockDeviceMappingList object
+        :param quotas: cloud.cloud.quotas.Quotas object
         """
         was_soft_deleted = instance.vm_state == vm_states.SOFT_DELETED
         if was_soft_deleted:
@@ -2436,7 +2436,7 @@ class ComputeManager(manager.Manager):
                                               "delete.start")
             self._shutdown_instance(context, instance, bdms)
             # NOTE(dims): instance.info_cache.delete() should be called after
-            # _shutdown_instance in the compute manager as shutdown calls
+            # _shutdown_instance in the cloud manager as shutdown calls
             # deallocate_for_instance so the info_cache is still needed
             # at this point.
             if instance.info_cache is not None:
@@ -2484,7 +2484,7 @@ class ComputeManager(manager.Manager):
     @wrap_instance_fault
     def terminate_instance(self, context, instance, bdms, reservations):
         """Terminate an instance on this host."""
-        quotas = compute.Quotas.from_reservations(context,
+        quotas = cloud.Quotas.from_reservations(context,
                                                   reservations,
                                                   instance=instance)
 
@@ -2492,8 +2492,8 @@ class ComputeManager(manager.Manager):
         def do_terminate_instance(instance, bdms):
             # NOTE(mriedem): If we are deleting the instance while it was
             # booting from volume, we could be racing with a database update of
-            # the BDM volume_id. Since the compute API passes the BDMs over RPC
-            # to compute here, the BDMs may be stale at this point. So check
+            # the BDM volume_id. Since the cloud API passes the BDMs over RPC
+            # to cloud here, the BDMs may be stale at this point. So check
             # for any volume BDMs that don't have volume_id set and if we
             # detect that, we need to refresh the BDM list before proceeding.
             # TODO(mriedem): Move this into _delete_instance and make the bdms
@@ -2503,7 +2503,7 @@ class ComputeManager(manager.Manager):
                     LOG.debug('There are potentially stale BDMs during '
                               'delete, refreshing the BlockDeviceMappingList.',
                               instance=instance)
-                    bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+                    bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
                         context, instance.uuid)
                     break
             try:
@@ -2646,7 +2646,7 @@ class ComputeManager(manager.Manager):
     def soft_delete_instance(self, context, instance, reservations):
         """Soft delete an instance on this host."""
 
-        quotas = compute.Quotas.from_reservations(context,
+        quotas = cloud.Quotas.from_reservations(context,
                                                   reservations,
                                                   instance=instance)
         try:
@@ -2691,7 +2691,7 @@ class ComputeManager(manager.Manager):
     def _set_migration_status(migration, status):
         """Set the status, and guard against a None being passed in.
 
-        This is useful as some of the compute RPC calls will not pass
+        This is useful as some of the cloud RPC calls will not pass
         a migration object in older versions. The check can be removed when
         we move past 4.x major version of the RPC API.
         """
@@ -2748,7 +2748,7 @@ class ComputeManager(manager.Manager):
         A 'rebuild' effectively purges all existing data from the system and
         remakes the VM with given 'metadata' and 'personalities'.
 
-        :param context: `compute.RequestContext` object
+        :param context: `cloud.RequestContext` object
         :param instance: Instance object
         :param orig_image_ref: Original image_ref before rebuild
         :param image_ref: New image_ref for rebuild
@@ -2894,7 +2894,7 @@ class ComputeManager(manager.Manager):
                                 " '%s'"), str(image_ref))
 
         if image_ref:
-            image_meta = compute.ImageMeta.from_image_ref(
+            image_meta = cloud.ImageMeta.from_image_ref(
                 context, self.image_api, image_ref)
         else:
             image_meta = instance.image_meta
@@ -2902,7 +2902,7 @@ class ComputeManager(manager.Manager):
         # This instance.exists message should contain the original
         # image_ref, not the new one.  Since the DB has been updated
         # to point to the new one... we have to override it.
-        # TODO(jaypipes): Move generate_image_url() into the compute.image.api
+        # TODO(jaypipes): Move generate_image_url() into the cloud.image.api
         orig_image_ref_url = glance.generate_image_url(orig_image_ref)
         extra_usage_info = {'image_ref_url': orig_image_ref_url}
         compute_utils.notify_usage_exists(
@@ -2920,10 +2920,10 @@ class ComputeManager(manager.Manager):
         instance.save(expected_task_state=[task_states.REBUILDING])
 
         if recreate:
-            # Needed for compute-network, does nothing for neutron
+            # Needed for cloud-network, does nothing for neutron
             self.network_api.setup_networks_on_host(
                     context, instance, self.host)
-            # For compute-network this is needed to move floating IPs
+            # For cloud-network this is needed to move floating IPs
             # For neutron this updates the host in the port binding
             # TODO(cfriesen): this network_api call and the one above
             # are so similar, we should really try to unify them.
@@ -2932,7 +2932,7 @@ class ComputeManager(manager.Manager):
 
         network_info = compute_utils.get_nw_info_for_instance(instance)
         if bdms is None:
-            bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+            bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
                     context, instance.uuid)
 
         block_device_info = \
@@ -3131,11 +3131,11 @@ class ComputeManager(manager.Manager):
         """Snapshot an instance on this host.
 
         :param context: security context
-        :param instance: a compute.compute.instance.Instance object
+        :param instance: a cloud.cloud.instance.Instance object
         :param image_id: glance.db.sqlalchemy.models.Image.Id
         """
         # NOTE(dave-mcnally) the task state will already be set by the api
-        # but if the compute manager has crashed/been restarted prior to the
+        # but if the cloud manager has crashed/been restarted prior to the
         # request getting here the task state may have been cleared so we set
         # it again and things continue normally
         try:
@@ -3335,7 +3335,7 @@ class ComputeManager(manager.Manager):
     def inject_file(self, context, path, file_contents, instance):
         """Write a file to the specified path in an instance on this host."""
         # NOTE(russellb) Remove this method, as well as the underlying virt
-        # driver methods, when the compute rpc interface is bumped to 4.x
+        # driver methods, when the cloud rpc interface is bumped to 4.x
         # as it is no longer used.
         context = context.elevated()
         current_power_state = self._get_power_state(context, instance)
@@ -3370,7 +3370,7 @@ class ComputeManager(manager.Manager):
                         instance=instance)
             rescue_image_ref = instance.image_ref
 
-        return compute.ImageMeta.from_image_ref(
+        return cloud.ImageMeta.from_image_ref(
             context, self.image_api, rescue_image_ref)
 
     @wrap_exception()
@@ -3461,7 +3461,7 @@ class ComputeManager(manager.Manager):
     @wrap_instance_fault
     def confirm_resize(self, context, instance, reservations, migration):
 
-        quotas = compute.Quotas.from_reservations(context,
+        quotas = cloud.Quotas.from_reservations(context,
                                                   reservations,
                                                   instance=instance)
 
@@ -3474,7 +3474,7 @@ class ComputeManager(manager.Manager):
             try:
                 # TODO(russellb) Why are we sending the migration object just
                 # to turn around and look it up from the db again?
-                migration = compute.Migration.get_by_id(
+                migration = cloud.Migration.get_by_id(
                                     context.elevated(), migration_id)
             except exception.MigrationNotFound:
                 LOG.error(_LE("Migration %s is not found during confirmation"),
@@ -3500,7 +3500,7 @@ class ComputeManager(manager.Manager):
             #                deleted, we do nothing and return here
             expected_attrs = ['metadata', 'system_metadata', 'flavor']
             try:
-                instance = compute.Instance.get_by_uuid(
+                instance = cloud.Instance.get_by_uuid(
                         context, instance.uuid,
                         expected_attrs=expected_attrs)
             except exception.InstanceNotFound:
@@ -3584,7 +3584,7 @@ class ComputeManager(manager.Manager):
 
         """
 
-        quotas = compute.Quotas.from_reservations(context,
+        quotas = cloud.Quotas.from_reservations(context,
                                                   reservations,
                                                   instance=instance)
 
@@ -3606,7 +3606,7 @@ class ComputeManager(manager.Manager):
 
             network_info = self.network_api.get_instance_nw_info(context,
                                                                  instance)
-            bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+            bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
                     context, instance.uuid)
             block_device_info = self._get_instance_block_device_info(
                                 context, instance, bdms=bdms)
@@ -3635,9 +3635,9 @@ class ComputeManager(manager.Manager):
             rt = self._get_resource_tracker(instance.node)
             rt.drop_move_claim(context, instance)
 
-            self.jacket_rpcapi.finish_revert_resize(context, instance,
-                                                    migration, migration.source_compute,
-                                                    quotas.reservations)
+            self.compute_rpcapi.finish_revert_resize(context, instance,
+                    migration, migration.source_compute,
+                    quotas.reservations)
 
     @wrap_exception()
     @reverts_task_state
@@ -3652,7 +3652,7 @@ class ComputeManager(manager.Manager):
 
         """
 
-        quotas = compute.Quotas.from_reservations(context,
+        quotas = cloud.Quotas.from_reservations(context,
                                                   reservations,
                                                   instance=instance)
 
@@ -3752,7 +3752,7 @@ class ComputeManager(manager.Manager):
         with rt.resize_claim(context, instance, instance_type,
                              image_meta=image, limits=limits) as claim:
             LOG.info(_LI('Migrating'), context=context, instance=instance)
-            self.jacket_rpcapi.resize_instance(
+            self.compute_rpcapi.resize_instance(
                     context, instance, claim.migration, image,
                     instance_type, quotas.reservations,
                     clean_shutdown)
@@ -3777,11 +3777,11 @@ class ComputeManager(manager.Manager):
         # NOTE(melwitt): Remove this in version 5.0 of the RPC API
         # Code downstream may expect extra_specs to be populated since it
         # is receiving an object, so lookup the flavor to ensure this.
-        if not isinstance(instance_type, compute.Flavor):
-            instance_type = compute.Flavor.get_by_id(context,
+        if not isinstance(instance_type, cloud.Flavor):
+            instance_type = cloud.Flavor.get_by_id(context,
                                                      instance_type['id'])
 
-        quotas = compute.Quotas.from_reservations(context,
+        quotas = cloud.Quotas.from_reservations(context,
                                                   reservations,
                                                   instance=instance)
         with self._error_out_instance_on_exception(context, instance,
@@ -3868,7 +3868,7 @@ class ComputeManager(manager.Manager):
                         clean_shutdown):
         """Starts the migration of a running instance to another host."""
 
-        quotas = compute.Quotas.from_reservations(context,
+        quotas = cloud.Quotas.from_reservations(context,
                                                   reservations,
                                                   instance=instance)
         with self._error_out_instance_on_exception(context, instance,
@@ -3877,8 +3877,8 @@ class ComputeManager(manager.Manager):
             # Code downstream may expect extra_specs to be populated since it
             # is receiving an object, so lookup the flavor to ensure this.
             if (not instance_type or
-                not isinstance(instance_type, compute.Flavor)):
-                instance_type = compute.Flavor.get_by_id(
+                not isinstance(instance_type, cloud.Flavor)):
+                instance_type = cloud.Flavor.get_by_id(
                     context, migration['new_instance_type_id'])
 
             network_info = self.network_api.get_instance_nw_info(context,
@@ -3894,7 +3894,7 @@ class ComputeManager(manager.Manager):
             self._notify_about_instance_usage(
                 context, instance, "resize.start", network_info=network_info)
 
-            bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+            bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
                     context, instance.uuid)
             block_device_info = self._get_instance_block_device_info(
                                 context, instance, bdms=bdms)
@@ -3923,9 +3923,9 @@ class ComputeManager(manager.Manager):
             instance.task_state = task_states.RESIZE_MIGRATED
             instance.save(expected_task_state=task_states.RESIZE_MIGRATING)
 
-            self.jacket_rpcapi.finish_resize(context, instance,
-                                             migration, image, disk_info,
-                                             migration.dest_compute, reservations=quotas.reservations)
+            self.compute_rpcapi.finish_resize(context, instance,
+                    migration, image, disk_info,
+                    migration.dest_compute, reservations=quotas.reservations)
 
             self._notify_about_instance_usage(context, instance, "resize.end",
                                               network_info=network_info)
@@ -4033,11 +4033,11 @@ class ComputeManager(manager.Manager):
         new host machine.
 
         """
-        quotas = compute.Quotas.from_reservations(context,
+        quotas = cloud.Quotas.from_reservations(context,
                                                   reservations,
                                                   instance=instance)
         try:
-            image_meta = compute.ImageMeta.from_dict(image)
+            image_meta = cloud.ImageMeta.from_dict(image)
             self._finish_resize(context, instance, migration,
                                 disk_info, image_meta)
             quotas.commit()
@@ -4303,7 +4303,7 @@ class ComputeManager(manager.Manager):
         potentially large download of an image.
 
         :param context: request context
-        :param instance: compute.compute.instance.Instance
+        :param instance: cloud.cloud.instance.Instance
         :param clean_shutdown: give the GuestOS a chance to stop
         """
         self._notify_about_instance_usage(context, instance,
@@ -4343,11 +4343,11 @@ class ComputeManager(manager.Manager):
         """Unshelve the instance.
 
         :param context: request context
-        :param instance: a compute.compute.instance.Instance object
+        :param instance: a cloud.cloud.instance.Instance object
         :param image: an image to build from.  If None we assume a
             volume backed instance.
         :param filter_properties: dict containing limits, retry info etc.
-        :param node: target compute node
+        :param node: target cloud node
         """
         if filter_properties is None:
             filter_properties = {}
@@ -4377,7 +4377,7 @@ class ComputeManager(manager.Manager):
         instance.task_state = task_states.SPAWNING
         instance.save()
 
-        bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
                 context, instance.uuid)
         block_device_info = self._prep_block_device(context, instance, bdms,
                                                     do_check_attach=False)
@@ -4394,9 +4394,9 @@ class ComputeManager(manager.Manager):
         shelved_image_ref = instance.image_ref
         if image:
             instance.image_ref = image['id']
-            image_meta = compute.ImageMeta.from_dict(image)
+            image_meta = cloud.ImageMeta.from_dict(image)
         else:
-            image_meta = compute.ImageMeta.from_dict(
+            image_meta = cloud.ImageMeta.from_dict(
                 utils.get_image_from_system_metadata(
                     instance.system_metadata))
 
@@ -4687,12 +4687,12 @@ class ComputeManager(manager.Manager):
         @utils.synchronized(instance.uuid)
         def do_reserve():
             bdms = (
-                compute.BlockDeviceMappingList.get_by_instance_uuid(
+                cloud.BlockDeviceMappingList.get_by_instance_uuid(
                     context, instance.uuid))
 
             # NOTE(ndipanov): We need to explicitly set all the fields on the
             #                 object so that obj_load_attr does not fail
-            new_bdm = compute.BlockDeviceMapping(
+            new_bdm = cloud.BlockDeviceMapping(
                     context=context,
                     source_type='volume', destination_type='volume',
                     instance_uuid=instance.uuid, boot_index=None,
@@ -4801,7 +4801,7 @@ class ComputeManager(manager.Manager):
 
         """
 
-        bdm = compute.BlockDeviceMapping.get_by_volume_and_instance(
+        bdm = cloud.BlockDeviceMapping.get_by_volume_and_instance(
                 context, volume_id, instance.uuid)
         if CONF.volume_usage_poll_interval > 0:
             vol_stats = []
@@ -4818,7 +4818,7 @@ class ComputeManager(manager.Manager):
                 LOG.debug("Updating volume usage cache with totals",
                           instance=instance)
                 rd_req, rd_bytes, wr_req, wr_bytes, flush_ops = vol_stats
-                vol_usage = compute.VolumeUsage(context)
+                vol_usage = cloud.VolumeUsage(context)
                 vol_usage.volume_id = volume_id
                 vol_usage.instance_uuid = instance.uuid
                 vol_usage.project_id = instance.project_id
@@ -4970,7 +4970,7 @@ class ComputeManager(manager.Manager):
         """Swap volume for an instance."""
         context = context.elevated()
 
-        bdm = compute.BlockDeviceMapping.get_by_volume_and_instance(
+        bdm = cloud.BlockDeviceMapping.get_by_volume_and_instance(
                 context, old_volume_id, instance.uuid)
         connector = self.driver.get_volume_connector(instance)
 
@@ -5020,7 +5020,7 @@ class ComputeManager(manager.Manager):
         #             connection from this host.
 
         try:
-            bdm = compute.BlockDeviceMapping.get_by_volume_and_instance(
+            bdm = cloud.BlockDeviceMapping.get_by_volume_and_instance(
                     context, volume_id, instance.uuid)
             self._driver_detach_volume(context, instance, bdm)
             connector = self.driver.get_volume_connector(instance)
@@ -5042,7 +5042,7 @@ class ComputeManager(manager.Manager):
                           'ports'), {'ports': len(network_info)})
             raise exception.InterfaceAttachFailed(
                     instance_uuid=instance.uuid)
-        image_meta = compute.ImageMeta.from_instance(instance)
+        image_meta = cloud.ImageMeta.from_instance(instance)
 
         try:
             self.driver.attach_interface(instance, image_meta, network_info[0])
@@ -5097,7 +5097,7 @@ class ComputeManager(manager.Manager):
                                 instance=instance)
 
     def _get_compute_info(self, context, host):
-        return compute.ComputeNode.get_first_node_by_host_for_old_compat(
+        return cloud.ComputeNode.get_first_node_by_host_for_old_compat(
             context, host)
 
     @wrap_exception()
@@ -5147,7 +5147,7 @@ class ComputeManager(manager.Manager):
             block_migration, disk_over_commit)
         LOG.debug('destination check data is %s', dest_check_data)
         try:
-            migrate_data = self.jacket_rpcapi.\
+            migrate_data = self.compute_rpcapi.\
                                 check_can_live_migrate_source(ctxt, instance,
                                                               dest_check_data)
         finally:
@@ -5231,7 +5231,7 @@ class ComputeManager(manager.Manager):
                                                          self.host)
 
         # Creating filters to hypervisors and firewalls.
-        # An example is that compute-instance-instance-xxx,
+        # An example is that cloud-instance-instance-xxx,
         # which is written to libvirt.xml(Check "virsh nwfilter-list")
         # This nwfilter is necessary on the destination host.
         # In addition, this method is creating filtering rule
@@ -5275,7 +5275,7 @@ class ComputeManager(manager.Manager):
             else:
                 disk = None
 
-            migrate_data = self.jacket_rpcapi.pre_live_migration(
+            migrate_data = self.compute_rpcapi.pre_live_migration(
                 context, instance,
                 block_migration, disk, dest, migrate_data)
         except Exception:
@@ -5313,9 +5313,9 @@ class ComputeManager(manager.Manager):
 
         :param context: security context
         :param dest: destination host
-        :param instance: a compute.compute.instance.Instance object
+        :param instance: a cloud.cloud.instance.Instance object
         :param block_migration: if true, prepare for block migration
-        :param migration: an compute.compute.Migration object
+        :param migration: an cloud.cloud.Migration object
         :param migrate_data: implementation specific params
 
         """
@@ -5344,7 +5344,7 @@ class ComputeManager(manager.Manager):
         :param migration_id: ID of ongoing migration
 
         """
-        migration = compute.Migration.get_by_id(context, migration_id)
+        migration = cloud.Migration.get_by_id(context, migration_id)
         if migration.status != 'running':
             raise exception.InvalidMigrationState(migration_id=migration_id,
                                                   instance_uuid=instance.uuid,
@@ -5368,7 +5368,7 @@ class ComputeManager(manager.Manager):
         :param migration_id: ID of in-progress live migration
 
         """
-        migration = compute.Migration.get_by_id(context, migration_id)
+        migration = cloud.Migration.get_by_id(context, migration_id)
         if migration.status != 'running':
             raise exception.InvalidMigrationState(migration_id=migration_id,
                     instance_uuid=instance.uuid,
@@ -5396,7 +5396,7 @@ class ComputeManager(manager.Manager):
         :returns: (bool, bool) -- do_cleanup, destroy_disks
         """
         # NOTE(pkoniszewski): block migration specific params are set inside
-        # migrate_data compute for drivers that expose block live migration
+        # migrate_data cloud for drivers that expose block live migration
         # information (i.e. Libvirt and Xenapi). For other drivers cleanup is
         # not needed.
         is_shared_block_storage = True
@@ -5436,7 +5436,7 @@ class ComputeManager(manager.Manager):
         LOG.info(_LI('_post_live_migration() is started..'),
                  instance=instance)
 
-        bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
                 ctxt, instance.uuid)
 
         # Cleanup source host post live-migration
@@ -5491,8 +5491,8 @@ class ComputeManager(manager.Manager):
 
         # Define domain at destination host, without doing it,
         # pause/suspend/terminate do not work.
-        self.jacket_rpcapi.post_live_migration_at_destination(ctxt,
-                                                              instance, block_migration, dest)
+        self.compute_rpcapi.post_live_migration_at_destination(ctxt,
+                instance, block_migration, dest)
 
         do_cleanup, destroy_disks = self._live_migration_cleanup_flags(
                 migrate_data)
@@ -5622,7 +5622,7 @@ class ComputeManager(manager.Manager):
         """Recovers Instance/volume state from migrating -> running.
 
         :param context: security context
-        :param instance: compute.compute.instance.Instance object
+        :param instance: cloud.cloud.instance.Instance object
         :param dest:
             This method is called from live migration src host.
             This param specifies destination host.
@@ -5651,11 +5651,11 @@ class ComputeManager(manager.Manager):
         # NOTE(tr3buchet): setup networks on source host (really it's re-setup)
         self.network_api.setup_networks_on_host(context, instance, self.host)
 
-        bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
                 context, instance.uuid)
         for bdm in bdms:
             if bdm.is_volume:
-                self.jacket_rpcapi.remove_volume_connection(
+                self.compute_rpcapi.remove_volume_connection(
                         context, bdm.volume_id, instance, dest)
 
         self._notify_about_instance_usage(context, instance,
@@ -5665,7 +5665,7 @@ class ComputeManager(manager.Manager):
                 migrate_data)
 
         if do_cleanup:
-            self.jacket_rpcapi.rollback_live_migration_at_destination(
+            self.compute_rpcapi.rollback_live_migration_at_destination(
                     context, instance, dest, destroy_disks=destroy_disks,
                     migrate_data=migrate_data)
 
@@ -5683,7 +5683,7 @@ class ComputeManager(manager.Manager):
         """Cleaning up image directory that is created pre_live_migration.
 
         :param context: security context
-        :param instance: a compute.compute.instance.Instance object sent over rpc
+        :param instance: a cloud.cloud.instance.Instance object sent over rpc
         """
         network_info = self.network_api.get_instance_nw_info(context, instance)
         self._notify_about_instance_usage(
@@ -5743,7 +5743,7 @@ class ComputeManager(manager.Manager):
         if not instance_uuids:
             # The list of instances to heal is empty so rebuild it
             LOG.debug('Rebuilding the list of instances to heal')
-            db_instances = compute.InstanceList.get_by_host(
+            db_instances = cloud.InstanceList.get_by_host(
                 context, self.host, expected_attrs=[], use_slave=True)
             for inst in db_instances:
                 # We don't want to refresh the cache for instances
@@ -5771,7 +5771,7 @@ class ComputeManager(manager.Manager):
             # Find the next valid instance on the list
             while instance_uuids:
                 try:
-                    inst = compute.Instance.get_by_uuid(
+                    inst = cloud.Instance.get_by_uuid(
                             context, instance_uuids.pop(0),
                             expected_attrs=['system_metadata', 'info_cache',
                                             'flavor'],
@@ -5825,7 +5825,7 @@ class ComputeManager(manager.Manager):
                         task_states.REBOOT_STARTED,
                         task_states.REBOOT_PENDING],
                        'host': self.host}
-            rebooting = compute.InstanceList.get_by_filters(
+            rebooting = cloud.InstanceList.get_by_filters(
                 context, filters, expected_attrs=[], use_slave=True)
 
             to_poll = []
@@ -5841,7 +5841,7 @@ class ComputeManager(manager.Manager):
         if CONF.rescue_timeout > 0:
             filters = {'vm_state': vm_states.RESCUED,
                        'host': self.host}
-            rescued_instances = compute.InstanceList.get_by_filters(
+            rescued_instances = cloud.InstanceList.get_by_filters(
                 context, filters, expected_attrs=["system_metadata"],
                 use_slave=True)
 
@@ -5859,7 +5859,7 @@ class ComputeManager(manager.Manager):
         if CONF.resize_confirm_window == 0:
             return
 
-        migrations = compute.MigrationList.get_unconfirmed_by_dest_compute(
+        migrations = cloud.MigrationList.get_unconfirmed_by_dest_compute(
                 context, CONF.resize_confirm_window, self.host,
                 use_slave=True)
 
@@ -5888,7 +5888,7 @@ class ComputeManager(manager.Manager):
                       'instance_uuid': instance_uuid})
             expected_attrs = ['metadata', 'system_metadata']
             try:
-                instance = compute.Instance.get_by_uuid(context,
+                instance = cloud.Instance.get_by_uuid(context,
                             instance_uuid, expected_attrs=expected_attrs,
                             use_slave=True)
             except exception.InstanceNotFound:
@@ -5949,7 +5949,7 @@ class ComputeManager(manager.Manager):
         filters = {'vm_state': vm_states.SHELVED,
                    'task_state': None,
                    'host': self.host}
-        shelved_instances = compute.InstanceList.get_by_filters(
+        shelved_instances = cloud.InstanceList.get_by_filters(
             context, filters=filters, expected_attrs=['system_metadata'],
             use_slave=True)
 
@@ -5976,11 +5976,11 @@ class ComputeManager(manager.Manager):
             return
 
         begin, end = utils.last_completed_audit_period()
-        if compute.TaskLog.get(context, 'instance_usage_audit', begin, end,
+        if cloud.TaskLog.get(context, 'instance_usage_audit', begin, end,
                                self.host):
             return
 
-        instances = compute.InstanceList.get_active_by_window_joined(
+        instances = cloud.InstanceList.get_active_by_window_joined(
             context, begin, end, host=self.host,
             expected_attrs=['system_metadata', 'info_cache', 'metadata',
                             'flavor'],
@@ -5997,7 +5997,7 @@ class ComputeManager(manager.Manager):
                   'end_time': end,
                   'number_instances': num_instances})
         start_time = time.time()
-        task_log = compute.TaskLog(context)
+        task_log = cloud.TaskLog(context)
         task_log.task_name = 'instance_usage_audit'
         task_log.period_beginning = begin
         task_log.period_ending = end
@@ -6045,7 +6045,7 @@ class ComputeManager(manager.Manager):
             else:
                 update_cells = False
 
-            instances = compute.InstanceList.get_by_host(context,
+            instances = cloud.InstanceList.get_by_host(context,
                                                               self.host,
                                                               use_slave=True)
             try:
@@ -6070,7 +6070,7 @@ class ComputeManager(manager.Manager):
                 bw_out = 0
                 last_ctr_in = None
                 last_ctr_out = None
-                usage = compute.BandwidthUsage.get_by_instance_uuid_and_mac(
+                usage = cloud.BandwidthUsage.get_by_instance_uuid_and_mac(
                     context, bw_ctr['uuid'], bw_ctr['mac_address'],
                     start_period=start_time, use_slave=True)
                 if usage:
@@ -6079,7 +6079,7 @@ class ComputeManager(manager.Manager):
                     last_ctr_in = usage.last_ctr_in
                     last_ctr_out = usage.last_ctr_out
                 else:
-                    usage = (compute.BandwidthUsage.
+                    usage = (cloud.BandwidthUsage.
                              get_by_instance_uuid_and_mac(
                         context, bw_ctr['uuid'], bw_ctr['mac_address'],
                         start_period=prev_time, use_slave=True))
@@ -6101,7 +6101,7 @@ class ComputeManager(manager.Manager):
                     else:
                         bw_out += (bw_ctr['bw_out'] - last_ctr_out)
 
-                compute.BandwidthUsage(context=context).create(
+                cloud.BandwidthUsage(context=context).create(
                                               bw_ctr['uuid'],
                                               bw_ctr['mac_address'],
                                               bw_in,
@@ -6113,12 +6113,12 @@ class ComputeManager(manager.Manager):
                                               update_cells=update_cells)
 
     def _get_host_volume_bdms(self, context, use_slave=False):
-        """Return all block device mappings on a compute host."""
+        """Return all block device mappings on a cloud host."""
         compute_host_bdms = []
-        instances = compute.InstanceList.get_by_host(context, self.host,
+        instances = cloud.InstanceList.get_by_host(context, self.host,
             use_slave=use_slave)
         for instance in instances:
-            bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+            bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
                     context, instance.uuid, use_slave=use_slave)
             instance_bdms = [bdm for bdm in bdms if bdm.is_volume]
             compute_host_bdms.append(dict(instance=instance,
@@ -6131,7 +6131,7 @@ class ComputeManager(manager.Manager):
         for usage in vol_usages:
             # Allow switching of greenthreads between queries.
             greenthread.sleep(0)
-            vol_usage = compute.VolumeUsage(context)
+            vol_usage = cloud.VolumeUsage(context)
             vol_usage.volume_id = usage['volume']
             vol_usage.instance_uuid = usage['instance'].uuid
             vol_usage.project_id = usage['instance'].project_id
@@ -6175,7 +6175,7 @@ class ComputeManager(manager.Manager):
         loop, one database record at a time, checking if the hypervisor has the
         same power state as is in the database.
         """
-        db_instances = compute.InstanceList.get_by_host(context, self.host,
+        db_instances = cloud.InstanceList.get_by_host(context, self.host,
                                                         expected_attrs=[],
                                                         use_slave=True)
 
@@ -6257,13 +6257,13 @@ class ComputeManager(manager.Manager):
         vm_state = db_instance.vm_state
 
         if self.host != db_instance.host:
-            # on the sending end of compute-compute _sync_power_state
+            # on the sending end of cloud-cloud _sync_power_state
             # may have yielded to the greenthread performing a live
             # migration; this in turn has changed the resident-host
             # for the VM; However, the instance is still active, it
             # is just in the process of migrating to another host.
-            # This implies that the compute source must relinquish
-            # control to the compute destination.
+            # This implies that the cloud source must relinquish
+            # control to the cloud destination.
             LOG.info(_LI("During the sync_power process the "
                          "instance has moved from "
                          "host %(src)s to host %(dst)s"),
@@ -6272,7 +6272,7 @@ class ComputeManager(manager.Manager):
                      instance=db_instance)
             return
         elif db_instance.task_state is not None:
-            # on the receiving end of compute-compute, it could happen
+            # on the receiving end of cloud-cloud, it could happen
             # that the DB instance already report the new resident
             # but the actual VM has not showed up on the hypervisor
             # yet. In this case, let's allow the loop to continue
@@ -6378,7 +6378,7 @@ class ComputeManager(manager.Manager):
                             instance=db_instance)
                 try:
                     # NOTE(russellb) Force the stop, because normally the
-                    # compute API would not allow an attempt to stop a stopped
+                    # cloud API would not allow an attempt to stop a stopped
                     # instance.
                     self.compute_api.force_stop(context, db_instance)
                 except Exception:
@@ -6415,22 +6415,22 @@ class ComputeManager(manager.Manager):
 
         # TODO(comstud, jichenjc): Dummy quota object for now See bug 1296414.
         # The only case that the quota might be inconsistent is
-        # the compute node died between set instance state to SOFT_DELETED
-        # and quota commit to DB. When compute node starts again
+        # the cloud node died between set instance state to SOFT_DELETED
+        # and quota commit to DB. When cloud node starts again
         # it will have no idea the reservation is committed or not or even
         # expired, since it's a rare case, so marked as todo.
-        quotas = compute.Quotas.from_reservations(context, None)
+        quotas = cloud.Quotas.from_reservations(context, None)
 
         filters = {'vm_state': vm_states.SOFT_DELETED,
                    'task_state': None,
                    'host': self.host}
-        instances = compute.InstanceList.get_by_filters(
+        instances = cloud.InstanceList.get_by_filters(
             context, filters,
-            expected_attrs=compute.instance.INSTANCE_DEFAULT_FIELDS,
+            expected_attrs=cloud.instance.INSTANCE_DEFAULT_FIELDS,
             use_slave=True)
         for instance in instances:
             if self._deleted_old_enough(instance, interval):
-                bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+                bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
                         context, instance.uuid)
                 LOG.info(_LI('Reclaiming deleted instance'), instance=instance)
                 try:
@@ -6444,7 +6444,7 @@ class ComputeManager(manager.Manager):
     def update_available_resource(self, context):
         """See driver.get_available_resource()
 
-        Periodic process that keeps that the compute host's understanding of
+        Periodic process that keeps that the cloud host's understanding of
         resource availability and usage in sync with the underlying hypervisor.
 
         :param context: security context
@@ -6474,23 +6474,23 @@ class ComputeManager(manager.Manager):
             new_resource_tracker_dict[nodename] = rt
 
         # NOTE(comstud): Replace the RT cache before looping through
-        # compute nodes to delete below, as we can end up doing greenthread
+        # cloud nodes to delete below, as we can end up doing greenthread
         # switches there. Best to have everyone using the newest cache
         # ASAP.
         self._resource_tracker_dict = new_resource_tracker_dict
 
-        # Delete orphan compute node not reported by driver but still in db
+        # Delete orphan cloud node not reported by driver but still in db
         for cn in compute_nodes_in_db:
             if cn.hypervisor_hostname not in nodenames:
-                LOG.info(_LI("Deleting orphan compute node %s"), cn.id)
+                LOG.info(_LI("Deleting orphan cloud node %s"), cn.id)
                 cn.destroy()
 
     def _get_compute_nodes_in_db(self, context, use_slave=False):
         try:
-            return compute.ComputeNodeList.get_all_by_host(context, self.host,
+            return cloud.ComputeNodeList.get_all_by_host(context, self.host,
                                                            use_slave=use_slave)
         except exception.NotFound:
-            LOG.error(_LE("No compute node record for host %s"), self.host)
+            LOG.error(_LE("No cloud node record for host %s"), self.host)
             return []
 
     @periodic_task.periodic_task(
@@ -6510,7 +6510,7 @@ class ComputeManager(manager.Manager):
         The use-case for this cleanup task is: for various reasons, it may be
         possible for the database to show an instance as deleted but for that
         instance to still be running on a host machine (see bug
-        https://bugs.launchpad.net/compute/+bug/911366).
+        https://bugs.launchpad.net/cloud/+bug/911366).
 
         This cleanup task is a cross-hypervisor utility for finding these
         zombied instances and either logging the discrepancy (likely what you
@@ -6554,7 +6554,7 @@ class ComputeManager(manager.Manager):
                                  "'%s' which is marked as "
                                  "DELETED but still present on host."),
                              instance.name, instance=instance)
-                    bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+                    bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
                         context, instance.uuid, use_slave=True)
                     self.instance_events.clear_events_for_instance(instance)
                     try:
@@ -6571,7 +6571,7 @@ class ComputeManager(manager.Manager):
                                       "instance_action") % action)
 
     def _running_deleted_instances(self, context):
-        """Returns a list of instances compute thinks is deleted,
+        """Returns a list of instances cloud thinks is deleted,
         but the hypervisor thinks is still running.
         """
         timeout = CONF.running_deleted_instance_timeout
@@ -6737,7 +6737,7 @@ class ComputeManager(manager.Manager):
         filters = {'deleted': False,
                    'soft_deleted': True,
                    'host': nodes}
-        filtered_instances = compute.InstanceList.get_by_filters(context,
+        filtered_instances = cloud.InstanceList.get_by_filters(context,
                                  filters, expected_attrs=[], use_slave=True)
 
         self.driver.manage_image_cache(context, filtered_instances)
@@ -6752,7 +6752,7 @@ class ComputeManager(manager.Manager):
                    'cleaned': False}
         attrs = ['info_cache', 'security_groups', 'system_metadata']
         with utils.temporary_mutation(context, read_deleted='yes'):
-            instances = compute.InstanceList.get_by_filters(
+            instances = cloud.InstanceList.get_by_filters(
                 context, filters, expected_attrs=attrs, use_slave=True)
         LOG.debug('There are %d instances to clean', len(instances))
 
@@ -6778,12 +6778,12 @@ class ComputeManager(manager.Manager):
 
         During resize/revert-resize operation, if that instance gets deleted
         in-between then instance files might remain either on source or
-        destination compute node because of race condition.
+        destination cloud node because of race condition.
         """
         LOG.debug('Cleaning up deleted instances with incomplete migration ')
         migration_filters = {'host': CONF.host,
                              'status': 'error'}
-        migrations = compute.MigrationList.get_by_filters(context,
+        migrations = cloud.MigrationList.get_by_filters(context,
                                                           migration_filters)
 
         if not migrations:
@@ -6796,7 +6796,7 @@ class ComputeManager(manager.Manager):
                         'uuid': inst_uuid_from_migrations}
         attrs = ['info_cache', 'security_groups', 'system_metadata']
         with utils.temporary_mutation(context, read_deleted='yes'):
-            instances = compute.InstanceList.get_by_filters(
+            instances = cloud.InstanceList.get_by_filters(
                 context, inst_filters, expected_attrs=attrs, use_slave=True)
 
         for instance in instances:
@@ -6804,7 +6804,7 @@ class ComputeManager(manager.Manager):
                 for migration in migrations:
                     if instance.uuid == migration.instance_uuid:
                         # Delete instance files if not cleanup properly either
-                        # from the source or destination compute nodes when
+                        # from the source or destination cloud nodes when
                         # the instance is deleted during resizing.
                         self.driver.delete_instance_files(instance)
                         try:
@@ -6825,7 +6825,7 @@ class ComputeManager(manager.Manager):
     def quiesce_instance(self, context, instance):
         """Quiesce an instance on this host."""
         context = context.elevated()
-        image_meta = compute.ImageMeta.from_instance(instance)
+        image_meta = cloud.ImageMeta.from_instance(instance)
         self.driver.quiesce(context, instance, image_meta)
 
     def _wait_for_snapshots_completion(self, context, mapping):
@@ -6860,5 +6860,5 @@ class ComputeManager(manager.Manager):
                 LOG.exception(_LE("Exception while waiting completion of "
                                   "volume snapshots: %s"),
                               error, instance=instance)
-        image_meta = compute.ImageMeta.from_instance(instance)
+        image_meta = cloud.ImageMeta.from_instance(instance)
         self.driver.unquiesce(context, instance, image_meta)

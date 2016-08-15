@@ -28,9 +28,9 @@ from oslo_log import log as logging
 from oslo_serialization import jsonutils
 from oslo_utils import units
 
-from jacket.compute.compute import arch
-from jacket.compute.compute import hv_type
-from jacket.compute.compute import vm_mode
+from jacket.compute.cloud import arch
+from jacket.compute.cloud import hv_type
+from jacket.compute.cloud import vm_mode
 from jacket.i18n import _
 from jacket.compute.virt.hyperv import constants
 from jacket.compute.virt.hyperv import pathutils

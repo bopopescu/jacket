@@ -24,7 +24,7 @@ from jacket.api.compute.openstack.compute.schemas import hosts
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _LI
 from jacket.objects import compute
@@ -37,7 +37,7 @@ authorize = extensions.os_compute_authorizer(ALIAS)
 class HostController(wsgi.Controller):
     """The Hosts API controller for the OpenStack API."""
     def __init__(self):
-        self.api = compute.HostAPI()
+        self.api = cloud.HostAPI()
         super(HostController, self).__init__()
 
     @extensions.expected_errors(())
@@ -63,11 +63,11 @@ class HostController(wsgi.Controller):
         |     'service': 'network',
         |     'zone': 'internal'},
         |    {'host_name': 'compute1.host.com',
-        |     'service': 'compute',
-        |     'zone': 'compute'},
+        |     'service': 'cloud',
+        |     'zone': 'cloud'},
         |    {'host_name': 'compute2.host.com',
-        |     'service': 'compute',
-        |     'zone': 'compute'},
+        |     'service': 'cloud',
+        |     'zone': 'cloud'},
         |    {'host_name': 'sched1.host.com',
         |     'service': 'scheduler',
         |     'zone': 'internal'},
@@ -79,7 +79,7 @@ class HostController(wsgi.Controller):
         |     'zone': 'internal'}]}
 
         """
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         filters = {'disabled': False}
         zone = req.GET.get('zone', None)
@@ -88,7 +88,7 @@ class HostController(wsgi.Controller):
         services = self.api.service_get_all(context, filters=filters,
                                             set_zones=True)
         hosts = []
-        api_services = ('compute-osapi_compute', 'compute-ec2', 'compute-metadata')
+        api_services = ('cloud-osapi_compute', 'cloud-ec2', 'cloud-metadata')
         for service in services:
             if service.binary not in api_services:
                 hosts.append({'host_name': service['host'],
@@ -101,7 +101,7 @@ class HostController(wsgi.Controller):
     def update(self, req, id, body):
         """Return booleanized version of body dict.
 
-        :param Request req: The request object (containing 'compute-context'
+        :param Request req: The request object (containing 'cloud-context'
                             env var).
         :param str id: The host name.
         :param dict body: example format {'host': {'status': 'enable',
@@ -115,7 +115,7 @@ class HostController(wsgi.Controller):
             val = orig_val.strip().lower()
             return val == "enable"
 
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         # See what the user wants to 'update'
         status = body.get('status')
@@ -177,7 +177,7 @@ class HostController(wsgi.Controller):
 
     def _host_power_action(self, req, host_name, action):
         """Reboots, shuts down or powers up the host."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         try:
             result = self.api.host_power_action(context, host_name=host_name,
@@ -263,12 +263,12 @@ class HostController(wsgi.Controller):
                 D: {'host': 'hostname','project': 'admin',
                     'cpu': 1, 'memory_mb': 2048, 'disk_gb': 30}
         """
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         host_name = id
         try:
             compute_node = (
-                compute.ComputeNode.get_first_node_by_host_for_old_compat(
+                cloud.ComputeNode.get_first_node_by_host_for_old_compat(
                     context, host_name))
         except exception.ComputeHostNotFound as e:
             raise webob.exc.HTTPNotFound(explanation=e.format_message())

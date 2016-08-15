@@ -25,8 +25,8 @@ from jacket.api.compute.openstack.compute.legacy_v2.contrib import security_grou
 from jacket.api.compute.openstack.compute import security_groups as \
     secgroups_v21
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
-from jacket.compute.compute import power_state
+from jacket.compute import cloud
+from jacket.compute.cloud import power_state
 from jacket.compute import context as context_maker
 import jacket.db.compute
 from jacket.compute import exception
@@ -180,7 +180,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           {'security_group': sg})
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['compute.context'])
+            self.req.environ['cloud.context'])
 
     def test_create_security_group_with_no_description(self):
         sg = security_group_request_template()
@@ -190,7 +190,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.req, {'security_group': sg})
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['compute.context'])
+            self.req.environ['cloud.context'])
 
     def test_create_security_group_with_empty_description(self):
         sg = security_group_request_template()
@@ -205,7 +205,7 @@ class TestSecurityGroupsV21(test.TestCase):
         except exception.InvalidInput:
             self.fail('Should have raised BadRequest exception instead of')
         self._assert_no_security_groups_reserved(
-            self.req.environ['compute.context'])
+            self.req.environ['cloud.context'])
 
     def test_create_security_group_with_blank_name(self):
         sg = security_group_request_template(name='')
@@ -214,7 +214,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.req, {'security_group': sg})
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['compute.context'])
+            self.req.environ['cloud.context'])
 
     def test_create_security_group_with_whitespace_name(self):
         sg = security_group_request_template(name=' ')
@@ -223,7 +223,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.req, {'security_group': sg})
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['compute.context'])
+            self.req.environ['cloud.context'])
 
     def test_create_security_group_with_blank_description(self):
         sg = security_group_request_template(description='')
@@ -232,7 +232,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.req, {'security_group': sg})
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['compute.context'])
+            self.req.environ['cloud.context'])
 
     def test_create_security_group_with_whitespace_description(self):
         sg = security_group_request_template(description=' ')
@@ -241,7 +241,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.req, {'security_group': sg})
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['compute.context'])
+            self.req.environ['cloud.context'])
 
     def test_create_security_group_with_duplicate_name(self):
         sg = security_group_request_template()
@@ -253,14 +253,14 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.req, {'security_group': sg})
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['compute.context'])
+            self.req.environ['cloud.context'])
 
     def test_create_security_group_with_no_body(self):
         self.assertRaises(webob.exc.HTTPBadRequest,
                           self.controller.create, self.req, None)
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['compute.context'])
+            self.req.environ['cloud.context'])
 
     def test_create_security_group_with_no_security_group(self):
         body = {'no-securityGroup': None}
@@ -269,7 +269,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.controller.create, self.req, body)
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['compute.context'])
+            self.req.environ['cloud.context'])
 
     def test_create_security_group_above_255_characters_name(self):
         sg = security_group_request_template(name='1234567890' * 26)
@@ -278,7 +278,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.req, {'security_group': sg})
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['compute.context'])
+            self.req.environ['cloud.context'])
 
     def test_create_security_group_above_255_characters_description(self):
         sg = security_group_request_template(description='1234567890' * 26)
@@ -287,7 +287,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.req, {'security_group': sg})
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['compute.context'])
+            self.req.environ['cloud.context'])
 
     def test_create_security_group_non_string_name(self):
         sg = security_group_request_template(name=12)
@@ -296,7 +296,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.req, {'security_group': sg})
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['compute.context'])
+            self.req.environ['cloud.context'])
 
     def test_create_security_group_non_string_description(self):
         sg = security_group_request_template(description=12)
@@ -305,7 +305,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.req, {'security_group': sg})
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['compute.context'])
+            self.req.environ['cloud.context'])
 
     def test_create_security_group_quota_limit(self):
         for num in range(1, CONF.quota_security_groups):
@@ -331,7 +331,7 @@ class TestSecurityGroupsV21(test.TestCase):
         def return_security_groups(context, project_id):
             return [security_group_db(sg) for sg in groups]
 
-        self.stub_out('compute.db.security_group_get_by_project',
+        self.stub_out('cloud.db.security_group_get_by_project',
                       return_security_groups)
 
         res_dict = self.controller.index(self.req)
@@ -397,13 +397,13 @@ class TestSecurityGroupsV21(test.TestCase):
         def return_all_security_groups(context):
             return [security_group_db(sg) for sg in all_groups]
 
-        self.stub_out('jacket.compute.security_group_get_all',
+        self.stub_out('jacket.cloud.security_group_get_all',
                       return_all_security_groups)
 
         def return_tenant_security_groups(context, project_id):
             return [security_group_db(sg) for sg in tenant_groups]
 
-        self.stub_out('jacket.compute.security_group_get_by_project',
+        self.stub_out('jacket.cloud.security_group_get_by_project',
                       return_tenant_security_groups)
 
         path = '/v2/fake/os-security-groups'
@@ -432,22 +432,22 @@ class TestSecurityGroupsV21(test.TestCase):
             self.assertEqual(server_id, FAKE_UUID1)
             return return_server_by_uuid(context, server_id)
 
-        self.stub_out('jacket.compute.instance_get_by_uuid',
+        self.stub_out('jacket.cloud.instance_get_by_uuid',
                       return_instance)
 
         def return_security_groups(context, instance_uuid):
             self.assertEqual(instance_uuid, FAKE_UUID1)
             return [security_group_db(sg) for sg in groups]
 
-        self.stub_out('compute.db.security_group_get_by_instance',
+        self.stub_out('cloud.db.security_group_get_by_instance',
                       return_security_groups)
 
         res_dict = self.server_controller.index(self.req, FAKE_UUID1)
 
         self.assertEqual(res_dict, expected)
 
-    @mock.patch('jacket.compute.instance_get_by_uuid')
-    @mock.patch('compute.db.security_group_get_by_instance', return_value=[])
+    @mock.patch('jacket.cloud.instance_get_by_uuid')
+    @mock.patch('cloud.db.security_group_get_by_instance', return_value=[])
     def test_get_security_group_empty_for_instance(self, mock_sec_group,
                                                    mock_db_get_ins):
         expected = {'security_groups': []}
@@ -460,11 +460,11 @@ class TestSecurityGroupsV21(test.TestCase):
         res_dict = self.server_controller.index(self.req, FAKE_UUID1)
         self.assertEqual(expected, res_dict)
         mock_sec_group.assert_called_once_with(
-            self.req.environ['compute.context'], FAKE_UUID1)
+            self.req.environ['cloud.context'], FAKE_UUID1)
 
     def test_get_security_group_by_instance_non_existing(self):
-        self.stub_out('jacket.compute.instance_get', return_server_nonexistent)
-        self.stub_out('jacket.compute.instance_get_by_uuid',
+        self.stub_out('jacket.cloud.instance_get', return_server_nonexistent)
+        self.stub_out('jacket.cloud.instance_get_by_uuid',
                       return_server_nonexistent)
         self.assertRaises(webob.exc.HTTPNotFound,
                           self.server_controller.index, self.req, '1')
@@ -480,7 +480,7 @@ class TestSecurityGroupsV21(test.TestCase):
             self.assertEqual(sg['id'], group_id)
             return security_group_db(sg)
 
-        self.stub_out('compute.db.security_group_get',
+        self.stub_out('cloud.db.security_group_get',
                       return_security_group)
 
         res_dict = self.controller.show(self.req, '2')
@@ -512,9 +512,9 @@ class TestSecurityGroupsV21(test.TestCase):
             self.assertEqual(sg_update['description'], values['description'])
             return security_group_db(sg_update)
 
-        self.stub_out('compute.db.security_group_update',
+        self.stub_out('cloud.db.security_group_update',
                       return_update_security_group)
-        self.stub_out('compute.db.security_group_get',
+        self.stub_out('cloud.db.security_group_get',
                       return_security_group)
 
         res_dict = self.controller.update(self.req, '2',
@@ -530,7 +530,7 @@ class TestSecurityGroupsV21(test.TestCase):
             self.assertEqual(sg['id'], group_id)
             return security_group_db(sg)
 
-        self.stub_out('jacket.compute.security_group_get',
+        self.stub_out('jacket.cloud.security_group_get',
                       return_security_group)
 
         self.assertRaises(webob.exc.HTTPBadRequest, self.controller.update,
@@ -555,9 +555,9 @@ class TestSecurityGroupsV21(test.TestCase):
             self.assertEqual(sg['id'], group_id)
             return security_group_db(sg)
 
-        self.stub_out('compute.db.security_group_destroy',
+        self.stub_out('cloud.db.security_group_destroy',
                       security_group_destroy)
-        self.stub_out('jacket.compute.security_group_get',
+        self.stub_out('jacket.cloud.security_group_get',
                       return_security_group)
 
         self.controller.delete(self.req, '1')
@@ -568,7 +568,7 @@ class TestSecurityGroupsV21(test.TestCase):
         sg = security_group_request_template()
 
         self.controller.create(self.req, {'security_group': sg})
-        context = self.req.environ['compute.context']
+        context = self.req.environ['cloud.context']
 
         # Ensure quota usage for security group is correct.
         self._assert_security_groups_in_use(context.project_id,
@@ -599,16 +599,16 @@ class TestSecurityGroupsV21(test.TestCase):
             self.assertEqual(sg['id'], group_id)
             return security_group_db(sg)
 
-        self.stub_out('compute.db.security_group_in_use',
+        self.stub_out('cloud.db.security_group_in_use',
                       security_group_in_use)
-        self.stub_out('jacket.compute.security_group_get',
+        self.stub_out('jacket.cloud.security_group_get',
                       return_security_group)
 
         self.assertRaises(webob.exc.HTTPBadRequest, self.controller.delete,
                           self.req, '1')
 
     def test_associate_by_non_existing_security_group_name(self):
-        self.stub_out('compute.db.instance_get', return_server)
+        self.stub_out('cloud.db.instance_get', return_server)
         self.assertEqual(return_server(None, '1'),
                          jacket.db.compute.instance_get(None, '1'))
         body = dict(addSecurityGroup=dict(name='non-existing'))
@@ -624,29 +624,29 @@ class TestSecurityGroupsV21(test.TestCase):
                           'invalid', body)
 
     def test_associate_without_body(self):
-        self.stub_out('jacket.compute.instance_get', return_server)
+        self.stub_out('jacket.cloud.instance_get', return_server)
         body = dict(addSecurityGroup=None)
 
         self.assertRaises(webob.exc.HTTPBadRequest,
                           self.manager._addSecurityGroup, self.req, '1', body)
 
     def test_associate_no_security_group_name(self):
-        self.stub_out('compute.db.instance_get', return_server)
+        self.stub_out('cloud.db.instance_get', return_server)
         body = dict(addSecurityGroup=dict())
 
         self.assertRaises(webob.exc.HTTPBadRequest,
                           self.manager._addSecurityGroup, self.req, '1', body)
 
     def test_associate_security_group_name_with_whitespaces(self):
-        self.stub_out('compute.db.instance_get', return_server)
+        self.stub_out('cloud.db.instance_get', return_server)
         body = dict(addSecurityGroup=dict(name="   "))
 
         self.assertRaises(webob.exc.HTTPBadRequest,
                           self.manager._addSecurityGroup, self.req, '1', body)
 
     def test_associate_non_existing_instance(self):
-        self.stub_out('jacket.compute.instance_get', return_server_nonexistent)
-        self.stub_out('jacket.compute.instance_get_by_uuid',
+        self.stub_out('jacket.cloud.instance_get', return_server_nonexistent)
+        self.stub_out('jacket.cloud.instance_get_by_uuid',
                        return_server_nonexistent)
         body = dict(addSecurityGroup=dict(name="test"))
 
@@ -654,20 +654,20 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.manager._addSecurityGroup, self.req, '1', body)
 
     def test_associate_non_running_instance(self):
-        self.stub_out('compute.db.instance_get', return_non_running_server)
-        self.stub_out('jacket.compute.instance_get_by_uuid',
+        self.stub_out('cloud.db.instance_get', return_non_running_server)
+        self.stub_out('jacket.cloud.instance_get_by_uuid',
                       return_non_running_server)
-        self.stub_out('jacket.compute.security_group_get_by_name',
+        self.stub_out('jacket.cloud.security_group_get_by_name',
                        return_security_group_without_instances)
         body = dict(addSecurityGroup=dict(name="test"))
 
         self.manager._addSecurityGroup(self.req, UUID_SERVER, body)
 
     def test_associate_already_associated_security_group_to_instance(self):
-        self.stub_out('compute.db.instance_get', return_server)
-        self.stub_out('jacket.compute.instance_get_by_uuid',
+        self.stub_out('cloud.db.instance_get', return_server)
+        self.stub_out('jacket.cloud.instance_get_by_uuid',
                       return_server_by_uuid)
-        self.stub_out('jacket.compute.security_group_get_by_name',
+        self.stub_out('jacket.cloud.security_group_get_by_name',
                        return_security_group_by_name)
         body = dict(addSecurityGroup=dict(name="test"))
 
@@ -676,14 +676,14 @@ class TestSecurityGroupsV21(test.TestCase):
                           UUID_SERVER, body)
 
     def test_associate(self):
-        self.stub_out('jacket.compute.instance_get', return_server)
-        self.stub_out('jacket.compute.instance_get_by_uuid',
+        self.stub_out('jacket.cloud.instance_get', return_server)
+        self.stub_out('jacket.cloud.instance_get_by_uuid',
                        return_server_by_uuid)
         self.mox.StubOutWithMock(jacket.db.compute, 'instance_add_security_group')
         jacket.db.compute.instance_add_security_group(mox.IgnoreArg(),
                                             mox.IgnoreArg(),
                                             mox.IgnoreArg())
-        self.stub_out('compute.db.security_group_get_by_name',
+        self.stub_out('cloud.db.security_group_get_by_name',
                        return_security_group_without_instances)
         self.mox.ReplayAll()
 
@@ -692,7 +692,7 @@ class TestSecurityGroupsV21(test.TestCase):
         self.manager._addSecurityGroup(self.req, UUID_SERVER, body)
 
     def test_disassociate_by_non_existing_security_group_name(self):
-        self.stub_out('compute.db.instance_get', return_server)
+        self.stub_out('cloud.db.instance_get', return_server)
         self.assertEqual(return_server(None, '1'),
                          jacket.db.compute.instance_get(None, '1'))
         body = dict(removeSecurityGroup=dict(name='non-existing'))
@@ -702,7 +702,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           UUID_SERVER, body)
 
     def test_disassociate_by_invalid_server_id(self):
-        self.stub_out('compute.db.security_group_get_by_name',
+        self.stub_out('cloud.db.security_group_get_by_name',
                       return_security_group_by_name)
         body = dict(removeSecurityGroup=dict(name='test'))
 
@@ -711,7 +711,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           'invalid', body)
 
     def test_disassociate_without_body(self):
-        self.stub_out('jacket.compute.instance_get', return_server)
+        self.stub_out('jacket.cloud.instance_get', return_server)
         body = dict(removeSecurityGroup=None)
 
         self.assertRaises(webob.exc.HTTPBadRequest,
@@ -719,7 +719,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           '1', body)
 
     def test_disassociate_no_security_group_name(self):
-        self.stub_out('jacket.compute.instance_get', return_server)
+        self.stub_out('jacket.cloud.instance_get', return_server)
         body = dict(removeSecurityGroup=dict())
 
         self.assertRaises(webob.exc.HTTPBadRequest,
@@ -727,7 +727,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           '1', body)
 
     def test_disassociate_security_group_name_with_whitespaces(self):
-        self.stub_out('compute.db.instance_get', return_server)
+        self.stub_out('cloud.db.instance_get', return_server)
         body = dict(removeSecurityGroup=dict(name="   "))
 
         self.assertRaises(webob.exc.HTTPBadRequest,
@@ -735,8 +735,8 @@ class TestSecurityGroupsV21(test.TestCase):
                           '1', body)
 
     def test_disassociate_non_existing_instance(self):
-        self.stub_out('compute.db.instance_get', return_server_nonexistent)
-        self.stub_out('compute.db.security_group_get_by_name',
+        self.stub_out('cloud.db.instance_get', return_server_nonexistent)
+        self.stub_out('cloud.db.security_group_get_by_name',
                       return_security_group_by_name)
         body = dict(removeSecurityGroup=dict(name="test"))
 
@@ -745,20 +745,20 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.req, '1', body)
 
     def test_disassociate_non_running_instance(self):
-        self.stub_out('compute.db.instance_get', return_non_running_server)
-        self.stub_out('compute.db.instance_get_by_uuid',
+        self.stub_out('cloud.db.instance_get', return_non_running_server)
+        self.stub_out('cloud.db.instance_get_by_uuid',
                       return_non_running_server)
-        self.stub_out('compute.db.security_group_get_by_name',
+        self.stub_out('cloud.db.security_group_get_by_name',
                        return_security_group_by_name)
         body = dict(removeSecurityGroup=dict(name="test"))
 
         self.manager._removeSecurityGroup(self.req, UUID_SERVER, body)
 
     def test_disassociate_already_associated_security_group_to_instance(self):
-        self.stub_out('jacket.compute.instance_get', return_server)
-        self.stub_out('compute.db.instance_get_by_uuid',
+        self.stub_out('jacket.cloud.instance_get', return_server)
+        self.stub_out('cloud.db.instance_get_by_uuid',
                       return_server_by_uuid)
-        self.stub_out('compute.db.security_group_get_by_name',
+        self.stub_out('cloud.db.security_group_get_by_name',
                        return_security_group_without_instances)
         body = dict(removeSecurityGroup=dict(name="test"))
 
@@ -767,14 +767,14 @@ class TestSecurityGroupsV21(test.TestCase):
                           UUID_SERVER, body)
 
     def test_disassociate(self):
-        self.stub_out('compute.db.instance_get', return_server)
-        self.stub_out('compute.db.instance_get_by_uuid',
+        self.stub_out('cloud.db.instance_get', return_server)
+        self.stub_out('cloud.db.instance_get_by_uuid',
                       return_server_by_uuid)
         self.mox.StubOutWithMock(jacket.db.compute, 'instance_remove_security_group')
         jacket.db.compute.instance_remove_security_group(mox.IgnoreArg(),
                                     mox.IgnoreArg(),
                                     mox.IgnoreArg())
-        self.stub_out('jacket.compute.security_group_get_by_name',
+        self.stub_out('jacket.cloud.security_group_get_by_name',
                       return_security_group_by_name)
         self.mox.ReplayAll()
 
@@ -820,7 +820,7 @@ class TestSecurityGroupRulesV21(test.TestCase):
                 return db2
             raise exception.SecurityGroupNotFound(security_group_id=group_id)
 
-        self.stub_out('compute.db.security_group_get',
+        self.stub_out('cloud.db.security_group_get',
                       return_security_group)
 
         self.parent_security_group = db2
@@ -1185,9 +1185,9 @@ class TestSecurityGroupRulesV21(test.TestCase):
         def security_group_rule_destroy(context, id):
             pass
 
-        self.stub_out('compute.db.security_group_rule_get',
+        self.stub_out('cloud.db.security_group_rule_get',
                       security_group_rule_get)
-        self.stub_out('jacket.compute.security_group_rule_destroy',
+        self.stub_out('jacket.cloud.security_group_rule_destroy',
                       security_group_rule_destroy)
 
         self.controller.delete(self.req, self.sg2['id'])
@@ -1288,14 +1288,14 @@ def fake_compute_get_all(*args, **kwargs):
                              dict(base, **{'name': 'fake-1-1'})])
     ]
 
-    return compute.InstanceList(compute=inst_list)
+    return cloud.InstanceList(cloud=inst_list)
 
 
 def fake_compute_get(*args, **kwargs):
-    secgroups = compute.SecurityGroupList()
+    secgroups = cloud.SecurityGroupList()
     secgroups.objects = [
-        compute.SecurityGroup(name='fake-2-0'),
-        compute.SecurityGroup(name='fake-2-1'),
+        cloud.SecurityGroup(name='fake-2-0'),
+        cloud.SecurityGroup(name='fake-2-1'),
     ]
     inst = fakes.stub_instance_obj(None, 1, uuid=UUID3)
     inst.security_groups = secgroups
@@ -1323,12 +1323,12 @@ class SecurityGroupsOutputTestV21(test.TestCase):
     def setUp(self):
         super(SecurityGroupsOutputTestV21, self).setUp()
         fakes.stub_out_nw_api(self)
-        self.stubs.Set(compute.api.API, 'get', fake_compute_get)
-        self.stubs.Set(compute.api.API, 'get_all', fake_compute_get_all)
-        self.stubs.Set(compute.api.API, 'create', fake_compute_create)
+        self.stubs.Set(cloud.api.API, 'get', fake_compute_get)
+        self.stubs.Set(cloud.api.API, 'get_all', fake_compute_get_all)
+        self.stubs.Set(cloud.api.API, 'create', fake_compute_create)
         self.flags(
             osapi_compute_extension=[
-                'compute.api.openstack.compute.contrib.select_extensions'],
+                'cloud.api.openstack.cloud.contrib.select_extensions'],
             osapi_compute_ext_list=['Security_groups'])
         self.app = self._setup_app()
 
@@ -1392,7 +1392,7 @@ class SecurityGroupsOutputTestV21(test.TestCase):
         def fake_compute_get(*args, **kwargs):
             raise exception.InstanceNotFound(instance_id='fake')
 
-        self.stubs.Set(compute.api.API, 'get', fake_compute_get)
+        self.stubs.Set(cloud.api.API, 'get', fake_compute_get)
         url = self.base_url + '/70f6db34-de8d-4fbd-aafb-4065bdfa6115'
         res = self._make_request(url)
 

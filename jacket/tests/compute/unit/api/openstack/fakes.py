@@ -34,9 +34,9 @@ from jacket.api.compute.openstack.compute.legacy_v2 import limits
 from jacket.api.compute.openstack.compute import versions
 from jacket.api.compute.openstack import urlmap
 from jacket.wsgi import compute as os_wsgi
-from jacket.compute.compute import api as compute_api
-from jacket.compute.compute import flavors
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import api as compute_api
+from jacket.compute.cloud import flavors
+from jacket.compute.cloud import vm_states
 from jacket.compute import context
 from jacket.db.compute.sqlalchemy import models
 from jacket.compute import exception as exc

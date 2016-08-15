@@ -21,7 +21,7 @@ from eventlet import greenthread
 import mock
 import six
 
-from jacket.compute.compute import arch
+from jacket.compute.cloud import arch
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.compute import test

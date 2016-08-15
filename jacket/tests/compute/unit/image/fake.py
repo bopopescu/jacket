@@ -23,7 +23,7 @@ import uuid
 from oslo_config import cfg
 from oslo_log import log as logging
 
-from jacket.compute.compute import arch
+from jacket.compute.cloud import arch
 from jacket.compute import exception
 
 CONF = cfg.CONF

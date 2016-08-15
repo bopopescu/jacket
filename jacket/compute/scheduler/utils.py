@@ -22,8 +22,8 @@ from oslo_log import log as logging
 import oslo_messaging as messaging
 from oslo_serialization import jsonutils
 
-from jacket.compute.compute import flavors
-from jacket.compute.compute import utils as compute_utils
+from jacket.compute.cloud import flavors
+from jacket.compute.cloud import utils as compute_utils
 import jacket.compute.conf
 from jacket.compute import exception
 from jacket.i18n import _, _LE, _LW

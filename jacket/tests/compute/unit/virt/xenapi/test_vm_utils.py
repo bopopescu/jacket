@@ -30,9 +30,9 @@ from oslo_utils import units
 from oslo_utils import uuidutils
 import six
 
-from jacket.compute.compute import flavors
-from jacket.compute.compute import power_state
-from jacket.compute.compute import vm_mode
+from jacket.compute.cloud import flavors
+from jacket.compute.cloud import power_state
+from jacket.compute.cloud import vm_mode
 from jacket.compute import context
 from jacket.compute import exception
 from jacket.objects import compute

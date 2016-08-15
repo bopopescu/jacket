@@ -20,7 +20,7 @@ import webob
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack.compute import flavors as flavors_v21
 from jacket.api.compute.openstack.compute.legacy_v2 import flavors as flavors_v2
-import jacket.compute.compute.flavors
+import jacket.compute.cloud.flavors
 from jacket.compute import context
 from jacket.db import compute
 from jacket.compute import exception
@@ -124,9 +124,9 @@ class FlavorsTestV21(test.TestCase):
         self.flags(osapi_compute_extension=[])
         fakes.stub_out_networking(self)
         fakes.stub_out_rate_limiting(self.stubs)
-        self.stubs.Set(jacket.compute.compute.flavors, "get_all_flavors_sorted_list",
+        self.stubs.Set(jacket.compute.cloud.flavors, "get_all_flavors_sorted_list",
                        fake_get_all_flavors_sorted_list)
-        self.stubs.Set(jacket.compute.compute.flavors,
+        self.stubs.Set(jacket.compute.cloud.flavors,
                        "get_flavor_by_flavor_id",
                        fake_flavor_get_by_flavor_id)
         self.controller = self.Controller()
@@ -140,7 +140,7 @@ class FlavorsTestV21(test.TestCase):
         expected['swap'] = swap
 
     def test_get_flavor_by_invalid_id(self):
-        self.stubs.Set(jacket.compute.compute.flavors,
+        self.stubs.Set(jacket.compute.cloud.flavors,
                        "get_flavor_by_flavor_id",
                        return_flavor_not_found)
         req = self.fake_request.blank(self._prefix + '/flavors/asdf')
@@ -458,7 +458,7 @@ class FlavorsTestV21(test.TestCase):
         self.assertEqual(expected, flavor)
 
     def test_get_empty_flavor_list(self):
-        self.stubs.Set(jacket.compute.compute.flavors, "get_all_flavors_sorted_list",
+        self.stubs.Set(jacket.compute.cloud.flavors, "get_all_flavors_sorted_list",
                        empty_get_all_flavors_sorted_list)
 
         req = self.fake_request.blank(self._prefix + '/flavors')

@@ -19,7 +19,7 @@ from oslo_config import cfg
 
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import vm_states
 
 
 CONF = cfg.CONF

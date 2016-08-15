@@ -20,7 +20,7 @@ CPU monitor based on virt driver to retrieve CPU information
 from oslo_log import log as logging
 from oslo_utils import timeutils
 
-from jacket.compute.compute.monitors import base
+from jacket.compute.cloud.monitors import base
 import jacket.compute.conf
 from jacket.compute import exception
 from jacket.i18n import _LE

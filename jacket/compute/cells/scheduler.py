@@ -24,9 +24,9 @@ from six.moves import range
 
 from jacket.compute.cells import filters
 from jacket.compute.cells import weights
-from jacket.compute import compute
-from jacket.compute.compute import instance_actions
-from jacket.compute.compute import vm_states
+from jacket.compute import cloud
+from jacket.compute.cloud import instance_actions
+from jacket.compute.cloud import vm_states
 from jacket.compute import conductor
 import jacket.compute.conf
 from jacket.db.compute import base
@@ -49,7 +49,7 @@ class CellsScheduler(base.Base):
         super(CellsScheduler, self).__init__()
         self.msg_runner = msg_runner
         self.state_manager = msg_runner.state_manager
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
         self.compute_task_api = conductor.ComputeTaskAPI()
         self.filter_handler = filters.CellFilterHandler()
         filter_classes = self.filter_handler.get_matching_classes(
@@ -78,7 +78,7 @@ class CellsScheduler(base.Base):
         # sent over RPC to us. Thus, the pci_requests value wasn't really
         # sent in a useful form. Since it was getting ignored for cells
         # before it was part of the Instance, skip it now until cells RPC
-        # is sending proper instance compute.
+        # is sending proper instance cloud.
         instance_values.pop('pci_requests', None)
 
         # FIXME(danms): Same for ec2_ids
@@ -90,7 +90,7 @@ class CellsScheduler(base.Base):
             self.compute_api.security_group_api.populate_security_groups(
                 security_groups))
         for i, instance_uuid in enumerate(instance_uuids):
-            instance = compute.Instance(context=ctxt)
+            instance = cloud.Instance(context=ctxt)
             instance.update(instance_values)
             instance.uuid = instance_uuid
             instance.flavor = instance_type
@@ -111,7 +111,7 @@ class CellsScheduler(base.Base):
 
     def _create_action_here(self, ctxt, instance_uuids):
         for instance_uuid in instance_uuids:
-            compute.InstanceAction.action_start(
+            cloud.InstanceAction.action_start(
                     ctxt,
                     instance_uuid,
                     instance_actions.CREATE,
@@ -231,7 +231,7 @@ class CellsScheduler(base.Base):
                           {'instance_uuids': instance_uuids})
             ctxt = message.ctxt
             for instance_uuid in instance_uuids:
-                instance = compute.Instance(context=ctxt, uuid=instance_uuid,
+                instance = cloud.Instance(context=ctxt, uuid=instance_uuid,
                                             vm_state=vm_states.ERROR)
                 self.msg_runner.instance_update_at_top(ctxt, instance)
                 try:

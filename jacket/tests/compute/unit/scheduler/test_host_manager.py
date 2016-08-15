@@ -26,8 +26,8 @@ from oslo_utils import versionutils
 import six
 
 from jacket import compute
-from jacket.compute.compute import task_states
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import vm_states
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.objects.compute import base as obj_base

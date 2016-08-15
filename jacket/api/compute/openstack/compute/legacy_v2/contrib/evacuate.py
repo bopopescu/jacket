@@ -19,20 +19,20 @@ from webob import exc
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import context as nova_context
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.compute import utils
 
-authorize = extensions.extension_authorizer('compute', 'evacuate')
+authorize = extensions.extension_authorizer('cloud', 'evacuate')
 
 
 class Controller(wsgi.Controller):
     def __init__(self, ext_mgr, *args, **kwargs):
         super(Controller, self).__init__(*args, **kwargs)
-        self.compute_api = compute.API()
-        self.host_api = compute.HostAPI()
+        self.compute_api = cloud.API()
+        self.host_api = cloud.HostAPI()
         self.ext_mgr = ext_mgr
 
     @wsgi.action('evacuate')
@@ -41,7 +41,7 @@ class Controller(wsgi.Controller):
         to a new one.
         If host is empty, the scheduler will select one.
         """
-        context = req.environ["compute.context"]
+        context = req.environ["cloud.context"]
         authorize(context)
 
         # NOTE(alex_xu): back-compatible with db layer hard-code admin
@@ -111,7 +111,7 @@ class Evacuate(extensions.ExtensionDescriptor):
 
     name = "Evacuate"
     alias = "os-evacuate"
-    namespace = "http://docs.openstack.org/compute/ext/evacuate/api/v2"
+    namespace = "http://docs.openstack.org/cloud/ext/evacuate/api/v2"
     updated = "2013-01-06T00:00:00Z"
 
     def get_controller_extensions(self):

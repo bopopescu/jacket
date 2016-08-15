@@ -20,8 +20,8 @@ from oslo_config import cfg
 from stevedore import extension
 from stevedore import named
 
-from jacket.compute.compute import resources
-from jacket.compute.compute.resources import base
+from jacket.compute.cloud import resources
+from jacket.compute.cloud.resources import base
 from jacket.compute import context
 from jacket.objects.compute import flavor as flavor_obj
 from jacket.compute import test

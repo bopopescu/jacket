@@ -28,7 +28,7 @@ from webob import exc
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.compute.network.security_group import openstack_driver
@@ -36,19 +36,19 @@ from jacket.compute.virt import netutils
 
 
 LOG = logging.getLogger(__name__)
-authorize = extensions.extension_authorizer('compute', 'security_groups')
-softauth = extensions.soft_extension_authorizer('compute', 'security_groups')
+authorize = extensions.extension_authorizer('cloud', 'security_groups')
+softauth = extensions.soft_extension_authorizer('cloud', 'security_groups')
 
 
 def _authorize_context(req):
-    context = req.environ['compute.context']
+    context = req.environ['cloud.context']
     authorize(context)
     return context
 
 
 @contextlib.contextmanager
 def translate_exceptions():
-    """Translate compute exceptions to http exceptions."""
+    """Translate cloud exceptions to http exceptions."""
     try:
         yield
     except exception.Invalid as exp:
@@ -74,7 +74,7 @@ class SecurityGroupControllerBase(object):
     def __init__(self):
         self.security_group_api = (
             openstack_driver.get_openstack_security_group_driver())
-        self.compute_api = compute.API(
+        self.compute_api = cloud.API(
                                    security_group_api=self.security_group_api)
 
     def _format_security_group_rule(self, context, rule, group_rule_data=None):
@@ -342,7 +342,7 @@ class SecurityGroupActionController(wsgi.Controller):
         super(SecurityGroupActionController, self).__init__(*args, **kwargs)
         self.security_group_api = (
             openstack_driver.get_openstack_security_group_driver())
-        self.compute_api = compute.API(
+        self.compute_api = cloud.API(
                                    security_group_api=self.security_group_api)
 
     def _parse(self, body, action):
@@ -371,7 +371,7 @@ class SecurityGroupActionController(wsgi.Controller):
 
     @wsgi.action('addSecurityGroup')
     def _addSecurityGroup(self, req, id, body):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         group_name = self._parse(body, 'addSecurityGroup')
@@ -381,7 +381,7 @@ class SecurityGroupActionController(wsgi.Controller):
 
     @wsgi.action('removeSecurityGroup')
     def _removeSecurityGroup(self, req, id, body):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         group_name = self._parse(body, 'removeSecurityGroup')
@@ -393,7 +393,7 @@ class SecurityGroupActionController(wsgi.Controller):
 class SecurityGroupsOutputController(wsgi.Controller):
     def __init__(self, *args, **kwargs):
         super(SecurityGroupsOutputController, self).__init__(*args, **kwargs)
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
         self.security_group_api = (
             openstack_driver.get_openstack_security_group_driver())
 
@@ -451,7 +451,7 @@ class SecurityGroupsOutputController(wsgi.Controller):
                     servers[0][key] = groups
 
     def _show(self, req, resp_obj):
-        if not softauth(req.environ['compute.context']):
+        if not softauth(req.environ['cloud.context']):
             return
         if 'server' in resp_obj.obj:
             self._extend_servers(req, [resp_obj.obj['server']])
@@ -466,7 +466,7 @@ class SecurityGroupsOutputController(wsgi.Controller):
 
     @wsgi.extends
     def detail(self, req, resp_obj):
-        if not softauth(req.environ['compute.context']):
+        if not softauth(req.environ['cloud.context']):
             return
         self._extend_servers(req, list(resp_obj.obj['servers']))
 
@@ -475,7 +475,7 @@ class Security_groups(extensions.ExtensionDescriptor):
     """Security group support."""
     name = "SecurityGroups"
     alias = "os-security-groups"
-    namespace = "http://docs.openstack.org/compute/ext/securitygroups/api/v1.1"
+    namespace = "http://docs.openstack.org/cloud/ext/securitygroups/api/v1.1"
     updated = "2013-05-28T00:00:00Z"
 
     def get_controller_extensions(self):

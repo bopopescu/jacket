@@ -20,7 +20,7 @@ import mock
 from oslo_serialization import jsonutils
 
 from jacket.compute.cells import utils as cells_utils
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import context
 from jacket.compute import exception
 from jacket.objects import compute
@@ -33,7 +33,7 @@ from jacket.tests.compute.unit.objects import test_service
 class ComputeHostAPITestCase(test.TestCase):
     def setUp(self):
         super(ComputeHostAPITestCase, self).setUp()
-        self.host_api = compute.HostAPI()
+        self.host_api = cloud.HostAPI()
         self.ctxt = context.get_admin_context()
         fake_notifier.stub_notifier(self.stubs)
         self.addCleanup(fake_notifier.reset)
@@ -168,9 +168,9 @@ class ComputeHostAPITestCase(test.TestCase):
 
     def test_service_get_all_no_zones(self):
         services = [dict(test_service.fake_service,
-                         id=1, topic='compute', host='host1'),
+                         id=1, topic='cloud', host='host1'),
                     dict(test_service.fake_service,
-                         topic='compute', host='host2')]
+                         topic='cloud', host='host2')]
 
         self.mox.StubOutWithMock(self.host_api.db,
                                  'service_get_all')
@@ -204,13 +204,13 @@ class ComputeHostAPITestCase(test.TestCase):
 
     def test_service_get_all(self):
         services = [dict(test_service.fake_service,
-                         topic='compute', host='host1'),
+                         topic='cloud', host='host1'),
                     dict(test_service.fake_service,
-                         topic='compute', host='host2')]
+                         topic='cloud', host='host2')]
         exp_services = []
         for service in services:
             exp_service = {}
-            exp_service.update(availability_zone='compute', **service)
+            exp_service.update(availability_zone='cloud', **service)
             exp_services.append(exp_service)
 
         self.mox.StubOutWithMock(self.host_api.db,
@@ -250,7 +250,7 @@ class ComputeHostAPITestCase(test.TestCase):
         self.host_api.db.service_get_all(self.ctxt,
                                          disabled=None).AndReturn(services)
         self.mox.ReplayAll()
-        filters = {'availability_zone': 'compute'}
+        filters = {'availability_zone': 'cloud'}
         result = self.host_api.service_get_all(self.ctxt,
                                                filters=filters)
         self.mox.VerifyAll()
@@ -269,7 +269,7 @@ class ComputeHostAPITestCase(test.TestCase):
 
     def test_service_update(self):
         host_name = 'fake-host'
-        binary = 'compute-compute'
+        binary = 'cloud-cloud'
         params_to_update = dict(disabled=True)
         service_id = 42
         expected_result = dict(test_service.fake_service, id=service_id)
@@ -289,7 +289,7 @@ class ComputeHostAPITestCase(test.TestCase):
             self.ctxt, host_name, binary, params_to_update)
         self._compare_obj(result, expected_result)
 
-    @mock.patch.object(compute.InstanceList, 'get_by_host',
+    @mock.patch.object(cloud.InstanceList, 'get_by_host',
                        return_value = ['fake-responses'])
     def test_instance_get_all_by_host(self, mock_get):
         result = self.host_api.instance_get_all_by_host(self.ctxt,
@@ -310,9 +310,9 @@ class ComputeHostAPITestCase(test.TestCase):
 
     def test_service_delete(self):
         with test.nested(
-            mock.patch.object(compute.Service, 'get_by_id',
-                              return_value=compute.Service()),
-            mock.patch.object(compute.Service, 'destroy')
+            mock.patch.object(cloud.Service, 'get_by_id',
+                              return_value=cloud.Service()),
+            mock.patch.object(cloud.Service, 'destroy')
         ) as (
             get_by_id, destroy
         ):
@@ -342,16 +342,16 @@ class ComputeHostAPICellsTestCase(ComputeHostAPITestCase):
         self.mox.StubOutWithMock(cells_rpcapi, 'proxy_rpc_to_manager')
         cells_rpcapi.proxy_rpc_to_manager(self.ctxt,
                                           rpc_message,
-                                          'compute.fake_host',
+                                          'cloud.fake_host',
                                           call=True).AndReturn('fake-result')
 
     def test_service_get_all_no_zones(self):
         services = [
             cells_utils.ServiceProxy(
-                compute.Service(id=1, topic='compute', host='host1'),
+                cloud.Service(id=1, topic='cloud', host='host1'),
                 'cell1'),
             cells_utils.ServiceProxy(
-                compute.Service(id=2, topic='compute', host='host2'),
+                cloud.Service(id=2, topic='cloud', host='host2'),
                 'cell1')]
 
         fake_filters = {'host': 'host1'}
@@ -369,17 +369,17 @@ class ComputeHostAPICellsTestCase(ComputeHostAPITestCase):
         del service_attrs['version']
         services = [
             cells_utils.ServiceProxy(
-                compute.Service(**dict(service_attrs, id=1,
-                                topic='compute', host='host1')),
+                cloud.Service(**dict(service_attrs, id=1,
+                                topic='cloud', host='host1')),
                 'cell1'),
             cells_utils.ServiceProxy(
-                compute.Service(**dict(service_attrs, id=2,
-                                topic='compute', host='host2')),
+                cloud.Service(**dict(service_attrs, id=2,
+                                topic='cloud', host='host2')),
                 'cell1')]
         exp_services = []
         for service in services:
             exp_service = copy.copy(service)
-            exp_service.update({'availability_zone': 'compute'})
+            exp_service.update({'availability_zone': 'cloud'})
             exp_services.append(exp_service)
 
         self.mox.StubOutWithMock(self.host_api.cells_rpcapi,
@@ -395,7 +395,7 @@ class ComputeHostAPICellsTestCase(ComputeHostAPITestCase):
                          jsonutils.to_primitive(result))
 
     def test_service_get_all(self):
-        fake_filters = {'availability_zone': 'compute'}
+        fake_filters = {'availability_zone': 'cloud'}
         self._test_service_get_all(fake_filters)
 
     def test_service_get_all_set_zones(self):
@@ -406,7 +406,7 @@ class ComputeHostAPICellsTestCase(ComputeHostAPITestCase):
         self.mox.StubOutWithMock(self.host_api.cells_rpcapi,
                                  'service_get_by_compute_host')
 
-        obj = compute.Service(id=1, host='fake')
+        obj = cloud.Service(id=1, host='fake')
         fake_service = cells_utils.ServiceProxy(obj, 'cell1')
 
         self.host_api.cells_rpcapi.service_get_by_compute_host(self.ctxt,
@@ -418,10 +418,10 @@ class ComputeHostAPICellsTestCase(ComputeHostAPITestCase):
 
     def test_service_update(self):
         host_name = 'fake-host'
-        binary = 'compute-compute'
+        binary = 'cloud-cloud'
         params_to_update = dict(disabled=True)
 
-        obj = compute.Service(id=42, host='fake')
+        obj = cloud.Service(id=42, host='fake')
         fake_service = cells_utils.ServiceProxy(obj, 'cell1')
 
         self.mox.StubOutWithMock(self.host_api.cells_rpcapi, 'service_update')
@@ -443,7 +443,7 @@ class ComputeHostAPICellsTestCase(ComputeHostAPITestCase):
             service_delete.assert_called_once_with(
                 self.ctxt, cell_service_id)
 
-    @mock.patch.object(compute.InstanceList, 'get_by_host')
+    @mock.patch.object(cloud.InstanceList, 'get_by_host')
     def test_instance_get_all_by_host(self, mock_get):
         instances = [dict(id=1, cell_name='cell1', host='host1'),
                      dict(id=2, cell_name='cell2', host='host1'),

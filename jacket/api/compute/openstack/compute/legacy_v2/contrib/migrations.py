@@ -11,18 +11,18 @@
 #    under the License.
 
 from jacket.api.compute.openstack import extensions
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import context as nova_context
 from jacket.objects.compute import base as obj_base
 
 
-XMLNS = "http://docs.openstack.org/compute/ext/migrations/api/v2.0"
+XMLNS = "http://docs.openstack.org/cloud/ext/migrations/api/v2.0"
 ALIAS = "os-migrations"
 
 
 def authorize(context, action_name):
     action = 'migrations:%s' % action_name
-    extensions.extension_authorizer('compute', action)(context)
+    extensions.extension_authorizer('cloud', action)(context)
 
 
 def output(migrations_obj):
@@ -52,11 +52,11 @@ def output(migrations_obj):
 class MigrationsController(object):
     """Controller for accessing migrations in OpenStack API."""
     def __init__(self):
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
 
     def index(self, req):
         """Return all migrations in progress."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, "index")
         # NOTE(alex_xu): back-compatible with db layer hard-code admin
         # permission checks.

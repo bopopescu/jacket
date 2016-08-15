@@ -19,7 +19,7 @@ import mock
 from oslo_serialization import jsonutils
 
 from jacket import compute
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import vm_states
 from jacket.compute import context
 from jacket.objects import compute
 from jacket.objects.compute import fields

@@ -19,7 +19,7 @@ from jacket.api.compute.openstack.compute.schemas import admin_password
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
 
@@ -32,7 +32,7 @@ class AdminPasswordController(wsgi.Controller):
 
     def __init__(self, *args, **kwargs):
         super(AdminPasswordController, self).__init__(*args, **kwargs)
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
 
     # TODO(eliqiao): Here should be 204(No content) instead of 202 by v2.1
     # +micorversions because the password has been changed when returning
@@ -42,7 +42,7 @@ class AdminPasswordController(wsgi.Controller):
     @extensions.expected_errors((400, 404, 409, 501))
     @validation.schema(admin_password.change_password)
     def change_password(self, req, id, body):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         password = body['changePassword']['adminPass']

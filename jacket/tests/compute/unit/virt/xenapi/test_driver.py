@@ -18,7 +18,7 @@ import math
 import mock
 from oslo_utils import units
 
-from jacket.compute.compute import arch
+from jacket.compute.cloud import arch
 from jacket.tests.compute.unit.virt.xenapi import stubs
 from jacket.compute.virt import driver
 from jacket.compute.virt import fake

@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from jacket.compute.compute import resource_tracker
+from jacket.compute.cloud import resource_tracker
 
 
 class FakeResourceTracker(resource_tracker.ResourceTracker):

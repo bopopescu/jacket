@@ -24,7 +24,7 @@ from jacket.api.compute.openstack.compute.schemas import security_groups as \
                                                   schema_security_groups
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.compute.network.security_group import openstack_driver
@@ -39,7 +39,7 @@ softauth = extensions.os_compute_soft_authorizer(ALIAS)
 
 
 def _authorize_context(req):
-    context = req.environ['compute.context']
+    context = req.environ['cloud.context']
     authorize(context)
     return context
 
@@ -51,7 +51,7 @@ class SecurityGroupControllerBase(wsgi.Controller):
         self.security_group_api = (
             openstack_driver.get_openstack_security_group_driver(
                 skip_policy_check=True))
-        self.compute_api = compute.API(
+        self.compute_api = cloud.API(
             security_group_api=self.security_group_api, skip_policy_check=True)
 
     def _format_security_group_rule(self, context, rule, group_rule_data=None):
@@ -359,7 +359,7 @@ class SecurityGroupActionController(wsgi.Controller):
         self.security_group_api = (
             openstack_driver.get_openstack_security_group_driver(
                 skip_policy_check=True))
-        self.compute_api = compute.API(
+        self.compute_api = cloud.API(
             security_group_api=self.security_group_api, skip_policy_check=True)
 
     def _parse(self, body, action):
@@ -387,7 +387,7 @@ class SecurityGroupActionController(wsgi.Controller):
     @wsgi.response(202)
     @wsgi.action('addSecurityGroup')
     def _addSecurityGroup(self, req, id, body):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         group_name = self._parse(body, 'addSecurityGroup')
@@ -407,7 +407,7 @@ class SecurityGroupActionController(wsgi.Controller):
     @wsgi.response(202)
     @wsgi.action('removeSecurityGroup')
     def _removeSecurityGroup(self, req, id, body):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         group_name = self._parse(body, 'removeSecurityGroup')
@@ -427,7 +427,7 @@ class SecurityGroupActionController(wsgi.Controller):
 class SecurityGroupsOutputController(wsgi.Controller):
     def __init__(self, *args, **kwargs):
         super(SecurityGroupsOutputController, self).__init__(*args, **kwargs)
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
         self.security_group_api = (
             openstack_driver.get_openstack_security_group_driver(
                 skip_policy_check=True))
@@ -438,7 +438,7 @@ class SecurityGroupsOutputController(wsgi.Controller):
         if not len(servers):
             return
         key = "security_groups"
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         if not softauth(context):
             return
 

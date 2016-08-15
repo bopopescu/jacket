@@ -15,7 +15,7 @@
 
 from oslo_config import cfg
 
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import vm_states
 from jacket.tests.compute.functional.api_sample_tests import test_servers
 
 CONF = cfg.CONF

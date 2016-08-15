@@ -14,7 +14,7 @@ from jacket.api.compute.openstack import api_version_request
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.objects.compute import base as obj_base
 
 
@@ -33,7 +33,7 @@ class MigrationsController(wsgi.Controller):
 
     def __init__(self):
         super(MigrationsController, self).__init__()
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
 
     def _output(self, req, migrations_obj, add_link=False):
         """Returns the desired output of the API from an object.
@@ -75,7 +75,7 @@ class MigrationsController(wsgi.Controller):
     @extensions.expected_errors(())
     def index(self, req):
         """Return all migrations in progress."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, "index")
         migrations = self.compute_api.get_migrations(context, req.GET)
 

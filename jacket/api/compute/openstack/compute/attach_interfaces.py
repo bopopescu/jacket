@@ -23,7 +23,7 @@ from jacket.api.compute.openstack.compute.schemas import attach_interfaces
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.compute import network
@@ -48,7 +48,7 @@ class InterfaceAttachmentController(wsgi.Controller):
     """The interface attachment API controller for the OpenStack API."""
 
     def __init__(self):
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
         self.network_api = network.API(skip_policy_check=True)
         super(InterfaceAttachmentController, self).__init__()
 
@@ -61,7 +61,7 @@ class InterfaceAttachmentController(wsgi.Controller):
     @extensions.expected_errors((403, 404))
     def show(self, req, server_id, id):
         """Return data about the given interface attachment."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         port_id = id
@@ -89,7 +89,7 @@ class InterfaceAttachmentController(wsgi.Controller):
     @validation.schema(attach_interfaces.create)
     def create(self, req, server_id, body):
         """Attach an interface to an instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         network_id = None
@@ -143,7 +143,7 @@ class InterfaceAttachmentController(wsgi.Controller):
     @extensions.expected_errors((404, 409, 501))
     def delete(self, req, server_id, id):
         """Detach an interface from an instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         port_id = id
 
@@ -163,7 +163,7 @@ class InterfaceAttachmentController(wsgi.Controller):
 
     def _items(self, req, server_id, entity_maker):
         """Returns a list of attachments, transformed through entity_maker."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         instance = common.get_instance(self.compute_api, context, server_id)

@@ -23,7 +23,7 @@ import webob
 
 from jacket.api.compute.openstack.compute import consoles as consoles_v21
 from jacket.api.compute.openstack.compute.legacy_v2 import consoles as consoles_v2
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import vm_states
 from jacket.compute import console
 from jacket.compute import exception
 from jacket.compute import policy

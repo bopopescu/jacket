@@ -19,13 +19,13 @@ import webob
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import rescue as rescue_v2
 from jacket.api.compute.openstack.compute import rescue as rescue_v21
 from jacket.api.compute.openstack import extensions
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.compute import test
 from jacket.tests.compute.unit.api.openstack import fakes
 
 CONF = cfg.CONF
-CONF.import_opt('password_length', 'compute.utils')
+CONF.import_opt('password_length', 'cloud.utils')
 UUID = '70f6db34-de8d-4fbd-aafb-4065bdfa6114'
 
 
@@ -51,9 +51,9 @@ class RescueTestV21(test.NoDBTestCase):
     def setUp(self):
         super(RescueTestV21, self).setUp()
 
-        self.stubs.Set(compute.api.API, "get", fake_compute_get)
-        self.stubs.Set(compute.api.API, "rescue", rescue)
-        self.stubs.Set(compute.api.API, "unrescue", unrescue)
+        self.stubs.Set(cloud.api.API, "get", fake_compute_get)
+        self.stubs.Set(cloud.api.API, "rescue", rescue)
+        self.stubs.Set(cloud.api.API, "unrescue", unrescue)
         self.controller = self._set_up_controller()
         self.fake_req = fakes.HTTPRequest.blank('')
 
@@ -65,7 +65,7 @@ class RescueTestV21(test.NoDBTestCase):
             instance, rescue_password=None, rescue_image_ref=None):
             raise exception.InstanceIsLocked(instance_uuid=instance['uuid'])
 
-        self.stubs.Set(compute.api.API,
+        self.stubs.Set(cloud.api.API,
                        'rescue',
                        fake_rescue_from_locked_server)
         body = {"rescue": {"adminPass": "AABBCC112233"}}
@@ -89,7 +89,7 @@ class RescueTestV21(test.NoDBTestCase):
         def fake_rescue(*args, **kwargs):
             raise exception.InstanceInvalidState('fake message')
 
-        self.stubs.Set(compute.api.API, "rescue", fake_rescue)
+        self.stubs.Set(cloud.api.API, "rescue", fake_rescue)
         self.assertRaises(webob.exc.HTTPConflict,
                           self.controller._rescue,
                           self.fake_req, UUID, body=body)
@@ -111,7 +111,7 @@ class RescueTestV21(test.NoDBTestCase):
             instance):
             raise exception.InstanceIsLocked(instance_uuid=instance['uuid'])
 
-        self.stubs.Set(compute.api.API,
+        self.stubs.Set(cloud.api.API,
                        'unrescue',
                        fake_unrescue_from_locked_server)
 
@@ -126,7 +126,7 @@ class RescueTestV21(test.NoDBTestCase):
         def fake_unrescue(*args, **kwargs):
             raise exception.InstanceInvalidState('fake message')
 
-        self.stubs.Set(compute.api.API, "unrescue", fake_unrescue)
+        self.stubs.Set(cloud.api.API, "unrescue", fake_unrescue)
         self.assertRaises(webob.exc.HTTPConflict,
                           self.controller._unrescue,
                           self.fake_req, UUID, body=body)
@@ -137,12 +137,12 @@ class RescueTestV21(test.NoDBTestCase):
         def fake_rescue(*args, **kwargs):
             raise exception.InstanceNotRescuable('fake message')
 
-        self.stubs.Set(compute.api.API, "rescue", fake_rescue)
+        self.stubs.Set(cloud.api.API, "rescue", fake_rescue)
         self.assertRaises(webob.exc.HTTPBadRequest,
                           self.controller._rescue,
                           self.fake_req, UUID, body=body)
 
-    @mock.patch('compute.compute.api.API.rescue')
+    @mock.patch('cloud.cloud.api.API.rescue')
     def test_rescue_with_bad_image_specified(self, mock_compute_api_rescue):
         body = {"rescue": {"adminPass": "ABC123",
                            "rescue_image_ref": "img-id"}}
@@ -150,7 +150,7 @@ class RescueTestV21(test.NoDBTestCase):
                           self.controller._rescue,
                           self.fake_req, UUID, body=body)
 
-    @mock.patch('compute.compute.api.API.rescue')
+    @mock.patch('cloud.cloud.api.API.rescue')
     def test_rescue_with_image_specified(self, mock_compute_api_rescue):
         instance = fake_compute_get()
         body = {"rescue": {"adminPass": "ABC123",
@@ -164,7 +164,7 @@ class RescueTestV21(test.NoDBTestCase):
             rescue_password=u'ABC123',
             rescue_image_ref=self.image_uuid)
 
-    @mock.patch('compute.compute.api.API.rescue')
+    @mock.patch('cloud.cloud.api.API.rescue')
     def test_rescue_without_image_specified(self, mock_compute_api_rescue):
         instance = fake_compute_get()
         body = {"rescue": {"adminPass": "ABC123"}}

@@ -24,7 +24,7 @@ from jacket.api.compute.openstack.compute.schemas import aggregates
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
-from jacket.compute.compute import api as compute_api
+from jacket.compute.cloud import api as compute_api
 from jacket.compute import exception
 from jacket.i18n import _
 

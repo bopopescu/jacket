@@ -20,7 +20,7 @@ import webob
 from jacket.api.compute.openstack.compute import (extended_volumes
                                                    as extended_volumes_v21)
 from jacket.api.compute.openstack import wsgi as os_wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.objects import compute
 from jacket.objects.compute import instance as instance_obj
 from jacket.compute import test
@@ -46,7 +46,7 @@ def fake_compute_get_all(*args, **kwargs):
     ]
     fields = instance_obj.INSTANCE_DEFAULT_FIELDS
     return instance_obj._make_instance_list(args[1],
-                                            compute.InstanceList(),
+                                            cloud.InstanceList(),
                                             db_list, fields)
 
 
@@ -96,14 +96,14 @@ class ExtendedVolumesTestV21(test.TestCase):
     def setUp(self):
         super(ExtendedVolumesTestV21, self).setUp()
         fakes.stub_out_nw_api(self)
-        self.stubs.Set(compute.api.API, 'get', fake_compute_get)
-        self.stubs.Set(compute.api.API, 'get_all', fake_compute_get_all)
-        self.stub_out('compute.db.block_device_mapping_get_all_by_instance_uuids',
+        self.stubs.Set(cloud.api.API, 'get', fake_compute_get)
+        self.stubs.Set(cloud.api.API, 'get_all', fake_compute_get_all)
+        self.stub_out('cloud.db.block_device_mapping_get_all_by_instance_uuids',
                        fake_bdms_get_all_by_instance_uuids)
         self._setUp()
         self.app = self._setup_app()
         return_server = fakes.fake_instance_get()
-        self.stub_out('compute.db.instance_get_by_uuid', return_server)
+        self.stub_out('cloud.db.instance_get_by_uuid', return_server)
 
     def _setup_app(self):
         return fakes.wsgi_app_v21(init_only=('os-extended-volumes',
@@ -155,7 +155,7 @@ class ExtendedVolumesTestV2(ExtendedVolumesTestV21):
 
     def _setUp(self):
         self.flags(
-                   osapi_compute_extension=['compute.api.openstack.compute.'
+                   osapi_compute_extension=['cloud.api.openstack.cloud.'
                                             'contrib.select_extensions'],
                    osapi_compute_ext_list=['Extended_volumes'])
 

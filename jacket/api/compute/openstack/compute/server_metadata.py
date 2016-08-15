@@ -21,7 +21,7 @@ from jacket.api.compute.openstack.compute.schemas import server_metadata
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
 
@@ -33,7 +33,7 @@ class ServerMetadataController(wsgi.Controller):
     """The server metadata API controller for the OpenStack API."""
 
     def __init__(self):
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
         super(ServerMetadataController, self).__init__()
 
     def _get_metadata(self, context, server_id):
@@ -54,7 +54,7 @@ class ServerMetadataController(wsgi.Controller):
     @extensions.expected_errors(404)
     def index(self, req, server_id):
         """Returns the list of metadata for a given instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='index')
         return {'metadata': self._get_metadata(context, server_id)}
 
@@ -64,7 +64,7 @@ class ServerMetadataController(wsgi.Controller):
     @validation.schema(server_metadata.create)
     def create(self, req, server_id, body):
         metadata = body['metadata']
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='create')
         new_metadata = self._update_instance_metadata(context,
                                                       server_id,
@@ -76,7 +76,7 @@ class ServerMetadataController(wsgi.Controller):
     @extensions.expected_errors((400, 403, 404, 409, 413))
     @validation.schema(server_metadata.update)
     def update(self, req, server_id, id, body):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='update')
         meta_item = body['meta']
         if id not in meta_item:
@@ -93,7 +93,7 @@ class ServerMetadataController(wsgi.Controller):
     @extensions.expected_errors((400, 403, 404, 409, 413))
     @validation.schema(server_metadata.update_all)
     def update_all(self, req, server_id, body):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='update_all')
         metadata = body['metadata']
         new_metadata = self._update_instance_metadata(context,
@@ -128,7 +128,7 @@ class ServerMetadataController(wsgi.Controller):
     @extensions.expected_errors(404)
     def show(self, req, server_id, id):
         """Return a single metadata item."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='show')
         data = self._get_metadata(context, server_id)
 
@@ -142,7 +142,7 @@ class ServerMetadataController(wsgi.Controller):
     @wsgi.response(204)
     def delete(self, req, server_id, id):
         """Deletes an existing metadata."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='delete')
         metadata = self._get_metadata(context, server_id)
 

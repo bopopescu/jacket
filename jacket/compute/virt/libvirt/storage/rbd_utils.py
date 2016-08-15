@@ -31,7 +31,7 @@ from oslo_service import loopingcall
 from oslo_utils import excutils
 from oslo_utils import units
 
-from jacket.compute.compute import task_states
+from jacket.compute.cloud import task_states
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.i18n import _LE

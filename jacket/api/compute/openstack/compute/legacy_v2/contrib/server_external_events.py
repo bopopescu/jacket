@@ -17,7 +17,7 @@ import webob
 
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.i18n import _LI
@@ -26,19 +26,19 @@ from jacket.objects.compute import external_event as external_event_obj
 
 
 LOG = logging.getLogger(__name__)
-authorize = extensions.extension_authorizer('compute',
+authorize = extensions.extension_authorizer('cloud',
                                             'os-server-external-events')
 
 
 class ServerExternalEventsController(wsgi.Controller):
 
     def __init__(self):
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
         super(ServerExternalEventsController, self).__init__()
 
     def create(self, req, body):
         """Creates a new instance event."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='create')
 
         response_events = []
@@ -53,7 +53,7 @@ class ServerExternalEventsController(wsgi.Controller):
 
         for _event in body_events:
             client_event = dict(_event)
-            event = compute.InstanceExternalEvent(context)
+            event = cloud.InstanceExternalEvent(context)
 
             status = client_event.get('status', 'completed')
             if status not in external_event_obj.EVENT_STATUSES:
@@ -81,7 +81,7 @@ class ServerExternalEventsController(wsgi.Controller):
             instance = instances.get(event.instance_uuid)
             if not instance:
                 try:
-                    instance = compute.Instance.get_by_uuid(
+                    instance = cloud.Instance.get_by_uuid(
                         context, event.instance_uuid)
                     instances[event.instance_uuid] = instance
                 except exception.InstanceNotFound:
@@ -138,7 +138,7 @@ class Server_external_events(extensions.ExtensionDescriptor):
 
     name = "ServerExternalEvents"
     alias = "os-server-external-events"
-    namespace = ("http://docs.openstack.org/compute/ext/"
+    namespace = ("http://docs.openstack.org/cloud/ext/"
                  "server-external-events/api/v2")
     updated = "2014-02-18T00:00:00Z"
 

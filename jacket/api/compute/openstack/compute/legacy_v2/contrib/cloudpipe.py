@@ -20,25 +20,25 @@ from webob import exc
 
 from jacket.api.compute.openstack import extensions
 from jacket.compute.cloudpipe import pipelib
-from jacket.compute import compute
-from jacket.compute.compute import utils as compute_utils
-from jacket.compute.compute import vm_states
+from jacket.compute import cloud
+from jacket.compute.cloud import utils as compute_utils
+from jacket.compute.cloud import vm_states
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.compute import network
 from jacket.compute import utils
 
 CONF = cfg.CONF
-CONF.import_opt('keys_path', 'compute.crypto')
+CONF.import_opt('keys_path', 'cloud.crypto')
 
-authorize = extensions.extension_authorizer('compute', 'cloudpipe')
+authorize = extensions.extension_authorizer('cloud', 'cloudpipe')
 
 
 class CloudpipeController(object):
     """Handle creating and listing cloudpipe instances."""
 
     def __init__(self):
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
         self.network_api = network.API()
         self.cloudpipe = pipelib.CloudPipe()
         self.setup()
@@ -107,7 +107,7 @@ class CloudpipeController(object):
         Parameters: {cloudpipe: {'project_id': ''}}
         """
 
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         params = body.get('cloudpipe', {})
         project_id = params.get('project_id', context.project_id)
@@ -130,7 +130,7 @@ class CloudpipeController(object):
 
     def index(self, req):
         """List running cloudpipe instances."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         vpns = [self._vpn_dict(context, x['project_id'], x)
                 for x in self._get_all_cloudpipes(context)]
@@ -150,7 +150,7 @@ class Cloudpipe(extensions.ExtensionDescriptor):
 
     name = "Cloudpipe"
     alias = "os-cloudpipe"
-    namespace = "http://docs.openstack.org/compute/ext/cloudpipe/api/v1.1"
+    namespace = "http://docs.openstack.org/cloud/ext/cloudpipe/api/v1.1"
     updated = "2011-12-16T00:00:00Z"
 
     def get_resources(self):

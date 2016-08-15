@@ -37,11 +37,11 @@ from oslo_utils import units
 import six
 
 from jacket.compute import block_device
-from jacket.compute import compute
-from jacket.compute.compute import power_state
-from jacket.compute.compute import task_states
-from jacket.compute.compute import vm_mode
-from jacket.compute.compute import vm_states
+from jacket.compute import cloud
+from jacket.compute.cloud import power_state
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import vm_mode
+from jacket.compute.cloud import vm_states
 import jacket.compute.conf
 from jacket.compute.console import type as ctype
 from jacket.compute import context as nova_context
@@ -69,16 +69,16 @@ xenapi_vmops_opts = [
                help='Number of seconds to wait for instance '
                     'to go to running state'),
     cfg.StrOpt('vif_driver',
-               default='compute.virt.xenapi.vif.XenAPIBridgeDriver',
+               default='cloud.virt.xenapi.vif.XenAPIBridgeDriver',
                help='The XenAPI VIF driver using XenServer Network APIs.'),
     cfg.StrOpt('image_upload_handler',
-                default='compute.virt.xenapi.image.glance.GlanceStore',
+                default='cloud.virt.xenapi.image.glance.GlanceStore',
                help='Dom0 plugin driver used to handle image uploads.'),
     ]
 
 CONF = jacket.compute.conf.CONF
 CONF.register_opts(xenapi_vmops_opts, 'xenserver')
-CONF.import_opt('host', 'compute.netconf')
+CONF.import_opt('host', 'cloud.netconf')
 
 DEFAULT_FIREWALL_DRIVER = "%s.%s" % (
     firewall.__name__,
@@ -152,7 +152,7 @@ def make_step_decorator(context, instance, update_instance_progress,
 class VMOps(object):
     """Management class for VM-related tasks."""
     def __init__(self, session, virtapi):
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
         self._session = session
         self._virtapi = virtapi
         self._volumeops = volumeops.VolumeOps(self._session)
@@ -194,7 +194,7 @@ class VMOps(object):
         return name_labels
 
     def list_instance_uuids(self):
-        """Get the list of compute instance uuids for VMs found on the
+        """Get the list of cloud instance uuids for VMs found on the
         hypervisor.
         """
         nova_uuids = []
@@ -1828,7 +1828,7 @@ class VMOps(object):
         else:
             vm_ref = vm_utils.lookup(self._session, instance.name)
             if vm_ref is None:
-                # The compute manager expects InstanceNotFound for this case.
+                # The cloud manager expects InstanceNotFound for this case.
                 raise exception.InstanceNotFound(instance_id=instance.uuid)
 
         session_id = self._session.get_session_id()
@@ -2100,7 +2100,7 @@ class VMOps(object):
                                                network_info=network_info)
 
     def _get_host_uuid_from_aggregate(self, context, hostname):
-        aggregate_list = compute.AggregateList.get_by_host(
+        aggregate_list = cloud.AggregateList.get_by_host(
             context, CONF.host, key=pool_states.POOL_FLAG)
 
         reason = _('Destination host:%s must be in the same '
@@ -2173,13 +2173,13 @@ class VMOps(object):
         """Check if it is possible to execute live migration.
 
         :param ctxt: security context
-        :param instance_ref: compute.db.sqlalchemy.models.Instance object
+        :param instance_ref: cloud.db.sqlalchemy.models.Instance object
         :param block_migration: if true, prepare for block migration
                                 if None, calculate it from driver
         :param disk_over_commit: if true, allow disk over commit
 
         """
-        dest_check_data = compute.XenapiLiveMigrateData()
+        dest_check_data = cloud.XenapiLiveMigrateData()
 
         # Notes(eliqiao): if block_migration is None, we calculate it
         # by checking if src and dest node are in same aggregate
@@ -2230,7 +2230,7 @@ class VMOps(object):
         """Check if it's possible to execute live migration on the source side.
 
         :param ctxt: security context
-        :param instance_ref: compute.db.sqlalchemy.models.Instance object
+        :param instance_ref: cloud.db.sqlalchemy.models.Instance object
         :param dest_check_data: data returned by the check on the
                                 destination, includes block_migration flag
 
@@ -2243,7 +2243,7 @@ class VMOps(object):
                                 'relax-xsm-sr-check=true required'))
 
         if not isinstance(dest_check_data, migrate_data_obj.LiveMigrateData):
-            obj = compute.XenapiLiveMigrateData()
+            obj = cloud.XenapiLiveMigrateData()
             obj.from_legacy_dict(dest_check_data)
             dest_check_data = obj
 

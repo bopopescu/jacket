@@ -19,8 +19,8 @@ from jacket.api.compute.openstack import api_version_request
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import virtual_interfaces \
         as vi20
 from jacket.api.compute.openstack.compute import virtual_interfaces as vi21
-from jacket.compute import compute
-from jacket.compute.compute import api as compute_api
+from jacket.compute import cloud
+from jacket.compute.cloud import api as compute_api
 from jacket.compute import context
 from jacket.compute import exception
 from jacket.compute import network
@@ -59,7 +59,7 @@ def get_vifs_by_instance(self, context, instance_id):
 
 class FakeRequest(object):
     def __init__(self, context):
-        self.environ = {'compute.context': context}
+        self.environ = {'cloud.context': context}
 
 
 class ServerVirtualInterfaceTestV21(test.NoDBTestCase):
@@ -73,7 +73,7 @@ class ServerVirtualInterfaceTestV21(test.NoDBTestCase):
 
     def setUp(self):
         super(ServerVirtualInterfaceTestV21, self).setUp()
-        self.stubs.Set(compute.api.API, "get",
+        self.stubs.Set(cloud.api.API, "get",
                        compute_api_get)
         self.stubs.Set(network.api.API, "get_vifs_by_instance",
                        get_vifs_by_instance)
@@ -111,7 +111,7 @@ class ServerVirtualInterfaceTestV21(test.NoDBTestCase):
         self.flags(use_neutron=True)
         # reset the controller to use the neutron network API
         self._set_controller()
-        self.stub_out('compute.compute.api.API.get', compute_api_get)
+        self.stub_out('cloud.cloud.api.API.get', compute_api_get)
         req = fakes.HTTPRequest.blank('', version=self.wsgi_api_version)
         self.assertRaises(webob.exc.HTTPBadRequest,
                           self.controller.index, req, FAKE_UUID)

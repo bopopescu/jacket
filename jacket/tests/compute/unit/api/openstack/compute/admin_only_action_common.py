@@ -16,7 +16,7 @@ from oslo_utils import timeutils
 from oslo_utils import uuidutils
 import webob
 
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import vm_states
 from jacket.compute import exception
 from jacket.compute import test
 from jacket.tests.compute.unit.api.openstack import fakes

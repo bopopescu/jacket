@@ -21,9 +21,9 @@ import mock
 from oslo_context import context as o_context
 from oslo_context import fixture as o_fixture
 
-from jacket.compute.compute import flavors
-from jacket.compute.compute import task_states
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import flavors
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import vm_states
 from jacket.compute import context
 from jacket.compute import exception
 from jacket.compute import notifications

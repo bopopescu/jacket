@@ -28,8 +28,8 @@ from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import fileutils
 
-from jacket.compute import compute
-from jacket.compute.compute import flavors
+from jacket.compute import cloud
+from jacket.compute.cloud import flavors
 from jacket.compute import crypto
 from jacket.db import compute
 from jacket.compute import exception
@@ -46,7 +46,7 @@ cloudpipe_opts = [
                default='m1.tiny',
                help=_('Flavor for vpn instances')),
     cfg.StrOpt('boot_script_template',
-               default=paths.basedir_def('compute/cloudpipe/bootscript.template'),
+               default=paths.basedir_def('cloud/cloudpipe/bootscript.template'),
                help=_('Template for cloudpipe instance boot script')),
     cfg.StrOpt('dmz_net',
                default='10.0.0.0',
@@ -61,7 +61,7 @@ cloudpipe_opts = [
 
 CONF = cfg.CONF
 CONF.register_opts(cloudpipe_opts)
-CONF.import_opt('keys_path', 'compute.crypto')
+CONF.import_opt('keys_path', 'cloud.crypto')
 
 LOG = logging.getLogger(__name__)
 
@@ -74,7 +74,7 @@ def _load_boot_script():
     with open(CONF.boot_script_template, "r") as shellfile:
         s = string.Template(shellfile.read())
 
-    CONF.import_opt('cnt_vpn_clients', 'compute.network.manager')
+    CONF.import_opt('cnt_vpn_clients', 'cloud.network.manager')
 
     return s.substitute(dmz_net=CONF.dmz_net,
                         dmz_mask=CONF.dmz_mask,
@@ -83,7 +83,7 @@ def _load_boot_script():
 
 class CloudPipe(object):
     def __init__(self, skip_policy_check=False):
-        self.compute_api = compute.API(skip_policy_check=skip_policy_check)
+        self.compute_api = cloud.API(skip_policy_check=skip_policy_check)
 
     def get_encoded_zip(self, project_id):
         # Make a payload.zip
@@ -137,7 +137,7 @@ class CloudPipe(object):
                  'name': group_name,
                  'description': 'Group for vpn'}
         try:
-            group_ref = compute.security_group_create(context, group)
+            group_ref = cloud.security_group_create(context, group)
         except exception.SecurityGroupExists:
             return group_name
         rule = {'parent_group_id': group_ref['id'],
@@ -145,13 +145,13 @@ class CloudPipe(object):
                 'protocol': 'udp',
                 'from_port': 1194,
                 'to_port': 1194}
-        compute.security_group_rule_create(context, rule)
+        cloud.security_group_rule_create(context, rule)
         rule = {'parent_group_id': group_ref['id'],
                 'cidr': '0.0.0.0/0',
                 'protocol': 'icmp',
                 'from_port': -1,
                 'to_port': -1}
-        compute.security_group_rule_create(context, rule)
+        cloud.security_group_rule_create(context, rule)
         # NOTE(vish): No need to trigger the group since the instance
         #             has not been run yet.
         return group_name
@@ -159,7 +159,7 @@ class CloudPipe(object):
     def setup_key_pair(self, context):
         key_name = '%s%s' % (context.project_id, CONF.vpn_key_suffix)
         try:
-            keypair_api = compute.api.KeypairAPI()
+            keypair_api = cloud.api.KeypairAPI()
             result, private_key = keypair_api.create_key_pair(context,
                                                               context.user_id,
                                                               key_name)

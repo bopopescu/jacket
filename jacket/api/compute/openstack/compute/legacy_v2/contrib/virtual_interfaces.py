@@ -19,12 +19,12 @@ import webob
 
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.i18n import _
 from jacket.compute import network
 
 
-authorize = extensions.extension_authorizer('compute', 'virtual_interfaces')
+authorize = extensions.extension_authorizer('cloud', 'virtual_interfaces')
 
 
 def _translate_vif_summary_view(vif):
@@ -40,13 +40,13 @@ class ServerVirtualInterfaceController(object):
     """
 
     def __init__(self):
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
         self.network_api = network.API()
         super(ServerVirtualInterfaceController, self).__init__()
 
     def _items(self, req, server_id, entity_maker):
         """Returns a list of VIFs, transformed through entity_maker."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         instance = common.get_instance(self.compute_api, context, server_id)
 
         try:
@@ -61,7 +61,7 @@ class ServerVirtualInterfaceController(object):
 
     def index(self, req, server_id):
         """Returns the list of VIFs for a given instance."""
-        authorize(req.environ['compute.context'])
+        authorize(req.environ['cloud.context'])
         return self._items(req, server_id,
                            entity_maker=_translate_vif_summary_view)
 
@@ -71,7 +71,7 @@ class Virtual_interfaces(extensions.ExtensionDescriptor):
 
     name = "VirtualInterfaces"
     alias = "os-virtual-interfaces"
-    namespace = ("http://docs.openstack.org/compute/ext/"
+    namespace = ("http://docs.openstack.org/cloud/ext/"
                  "virtual_interfaces/api/v1.1")
     updated = "2011-08-17T00:00:00Z"
 

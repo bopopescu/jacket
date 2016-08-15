@@ -19,7 +19,7 @@ from jacket.api.compute.openstack.compute.schemas import server_external_events
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.i18n import _LI
@@ -34,7 +34,7 @@ authorize = extensions.os_compute_authorizer(ALIAS)
 class ServerExternalEventsController(wsgi.Controller):
 
     def __init__(self):
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
         super(ServerExternalEventsController, self).__init__()
 
     @extensions.expected_errors((400, 403, 404))
@@ -42,7 +42,7 @@ class ServerExternalEventsController(wsgi.Controller):
     @validation.schema(server_external_events.create)
     def create(self, req, body):
         """Creates a new instance event."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='create')
 
         response_events = []
@@ -55,7 +55,7 @@ class ServerExternalEventsController(wsgi.Controller):
 
         for _event in body_events:
             client_event = dict(_event)
-            event = compute.InstanceExternalEvent(context)
+            event = cloud.InstanceExternalEvent(context)
 
             event.instance_uuid = client_event.pop('server_uuid')
             event.name = client_event.pop('name')
@@ -65,7 +65,7 @@ class ServerExternalEventsController(wsgi.Controller):
             instance = instances.get(event.instance_uuid)
             if not instance:
                 try:
-                    instance = compute.Instance.get_by_uuid(
+                    instance = cloud.Instance.get_by_uuid(
                         context, event.instance_uuid)
                     instances[event.instance_uuid] = instance
                 except exception.InstanceNotFound:

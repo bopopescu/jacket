@@ -13,9 +13,9 @@
 import mock
 import oslo_messaging as messaging
 
-from jacket.compute.compute import power_state
-from jacket.compute.compute import rpcapi as compute_rpcapi
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import power_state
+from jacket.compute.cloud import rpcapi as compute_rpcapi
+from jacket.compute.cloud import vm_states
 from jacket.compute.conductor.tasks import live_migrate
 from jacket.compute import exception
 from jacket.objects import compute

@@ -59,8 +59,8 @@ from sqlalchemy.sql import null
 from sqlalchemy.sql import true
 
 from jacket.compute import block_device
-from jacket.compute.compute import task_states
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import vm_states
 import jacket.compute.context
 from jacket.db.compute.sqlalchemy import models
 from jacket.compute import exception

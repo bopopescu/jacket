@@ -18,7 +18,7 @@ from webob import exc
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 
 ALIAS = "os-pause-server"
@@ -29,14 +29,14 @@ authorize = extensions.os_compute_authorizer(ALIAS)
 class PauseServerController(wsgi.Controller):
     def __init__(self, *args, **kwargs):
         super(PauseServerController, self).__init__(*args, **kwargs)
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
 
     @wsgi.response(202)
     @extensions.expected_errors((404, 409, 501))
     @wsgi.action('pause')
     def _pause(self, req, id, body):
         """Permit Admins to pause the server."""
-        ctxt = req.environ['compute.context']
+        ctxt = req.environ['cloud.context']
         authorize(ctxt, action='pause')
         server = common.get_instance(self.compute_api, ctxt, id)
         try:
@@ -57,7 +57,7 @@ class PauseServerController(wsgi.Controller):
     @wsgi.action('unpause')
     def _unpause(self, req, id, body):
         """Permit Admins to unpause the server."""
-        ctxt = req.environ['compute.context']
+        ctxt = req.environ['cloud.context']
         authorize(ctxt, action='unpause')
         server = common.get_instance(self.compute_api, ctxt, id)
         try:

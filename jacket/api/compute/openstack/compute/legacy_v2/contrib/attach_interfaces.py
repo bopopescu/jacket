@@ -23,7 +23,7 @@ from webob import exc
 
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.i18n import _LI
@@ -31,7 +31,7 @@ from jacket.compute import network
 
 
 LOG = logging.getLogger(__name__)
-authorize = extensions.extension_authorizer('compute', 'attach_interfaces')
+authorize = extensions.extension_authorizer('cloud', 'attach_interfaces')
 
 
 def _translate_interface_attachment_view(port_info):
@@ -49,7 +49,7 @@ class InterfaceAttachmentController(object):
     """The interface attachment API controller for the OpenStack API."""
 
     def __init__(self):
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
         self.network_api = network.API()
         super(InterfaceAttachmentController, self).__init__()
 
@@ -60,7 +60,7 @@ class InterfaceAttachmentController(object):
 
     def show(self, req, server_id, id):
         """Return data about the given interface attachment."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         port_id = id
@@ -86,7 +86,7 @@ class InterfaceAttachmentController(object):
 
     def create(self, req, server_id, body):
         """Attach an interface to an instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         network_id = None
@@ -147,7 +147,7 @@ class InterfaceAttachmentController(object):
 
     def delete(self, req, server_id, id):
         """Detach an interface from an instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         port_id = id
         instance = common.get_instance(self.compute_api,
@@ -171,7 +171,7 @@ class InterfaceAttachmentController(object):
 
     def _items(self, req, server_id, entity_maker):
         """Returns a list of attachments, transformed through entity_maker."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         instance = common.get_instance(self.compute_api, context, server_id)
         search_opts = {'device_id': instance.uuid}
@@ -195,7 +195,7 @@ class Attach_interfaces(extensions.ExtensionDescriptor):
 
     name = "AttachInterfaces"
     alias = "os-attach-interfaces"
-    namespace = "http://docs.openstack.org/compute/ext/interfaces/api/v1.1"
+    namespace = "http://docs.openstack.org/cloud/ext/interfaces/api/v1.1"
     updated = "2012-07-22T00:00:00Z"
 
     def get_resources(self):

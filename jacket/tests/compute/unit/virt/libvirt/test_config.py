@@ -15,7 +15,7 @@
 from lxml import etree
 from oslo_utils import units
 
-from jacket.compute.compute import arch
+from jacket.compute.cloud import arch
 from jacket.compute import test
 from jacket.tests.compute.unit import matchers
 from jacket.compute.virt.libvirt import config

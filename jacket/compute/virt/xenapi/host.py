@@ -24,11 +24,11 @@ from oslo_log import log as logging
 from oslo_serialization import jsonutils
 import six
 
-from jacket.compute.compute import arch
-from jacket.compute.compute import hv_type
-from jacket.compute.compute import task_states
-from jacket.compute.compute import vm_mode
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import arch
+from jacket.compute.cloud import hv_type
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import vm_mode
+from jacket.compute.cloud import vm_states
 from jacket.compute import context
 from jacket.compute import exception
 from jacket.i18n import _, _LE, _LI, _LW

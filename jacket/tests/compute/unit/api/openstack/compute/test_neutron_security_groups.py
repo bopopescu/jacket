@@ -24,7 +24,7 @@ from oslo_utils import encodeutils
 import webob
 
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import security_groups
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import context
 import jacket.db.compute
 from jacket.compute import exception
@@ -150,7 +150,7 @@ class TestNeutronSecurityGroupsV21(
             device_id=test_security_groups.FAKE_UUID1)
         expected = [{'rules': [], 'tenant_id': 'fake', 'id': sg['id'],
                     'name': 'test', 'description': 'test-description'}]
-        self.stub_out('compute.db.instance_get_by_uuid',
+        self.stub_out('cloud.db.instance_get_by_uuid',
                       test_security_groups.return_server_by_uuid)
         req = fakes.HTTPRequest.blank('/v2/fake/servers/%s/os-security-groups'
                                       % test_security_groups.FAKE_UUID1)
@@ -178,7 +178,7 @@ class TestNeutronSecurityGroupsV21(
                                       sg['id'], use_admin_context=True)
         self.controller.delete(req, sg['id'])
 
-    @mock.patch('compute.compute.utils.refresh_info_cache_for_instance')
+    @mock.patch('cloud.cloud.utils.refresh_info_cache_for_instance')
     def test_delete_security_group_in_use(self, refresh_info_cache_mock):
         sg = self._create_sg_template().get('security_group')
         self._create_network()
@@ -217,7 +217,7 @@ class TestNeutronSecurityGroupsV21(
             network_id=net['network']['id'], security_groups=[sg['id']],
             device_id=UUID_SERVER)
 
-        self.stub_out('jacket.compute.instance_get_by_uuid',
+        self.stub_out('jacket.cloud.instance_get_by_uuid',
                       test_security_groups.return_server)
         body = dict(addSecurityGroup=dict(name="test"))
 
@@ -235,7 +235,7 @@ class TestNeutronSecurityGroupsV21(
             network_id=net['network']['id'], security_groups=[sg1['id']],
             device_id=UUID_SERVER)
 
-        self.stub_out('jacket.compute.instance_get_by_uuid',
+        self.stub_out('jacket.cloud.instance_get_by_uuid',
                       test_security_groups.return_server)
         body = dict(addSecurityGroup=dict(name="sg1"))
 
@@ -253,7 +253,7 @@ class TestNeutronSecurityGroupsV21(
             port_security_enabled=True,
             device_id=UUID_SERVER)
 
-        self.stub_out('jacket.compute.instance_get_by_uuid',
+        self.stub_out('jacket.cloud.instance_get_by_uuid',
                       test_security_groups.return_server)
         body = dict(addSecurityGroup=dict(name="test"))
 
@@ -268,7 +268,7 @@ class TestNeutronSecurityGroupsV21(
             network_id=net['network']['id'], port_security_enabled=False,
             device_id=UUID_SERVER)
 
-        self.stub_out('compute.db.instance_get_by_uuid',
+        self.stub_out('cloud.db.instance_get_by_uuid',
                       test_security_groups.return_server)
         body = dict(addSecurityGroup=dict(name="test"))
 
@@ -279,7 +279,7 @@ class TestNeutronSecurityGroupsV21(
                           req, UUID_SERVER, body)
 
     def test_disassociate_by_non_existing_security_group_name(self):
-        self.stub_out('jacket.compute.instance_get_by_uuid',
+        self.stub_out('jacket.cloud.instance_get_by_uuid',
                       test_security_groups.return_server)
         body = dict(removeSecurityGroup=dict(name='non-existing'))
 
@@ -308,7 +308,7 @@ class TestNeutronSecurityGroupsV21(
             network_id=net['network']['id'], security_groups=[sg['id']],
             device_id=UUID_SERVER)
 
-        self.stub_out('compute.db.instance_get_by_uuid',
+        self.stub_out('cloud.db.instance_get_by_uuid',
                       test_security_groups.return_server)
         body = dict(removeSecurityGroup=dict(name="test"))
 
@@ -374,7 +374,7 @@ class TestNeutronSecurityGroupsV21(
             instance_obj.Instance(uuid=test_security_groups.FAKE_UUID1))
         self.assertEqual(sgs, expected)
 
-    @mock.patch('compute.network.security_group.neutron_driver.SecurityGroupAPI.'
+    @mock.patch('cloud.network.security_group.neutron_driver.SecurityGroupAPI.'
                 'get_instances_security_groups_bindings')
     def test_get_security_group_empty_for_instance(self, neutron_sg_bind_mock):
         servers = [{'id': test_security_groups.FAKE_UUID1}]
@@ -499,11 +499,11 @@ class TestNeutronSecurityGroupsOutputTest(TestNeutronSecurityGroupsTestCase):
         super(TestNeutronSecurityGroupsOutputTest, self).setUp()
         fakes.stub_out_nw_api(self)
         self.controller = security_groups.SecurityGroupController()
-        self.stubs.Set(compute.api.API, 'get',
+        self.stubs.Set(cloud.api.API, 'get',
                        test_security_groups.fake_compute_get)
-        self.stubs.Set(compute.api.API, 'get_all',
+        self.stubs.Set(cloud.api.API, 'get_all',
                        test_security_groups.fake_compute_get_all)
-        self.stubs.Set(compute.api.API, 'create',
+        self.stubs.Set(cloud.api.API, 'create',
                        test_security_groups.fake_compute_create)
         self.stubs.Set(neutron_driver.SecurityGroupAPI,
                        'get_instances_security_groups_bindings',
@@ -511,7 +511,7 @@ class TestNeutronSecurityGroupsOutputTest(TestNeutronSecurityGroupsTestCase):
                        fake_get_instances_security_groups_bindings))
         self.flags(
             osapi_compute_extension=[
-                'compute.api.openstack.compute.contrib.select_extensions'],
+                'cloud.api.openstack.cloud.contrib.select_extensions'],
             osapi_compute_ext_list=['Security_groups'])
 
     def _make_request(self, url, body=None):
@@ -616,7 +616,7 @@ class TestNeutronSecurityGroupsOutputTest(TestNeutronSecurityGroupsTestCase):
         def fake_compute_get(*args, **kwargs):
             raise exception.InstanceNotFound(instance_id='fake')
 
-        self.stubs.Set(compute.api.API, 'get', fake_compute_get)
+        self.stubs.Set(cloud.api.API, 'get', fake_compute_get)
         url = '/v2/fake/servers/70f6db34-de8d-4fbd-aafb-4065bdfa6115'
         res = self._make_request(url)
 

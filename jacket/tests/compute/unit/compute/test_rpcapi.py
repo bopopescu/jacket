@@ -20,7 +20,7 @@ import mock
 from oslo_config import cfg
 from oslo_serialization import jsonutils
 
-from jacket.compute.compute import rpcapi as compute_rpcapi
+from jacket.compute.cloud import rpcapi as compute_rpcapi
 from jacket.compute import context
 from jacket.compute import exception
 from jacket.objects.compute import block_device as objects_block_dev

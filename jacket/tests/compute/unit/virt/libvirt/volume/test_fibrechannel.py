@@ -15,7 +15,7 @@ import platform
 import mock
 from os_brick.initiator import connector
 
-from jacket.compute.compute import arch
+from jacket.compute.cloud import arch
 from jacket.tests.compute.unit.virt.libvirt.volume import test_volume
 from jacket.compute.virt.libvirt.volume import fibrechannel
 

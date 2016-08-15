@@ -25,11 +25,11 @@ from oslo_serialization import jsonutils
 from oslo_utils import timeutils
 import six
 
-from jacket.compute.compute.monitors import base as monitor_base
-from jacket.compute.compute import resource_tracker
-from jacket.compute.compute import resources
-from jacket.compute.compute import task_states
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud.monitors import base as monitor_base
+from jacket.compute.cloud import resource_tracker
+from jacket.compute.cloud import resources
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import vm_states
 from jacket.compute import context
 from jacket.compute import exception
 from jacket.objects import compute

@@ -20,7 +20,7 @@ import six
 import webob.exc
 
 from jacket.api.compute.openstack import extensions
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import context as nova_context
 from jacket.compute import exception
 from jacket.i18n import _
@@ -28,13 +28,13 @@ from jacket.i18n import _LI
 from jacket.objects import compute
 
 LOG = logging.getLogger(__name__)
-authorize = extensions.extension_authorizer('compute', 'hosts')
+authorize = extensions.extension_authorizer('cloud', 'hosts')
 
 
 class HostController(object):
     """The Hosts API controller for the OpenStack API."""
     def __init__(self):
-        self.api = compute.HostAPI()
+        self.api = cloud.HostAPI()
         super(HostController, self).__init__()
 
     def index(self, req):
@@ -59,11 +59,11 @@ class HostController(object):
         |     'service': 'network',
         |     'zone': 'internal'},
         |    {'host_name': 'compute1.host.com',
-        |     'service': 'compute',
-        |     'zone': 'compute'},
+        |     'service': 'cloud',
+        |     'zone': 'cloud'},
         |    {'host_name': 'compute2.host.com',
-        |     'service': 'compute',
-        |     'zone': 'compute'},
+        |     'service': 'cloud',
+        |     'zone': 'cloud'},
         |    {'host_name': 'sched1.host.com',
         |     'service': 'scheduler',
         |     'zone': 'internal'},
@@ -75,7 +75,7 @@ class HostController(object):
         |     'zone': 'internal'}]}
 
         """
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         # NOTE(alex_xu): back-compatible with db layer hard-code admin
@@ -89,7 +89,7 @@ class HostController(object):
         services = self.api.service_get_all(context, filters=filters,
                                             set_zones=True)
         hosts = []
-        api_services = ('compute-osapi_compute', 'compute-ec2', 'compute-metadata')
+        api_services = ('cloud-osapi_compute', 'cloud-ec2', 'cloud-metadata')
         for service in services:
             if service.binary not in api_services:
                 hosts.append({'host_name': service['host'],
@@ -120,7 +120,7 @@ class HostController(object):
                 return False
             else:
                 raise webob.exc.HTTPBadRequest(explanation=msg % orig_val)
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         # NOTE(alex_xu): back-compatible with db layer hard-code admin
@@ -202,7 +202,7 @@ class HostController(object):
 
     def _host_power_action(self, req, host_name, action):
         """Reboots, shuts down or powers up the host."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         # NOTE(alex_xu): back-compatible with db layer hard-code admin
         # permission checks. This has to be left only for API v2.0 because
@@ -290,7 +290,7 @@ class HostController(object):
                 D: {'host': 'hostname','project': 'admin',
                     'cpu': 1, 'memory_mb': 2048, 'disk_gb': 30}
         """
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
 
         # NOTE(eliqiao): back-compatible with db layer hard-code admin
         # permission checks. This has to be left only for API v2.0 because
@@ -301,7 +301,7 @@ class HostController(object):
         host_name = id
         try:
             compute_node = (
-                compute.ComputeNode.get_first_node_by_host_for_old_compat(
+                cloud.ComputeNode.get_first_node_by_host_for_old_compat(
                     context, host_name))
         except exception.NotFound as e:
             raise webob.exc.HTTPNotFound(explanation=e.format_message())
@@ -323,7 +323,7 @@ class Hosts(extensions.ExtensionDescriptor):
 
     name = "Hosts"
     alias = "os-hosts"
-    namespace = "http://docs.openstack.org/compute/ext/hosts/api/v1.1"
+    namespace = "http://docs.openstack.org/cloud/ext/hosts/api/v1.1"
     updated = "2011-06-29T00:00:00Z"
 
     def get_resources(self):

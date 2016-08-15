@@ -18,21 +18,21 @@
 import webob.exc
 
 from jacket.api.compute.openstack import extensions
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import context as nova_context
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.compute import servicegroup
 
 
-authorize = extensions.extension_authorizer('compute', 'hypervisors')
+authorize = extensions.extension_authorizer('cloud', 'hypervisors')
 
 
 class HypervisorsController(object):
     """The Hypervisors API controller for the OpenStack API."""
 
     def __init__(self, ext_mgr):
-        self.host_api = compute.HostAPI()
+        self.host_api = cloud.HostAPI()
         self.servicegroup_api = servicegroup.API()
         super(HypervisorsController, self).__init__()
         self.ext_mgr = ext_mgr
@@ -82,7 +82,7 @@ class HypervisorsController(object):
         return hyp_dict
 
     def index(self, req):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         # NOTE(eliqiao): back-compatible with db layer hard-code admin
@@ -101,7 +101,7 @@ class HypervisorsController(object):
                                  for hyp in compute_nodes])
 
     def detail(self, req):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         # NOTE(eliqiao): back-compatible with db layer hard-code admin
@@ -120,7 +120,7 @@ class HypervisorsController(object):
                                  for hyp in compute_nodes])
 
     def show(self, req, id):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         try:
             hyp = self.host_api.compute_node_get(context, id)
@@ -133,7 +133,7 @@ class HypervisorsController(object):
         return dict(hypervisor=self._view_hypervisor(hyp, service, True))
 
     def uptime(self, req, id):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         try:
             hyp = self.host_api.compute_node_get(context, id)
@@ -155,7 +155,7 @@ class HypervisorsController(object):
                                                      uptime=uptime))
 
     def search(self, req, id):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         # NOTE(eliqiao): back-compatible with db layer hard-code admin
@@ -178,7 +178,7 @@ class HypervisorsController(object):
             raise webob.exc.HTTPNotFound(explanation=msg)
 
     def servers(self, req, id):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         # NOTE(eliqiao): back-compatible with db layer hard-code admin
@@ -204,7 +204,7 @@ class HypervisorsController(object):
         return dict(hypervisors=hypervisors)
 
     def statistics(self, req):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         stats = self.host_api.compute_node_statistics(context)
         return dict(hypervisor_statistics=stats)
@@ -215,7 +215,7 @@ class Hypervisors(extensions.ExtensionDescriptor):
 
     name = "Hypervisors"
     alias = "os-hypervisors"
-    namespace = "http://docs.openstack.org/compute/ext/hypervisors/api/v1.1"
+    namespace = "http://docs.openstack.org/cloud/ext/hypervisors/api/v1.1"
     updated = "2012-06-21T00:00:00Z"
 
     def get_resources(self):

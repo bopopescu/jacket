@@ -16,9 +16,9 @@ from oslo_config import cfg
 from oslo_utils import fixture as utils_fixture
 from oslo_utils import timeutils
 
-from jacket.compute.compute import claims
-from jacket.compute.compute import task_states
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import claims
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import vm_states
 from jacket.db import compute
 from jacket.objects import compute
 from jacket.tests.compute.unit.compute import test_compute

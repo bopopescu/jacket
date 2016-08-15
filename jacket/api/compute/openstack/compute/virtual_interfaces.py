@@ -21,7 +21,7 @@ from jacket.api.compute.openstack import api_version_request
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.i18n import _
 from jacket.compute import network
 
@@ -49,13 +49,13 @@ class ServerVirtualInterfaceController(wsgi.Controller):
     """
 
     def __init__(self):
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
         self.network_api = network.API(skip_policy_check=True)
         super(ServerVirtualInterfaceController, self).__init__()
 
     def _items(self, req, server_id, entity_maker):
         """Returns a list of VIFs, transformed through entity_maker."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         instance = common.get_instance(self.compute_api, context, server_id)
 

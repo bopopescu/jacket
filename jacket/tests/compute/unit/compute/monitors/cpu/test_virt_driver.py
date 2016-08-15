@@ -17,7 +17,7 @@
 
 import mock
 
-from jacket.compute.compute.monitors.cpu import virt_driver
+from jacket.compute.cloud.monitors.cpu import virt_driver
 from jacket.objects import compute
 from jacket.compute import test
 

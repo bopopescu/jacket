@@ -23,13 +23,13 @@ from webob import exc
 
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.i18n import _
 from jacket.compute import utils
 
-authorize = extensions.extension_authorizer('compute', 'fping')
+authorize = extensions.extension_authorizer('cloud', 'fping')
 authorize_all_tenants = extensions.extension_authorizer(
-    'compute', 'fping:all_tenants')
+    'cloud', 'fping:all_tenants')
 fping_opts = [
     cfg.StrOpt("fping_path",
                default="/usr/sbin/fping",
@@ -43,7 +43,7 @@ CONF.register_opts(fping_opts)
 class FpingController(object):
 
     def __init__(self, network_api=None):
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
         self.last_call = {}
 
     def check_fping(self):
@@ -74,7 +74,7 @@ class FpingController(object):
         return ret
 
     def index(self, req):
-        context = req.environ["compute.context"]
+        context = req.environ["cloud.context"]
         search_opts = dict(deleted=False)
         if "all_tenants" in req.GET:
             authorize_all_tenants(context)
@@ -123,7 +123,7 @@ class FpingController(object):
         return {"servers": res}
 
     def show(self, req, id):
-        context = req.environ["compute.context"]
+        context = req.environ["cloud.context"]
         authorize(context)
         self.check_fping()
         instance = common.get_instance(self.compute_api, context, id)
@@ -143,7 +143,7 @@ class Fping(extensions.ExtensionDescriptor):
 
     name = "Fping"
     alias = "os-fping"
-    namespace = "http://docs.openstack.org/compute/ext/fping/api/v1.1"
+    namespace = "http://docs.openstack.org/cloud/ext/fping/api/v1.1"
     updated = "2012-07-06T00:00:00Z"
 
     def get_resources(self):

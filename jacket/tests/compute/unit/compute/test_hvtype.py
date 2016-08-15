@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from jacket.compute.compute import hv_type
+from jacket.compute.cloud import hv_type
 from jacket.compute import exception
 from jacket.compute import test
 

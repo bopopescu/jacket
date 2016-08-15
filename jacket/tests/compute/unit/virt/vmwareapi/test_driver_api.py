@@ -35,10 +35,10 @@ from oslo_vmware import pbm
 from oslo_vmware import vim_util as oslo_vim_util
 
 from jacket.compute import block_device
-from jacket.compute.compute import api as compute_api
-from jacket.compute.compute import power_state
-from jacket.compute.compute import task_states
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import api as compute_api
+from jacket.compute.cloud import power_state
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import vm_states
 from jacket.compute import context
 from jacket.compute import exception
 from jacket.compute.image import glance

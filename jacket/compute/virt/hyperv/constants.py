@@ -19,8 +19,8 @@ Constants used in ops classes
 
 from os_win import constants
 
-from jacket.compute.compute import arch
-from jacket.compute.compute import power_state
+from jacket.compute.cloud import arch
+from jacket.compute.cloud import power_state
 
 HYPERV_POWER_STATE = {
     constants.HYPERV_VM_STATE_DISABLED: power_state.SHUTDOWN,

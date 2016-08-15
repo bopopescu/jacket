@@ -15,9 +15,9 @@
 
 """Tests for compute node stats."""
 
-from jacket.compute.compute import stats
-from jacket.compute.compute import task_states
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import stats
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import vm_states
 from jacket.compute import test
 from jacket.tests.compute.unit import fake_instance
 from jacket.tests.compute import uuidsentinel as uuids

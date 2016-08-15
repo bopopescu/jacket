@@ -22,7 +22,7 @@ from jacket.api.compute.openstack.compute.schemas import multinic
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 
 
@@ -33,7 +33,7 @@ authorize = extensions.os_compute_authorizer(ALIAS)
 class MultinicController(wsgi.Controller):
     def __init__(self, *args, **kwargs):
         super(MultinicController, self).__init__(*args, **kwargs)
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
 
     @wsgi.response(202)
     @wsgi.action('addFixedIp')
@@ -41,7 +41,7 @@ class MultinicController(wsgi.Controller):
     @validation.schema(multinic.add_fixed_ip)
     def _add_fixed_ip(self, req, id, body):
         """Adds an IP on a given network to an instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         instance = common.get_instance(self.compute_api, context, id)
@@ -59,7 +59,7 @@ class MultinicController(wsgi.Controller):
     @validation.schema(multinic.remove_fixed_ip)
     def _remove_fixed_ip(self, req, id, body):
         """Removes an IP from an instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         instance = common.get_instance(self.compute_api, context, id)

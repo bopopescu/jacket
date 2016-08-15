@@ -18,7 +18,7 @@ from oslo_serialization import jsonutils
 import webob
 
 from jacket.api.compute.openstack import wsgi as os_wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.compute import test
@@ -34,9 +34,9 @@ UUID5 = '00000000-0000-0000-0000-000000000005'
 
 
 def fake_services(host):
-    service_list = [compute.Service(id=0, host=host, forced_down=True,
-                                   binary='compute-compute')]
-    return compute.ServiceList(compute=service_list)
+    service_list = [cloud.Service(id=0, host=host, forced_down=True,
+                                   binary='cloud-cloud')]
+    return cloud.ServiceList(cloud=service_list)
 
 
 def fake_compute_get(*args, **kwargs):
@@ -70,7 +70,7 @@ def fake_compute_get_all(*args, **kwargs):
             user_data="userdata",
             services=fake_services("host-2")),
     ]
-    return compute.InstanceList(compute=inst_list)
+    return cloud.InstanceList(cloud=inst_list)
 
 
 class ExtendedServerAttributesTestV21(test.TestCase):
@@ -82,9 +82,9 @@ class ExtendedServerAttributesTestV21(test.TestCase):
     def setUp(self):
         super(ExtendedServerAttributesTestV21, self).setUp()
         fakes.stub_out_nw_api(self)
-        self.stubs.Set(compute.api.API, 'get', fake_compute_get)
-        self.stubs.Set(compute.api.API, 'get_all', fake_compute_get_all)
-        self.stub_out('compute.db.instance_get_by_uuid', fake_compute_get)
+        self.stubs.Set(cloud.api.API, 'get', fake_compute_get)
+        self.stubs.Set(cloud.api.API, 'get_all', fake_compute_get_all)
+        self.stub_out('cloud.db.instance_get_by_uuid', fake_compute_get)
 
     def _make_request(self, url):
         req = fakes.HTTPRequest.blank(url)
@@ -135,7 +135,7 @@ class ExtendedServerAttributesTestV21(test.TestCase):
         def fake_compute_get(*args, **kwargs):
             raise exception.InstanceNotFound(instance_id='fake')
 
-        self.stubs.Set(compute.api.API, 'get', fake_compute_get)
+        self.stubs.Set(cloud.api.API, 'get', fake_compute_get)
         url = self.fake_url + '/servers/70f6db34-de8d-4fbd-aafb-4065bdfa6115'
         res = self._make_request(url)
 
@@ -148,7 +148,7 @@ class ExtendedServerAttributesTestV2(ExtendedServerAttributesTestV21):
         super(ExtendedServerAttributesTestV2, self).setUp()
         self.flags(
             osapi_compute_extension=[
-                'compute.api.openstack.compute.contrib.select_extensions'],
+                'cloud.api.openstack.cloud.contrib.select_extensions'],
             osapi_compute_ext_list=['Extended_server_attributes'])
 
     def _make_request(self, url):

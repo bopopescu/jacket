@@ -14,15 +14,15 @@
 
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 
-authorize = extensions.soft_extension_authorizer('compute', 'server_usage')
+authorize = extensions.soft_extension_authorizer('cloud', 'server_usage')
 
 
 class ServerUsageController(wsgi.Controller):
     def __init__(self, *args, **kwargs):
         super(ServerUsageController, self).__init__(*args, **kwargs)
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
 
     def _extend_server(self, server, instance):
         for k in ['launched_at', 'terminated_at']:
@@ -36,7 +36,7 @@ class ServerUsageController(wsgi.Controller):
 
     @wsgi.extends
     def show(self, req, resp_obj, id):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         if authorize(context):
             server = resp_obj.obj['server']
             db_instance = req.get_db_instance(server['id'])
@@ -46,7 +46,7 @@ class ServerUsageController(wsgi.Controller):
 
     @wsgi.extends
     def detail(self, req, resp_obj):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         if authorize(context):
             servers = list(resp_obj.obj['servers'])
             for server in servers:
@@ -61,7 +61,7 @@ class Server_usage(extensions.ExtensionDescriptor):
 
     name = "ServerUsage"
     alias = "OS-SRV-USG"
-    namespace = ("http://docs.openstack.org/compute/ext/"
+    namespace = ("http://docs.openstack.org/cloud/ext/"
                  "server_usage/api/v1.1")
     updated = "2013-04-29T00:00:00Z"
 

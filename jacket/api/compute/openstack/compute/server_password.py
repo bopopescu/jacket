@@ -19,7 +19,7 @@ from jacket.api.compute.metadata import password
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 
 
 ALIAS = 'os-server-password'
@@ -29,11 +29,11 @@ authorize = extensions.os_compute_authorizer(ALIAS)
 class ServerPasswordController(wsgi.Controller):
     """The Server Password API controller for the OpenStack API."""
     def __init__(self):
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
 
     @extensions.expected_errors(404)
     def index(self, req, server_id):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         instance = common.get_instance(self.compute_api, context, server_id)
 
@@ -49,7 +49,7 @@ class ServerPasswordController(wsgi.Controller):
         password.
         """
 
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         instance = common.get_instance(self.compute_api, context, server_id)
         meta = password.convert_password(context, None)

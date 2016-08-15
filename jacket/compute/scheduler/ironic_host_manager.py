@@ -21,7 +21,7 @@ This host manager will consume all cpu's, disk space, and
 ram from a host / node as it is supporting Baremetal hosts, which can not be
 subdivided into multiple instances.
 """
-from jacket.compute.compute import hv_type
+from jacket.compute.cloud import hv_type
 import jacket.compute.conf
 from jacket.compute.scheduler import host_manager
 

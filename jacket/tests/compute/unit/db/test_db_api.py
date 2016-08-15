@@ -50,9 +50,9 @@ from sqlalchemy import sql
 from sqlalchemy import Table
 
 from jacket.compute import block_device
-from jacket.compute.compute import arch
-from jacket.compute.compute import task_states
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import arch
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import vm_states
 from jacket.compute import context
 from jacket.db import compute
 from jacket.db.compute.sqlalchemy import api as sqlalchemy_api

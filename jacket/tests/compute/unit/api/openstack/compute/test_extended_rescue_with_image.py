@@ -18,17 +18,17 @@ from oslo_config import cfg
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import rescue
 from jacket.api.compute.openstack import extensions
-from jacket.compute import compute
+from jacket.compute import cloud
 import jacket.compute.context as context
 from jacket.compute import test
 
 CONF = cfg.CONF
-CONF.import_opt('password_length', 'compute.utils')
+CONF.import_opt('password_length', 'cloud.utils')
 
 
 class FakeRequest(object):
     def __init__(self, context):
-        self.environ = {"compute.context": context}
+        self.environ = {"cloud.context": context}
 
 
 class ExtendedRescueWithImageTest(test.NoDBTestCase):
@@ -40,7 +40,7 @@ class ExtendedRescueWithImageTest(test.NoDBTestCase):
 
     @mock.patch.object(common, 'get_instance',
                        return_value="instance")
-    @mock.patch.object(compute.api.API, "rescue")
+    @mock.patch.object(cloud.api.API, "rescue")
     def _make_rescue_request_with_image_ref(self, body, mock_rescue,
                                             mock_get_instance):
         instance = "instance"

@@ -25,11 +25,11 @@ from oslo_log import log as logging
 from oslo_serialization import jsonutils
 from oslo_utils import importutils
 
-from jacket.compute.compute import claims
-from jacket.compute.compute import monitors
-from jacket.compute.compute import resources as ext_resources
-from jacket.compute.compute import task_states
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import claims
+from jacket.compute.cloud import monitors
+from jacket.compute.cloud import resources as ext_resources
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import vm_states
 from jacket.compute import exception
 from jacket.i18n import _, _LE, _LI, _LW
 from jacket.objects import compute

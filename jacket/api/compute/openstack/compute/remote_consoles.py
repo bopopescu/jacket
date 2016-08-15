@@ -19,7 +19,7 @@ from jacket.api.compute.openstack.compute.schemas import remote_consoles
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 
 
@@ -29,7 +29,7 @@ authorize = extensions.os_compute_authorizer(ALIAS)
 
 class RemoteConsolesController(wsgi.Controller):
     def __init__(self, *args, **kwargs):
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
         self.handlers = {'vnc': self.compute_api.get_vnc_console,
                          'spice': self.compute_api.get_spice_console,
                          'rdp': self.compute_api.get_rdp_console,
@@ -43,7 +43,7 @@ class RemoteConsolesController(wsgi.Controller):
     @validation.schema(remote_consoles.get_vnc_console)
     def get_vnc_console(self, req, id, body):
         """Get text console output."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         # If type is not supplied or unknown, get_vnc_console below will cope
@@ -72,7 +72,7 @@ class RemoteConsolesController(wsgi.Controller):
     @validation.schema(remote_consoles.get_spice_console)
     def get_spice_console(self, req, id, body):
         """Get text console output."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         # If type is not supplied or unknown, get_spice_console below will cope
@@ -101,7 +101,7 @@ class RemoteConsolesController(wsgi.Controller):
     @validation.schema(remote_consoles.get_rdp_console)
     def get_rdp_console(self, req, id, body):
         """Get text console output."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         # If type is not supplied or unknown, get_rdp_console below will cope
@@ -132,7 +132,7 @@ class RemoteConsolesController(wsgi.Controller):
     @validation.schema(remote_consoles.get_serial_console)
     def get_serial_console(self, req, id, body):
         """Get connection to a serial console."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         # If type is not supplied or unknown get_serial_console below will cope
@@ -162,7 +162,7 @@ class RemoteConsolesController(wsgi.Controller):
     @validation.schema(remote_consoles.create_v26, "2.6", "2.7")
     @validation.schema(remote_consoles.create_v28, "2.8")
     def create(self, req, server_id, body):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         instance = common.get_instance(self.compute_api, context, server_id)
         protocol = body['remote_console']['protocol']

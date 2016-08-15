@@ -13,7 +13,7 @@
 """
 Unit Tests for flavors code
 """
-from jacket.compute.compute import flavors
+from jacket.compute.cloud import flavors
 from jacket.compute import context
 from jacket.db import compute
 from jacket.compute import exception

@@ -17,8 +17,8 @@ from oslo_serialization import jsonutils
 import six
 import webob
 
-from jacket.compute import compute
-from jacket.compute.compute import vm_states
+from jacket.compute import cloud
+from jacket.compute.cloud import vm_states
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.objects.compute import instance as instance_obj
@@ -49,7 +49,7 @@ class HideServerAddressesTestV21(test.TestCase):
         super(HideServerAddressesTestV21, self).setUp()
         fakes.stub_out_nw_api(self)
         return_server = fakes.fake_instance_get()
-        self.stub_out('compute.db.instance_get_by_uuid', return_server)
+        self.stub_out('cloud.db.instance_get_by_uuid', return_server)
         self._setup_wsgi()
 
     def _make_request(self, url):
@@ -80,7 +80,7 @@ class HideServerAddressesTestV21(test.TestCase):
     def test_show_hides_in_building(self):
         instance_id = 1
         uuid = fakes.get_fake_uuid(instance_id)
-        self.stubs.Set(compute.api.API, 'get',
+        self.stubs.Set(cloud.api.API, 'get',
                        fake_compute_get(instance_id, uuid=uuid,
                                         vm_state=vm_states.BUILDING))
         res = self._make_request(self.base_url + '/%s' % uuid)
@@ -93,7 +93,7 @@ class HideServerAddressesTestV21(test.TestCase):
     def test_show(self):
         instance_id = 1
         uuid = fakes.get_fake_uuid(instance_id)
-        self.stubs.Set(compute.api.API, 'get',
+        self.stubs.Set(cloud.api.API, 'get',
                        fake_compute_get(instance_id, uuid=uuid,
                                         vm_state=vm_states.ACTIVE))
         res = self._make_request(self.base_url + '/%s' % uuid)
@@ -113,9 +113,9 @@ class HideServerAddressesTestV21(test.TestCase):
         def get_all(*args, **kwargs):
             fields = instance_obj.INSTANCE_DEFAULT_FIELDS
             return instance_obj._make_instance_list(
-                args[1], compute.InstanceList(), instances, fields)
+                args[1], cloud.InstanceList(), instances, fields)
 
-        self.stubs.Set(compute.api.API, 'get_all', get_all)
+        self.stubs.Set(cloud.api.API, 'get_all', get_all)
         res = self._make_request(self.base_url + '/detail')
 
         self.assertEqual(res.status_int, 200)
@@ -133,7 +133,7 @@ class HideServerAddressesTestV21(test.TestCase):
         def fake_compute_get(*args, **kwargs):
             raise exception.InstanceNotFound(instance_id='fake')
 
-        self.stubs.Set(compute.api.API, 'get', fake_compute_get)
+        self.stubs.Set(cloud.api.API, 'get', fake_compute_get)
         res = self._make_request(self.base_url + '/' + fakes.get_fake_uuid())
 
         self.assertEqual(res.status_int, 404)
@@ -144,6 +144,6 @@ class HideServerAddressesTestV2(HideServerAddressesTestV21):
     def _setup_wsgi(self):
         self.flags(
             osapi_compute_extension=[
-                'compute.api.openstack.compute.contrib.select_extensions'],
+                'cloud.api.openstack.cloud.contrib.select_extensions'],
             osapi_compute_ext_list=['Hide_server_addresses'])
         self.wsgi_app = fakes.wsgi_app(init_only=('servers',))

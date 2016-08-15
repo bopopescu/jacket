@@ -23,7 +23,7 @@ from jacket.api.compute.openstack.compute.schemas import rescue
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.compute import utils
@@ -32,7 +32,7 @@ from jacket.compute import utils
 ALIAS = "os-rescue"
 CONF = cfg.CONF
 CONF.import_opt('enable_instance_password',
-                'compute.api.openstack.compute.legacy_v2.servers')
+                'cloud.api.openstack.cloud.legacy_v2.servers')
 
 authorize = extensions.os_compute_authorizer(ALIAS)
 
@@ -40,7 +40,7 @@ authorize = extensions.os_compute_authorizer(ALIAS)
 class RescueController(wsgi.Controller):
     def __init__(self, *args, **kwargs):
         super(RescueController, self).__init__(*args, **kwargs)
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
 
     def _rescue_image_validation(self, image_ref):
         image_uuid = image_ref.split('/').pop()
@@ -59,7 +59,7 @@ class RescueController(wsgi.Controller):
     @validation.schema(rescue.rescue)
     def _rescue(self, req, id, body):
         """Rescue an instance."""
-        context = req.environ["compute.context"]
+        context = req.environ["cloud.context"]
         authorize(context)
 
         if body['rescue'] and 'adminPass' in body['rescue']:
@@ -100,7 +100,7 @@ class RescueController(wsgi.Controller):
     @wsgi.action('unrescue')
     def _unrescue(self, req, id, body):
         """Unrescue an instance."""
-        context = req.environ["compute.context"]
+        context = req.environ["cloud.context"]
         authorize(context)
         instance = common.get_instance(self.compute_api, context, id)
         try:

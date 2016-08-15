@@ -15,7 +15,7 @@
 from oslo_utils import uuidutils
 from oslo_utils import versionutils
 
-from jacket.compute.compute import utils as compute_utils
+from jacket.compute.cloud import utils as compute_utils
 from jacket.db import compute
 from jacket.compute import exception
 from jacket.objects import compute

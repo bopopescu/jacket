@@ -22,8 +22,8 @@ from oslo_utils import excutils
 from jacket.compute import availability_zones
 from jacket.compute.cells import rpcapi as cells_rpcapi
 from jacket.compute.cells import utils as cells_utils
-from jacket.compute.compute import api as compute_api
-from jacket.compute.compute import rpcapi as jacket_rpcapi
+from jacket.compute.cloud import api as compute_api
+from jacket.compute.cloud import rpcapi as compute_rpcapi
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.objects.compute import base as obj_base
@@ -39,9 +39,9 @@ check_instance_cell = compute_api.check_instance_cell
 
 class ComputeRPCAPIRedirect(object):
     # NOTE(comstud): These are a list of methods where the cells_rpcapi
-    # and the jacket_rpcapi methods have the same signatures.  This
+    # and the compute_rpcapi methods have the same signatures.  This
     # is for transitioning to a common interface where we can just
-    # swap out the jacket_rpcapi class with the cells_rpcapi class.
+    # swap out the compute_rpcapi class with the cells_rpcapi class.
     cells_compatible = ['start_instance', 'stop_instance',
                         'reboot_instance', 'suspend_instance',
                         'resume_instance', 'terminate_instance',
@@ -151,7 +151,7 @@ class RPCClientCellsProxy(object):
                                                       topic, call=True)
 
 
-class ComputeRPCProxyAPI(jacket_rpcapi.JacketAPI):
+class ComputeRPCProxyAPI(compute_rpcapi.ComputeAPI):
     """Class used to substitute Compute RPC API that will proxy
     via the cells manager to a compute manager in a child cell.
     """
@@ -164,7 +164,7 @@ class ComputeCellsAPI(compute_api.API):
         super(ComputeCellsAPI, self).__init__(*args, **kwargs)
         self.cells_rpcapi = cells_rpcapi.CellsAPI()
         # Avoid casts/calls directly to compute
-        self.jacket_rpcapi = ComputeRPCAPIRedirect(self.cells_rpcapi)
+        self.compute_rpcapi = ComputeRPCAPIRedirect(self.cells_rpcapi)
         # Redirect conductor build_instances to cells
         self.compute_task_api = ConductorTaskRPCAPIRedirect(self.cells_rpcapi)
         self._cell_type = 'api'

@@ -26,8 +26,8 @@ from jacket.api.compute.openstack.compute.legacy_v2 import server_metadata \
         as server_metadata_v2
 from jacket.api.compute.openstack.compute import server_metadata \
         as server_metadata_v21
-from jacket.compute.compute import rpcapi as compute_rpcapi
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import rpcapi as compute_rpcapi
+from jacket.compute.cloud import vm_states
 import jacket.db.compute
 from jacket.compute import exception
 from jacket.objects import compute

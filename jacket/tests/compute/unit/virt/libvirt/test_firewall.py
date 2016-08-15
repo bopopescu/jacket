@@ -23,7 +23,7 @@ import mock
 from mox3 import mox
 from oslo_concurrency.fixture import lockutils as lock_fixture
 
-from jacket.compute.compute import utils as compute_utils
+from jacket.compute.cloud import utils as compute_utils
 from jacket.compute import exception
 from jacket.compute.network import linux_net
 from jacket.objects import compute

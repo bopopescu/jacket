@@ -19,7 +19,7 @@ import webob
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack.compute.views import flavors as flavors_view
 from jacket.api.compute.openstack import wsgi
-from jacket.compute.compute import flavors
+from jacket.compute.cloud import flavors
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.compute import utils

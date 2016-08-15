@@ -25,7 +25,7 @@ from jacket.api.compute.openstack.compute.schemas import assisted_volume_snapsho
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _LI
 
@@ -39,14 +39,14 @@ class AssistedVolumeSnapshotsController(wsgi.Controller):
     """The Assisted volume snapshots API controller for the OpenStack API."""
 
     def __init__(self):
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
         super(AssistedVolumeSnapshotsController, self).__init__()
 
     @extensions.expected_errors(400)
     @validation.schema(assisted_volume_snapshots.snapshots_create)
     def create(self, req, body):
         """Creates a new snapshot."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='create')
 
         snapshot = body['snapshot']
@@ -66,7 +66,7 @@ class AssistedVolumeSnapshotsController(wsgi.Controller):
     @extensions.expected_errors((400, 404))
     def delete(self, req, id):
         """Delete a snapshot."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='delete')
 
         LOG.info(_LI("Delete snapshot with id: %s"), id, context=context)

@@ -20,9 +20,9 @@ Management class for host-related functions (start, reboot, etc).
 from oslo_utils import units
 from oslo_utils import versionutils
 
-from jacket.compute.compute import arch
-from jacket.compute.compute import hv_type
-from jacket.compute.compute import vm_mode
+from jacket.compute.cloud import arch
+from jacket.compute.cloud import hv_type
+from jacket.compute.cloud import vm_mode
 from jacket.compute import exception
 from jacket.compute.virt.vmwareapi import ds_util
 from jacket.compute.virt.vmwareapi import vim_util

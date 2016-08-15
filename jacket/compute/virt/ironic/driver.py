@@ -34,12 +34,12 @@ from oslo_utils import importutils
 import six
 
 from jacket.api.compute.metadata import base as instance_metadata
-from jacket.compute.compute import arch
-from jacket.compute.compute import hv_type
-from jacket.compute.compute import power_state
-from jacket.compute.compute import task_states
-from jacket.compute.compute import vm_mode
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import arch
+from jacket.compute.cloud import hv_type
+from jacket.compute.cloud import power_state
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import vm_mode
+from jacket.compute.cloud import vm_states
 import jacket.compute.conf
 from jacket.compute import context as nova_context
 from jacket.compute import exception

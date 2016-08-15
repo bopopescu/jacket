@@ -24,10 +24,10 @@ import oslo_messaging as messaging
 from oslo_utils import timeutils
 import six
 
-from jacket.compute.compute import flavors
-from jacket.compute.compute import rpcapi as compute_rpcapi
-from jacket.compute.compute import task_states
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import flavors
+from jacket.compute.cloud import rpcapi as compute_rpcapi
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import vm_states
 from jacket.compute import conductor
 from jacket.compute.conductor import api as conductor_api
 from jacket.compute.conductor import manager as conductor_manager

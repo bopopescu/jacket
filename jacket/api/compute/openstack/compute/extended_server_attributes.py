@@ -17,7 +17,7 @@
 from jacket.api.compute.openstack import api_version_request
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 
 ALIAS = "os-extended-server-attributes"
 authorize = extensions.os_compute_soft_authorizer(ALIAS)
@@ -28,7 +28,7 @@ class ExtendedServerAttributesController(wsgi.Controller):
     def __init__(self, *args, **kwargs):
         super(ExtendedServerAttributesController, self).__init__(*args,
                                                                  **kwargs)
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
 
     def _extend_server(self, context, server, instance, req):
         key = "OS-EXT-SRV-ATTR:hypervisor_hostname"
@@ -59,7 +59,7 @@ class ExtendedServerAttributesController(wsgi.Controller):
 
     @wsgi.extends
     def show(self, req, resp_obj, id):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize_extend = False
         authorize_host_status = False
         if authorize(context):
@@ -79,7 +79,7 @@ class ExtendedServerAttributesController(wsgi.Controller):
 
     @wsgi.extends
     def detail(self, req, resp_obj):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize_extend = False
         authorize_host_status = False
         if authorize(context):

@@ -12,7 +12,7 @@
 
 import mock
 
-from jacket.compute.compute import rpcapi as compute_rpcapi
+from jacket.compute.cloud import rpcapi as compute_rpcapi
 from jacket.compute.conductor.tasks import migrate
 from jacket.objects import compute
 from jacket.objects.compute import base as obj_base

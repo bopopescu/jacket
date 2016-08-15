@@ -22,7 +22,7 @@ from jacket.api.compute.openstack.compute import console_output \
         as console_output_v21
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import console_output \
         as console_output_v2
-from jacket.compute.compute import api as compute_api
+from jacket.compute.cloud import api as compute_api
 from jacket.compute import exception
 from jacket.compute import test
 from jacket.tests.compute.unit.api.openstack import fakes

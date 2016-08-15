@@ -24,7 +24,7 @@ from oslo_utils import uuidutils
 from jacket.compute import block_device
 from jacket.compute.cells import filters
 from jacket.compute.cells import weights
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import vm_states
 import jacket.compute.conf
 from jacket.compute import context
 from jacket.db import compute

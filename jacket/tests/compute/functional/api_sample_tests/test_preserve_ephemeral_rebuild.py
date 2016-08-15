@@ -14,7 +14,7 @@
 
 from oslo_config import cfg
 
-from jacket.compute.compute import api as compute_api
+from jacket.compute.cloud import api as compute_api
 from jacket.tests.compute.functional.api_sample_tests import test_servers
 from jacket.tests.compute.unit.image import fake
 

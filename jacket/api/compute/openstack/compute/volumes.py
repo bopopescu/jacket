@@ -24,8 +24,8 @@ from jacket.api.compute.openstack.compute.schemas import volumes as volumes_sche
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
-from jacket.compute import compute
-from jacket.compute.compute import vm_states
+from jacket.compute import cloud
+from jacket.compute.cloud import vm_states
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.objects import compute
@@ -103,7 +103,7 @@ class VolumeController(wsgi.Controller):
     @extensions.expected_errors(404)
     def show(self, req, id):
         """Return data about the given volume."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         try:
@@ -117,7 +117,7 @@ class VolumeController(wsgi.Controller):
     @extensions.expected_errors(404)
     def delete(self, req, id):
         """Delete a volume."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         try:
@@ -137,7 +137,7 @@ class VolumeController(wsgi.Controller):
 
     def _items(self, req, entity_maker):
         """Returns a list of volumes, transformed through entity_maker."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         volumes = self.volume_api.get_all(context)
@@ -149,7 +149,7 @@ class VolumeController(wsgi.Controller):
     @validation.schema(volumes_schema.create)
     def create(self, req, body):
         """Creates a new volume."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         vol = body['volume']
@@ -248,14 +248,14 @@ class VolumeAttachmentController(wsgi.Controller):
     """
 
     def __init__(self):
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
         self.volume_api = volume.API()
         super(VolumeAttachmentController, self).__init__()
 
     @extensions.expected_errors(404)
     def index(self, req, server_id):
         """Returns the list of volume attachments for a given instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize_attach(context, action='index')
         return self._items(req, server_id,
                            entity_maker=_translate_attachment_summary_view)
@@ -263,14 +263,14 @@ class VolumeAttachmentController(wsgi.Controller):
     @extensions.expected_errors(404)
     def show(self, req, server_id, id):
         """Return data about the given volume attachment."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         authorize_attach(context, action='show')
 
         volume_id = id
         instance = common.get_instance(self.compute_api, context, server_id)
 
-        bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
                 context, instance.uuid)
 
         if not bdms:
@@ -297,7 +297,7 @@ class VolumeAttachmentController(wsgi.Controller):
     @validation.schema(volumes_schema.create_volume_attachment)
     def create(self, req, server_id, body):
         """Attach a volume to an instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         authorize_attach(context, action='create')
 
@@ -349,7 +349,7 @@ class VolumeAttachmentController(wsgi.Controller):
     @extensions.expected_errors((400, 404, 409))
     @validation.schema(volumes_schema.update_volume_attachment)
     def update(self, req, server_id, id, body):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         authorize_attach(context, action='update')
 
@@ -364,7 +364,7 @@ class VolumeAttachmentController(wsgi.Controller):
 
         instance = common.get_instance(self.compute_api, context, server_id)
 
-        bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
                 context, instance.uuid)
         found = False
         try:
@@ -397,7 +397,7 @@ class VolumeAttachmentController(wsgi.Controller):
     @extensions.expected_errors((400, 403, 404, 409))
     def delete(self, req, server_id, id):
         """Detach a volume from an instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         authorize_attach(context, action='delete')
 
@@ -413,7 +413,7 @@ class VolumeAttachmentController(wsgi.Controller):
         except exception.VolumeNotFound as e:
             raise exc.HTTPNotFound(explanation=e.format_message())
 
-        bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
                 context, instance.uuid)
         if not bdms:
             msg = _("Instance %s is not attached.") % server_id
@@ -454,12 +454,12 @@ class VolumeAttachmentController(wsgi.Controller):
 
     def _items(self, req, server_id, entity_maker):
         """Returns a list of attachments, transformed through entity_maker."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         instance = common.get_instance(self.compute_api, context, server_id)
 
-        bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
                 context, instance.uuid)
         limited_list = common.limited(bdms, req)
         results = []
@@ -507,7 +507,7 @@ class SnapshotController(wsgi.Controller):
     @extensions.expected_errors(404)
     def show(self, req, id):
         """Return data about the given snapshot."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         try:
@@ -521,7 +521,7 @@ class SnapshotController(wsgi.Controller):
     @extensions.expected_errors(404)
     def delete(self, req, id):
         """Delete a snapshot."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         try:
@@ -541,7 +541,7 @@ class SnapshotController(wsgi.Controller):
 
     def _items(self, req, entity_maker):
         """Returns a list of snapshots, transformed through entity_maker."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         snapshots = self.volume_api.get_all_snapshots(context)
@@ -553,7 +553,7 @@ class SnapshotController(wsgi.Controller):
     @validation.schema(volumes_schema.snapshot_create)
     def create(self, req, body):
         """Creates a new snapshot."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         snapshot = body['snapshot']

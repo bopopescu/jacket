@@ -43,10 +43,10 @@ from six.moves import range
 
 from jacket.compute.cells import state as cells_state
 from jacket.compute.cells import utils as cells_utils
-from jacket.compute import compute
-from jacket.compute.compute import rpcapi as jacket_rpcapi
-from jacket.compute.compute import task_states
-from jacket.compute.compute import vm_states
+from jacket.compute import cloud
+from jacket.compute.cloud import rpcapi as compute_rpcapi
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import vm_states
 import jacket.compute.conf
 from jacket.compute.consoleauth import rpcapi as consoleauth_rpcapi
 from jacket.compute import context
@@ -110,9 +110,9 @@ class _BaseMessage(object):
     only current usefulness of this is to break out of a routing loop
     if someone has a broken config.
 
-    fanout means to send to all compute-cells services running in a cell.
+    fanout means to send to all cloud-cells services running in a cell.
     This is useful for capacity and capability broadcasting as well
-    as making sure responses get back to the compute-cells service that
+    as making sure responses get back to the cloud-cells service that
     is waiting.
     """
 
@@ -293,7 +293,7 @@ class _BaseMessage(object):
         # Convert context to dict.
         _dict['ctxt'] = _dict['ctxt'].to_dict()
         # NOTE(comstud): 'method_kwargs' needs special serialization
-        # because it may contain compute.
+        # because it may contain cloud.
         method_kwargs = _dict['method_kwargs']
         for k, v in method_kwargs.items():
             method_kwargs[k] = self.serializer.serialize_entity(self.ctxt, v)
@@ -554,7 +554,7 @@ class _ResponseMessage(_TargetedMessage):
 
     The 'fanout' attribute on this message may be true if we're responding
     to a broadcast or if we're about to respond to the source of an
-    original target message.  Because multiple compute-cells services may
+    original target message.  Because multiple cloud-cells services may
     be running within a cell, we need to make sure the response gets
     back to the correct one, so we have to fanout.
     """
@@ -600,10 +600,10 @@ class _BaseMessageMethods(base.Base):
         super(_BaseMessageMethods, self).__init__()
         self.msg_runner = msg_runner
         self.state_manager = msg_runner.state_manager
-        self.compute_api = compute.API()
-        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
+        self.compute_api = cloud.API()
+        self.compute_rpcapi = compute_rpcapi.ComputeAPI()
         self.consoleauth_rpcapi = consoleauth_rpcapi.ConsoleAuthAPI()
-        self.host_api = compute.HostAPI()
+        self.host_api = cloud.HostAPI()
 
     def task_log_get_all(self, message, task_name, period_beginning,
                          period_ending, host, state):
@@ -645,24 +645,24 @@ class _TargetedMessageMethods(_BaseMessageMethods):
         self.msg_runner.scheduler.build_instances(message, build_inst_kwargs)
 
     def run_compute_api_method(self, message, method_info):
-        """Run a method in the compute api class."""
+        """Run a method in the cloud api class."""
         method = method_info['method']
         fn = getattr(self.compute_api, method, None)
         if not fn:
-            detail = _("Unknown method '%(method)s' in compute API")
+            detail = _("Unknown method '%(method)s' in cloud API")
             raise exception.CellServiceAPIMethodNotFound(
                     detail=detail % {'method': method})
         args = list(method_info['method_args'])
         # 1st arg is instance_uuid that we need to turn into the
         # instance object.
         instance_uuid = args[0]
-        # NOTE: compute/api.py loads these when retrieving an instance for an
+        # NOTE: cloud/api.py loads these when retrieving an instance for an
         # API request, so there's a good chance that this is what was loaded.
         expected_attrs = ['metadata', 'system_metadata', 'security_groups',
                           'info_cache']
 
         try:
-            instance = compute.Instance.get_by_uuid(message.ctxt,
+            instance = cloud.Instance.get_by_uuid(message.ctxt,
                     instance_uuid, expected_attrs=expected_attrs)
             args[0] = instance
         except exception.InstanceNotFound:
@@ -670,7 +670,7 @@ class _TargetedMessageMethods(_BaseMessageMethods):
                 # Must be a race condition.  Let's try to resolve it by
                 # telling the top level cells that this instance doesn't
                 # exist.
-                instance = compute.Instance(context=message.ctxt,
+                instance = cloud.Instance(context=message.ctxt,
                                             uuid=instance_uuid)
                 self.msg_runner.instance_destroy_at_top(message.ctxt,
                                                         instance)
@@ -709,11 +709,11 @@ class _TargetedMessageMethods(_BaseMessageMethods):
         self.msg_runner.tell_parents_our_capacities(message.ctxt)
 
     def service_get_by_compute_host(self, message, host_name):
-        """Return the service entry for a compute host."""
-        return compute.Service.get_by_compute_host(message.ctxt, host_name)
+        """Return the service entry for a cloud host."""
+        return cloud.Service.get_by_compute_host(message.ctxt, host_name)
 
     def service_update(self, message, host_name, binary, params_to_update):
-        """Used to enable/disable a service. For compute services, setting to
+        """Used to enable/disable a service. For cloud services, setting to
         disabled stops new builds arriving on that host.
 
         :param host_name: the name of the host machine that the service is
@@ -730,9 +730,9 @@ class _TargetedMessageMethods(_BaseMessageMethods):
 
     def proxy_rpc_to_manager(self, message, host_name, rpc_message,
                              topic, timeout):
-        """Proxy RPC to the given compute topic."""
+        """Proxy RPC to the given cloud topic."""
         # Check that the host exists.
-        compute.Service.get_by_compute_host(message.ctxt, host_name)
+        cloud.Service.get_by_compute_host(message.ctxt, host_name)
 
         topic, _sep, server = topic.partition('.')
 
@@ -748,8 +748,8 @@ class _TargetedMessageMethods(_BaseMessageMethods):
             cctxt.cast(message.ctxt, method, **kwargs)
 
     def compute_node_get(self, message, compute_id):
-        """Get compute node by ID."""
-        return compute.ComputeNode.get_by_id(message.ctxt, compute_id)
+        """Get cloud node by ID."""
+        return cloud.ComputeNode.get_by_id(message.ctxt, compute_id)
 
     def actions_get(self, message, instance_uuid):
         actions = self.db.actions_get(message.ctxt, instance_uuid)
@@ -766,23 +766,23 @@ class _TargetedMessageMethods(_BaseMessageMethods):
 
     def validate_console_port(self, message, instance_uuid, console_port,
                               console_type):
-        """Validate console port with child cell compute node."""
+        """Validate console port with child cell cloud node."""
         # 1st arg is instance_uuid that we need to turn into the
         # instance object.
         try:
-            instance = compute.Instance.get_by_uuid(message.ctxt,
+            instance = cloud.Instance.get_by_uuid(message.ctxt,
                                                     instance_uuid)
         except exception.InstanceNotFound:
             with excutils.save_and_reraise_exception():
                 # Must be a race condition.  Let's try to resolve it by
                 # telling the top level cells that this instance doesn't
                 # exist.
-                instance = compute.Instance(context=message.ctxt,
+                instance = cloud.Instance(context=message.ctxt,
                                             uuid=instance_uuid)
                 self.msg_runner.instance_destroy_at_top(message.ctxt,
                                                         instance)
-        return self.jacket_rpcapi.validate_console_port(message.ctxt,
-                                                        instance, console_port, console_type)
+        return self.compute_rpcapi.validate_console_port(message.ctxt,
+                instance, console_port, console_type)
 
     def get_migrations(self, message, filters):
         return self.compute_api.get_migrations(message.ctxt, filters)
@@ -815,7 +815,7 @@ class _TargetedMessageMethods(_BaseMessageMethods):
                 # Must be a race condition.  Let's try to resolve it by
                 # telling the top level cells that this instance doesn't
                 # exist.
-                instance = compute.Instance(context=ctxt,
+                instance = cloud.Instance(context=ctxt,
                                             uuid=instance.uuid)
                 self.msg_runner.instance_destroy_at_top(ctxt,
                                                         instance)
@@ -907,9 +907,9 @@ class _TargetedMessageMethods(_BaseMessageMethods):
         instance.refresh()
         instance.task_state = task_states.IMAGE_SNAPSHOT_PENDING
         instance.save(expected_task_state=[None])
-        self.jacket_rpcapi.snapshot_instance(message.ctxt,
-                                             instance,
-                                             image_id)
+        self.compute_rpcapi.snapshot_instance(message.ctxt,
+                                              instance,
+                                              image_id)
 
     def backup_instance(self, message, instance, image_id,
                         backup_type, rotation):
@@ -917,11 +917,11 @@ class _TargetedMessageMethods(_BaseMessageMethods):
         instance.refresh()
         instance.task_state = task_states.IMAGE_BACKUP
         instance.save(expected_task_state=[None])
-        self.jacket_rpcapi.backup_instance(message.ctxt,
-                                           instance,
-                                           image_id,
-                                           backup_type,
-                                           rotation)
+        self.compute_rpcapi.backup_instance(message.ctxt,
+                                            instance,
+                                            image_id,
+                                            backup_type,
+                                            rotation)
 
     def rebuild_instance(self, message, instance, image_href, admin_password,
                          files_to_inject, preserve_ephemeral, kwargs):
@@ -1050,7 +1050,7 @@ class _BroadcastMessageMethods(_BaseMessageMethods):
             # that would be true.  But for cells we'll try to pull the actual
             # instance and try to delete it again.
             try:
-                instance = compute.Instance.get_by_uuid(message.ctxt,
+                instance = cloud.Instance.get_by_uuid(message.ctxt,
                         instance.uuid)
                 instance.destroy()
             except exception.InstanceNotFound:
@@ -1058,7 +1058,7 @@ class _BroadcastMessageMethods(_BaseMessageMethods):
 
     def instance_delete_everywhere(self, message, instance, delete_type,
                                    **kwargs):
-        """Call compute API delete() or soft_delete() in every cell.
+        """Call cloud API delete() or soft_delete() in every cell.
         This is used when the API cell doesn't know what cell an instance
         belongs to but the instance was requested to be deleted or
         soft-deleted.  So, we'll run it everywhere.
@@ -1078,7 +1078,7 @@ class _BroadcastMessageMethods(_BaseMessageMethods):
         for key in items_to_remove:
             instance_fault.pop(key, None)
         LOG.debug("Got message to create instance fault: %s", instance_fault)
-        fault = compute.InstanceFault(context=message.ctxt)
+        fault = cloud.InstanceFault(context=message.ctxt)
         fault.update(instance_fault)
         fault.create()
 
@@ -1113,7 +1113,7 @@ class _BroadcastMessageMethods(_BaseMessageMethods):
         if filters is None:
             filters = {}
         disabled = filters.pop('disabled', None)
-        services = compute.ServiceList.get_all(message.ctxt, disabled=disabled)
+        services = cloud.ServiceList.get_all(message.ctxt, disabled=disabled)
         ret_services = []
         for service in services:
             for key, val in six.iteritems(filters):
@@ -1124,14 +1124,14 @@ class _BroadcastMessageMethods(_BaseMessageMethods):
         return ret_services
 
     def compute_node_get_all(self, message, hypervisor_match):
-        """Return compute nodes in this cell."""
+        """Return cloud nodes in this cell."""
         if hypervisor_match is not None:
-            return compute.ComputeNodeList.get_by_hypervisor(message.ctxt,
+            return cloud.ComputeNodeList.get_by_hypervisor(message.ctxt,
                                                              hypervisor_match)
-        return compute.ComputeNodeList.get_all(message.ctxt)
+        return cloud.ComputeNodeList.get_all(message.ctxt)
 
     def compute_node_stats(self, message):
-        """Return compute node stats from this cell."""
+        """Return cloud node stats from this cell."""
         return self.db.compute_node_statistics(message.ctxt)
 
     def consoleauth_delete_tokens(self, message, instance_uuid):
@@ -1145,7 +1145,7 @@ class _BroadcastMessageMethods(_BaseMessageMethods):
         """Create or update a block device mapping in API cells.  If
         create is True, only try to create.  If create is None, try to
         update but fall back to create.  If create is False, only attempt
-        to update.  This maps to compute-conductor's behavior.
+        to update.  This maps to cloud-conductor's behavior.
         """
         if not self._at_the_top():
             return
@@ -1212,7 +1212,7 @@ class _BroadcastMessageMethods(_BaseMessageMethods):
             return
 
         try:
-            return compute.KeyPair.get_by_name(message.ctxt, user_id, name)
+            return cloud.KeyPair.get_by_name(message.ctxt, user_id, name)
         except exception.KeypairNotFound:
             pass
 
@@ -1309,7 +1309,7 @@ class MessageRunner(object):
     def _create_response_message(self, ctxt, direction, target_cell,
             response_uuid, response_kwargs, **kwargs):
         """Create a ResponseMessage.  This is used internally within
-        the compute.cells.messaging module.
+        the cloud.cells.messaging module.
         """
         return _ResponseMessage(self, ctxt, 'parse_responses',
                                 response_kwargs, direction, target_cell,
@@ -1337,7 +1337,7 @@ class MessageRunner(object):
         # Need to convert context back.
         ctxt = message_dict['ctxt']
         message_dict['ctxt'] = context.RequestContext.from_dict(ctxt)
-        # NOTE(comstud): We also need to re-serialize any compute that
+        # NOTE(comstud): We also need to re-serialize any cloud that
         # exist in 'method_kwargs'.
         method_kwargs = message_dict['method_kwargs']
         for k, v in method_kwargs.items():
@@ -1349,7 +1349,7 @@ class MessageRunner(object):
 
     def ask_children_for_capabilities(self, ctxt):
         """Tell child cells to send us capabilities.  This is typically
-        called on startup of the compute-cells service.
+        called on startup of the cloud-cells service.
         """
         child_cells = self.state_manager.get_child_cells()
         for child_cell in child_cells:
@@ -1360,7 +1360,7 @@ class MessageRunner(object):
 
     def ask_children_for_capacities(self, ctxt):
         """Tell child cells to send us capacities.  This is typically
-        called on startup of the compute-cells service.
+        called on startup of the cloud-cells service.
         """
         child_cells = self.state_manager.get_child_cells()
         for child_cell in child_cells:
@@ -1420,7 +1420,7 @@ class MessageRunner(object):
         message.process()
 
     def run_compute_api_method(self, ctxt, cell_name, method_info, call):
-        """Call a compute API method in a specific cell."""
+        """Call a cloud API method in a specific cell."""
         message = _TargetedMessage(self, ctxt, 'run_compute_api_method',
                                    dict(method_info=method_info), 'down',
                                    cell_name, need_response=call)
@@ -1504,7 +1504,7 @@ class MessageRunner(object):
 
     def service_update(self, ctxt, cell_name, host_name, binary,
                        params_to_update):
-        """Used to enable/disable a service. For compute services, setting to
+        """Used to enable/disable a service. For cloud services, setting to
         disabled stops new builds arriving on that host.
 
         :param host_name: the name of the host machine that the service is
@@ -1552,7 +1552,7 @@ class MessageRunner(object):
         If 'host' is not None, filter by host.
         If 'state' is not None, filter by state.
 
-        Return a list of Response compute.
+        Return a list of Response cloud.
         """
         method_kwargs = dict(task_name=task_name,
                              period_beginning=period_beginning,
@@ -1570,7 +1570,7 @@ class MessageRunner(object):
         return message.process()
 
     def compute_node_get_all(self, ctxt, hypervisor_match=None):
-        """Return list of compute nodes in all child cells."""
+        """Return list of cloud nodes in all child cells."""
         method_kwargs = dict(hypervisor_match=hypervisor_match)
         message = _BroadcastMessage(self, ctxt, 'compute_node_get_all',
                                     method_kwargs, 'down',
@@ -1578,7 +1578,7 @@ class MessageRunner(object):
         return message.process()
 
     def compute_node_stats(self, ctxt):
-        """Return compute node stats from all child cells."""
+        """Return cloud node stats from all child cells."""
         method_kwargs = dict()
         message = _BroadcastMessage(self, ctxt, 'compute_node_stats',
                                     method_kwargs, 'down',
@@ -1586,7 +1586,7 @@ class MessageRunner(object):
         return message.process()
 
     def compute_node_get(self, ctxt, cell_name, compute_id):
-        """Return compute node entry from a specific cell by ID."""
+        """Return cloud node entry from a specific cell by ID."""
         method_kwargs = dict(compute_id=compute_id)
         message = _TargetedMessage(self, ctxt, 'compute_node_get',
                                     method_kwargs, 'down',
@@ -1625,7 +1625,7 @@ class MessageRunner(object):
 
     def validate_console_port(self, ctxt, cell_name, instance_uuid,
                               console_port, console_type):
-        """Validate console port with child cell compute node."""
+        """Validate console port with child cell cloud node."""
         method_kwargs = {'instance_uuid': instance_uuid,
                          'console_port': console_port,
                          'console_type': console_type}

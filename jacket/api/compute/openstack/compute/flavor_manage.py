@@ -17,7 +17,7 @@ from jacket.api.compute.openstack.compute.views import flavors as flavors_view
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
-from jacket.compute.compute import flavors
+from jacket.compute.cloud import flavors
 from jacket.compute import exception
 
 ALIAS = "os-flavor-manage"

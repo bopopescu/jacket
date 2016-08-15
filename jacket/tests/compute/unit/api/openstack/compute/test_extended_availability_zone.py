@@ -17,8 +17,8 @@ from oslo_serialization import jsonutils
 import webob
 
 from jacket.compute import availability_zones
-from jacket.compute import compute
-from jacket.compute.compute import vm_states
+from jacket.compute import cloud
+from jacket.compute.cloud import vm_states
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.objects.compute import instance as instance_obj
@@ -59,7 +59,7 @@ def fake_compute_get_all(*args, **kwargs):
     db_list = [inst1, inst2]
     fields = instance_obj.INSTANCE_DEFAULT_FIELDS
     return instance_obj._make_instance_list(args[1],
-                                            compute.InstanceList(),
+                                            cloud.InstanceList(),
                                             db_list, fields)
 
 
@@ -80,12 +80,12 @@ class ExtendedAvailabilityZoneTestV21(test.TestCase):
         super(ExtendedAvailabilityZoneTestV21, self).setUp()
         availability_zones.reset_cache()
         fakes.stub_out_nw_api(self)
-        self.stubs.Set(compute.api.API, 'get', fake_compute_get)
-        self.stubs.Set(compute.api.API, 'get_all', fake_compute_get_all)
+        self.stubs.Set(cloud.api.API, 'get', fake_compute_get)
+        self.stubs.Set(cloud.api.API, 'get_all', fake_compute_get_all)
         self.stubs.Set(availability_zones, 'get_host_availability_zone',
                        fake_get_host_availability_zone)
         return_server = fakes.fake_instance_get()
-        self.stub_out('compute.db.instance_get_by_uuid', return_server)
+        self.stub_out('cloud.db.instance_get_by_uuid', return_server)
 
     def _make_request(self, url):
         req = webob.Request.blank(url)
@@ -105,7 +105,7 @@ class ExtendedAvailabilityZoneTestV21(test.TestCase):
                          az)
 
     def test_show_no_host_az(self):
-        self.stubs.Set(compute.api.API, 'get', fake_compute_get_az)
+        self.stubs.Set(cloud.api.API, 'get', fake_compute_get_az)
         self.stubs.Set(availability_zones, 'get_host_availability_zone',
                        fake_get_no_host_availability_zone)
 
@@ -116,7 +116,7 @@ class ExtendedAvailabilityZoneTestV21(test.TestCase):
         self.assertAvailabilityZone(self._get_server(res.body), '')
 
     def test_show_empty_host_az(self):
-        self.stubs.Set(compute.api.API, 'get', fake_compute_get_empty)
+        self.stubs.Set(cloud.api.API, 'get', fake_compute_get_empty)
 
         url = self.base_url + UUID3
         res = self._make_request(url)
@@ -144,7 +144,7 @@ class ExtendedAvailabilityZoneTestV21(test.TestCase):
         def fake_compute_get(*args, **kwargs):
             raise exception.InstanceNotFound(instance_id='fake')
 
-        self.stubs.Set(compute.api.API, 'get', fake_compute_get)
+        self.stubs.Set(cloud.api.API, 'get', fake_compute_get)
         url = self.base_url + '70f6db34-de8d-4fbd-aafb-4065bdfa6115'
         res = self._make_request(url)
 
@@ -158,7 +158,7 @@ class ExtendedAvailabilityZoneTestV2(ExtendedAvailabilityZoneTestV21):
 
         self.flags(
             osapi_compute_extension=[
-                'compute.api.openstack.compute.contrib.select_extensions'],
+                'cloud.api.openstack.cloud.contrib.select_extensions'],
             osapi_compute_ext_list=['Extended_availability_zone'])
 
     def _make_request(self, url):

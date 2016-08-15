@@ -31,7 +31,7 @@ from oslo_vmware import pbm
 from oslo_vmware import vim
 from oslo_vmware import vim_util
 
-from jacket.compute.compute import task_states
+from jacket.compute.cloud import task_states
 import jacket.compute.conf
 from jacket.compute import exception
 from jacket.i18n import _, _LI, _LE, _LW

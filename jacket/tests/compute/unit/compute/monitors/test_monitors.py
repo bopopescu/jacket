@@ -17,7 +17,7 @@
 
 import mock
 
-from jacket.compute.compute import monitors
+from jacket.compute.cloud import monitors
 from jacket.compute import test
 
 

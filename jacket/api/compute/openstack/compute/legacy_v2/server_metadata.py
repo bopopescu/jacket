@@ -18,7 +18,7 @@ from webob import exc
 
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
 
@@ -27,7 +27,7 @@ class Controller(object):
     """The server metadata API controller for the OpenStack API."""
 
     def __init__(self):
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
         super(Controller, self).__init__()
 
     def _get_metadata(self, context, server_id):
@@ -45,7 +45,7 @@ class Controller(object):
 
     def index(self, req, server_id):
         """Returns the list of metadata for a given instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         return {'metadata': self._get_metadata(context, server_id)}
 
     def create(self, req, server_id, body):
@@ -58,7 +58,7 @@ class Controller(object):
             msg = _("Malformed request body. metadata must be object")
             raise exc.HTTPBadRequest(explanation=msg)
 
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
 
         new_metadata = self._update_instance_metadata(context,
                                                       server_id,
@@ -86,7 +86,7 @@ class Controller(object):
             expl = _('Request body contains too many items')
             raise exc.HTTPBadRequest(explanation=expl)
 
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         self._update_instance_metadata(context,
                                        server_id,
                                        meta_item,
@@ -105,7 +105,7 @@ class Controller(object):
             msg = _("Malformed request body. metadata must be object")
             raise exc.HTTPBadRequest(explanation=msg)
 
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         new_metadata = self._update_instance_metadata(context,
                                                       server_id,
                                                       metadata,
@@ -149,7 +149,7 @@ class Controller(object):
 
     def show(self, req, server_id, id):
         """Return a single metadata item."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         data = self._get_metadata(context, server_id)
 
         try:
@@ -161,7 +161,7 @@ class Controller(object):
     @wsgi.response(204)
     def delete(self, req, server_id, id):
         """Deletes an existing metadata."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
 
         metadata = self._get_metadata(context, server_id)
 

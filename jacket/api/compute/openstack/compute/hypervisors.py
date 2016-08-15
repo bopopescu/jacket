@@ -20,7 +20,7 @@ import webob.exc
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.compute import servicegroup
@@ -34,7 +34,7 @@ class HypervisorsController(wsgi.Controller):
     """The Hypervisors API controller for the OpenStack API."""
 
     def __init__(self):
-        self.host_api = compute.HostAPI()
+        self.host_api = cloud.HostAPI()
         self.servicegroup_api = servicegroup.API()
         super(HypervisorsController, self).__init__()
 
@@ -76,7 +76,7 @@ class HypervisorsController(wsgi.Controller):
 
     @extensions.expected_errors(())
     def index(self, req):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         compute_nodes = self.host_api.compute_node_get_all(context)
         req.cache_db_compute_nodes(compute_nodes)
@@ -89,7 +89,7 @@ class HypervisorsController(wsgi.Controller):
 
     @extensions.expected_errors(())
     def detail(self, req):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         compute_nodes = self.host_api.compute_node_get_all(context)
         req.cache_db_compute_nodes(compute_nodes)
@@ -102,7 +102,7 @@ class HypervisorsController(wsgi.Controller):
 
     @extensions.expected_errors(404)
     def show(self, req, id):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         try:
             hyp = self.host_api.compute_node_get(context, id)
@@ -116,7 +116,7 @@ class HypervisorsController(wsgi.Controller):
 
     @extensions.expected_errors((404, 501))
     def uptime(self, req, id):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         try:
             hyp = self.host_api.compute_node_get(context, id)
@@ -138,7 +138,7 @@ class HypervisorsController(wsgi.Controller):
 
     @extensions.expected_errors(404)
     def search(self, req, id):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         hypervisors = self.host_api.compute_node_search_by_hypervisor(
                 context, id)
@@ -155,7 +155,7 @@ class HypervisorsController(wsgi.Controller):
 
     @extensions.expected_errors(404)
     def servers(self, req, id):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         compute_nodes = self.host_api.compute_node_search_by_hypervisor(
                 context, id)
@@ -175,7 +175,7 @@ class HypervisorsController(wsgi.Controller):
 
     @extensions.expected_errors(())
     def statistics(self, req):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         stats = self.host_api.compute_node_statistics(context)
         return dict(hypervisor_statistics=stats)

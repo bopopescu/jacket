@@ -210,9 +210,9 @@ class ExtensionManager(object):
         LOG.debug("Loading extension %s", ext_factory)
 
         if isinstance(ext_factory, six.string_types):
-            if ext_factory.startswith('jacket.compute.compute.contrib'):
+            if ext_factory.startswith('jacket.compute.cloud.contrib'):
                 LOG.warn(_LW("The legacy v2 API module already moved into"
-                             "'jacket.compute.compute.legacy_v2.contrib'. "
+                             "'jacket.compute.cloud.legacy_v2.contrib'. "
                              "Use new path instead of old path %s"),
                          ext_factory)
                 ext_factory = ext_factory.replace('contrib',

@@ -19,7 +19,7 @@ import fixtures
 import mock
 
 from jacket.compute import block_device
-from jacket.compute.compute import arch
+from jacket.compute.cloud import arch
 from jacket.compute import context
 from jacket.compute import exception
 from jacket.objects import compute

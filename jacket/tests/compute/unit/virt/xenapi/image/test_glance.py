@@ -20,7 +20,7 @@ import mock
 from mox3 import mox
 from oslo_log import log as logging
 
-from jacket.compute.compute import utils as compute_utils
+from jacket.compute.cloud import utils as compute_utils
 from jacket.compute import context
 from jacket.compute import exception
 from jacket.tests.compute.unit.virt.xenapi import stubs

@@ -18,11 +18,11 @@ from webob import exc
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 
-authorize_actions = extensions.extension_authorizer('compute',
+authorize_actions = extensions.extension_authorizer('cloud',
                                                     'instance_actions')
-authorize_events = extensions.soft_extension_authorizer('compute',
+authorize_events = extensions.soft_extension_authorizer('cloud',
                                                     'instance_actions:events')
 
 ACTION_KEYS = ['action', 'instance_uuid', 'request_id', 'user_id',
@@ -34,8 +34,8 @@ class InstanceActionsController(wsgi.Controller):
 
     def __init__(self):
         super(InstanceActionsController, self).__init__()
-        self.compute_api = compute.API()
-        self.action_api = compute.InstanceActionAPI()
+        self.compute_api = cloud.API()
+        self.action_api = cloud.InstanceActionAPI()
 
     def _format_action(self, action_raw):
         action = {}
@@ -51,7 +51,7 @@ class InstanceActionsController(wsgi.Controller):
 
     def index(self, req, server_id):
         """Returns the list of actions recorded for a given instance."""
-        context = req.environ["compute.context"]
+        context = req.environ["cloud.context"]
         instance = common.get_instance(self.compute_api, context, server_id)
         authorize_actions(context, target=instance)
         actions_raw = self.action_api.actions_get(context, instance)
@@ -60,7 +60,7 @@ class InstanceActionsController(wsgi.Controller):
 
     def show(self, req, server_id, id):
         """Return data about the given instance action."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         instance = common.get_instance(self.compute_api, context, server_id)
         authorize_actions(context, target=instance)
         action = self.action_api.action_get_by_request_id(context, instance,
@@ -82,7 +82,7 @@ class Instance_actions(extensions.ExtensionDescriptor):
 
     name = "InstanceActions"
     alias = "os-instance-actions"
-    namespace = ("http://docs.openstack.org/compute/ext/"
+    namespace = ("http://docs.openstack.org/cloud/ext/"
                  "instance-actions/api/v1.1")
     updated = "2013-02-08T00:00:00Z"
 

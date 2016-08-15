@@ -19,15 +19,15 @@ import itertools
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 
-authorize = extensions.soft_extension_authorizer('compute', 'extended_ips')
+authorize = extensions.soft_extension_authorizer('cloud', 'extended_ips')
 
 
 class ExtendedIpsController(wsgi.Controller):
     def __init__(self, *args, **kwargs):
         super(ExtendedIpsController, self).__init__(*args, **kwargs)
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
 
     def _extend_server(self, context, server, instance):
         key = "%s:type" % Extended_ips.alias
@@ -43,7 +43,7 @@ class ExtendedIpsController(wsgi.Controller):
 
     @wsgi.extends
     def show(self, req, resp_obj, id):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         if authorize(context):
             server = resp_obj.obj['server']
             db_instance = req.get_db_instance(server['id'])
@@ -53,7 +53,7 @@ class ExtendedIpsController(wsgi.Controller):
 
     @wsgi.extends
     def detail(self, req, resp_obj):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         if authorize(context):
             servers = list(resp_obj.obj['servers'])
             for server in servers:
@@ -68,7 +68,7 @@ class Extended_ips(extensions.ExtensionDescriptor):
 
     name = "ExtendedIps"
     alias = "OS-EXT-IPS"
-    namespace = ("http://docs.openstack.org/compute/ext/"
+    namespace = ("http://docs.openstack.org/cloud/ext/"
                  "extended_ips/api/v1.1")
     updated = "2013-01-06T00:00:00Z"
 

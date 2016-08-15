@@ -12,7 +12,7 @@
 
 import mock
 
-from jacket.compute.compute import power_state
+from jacket.compute.cloud import power_state
 from jacket.compute import test
 from jacket.tests.compute.unit.virt.libvirt import fakelibvirt
 from jacket.compute.virt.libvirt import compat

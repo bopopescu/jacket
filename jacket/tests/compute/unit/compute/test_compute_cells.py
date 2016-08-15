@@ -24,11 +24,11 @@ from oslo_utils import timeutils
 
 from jacket.compute import block_device
 from jacket.compute.cells import manager
-from jacket.compute.compute import api as compute_api
-from jacket.compute.compute import cells_api as compute_cells_api
-from jacket.compute.compute import flavors
-from jacket.compute.compute import utils as compute_utils
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import api as compute_api
+from jacket.compute.cloud import cells_api as compute_cells_api
+from jacket.compute.cloud import flavors
+from jacket.compute.cloud import utils as compute_utils
+from jacket.compute.cloud import vm_states
 import jacket.compute.conf
 from jacket.compute import context
 from jacket.db import compute

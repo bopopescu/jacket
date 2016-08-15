@@ -16,7 +16,7 @@
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 
 
@@ -26,11 +26,11 @@ authorize = extensions.os_compute_authorizer(ALIAS)
 
 class ServerDiagnosticsController(wsgi.Controller):
     def __init__(self):
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
 
     @extensions.expected_errors((404, 409, 501))
     def index(self, req, server_id):
-        context = req.environ["compute.context"]
+        context = req.environ["cloud.context"]
         authorize(context)
 
         instance = common.get_instance(self.compute_api, context, server_id)
@@ -40,7 +40,7 @@ class ServerDiagnosticsController(wsgi.Controller):
             # 'get_diagnostics' instead of 'get_instance_diagnostics'.
             # In future, 'get_instance_diagnostics' needs to be called to
             # provide VM diagnostics in a defined format for all driver.
-            # BP - https://blueprints.launchpad.net/compute/+spec/v3-diagnostics.
+            # BP - https://blueprints.launchpad.net/cloud/+spec/v3-diagnostics.
             return self.compute_api.get_diagnostics(context, instance)
         except exception.InstanceInvalidState as state_error:
             common.raise_http_conflict_for_instance_invalid_state(state_error,

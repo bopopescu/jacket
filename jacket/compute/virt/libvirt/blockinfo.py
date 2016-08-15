@@ -76,8 +76,8 @@ from oslo_config import cfg
 import six
 
 from jacket.compute import block_device
-from jacket.compute.compute import arch
-from jacket.compute.compute import vm_mode
+from jacket.compute.cloud import arch
+from jacket.compute.cloud import vm_mode
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.objects.compute import base as obj_base

@@ -20,8 +20,8 @@ from oslo_db.sqlalchemy import enginefacade
 from oslo_utils import timeutils
 from six.moves import range
 
-from jacket.compute import compute
-from jacket.compute.compute import flavors
+from jacket.compute import cloud
+from jacket.compute.cloud import flavors
 import jacket.compute.conf
 from jacket.compute import context
 from jacket.db import compute
@@ -41,11 +41,11 @@ class QuotaIntegrationTestCase(test.TestCase):
 
     def setUp(self):
         super(QuotaIntegrationTestCase, self).setUp()
-        self.flags(compute_driver='compute.virt.fake.FakeDriver',
+        self.flags(compute_driver='cloud.virt.fake.FakeDriver',
                    quota_instances=2,
                    quota_cores=4,
                    quota_floating_ips=1,
-                   network_manager='compute.network.manager.FlatDHCPManager')
+                   network_manager='cloud.network.manager.FlatDHCPManager')
 
         # Apparently needed by the RPC tests...
         self.network = self.start_service('network')
@@ -58,7 +58,7 @@ class QuotaIntegrationTestCase(test.TestCase):
 
         jacket.tests.compute.unit.image.fake.stub_out_image_service(self)
 
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
 
     def tearDown(self):
         super(QuotaIntegrationTestCase, self).tearDown()
@@ -73,7 +73,7 @@ class QuotaIntegrationTestCase(test.TestCase):
         inst['project_id'] = self.project_id
         inst['instance_type_id'] = '3'  # m1.large
         inst['vcpus'] = cores
-        return compute.instance_create(self.context, inst)
+        return cloud.instance_create(self.context, inst)
 
     def test_too_many_instances(self):
         instance_uuids = []
@@ -96,7 +96,7 @@ class QuotaIntegrationTestCase(test.TestCase):
         else:
             self.fail('Expected QuotaError exception')
         for instance_uuid in instance_uuids:
-            compute.instance_destroy(self.context, instance_uuid)
+            cloud.instance_destroy(self.context, instance_uuid)
 
     def test_too_many_cores(self):
         instance = self._create_instance(cores=4)
@@ -115,31 +115,31 @@ class QuotaIntegrationTestCase(test.TestCase):
             self.assertEqual(expected_kwargs, e.kwargs)
         else:
             self.fail('Expected QuotaError exception')
-        compute.instance_destroy(self.context, instance['uuid'])
+        cloud.instance_destroy(self.context, instance['uuid'])
 
     def test_many_cores_with_unlimited_quota(self):
         # Setting cores quota to unlimited:
         self.flags(quota_cores=-1)
         instance = self._create_instance(cores=4)
-        compute.instance_destroy(self.context, instance['uuid'])
+        cloud.instance_destroy(self.context, instance['uuid'])
 
     def test_too_many_addresses(self):
         address = '192.168.0.100'
-        compute.floating_ip_create(context.get_admin_context(),
+        cloud.floating_ip_create(context.get_admin_context(),
                               {'address': address,
-                               'pool': 'compute',
+                               'pool': 'cloud',
                                'project_id': self.project_id})
         self.assertRaises(exception.QuotaError,
                           self.network.allocate_floating_ip,
                           self.context,
                           self.project_id)
-        compute.floating_ip_destroy(context.get_admin_context(), address)
+        cloud.floating_ip_destroy(context.get_admin_context(), address)
 
     def test_auto_assigned(self):
         address = '192.168.0.100'
-        compute.floating_ip_create(context.get_admin_context(),
+        cloud.floating_ip_create(context.get_admin_context(),
                               {'address': address,
-                               'pool': 'compute',
+                               'pool': 'cloud',
                                'project_id': self.project_id})
         # auto allocated addresses should not be counted
         self.assertRaises(exception.NoMoreFloatingIps,
@@ -147,7 +147,7 @@ class QuotaIntegrationTestCase(test.TestCase):
                           self.context,
                           self.project_id,
                           True)
-        compute.floating_ip_destroy(context.get_admin_context(), address)
+        cloud.floating_ip_destroy(context.get_admin_context(), address)
 
     def test_too_many_metadata_items(self):
         metadata = {}
@@ -491,7 +491,7 @@ class QuotaEngineTestCase(test.TestCase):
 
     def test_init_override_string(self):
         quota_obj = quota.QuotaEngine(
-            quota_driver_class='compute.tests.unit.test_quota.FakeDriver')
+            quota_driver_class='cloud.tests.unit.test_quota.FakeDriver')
 
         self.assertEqual(quota_obj._resources, {})
         self.assertIsInstance(quota_obj._driver, FakeDriver)
@@ -867,7 +867,7 @@ class DbQuotaDriverTestCase(test.TestCase):
                 metadata_items=64,
                 injected_file_content_bytes=5 * 1024,
                 )
-        self.stub_out('compute.compute.quota_class_get_default', fake_qcgd)
+        self.stub_out('cloud.cloud.quota_class_get_default', fake_qcgd)
 
     def _stub_quota_class_get_all_by_name(self):
         # Stub out quota_class_get_all_by_name
@@ -880,7 +880,7 @@ class DbQuotaDriverTestCase(test.TestCase):
                 metadata_items=64,
                 injected_file_content_bytes=5 * 1024,
                 )
-        self.stub_out('compute.compute.quota_class_get_all_by_name', fake_qcgabn)
+        self.stub_out('cloud.cloud.quota_class_get_all_by_name', fake_qcgabn)
 
     def test_get_class_quotas(self):
         self._stub_quota_class_get_all_by_name()
@@ -953,10 +953,10 @@ class DbQuotaDriverTestCase(test.TestCase):
                 injected_file_path_bytes=dict(in_use=0, reserved=0),
                 )
 
-        self.stub_out('compute.compute.quota_get_all_by_project_and_user',
+        self.stub_out('cloud.cloud.quota_get_all_by_project_and_user',
                        fake_qgabpau)
-        self.stub_out('compute.compute.quota_get_all_by_project', fake_qgabp)
-        self.stub_out('compute.compute.quota_usage_get_all_by_project_and_user',
+        self.stub_out('cloud.cloud.quota_get_all_by_project', fake_qgabp)
+        self.stub_out('cloud.cloud.quota_usage_get_all_by_project_and_user',
                        fake_qugabpau)
 
         self._stub_quota_class_get_all_by_name()
@@ -1056,7 +1056,7 @@ class DbQuotaDriverTestCase(test.TestCase):
             return dict(
                 test_resource=dict(in_use=20, reserved=10),
                 )
-        self.stub_out('compute.compute.quota_get', fake_quota_get)
+        self.stub_out('cloud.cloud.quota_get', fake_quota_get)
 
     def test_get_by_project_and_user(self):
         self._stub_get_by_project_and_user_specific()
@@ -1101,9 +1101,9 @@ class DbQuotaDriverTestCase(test.TestCase):
                     sqa_models.ProjectUserQuota(resource='cores',
                                                 hard_limit=2)]
 
-        self.stub_out('compute.compute.quota_get_all_by_project', fake_qgabp)
-        self.stub_out('compute.compute.quota_usage_get_all_by_project', fake_qugabp)
-        self.stub_out('compute.compute.quota_get_all', fake_quota_get_all)
+        self.stub_out('cloud.cloud.quota_get_all_by_project', fake_qgabp)
+        self.stub_out('cloud.cloud.quota_usage_get_all_by_project', fake_qugabp)
+        self.stub_out('cloud.cloud.quota_get_all', fake_quota_get_all)
 
         self._stub_quota_class_get_all_by_name()
         self._stub_quota_class_get_default()
@@ -1868,13 +1868,13 @@ class DbQuotaDriverTestCase(test.TestCase):
             self.calls.append('quota_get_all_by_project_and_user')
             return {'instances': 2, 'cores': -1}
 
-        self.stub_out('compute.compute.quota_get_all_by_project',
+        self.stub_out('cloud.cloud.quota_get_all_by_project',
                        fake_quota_get_all_by_project)
-        self.stub_out('compute.quota.DbQuotaDriver.get_project_quotas',
+        self.stub_out('cloud.quota.DbQuotaDriver.get_project_quotas',
                        fake_get_project_quotas)
-        self.stub_out('compute.quota.DbQuotaDriver._process_quotas',
+        self.stub_out('cloud.quota.DbQuotaDriver._process_quotas',
                        fake_process_quotas_in_get_user_quotas)
-        self.stub_out('compute.compute.quota_get_all_by_project_and_user',
+        self.stub_out('cloud.cloud.quota_get_all_by_project_and_user',
                        fake_qgabpau)
 
     def test_get_settable_quotas_with_user(self):
@@ -2096,7 +2096,7 @@ class DbQuotaDriverTestCase(test.TestCase):
             self.calls.append('get_project_quotas')
             return {k: dict(limit=v.default) for k, v in resources.items()}
 
-        self.stub_out('compute.quota.DbQuotaDriver.get_project_quotas',
+        self.stub_out('cloud.quota.DbQuotaDriver.get_project_quotas',
                        fake_get_project_quotas)
 
     def test_get_quotas_has_sync_unknown(self):
@@ -2219,7 +2219,7 @@ class DbQuotaDriverTestCase(test.TestCase):
             self.calls.append(('quota_reserve', expire, until_refresh,
                                max_age))
             return ['resv-1', 'resv-2', 'resv-3']
-        self.stub_out('compute.compute.quota_reserve', fake_quota_reserve)
+        self.stub_out('cloud.cloud.quota_reserve', fake_quota_reserve)
 
     def test_reserve_bad_expire(self):
         self._stub_get_project_quotas()
@@ -2327,7 +2327,7 @@ class DbQuotaDriverTestCase(test.TestCase):
                           resource, kwargs))
             if resource == 'nonexist':
                 raise exception.QuotaUsageNotFound(project_id=project_id)
-        self.stub_out('compute.compute.quota_usage_update', fake_quota_usage_update)
+        self.stub_out('cloud.cloud.quota_usage_update', fake_quota_usage_update)
 
         ctx = FakeContext('test_project', 'test_class')
         resources = ['res1', 'res2', 'nonexist', 'res4']
@@ -2369,7 +2369,7 @@ class FakeUsage(sqa_models.QuotaUsage):
 
 
 class QuotaReserveSqlAlchemyTestCase(test.TestCase):
-    # compute.compute.sqlalchemy.api.quota_reserve is so complex it needs its
+    # cloud.cloud.sqlalchemy.api.quota_reserve is so complex it needs its
     # own test case, and since it's a quota manipulator, this is the
     # best place to put it...
 
@@ -2471,11 +2471,11 @@ class QuotaReserveSqlAlchemyTestCase(test.TestCase):
 
             return reservation_ref
 
-        self.stub_out('compute.compute.sqlalchemy.api._get_project_user_quota_usages',
+        self.stub_out('cloud.cloud.sqlalchemy.api._get_project_user_quota_usages',
                        fake_get_project_user_quota_usages)
-        self.stub_out('compute.compute.sqlalchemy.api._quota_usage_create',
+        self.stub_out('cloud.cloud.sqlalchemy.api._quota_usage_create',
                        fake_quota_usage_create)
-        self.stub_out('compute.compute.sqlalchemy.api._reservation_create',
+        self.stub_out('cloud.cloud.sqlalchemy.api._reservation_create',
                        fake_reservation_create)
 
         self.useFixture(test.TimeOverride())

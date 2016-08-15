@@ -19,7 +19,7 @@ import webob
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import multinic \
         as multinic_v2
 from jacket.api.compute.openstack.compute import multinic as multinic_v21
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.compute import test
@@ -45,7 +45,7 @@ def compute_api_remove_fixed_ip(self, context, instance, address):
 
 def compute_api_get(self, context, instance_id, want_objects=False,
                     expected_attrs=None):
-    instance = compute.Instance()
+    instance = cloud.Instance()
     instance.uuid = instance_id
     instance.id = 1
     instance.vm_state = 'fake'
@@ -62,11 +62,11 @@ class FixedIpTestV21(test.NoDBTestCase):
         super(FixedIpTestV21, self).setUp()
         fakes.stub_out_networking(self)
         fakes.stub_out_rate_limiting(self.stubs)
-        self.stubs.Set(compute.api.API, "add_fixed_ip",
+        self.stubs.Set(cloud.api.API, "add_fixed_ip",
                        compute_api_add_fixed_ip)
-        self.stubs.Set(compute.api.API, "remove_fixed_ip",
+        self.stubs.Set(cloud.api.API, "remove_fixed_ip",
                        compute_api_remove_fixed_ip)
-        self.stubs.Set(compute.api.API, 'get', compute_api_get)
+        self.stubs.Set(cloud.api.API, 'get', compute_api_get)
         self.controller = self.controller_class.MultinicController()
         self.fake_req = fakes.HTTPRequest.blank('')
 
@@ -108,7 +108,7 @@ class FixedIpTestV21(test.NoDBTestCase):
         self._test_add_fixed_ip_bad_request(body)
         self.assertEqual(last_add_fixed_ip, (None, None))
 
-    @mock.patch.object(compute.api.API, 'add_fixed_ip')
+    @mock.patch.object(cloud.api.API, 'add_fixed_ip')
     def test_add_fixed_ip_no_more_ips_available(self, mock_add_fixed_ip):
         mock_add_fixed_ip.side_effect = exception.NoMoreFixedIps(net='netid')
 
@@ -152,7 +152,7 @@ class FixedIpTestV21(test.NoDBTestCase):
                           self.fake_req,
                           UUID, body=body)
 
-    @mock.patch.object(compute.api.API, 'remove_fixed_ip',
+    @mock.patch.object(cloud.api.API, 'remove_fixed_ip',
         side_effect=exception.FixedIpNotFoundForSpecificInstance(
             instance_uuid=UUID, ip='10.10.10.1'))
     def test_remove_fixed_ip_not_found(self, _remove_fixed_ip):

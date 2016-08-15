@@ -29,8 +29,8 @@ from oslo_utils import uuidutils
 from jacket.compute.cells import messaging
 from jacket.compute.cells import rpcapi as cells_rpcapi
 from jacket.compute.cells import utils as cells_utils
-from jacket.compute.compute import task_states
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import vm_states
 import jacket.compute.conf
 from jacket.compute import context
 from jacket.db import compute

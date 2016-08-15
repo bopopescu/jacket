@@ -18,7 +18,7 @@ from oslo_serialization import jsonutils
 
 from jacket.api.compute.openstack import compute
 from jacket.api.compute.openstack.compute import server_diagnostics
-from jacket.compute.compute import api as compute_api
+from jacket.compute.cloud import api as compute_api
 from jacket.compute import exception
 from jacket.compute import test
 from jacket.tests.compute.unit.api.openstack import fakes

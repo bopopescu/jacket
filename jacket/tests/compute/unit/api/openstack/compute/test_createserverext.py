@@ -18,7 +18,7 @@ import base64
 from oslo_serialization import jsonutils
 import webob
 
-from jacket.compute.compute import api as compute_api
+from jacket.compute.cloud import api as compute_api
 from jacket.compute import exception
 from jacket.compute import test
 from jacket.tests.compute.unit.api.openstack import fakes

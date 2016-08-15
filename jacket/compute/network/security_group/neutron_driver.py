@@ -23,7 +23,7 @@ from oslo_utils import uuidutils
 import six
 from webob import exc
 
-from jacket.compute.compute import api as compute_api
+from jacket.compute.cloud import api as compute_api
 from jacket.compute import exception
 from jacket.i18n import _, _LE, _LI, _LW
 from jacket.compute.network.neutronv2 import api as neutronapi

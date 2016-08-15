@@ -19,14 +19,14 @@ from jacket.api.compute.openstack.compute.schemas import reset_server_state
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
-from jacket.compute import compute
-from jacket.compute.compute import vm_states
+from jacket.compute import cloud
+from jacket.compute.cloud import vm_states
 from jacket.compute import exception
 
 ALIAS = "os-admin-actions"
 
 # States usable in resetState action
-# NOTE: It is necessary to update the schema of compute/api/openstack/compute/
+# NOTE: It is necessary to update the schema of cloud/api/openstack/cloud/
 # schemas/reset_server_state.py, when updating this state_map.
 state_map = dict(active=vm_states.ACTIVE, error=vm_states.ERROR)
 
@@ -36,14 +36,14 @@ authorize = extensions.os_compute_authorizer(ALIAS)
 class AdminActionsController(wsgi.Controller):
     def __init__(self, *args, **kwargs):
         super(AdminActionsController, self).__init__(*args, **kwargs)
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
 
     @wsgi.response(202)
     @extensions.expected_errors((404, 409))
     @wsgi.action('resetNetwork')
     def _reset_network(self, req, id, body):
         """Permit admins to reset networking on a server."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='reset_network')
         try:
             instance = common.get_instance(self.compute_api, context, id)
@@ -58,7 +58,7 @@ class AdminActionsController(wsgi.Controller):
     @wsgi.action('injectNetworkInfo')
     def _inject_network_info(self, req, id, body):
         """Permit admins to inject network info into a server."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='inject_network_info')
         try:
             instance = common.get_instance(self.compute_api, context, id)
@@ -74,7 +74,7 @@ class AdminActionsController(wsgi.Controller):
     @validation.schema(reset_server_state.reset_state)
     def _reset_state(self, req, id, body):
         """Permit admins to reset the state of a server."""
-        context = req.environ["compute.context"]
+        context = req.environ["cloud.context"]
         authorize(context, action='reset_state')
 
         # Identify the desired state from the body

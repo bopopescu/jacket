@@ -22,7 +22,7 @@ from jacket.api.compute.openstack.compute.schemas import migrate_server
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 
 ALIAS = "os-migrate-server"
@@ -34,19 +34,19 @@ authorize = extensions.os_compute_authorizer(ALIAS)
 class MigrateServerController(wsgi.Controller):
     def __init__(self, *args, **kwargs):
         super(MigrateServerController, self).__init__(*args, **kwargs)
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
 
     @wsgi.response(202)
     @extensions.expected_errors((400, 403, 404, 409))
     @wsgi.action('migrate')
     def _migrate(self, req, id, body):
         """Permit admins to migrate a server to a new host."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='migrate')
 
         instance = common.get_instance(self.compute_api, context, id)
         try:
-            self.compute_api.resize(req.environ['compute.context'], instance)
+            self.compute_api.resize(req.environ['cloud.context'], instance)
         except (exception.TooManyInstances, exception.QuotaError) as e:
             raise exc.HTTPForbidden(explanation=e.format_message())
         except exception.InstanceIsLocked as e:
@@ -66,7 +66,7 @@ class MigrateServerController(wsgi.Controller):
     @validation.schema(migrate_server.migrate_live_v2_25, "2.25")
     def _migrate_live(self, req, id, body):
         """Permit admins to (live) migrate a server to a new host."""
-        context = req.environ["compute.context"]
+        context = req.environ["cloud.context"]
         authorize(context, action='migrate_live')
 
         host = body["os-migrateLive"]["host"]

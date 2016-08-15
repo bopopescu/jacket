@@ -19,19 +19,19 @@ from jacket.api.compute.metadata import password
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 
 
-authorize = extensions.extension_authorizer('compute', 'server_password')
+authorize = extensions.extension_authorizer('cloud', 'server_password')
 
 
 class ServerPasswordController(object):
     """The Server Password API controller for the OpenStack API."""
     def __init__(self):
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
 
     def index(self, req, server_id):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         instance = common.get_instance(self.compute_api, context, server_id)
 
@@ -40,7 +40,7 @@ class ServerPasswordController(object):
 
     @wsgi.response(204)
     def delete(self, req, server_id):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         instance = common.get_instance(self.compute_api, context, server_id)
         meta = password.convert_password(context, None)
@@ -53,7 +53,7 @@ class Server_password(extensions.ExtensionDescriptor):
 
     name = "ServerPassword"
     alias = "os-server-password"
-    namespace = ("http://docs.openstack.org/compute/ext/"
+    namespace = ("http://docs.openstack.org/cloud/ext/"
                  "server-password/api/v2")
     updated = "2012-11-29T00:00:00Z"
 

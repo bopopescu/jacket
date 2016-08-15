@@ -24,7 +24,7 @@ from jacket.api.compute.openstack.compute import instance_actions as instance_ac
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import instance_actions \
         as instance_actions_v2
 from jacket.api.compute.openstack import wsgi as os_wsgi
-from jacket.compute.compute import api as compute_api
+from jacket.compute.cloud import api as compute_api
 from jacket.db.compute.sqlalchemy import models
 from jacket.compute import exception
 from jacket.objects import compute

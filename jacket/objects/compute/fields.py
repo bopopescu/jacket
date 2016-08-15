@@ -19,13 +19,13 @@ from oslo_versionedobjects import fields
 import six
 
 # TODO(berrange) Temporary import for Arch class
-from jacket.compute.compute import arch
+from jacket.compute.cloud import arch
 # TODO(berrange) Temporary import for CPU* classes
-from jacket.compute.compute import cpumodel
+from jacket.compute.cloud import cpumodel
 # TODO(berrange) Temporary import for HVType class
-from jacket.compute.compute import hv_type
+from jacket.compute.cloud import hv_type
 # TODO(berrange) Temporary import for VMMode class
-from jacket.compute.compute import vm_mode
+from jacket.compute.cloud import vm_mode
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.compute.network import model as network_model

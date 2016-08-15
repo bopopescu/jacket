@@ -33,7 +33,7 @@ import requests_mock
 import six
 from six.moves import range
 
-from jacket.compute.compute import flavors
+from jacket.compute.cloud import flavors
 from jacket.compute import context
 from jacket.compute import exception
 from jacket.compute.network import model

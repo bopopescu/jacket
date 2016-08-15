@@ -12,9 +12,9 @@
 
 from oslo_utils import versionutils
 
-from jacket.compute.compute import arch
-from jacket.compute.compute import hv_type
-from jacket.compute.compute import vm_mode
+from jacket.compute.cloud import arch
+from jacket.compute.cloud import hv_type
+from jacket.compute.cloud import vm_mode
 from jacket.objects import compute
 from jacket.compute.scheduler.filters import image_props_filter
 from jacket.compute import test

@@ -16,7 +16,7 @@
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 
 ALIAS = "os-lock-server"
 
@@ -26,14 +26,14 @@ authorize = extensions.os_compute_authorizer(ALIAS)
 class LockServerController(wsgi.Controller):
     def __init__(self, *args, **kwargs):
         super(LockServerController, self).__init__(*args, **kwargs)
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
 
     @wsgi.response(202)
     @extensions.expected_errors(404)
     @wsgi.action('lock')
     def _lock(self, req, id, body):
         """Lock a server instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='lock')
         instance = common.get_instance(self.compute_api, context, id)
         self.compute_api.lock(context, instance)
@@ -43,7 +43,7 @@ class LockServerController(wsgi.Controller):
     @wsgi.action('unlock')
     def _unlock(self, req, id, body):
         """Unlock a server instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='unlock')
         instance = common.get_instance(self.compute_api, context, id)
         if not self.compute_api.is_expected_locked_by(context, instance):

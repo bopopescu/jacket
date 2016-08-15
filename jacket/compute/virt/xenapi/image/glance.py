@@ -20,7 +20,7 @@ from oslo_config import cfg
 from oslo_log import log as logging
 import six
 
-from jacket.compute.compute import utils as compute_utils
+from jacket.compute.cloud import utils as compute_utils
 from jacket.compute import exception
 from jacket.compute.image import glance
 from jacket.compute import utils

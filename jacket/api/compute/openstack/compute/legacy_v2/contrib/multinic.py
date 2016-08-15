@@ -22,25 +22,25 @@ from webob import exc
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.i18n import _LE
 
 
 LOG = logging.getLogger(__name__)
-authorize = extensions.extension_authorizer('compute', 'multinic')
+authorize = extensions.extension_authorizer('cloud', 'multinic')
 
 
 class MultinicController(wsgi.Controller):
     def __init__(self, *args, **kwargs):
         super(MultinicController, self).__init__(*args, **kwargs)
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
 
     @wsgi.action('addFixedIp')
     def _add_fixed_ip(self, req, id, body):
         """Adds an IP on a given network to an instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         # Validate the input entity
@@ -60,7 +60,7 @@ class MultinicController(wsgi.Controller):
     @wsgi.action('removeFixedIp')
     def _remove_fixed_ip(self, req, id, body):
         """Removes an IP from an instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         # Validate the input entity
@@ -88,7 +88,7 @@ class Multinic(extensions.ExtensionDescriptor):
 
     name = "Multinic"
     alias = "NMN"
-    namespace = "http://docs.openstack.org/compute/ext/multinic/api/v1.1"
+    namespace = "http://docs.openstack.org/cloud/ext/multinic/api/v1.1"
     updated = "2011-06-09T00:00:00Z"
 
     def get_controller_extensions(self):

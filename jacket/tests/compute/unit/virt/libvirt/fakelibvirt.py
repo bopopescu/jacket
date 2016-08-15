@@ -19,7 +19,7 @@ import fixtures
 from lxml import etree
 import six
 
-from jacket.compute.compute import arch
+from jacket.compute.cloud import arch
 from jacket.compute.virt.libvirt import config as vconfig
 
 # Allow passing None to the various connect methods

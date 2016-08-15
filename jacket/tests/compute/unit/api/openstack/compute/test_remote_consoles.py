@@ -21,7 +21,7 @@ from jacket.api.compute.openstack.compute.legacy_v2.contrib import consoles \
     as console_v2
 from jacket.api.compute.openstack.compute import remote_consoles \
     as console_v21
-from jacket.compute.compute import api as compute_api
+from jacket.compute.cloud import api as compute_api
 from jacket.compute import exception
 from jacket.compute import test
 from jacket.tests.compute.unit.api.openstack import fakes

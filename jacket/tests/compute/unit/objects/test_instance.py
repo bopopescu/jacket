@@ -22,7 +22,7 @@ from oslo_serialization import jsonutils
 from oslo_utils import timeutils
 
 from jacket.compute.cells import rpcapi as cells_rpcapi
-from jacket.compute.compute import flavors
+from jacket.compute.cloud import flavors
 from jacket.db import compute
 from jacket.compute import exception
 from jacket.compute.network import model as network_model

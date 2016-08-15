@@ -46,10 +46,10 @@ from jacket.api.compute.openstack.compute import views
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi as os_wsgi
 from jacket.compute import availability_zones
-from jacket.compute.compute import api as compute_api
-from jacket.compute.compute import flavors
-from jacket.compute.compute import task_states
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import api as compute_api
+from jacket.compute.cloud import flavors
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import vm_states
 from jacket.compute import context
 from jacket.db import compute
 from jacket.db.compute.sqlalchemy import models

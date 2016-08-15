@@ -24,8 +24,8 @@ from jacket.api.compute.openstack.compute import extension_info
 from jacket.api.compute.openstack.compute.legacy_v2 import servers as servers_v2
 from jacket.api.compute.openstack.compute import servers as servers_v21
 from jacket.api.compute.openstack import extensions
-import jacket.compute.compute.api
-from jacket.compute.compute import flavors
+import jacket.compute.cloud.api
+from jacket.compute.cloud import flavors
 from jacket.compute import exception
 from jacket.compute import test
 from jacket.tests.compute.unit.api.openstack import fakes
@@ -59,7 +59,7 @@ class SchedulerHintsTestCaseV21(test.TestCase):
             self.assertEqual(kwargs['scheduler_hints'], {})
             return ([self.fake_instance], '')
 
-        self.stubs.Set(jacket.compute.compute.api.API, 'create', fake_create)
+        self.stubs.Set(jacket.compute.cloud.api.API, 'create', fake_create)
 
         req = self._get_request()
         req.method = 'POST'
@@ -80,7 +80,7 @@ class SchedulerHintsTestCaseV21(test.TestCase):
             self.assertEqual(kwargs['scheduler_hints'], hint)
             return ([self.fake_instance], '')
 
-        self.stubs.Set(jacket.compute.compute.api.API, 'create', fake_create)
+        self.stubs.Set(jacket.compute.cloud.api.API, 'create', fake_create)
 
         req = self._get_request()
         req.method = 'POST'
@@ -241,13 +241,13 @@ class ServersControllerCreateTestV21(test.TestCase):
     def test_create_instance_with_scheduler_hints_disabled(self):
         hints = {'same_host': '48e6a9f6-30af-47e0-bc04-acaed113bb4e'}
         params = {'OS-SCH-HNT:scheduler_hints': hints}
-        old_create = jacket.compute.compute.api.API.create
+        old_create = jacket.compute.cloud.api.API.create
 
         def create(*args, **kwargs):
             self._verify_availability_zone(**kwargs)
             return old_create(*args, **kwargs)
 
-        self.stubs.Set(jacket.compute.compute.api.API, 'create', create)
+        self.stubs.Set(jacket.compute.cloud.api.API, 'create', create)
         self._test_create_extra(params)
 
 

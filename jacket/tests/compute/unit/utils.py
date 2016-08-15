@@ -20,7 +20,7 @@ import sys
 from oslo_config import cfg
 from six.moves import range
 
-from jacket.compute.compute import flavors
+from jacket.compute.cloud import flavors
 import jacket.compute.context
 import jacket.db.compute
 from jacket.compute import exception

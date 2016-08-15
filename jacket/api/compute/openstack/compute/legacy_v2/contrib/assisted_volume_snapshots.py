@@ -19,25 +19,25 @@ import webob
 
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _LI
 
 
 LOG = logging.getLogger(__name__)
-authorize = extensions.extension_authorizer('compute',
+authorize = extensions.extension_authorizer('cloud',
         'os-assisted-volume-snapshots')
 
 
 class AssistedVolumeSnapshotsController(wsgi.Controller):
 
     def __init__(self):
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
         super(AssistedVolumeSnapshotsController, self).__init__()
 
     def create(self, req, body):
         """Creates a new snapshot."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='create')
 
         if not self.is_valid_body(body, 'snapshot'):
@@ -58,7 +58,7 @@ class AssistedVolumeSnapshotsController(wsgi.Controller):
 
     def delete(self, req, id):
         """Delete a snapshot."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='delete')
 
         LOG.info(_LI("Delete snapshot with id: %s"), id, context=context)
@@ -86,7 +86,7 @@ class Assisted_volume_snapshots(extensions.ExtensionDescriptor):
 
     name = "AssistedVolumeSnapshots"
     alias = "os-assisted-volume-snapshots"
-    namespace = ("http://docs.openstack.org/compute/ext/"
+    namespace = ("http://docs.openstack.org/cloud/ext/"
                  "assisted-volume-snapshots/api/v2")
     updated = "2013-08-29T00:00:00Z"
 

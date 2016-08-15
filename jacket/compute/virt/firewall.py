@@ -18,7 +18,7 @@
 from oslo_log import log as logging
 from oslo_utils import importutils
 
-from jacket.compute.compute import utils as compute_utils
+from jacket.compute.cloud import utils as compute_utils
 import jacket.compute.conf
 from jacket.compute import context
 from jacket.i18n import _LI

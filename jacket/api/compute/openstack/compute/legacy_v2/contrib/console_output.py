@@ -21,23 +21,23 @@ import webob
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
 
 
-authorize = extensions.extension_authorizer('compute', 'console_output')
+authorize = extensions.extension_authorizer('cloud', 'console_output')
 
 
 class ConsoleOutputController(wsgi.Controller):
     def __init__(self, *args, **kwargs):
         super(ConsoleOutputController, self).__init__(*args, **kwargs)
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
 
     @wsgi.action('os-getConsoleOutput')
     def get_console_output(self, req, id, body):
         """Get text console output."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         instance = common.get_instance(self.compute_api, context, id)
@@ -85,7 +85,7 @@ class Console_output(extensions.ExtensionDescriptor):
 
     name = "ConsoleOutput"
     alias = "os-console-output"
-    namespace = ("http://docs.openstack.org/compute/ext/"
+    namespace = ("http://docs.openstack.org/cloud/ext/"
                  "os-console-output/api/v2")
     updated = "2011-12-08T00:00:00Z"
 

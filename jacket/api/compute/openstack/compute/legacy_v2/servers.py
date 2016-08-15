@@ -33,8 +33,8 @@ from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack.compute.views import servers as views_servers
 from jacket.api.compute.openstack import wsgi
 from jacket.compute import block_device
-from jacket.compute import compute
-from jacket.compute.compute import flavors
+from jacket.compute import cloud
+from jacket.compute.cloud import flavors
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.objects import compute
@@ -53,7 +53,7 @@ server_opts = [
 ]
 CONF = cfg.CONF
 CONF.register_opts(server_opts)
-CONF.import_opt('reclaim_instance_interval', 'compute.compute.manager')
+CONF.import_opt('reclaim_instance_interval', 'cloud.cloud.manager')
 
 LOG = logging.getLogger(__name__)
 
@@ -114,7 +114,7 @@ class Controller(wsgi.Controller):
 
     def __init__(self, ext_mgr=None, **kwargs):
         super(Controller, self).__init__(**kwargs)
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
         self.ext_mgr = ext_mgr
 
     def index(self, req):
@@ -139,7 +139,7 @@ class Controller(wsgi.Controller):
         search_opts = {}
         search_opts.update(req.GET)
 
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         remove_invalid_options(context, search_opts,
                 self._get_server_search_options())
 
@@ -166,7 +166,7 @@ class Controller(wsgi.Controller):
                 raise exc.HTTPBadRequest(explanation=msg)
             search_opts['changes-since'] = parsed
 
-        # By default, compute's get_all() will return deleted instances.
+        # By default, cloud's get_all() will return deleted instances.
         # If an admin hasn't specified a 'deleted' search option, we need
         # to filter out deleted instances by setting the filter ourselves.
         # ... Unless 'changes-since' is specified, because 'changes-since'
@@ -197,7 +197,7 @@ class Controller(wsgi.Controller):
 
         elevated = None
         if all_tenants:
-            policy.enforce(context, 'compute:get_all_tenants',
+            policy.enforce(context, 'cloud:get_all_tenants',
                            {'project_id': context.project_id,
                             'user_id': context.user_id})
             elevated = context.elevated()
@@ -230,7 +230,7 @@ class Controller(wsgi.Controller):
             raise exc.HTTPBadRequest(explanation=msg)
         except exception.FlavorNotFound:
             LOG.debug("Flavor '%s' could not be found", search_opts['flavor'])
-            instance_list = compute.InstanceList()
+            instance_list = cloud.InstanceList()
 
         if is_detail:
             instance_list._context = context
@@ -277,7 +277,7 @@ class Controller(wsgi.Controller):
 
         At this time, injected_files must be formatted as a list of
         (file_path, file_content) pairs for compatibility with the
-        underlying compute service.
+        underlying cloud service.
         """
         injected_files = []
 
@@ -302,7 +302,7 @@ class Controller(wsgi.Controller):
         networks = []
         network_uuids = []
         for network in requested_networks:
-            request = compute.NetworkRequest()
+            request = cloud.NetworkRequest()
             try:
                 try:
                     request.port_id = network.get('port', None)
@@ -355,7 +355,7 @@ class Controller(wsgi.Controller):
                 expl = _('Bad networks format')
                 raise exc.HTTPBadRequest(explanation=expl)
 
-        return compute.NetworkRequestList(compute=networks)
+        return cloud.NetworkRequestList(cloud=networks)
 
     # NOTE(vish): Without this regex, b64decode will happily
     #             ignore illegal bytes in the base64 encoded
@@ -390,7 +390,7 @@ class Controller(wsgi.Controller):
 
     def show(self, req, id):
         """Returns server details by server id."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         instance = self._get_server(context, req, id, is_detail=True)
         return self._view_builder.show(req, instance)
 
@@ -469,7 +469,7 @@ class Controller(wsgi.Controller):
     @staticmethod
     def _handle_create_exception(*exc_info):
         """The `CREATE_EXCEPTIONS` dict containing the relationships between
-        the compute exceptions and the webob exception classes to be raised is
+        the cloud exceptions and the webob exception classes to be raised is
         defined at the top of this file.
         """
         error = exc_info[1]
@@ -512,7 +512,7 @@ class Controller(wsgi.Controller):
         if not self.is_valid_body(body, 'server'):
             raise exc.HTTPUnprocessableEntity()
 
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         server_dict = body['server']
         password = self._get_server_admin_password(server_dict)
 
@@ -690,7 +690,7 @@ class Controller(wsgi.Controller):
         if not self.is_valid_body(body, 'server'):
             raise exc.HTTPUnprocessableEntity()
 
-        ctxt = req.environ['compute.context']
+        ctxt = req.environ['cloud.context']
         update_dict = {}
 
         if 'name' in body['server']:
@@ -727,7 +727,7 @@ class Controller(wsgi.Controller):
 
         instance = self._get_server(ctxt, req, id, is_detail=True)
         try:
-            policy.enforce(ctxt, 'compute:update', instance)
+            policy.enforce(ctxt, 'cloud:update', instance)
             instance.update(update_dict)
             # Note instance.save can throw a NotFound exception
             instance.save()
@@ -740,7 +740,7 @@ class Controller(wsgi.Controller):
     @wsgi.response(204)
     @wsgi.action('confirmResize')
     def _action_confirm_resize(self, req, id, body):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         instance = self._get_server(context, req, id)
         try:
             self.compute_api.confirm_resize(context, instance)
@@ -756,7 +756,7 @@ class Controller(wsgi.Controller):
     @wsgi.response(202)
     @wsgi.action('revertResize')
     def _action_revert_resize(self, req, id, body):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         instance = self._get_server(context, req, id)
         try:
             self.compute_api.revert_resize(context, instance)
@@ -792,7 +792,7 @@ class Controller(wsgi.Controller):
             LOG.error(msg)
             raise exc.HTTPBadRequest(explanation=msg)
 
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         instance = self._get_server(context, req, id)
 
         try:
@@ -806,7 +806,7 @@ class Controller(wsgi.Controller):
 
     def _resize(self, req, instance_id, flavor_id, **kwargs):
         """Begin the resize process with given instance/flavor."""
-        context = req.environ["compute.context"]
+        context = req.environ["cloud.context"]
         instance = self._get_server(context, req, instance_id)
         try:
             self.compute_api.resize(context, instance, flavor_id, **kwargs)
@@ -847,7 +847,7 @@ class Controller(wsgi.Controller):
     def delete(self, req, id):
         """Destroys a server."""
         try:
-            self._delete(req.environ['compute.context'], req, id)
+            self._delete(req.environ['cloud.context'], req, id)
         except exception.NotFound:
             msg = _("Instance could not be found")
             raise exc.HTTPNotFound(explanation=msg)
@@ -869,7 +869,7 @@ class Controller(wsgi.Controller):
             msg = _("Invalid imageRef provided.")
             raise exc.HTTPBadRequest(explanation=msg)
 
-        # If the image href was generated by compute api, strip image_href
+        # If the image href was generated by cloud api, strip image_href
         # down to an id and use the default glance connection params
         image_uuid = image_href.split('/').pop()
 
@@ -915,7 +915,7 @@ class Controller(wsgi.Controller):
     @wsgi.response(202)
     @wsgi.action('changePassword')
     def _action_change_password(self, req, id, body):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         if (not body.get('changePassword')
                 or 'adminPass' not in body['changePassword']):
             msg = _("No adminPass was specified")
@@ -979,7 +979,7 @@ class Controller(wsgi.Controller):
 
         password = self._get_server_admin_password(body)
 
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         instance = self._get_server(context, req, id)
 
         attr_map = {
@@ -1070,7 +1070,7 @@ class Controller(wsgi.Controller):
     @common.check_snapshots_enabled
     def _action_create_image(self, req, id, body):
         """Snapshot a server instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         entity = body.get("createImage", {})
 
         image_name = entity.get("name")
@@ -1090,14 +1090,14 @@ class Controller(wsgi.Controller):
 
         instance = self._get_server(context, req, id)
 
-        bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
                     context, instance.uuid)
 
         try:
             if self.compute_api.is_volume_backed_instance(context, instance,
                                                           bdms):
                 policy.enforce(context,
-                        'compute:snapshot_volume_backed',
+                        'cloud:snapshot_volume_backed',
                         {'project_id': context.project_id,
                         'user_id': context.user_id})
                 image = self.compute_api.snapshot_volume_backed(

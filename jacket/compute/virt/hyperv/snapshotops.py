@@ -22,7 +22,7 @@ from os_win import exceptions as os_win_exc
 from os_win import utilsfactory
 from oslo_log import log as logging
 
-from jacket.compute.compute import task_states
+from jacket.compute.cloud import task_states
 from jacket.compute import exception
 from jacket.i18n import _LE
 from jacket.compute.image import glance

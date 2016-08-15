@@ -36,7 +36,7 @@ from jacket.api.compute.metadata import base
 from jacket.api.compute.metadata import handler
 from jacket.api.compute.metadata import password
 from jacket.compute import block_device
-from jacket.compute.compute import flavors
+from jacket.compute.cloud import flavors
 from jacket.compute.conductor import api as conductor_api
 from jacket.compute import context
 from jacket.compute import exception

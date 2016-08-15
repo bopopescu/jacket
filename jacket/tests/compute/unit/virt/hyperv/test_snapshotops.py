@@ -18,7 +18,7 @@ import os
 import mock
 from os_win import exceptions as os_win_exc
 
-from jacket.compute.compute import task_states
+from jacket.compute.cloud import task_states
 from jacket.compute import exception
 from jacket.tests.compute.unit import fake_instance
 from jacket.tests.compute.unit.virt.hyperv import test_base

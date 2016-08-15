@@ -20,7 +20,7 @@ from jacket.api.compute.openstack.compute.schemas import server_migrations
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
 
@@ -59,7 +59,7 @@ class ServerMigrationsController(wsgi.Controller):
     """The server migrations API controller for the OpenStack API."""
 
     def __init__(self):
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
         super(ServerMigrationsController, self).__init__()
 
     @wsgi.Controller.api_version("2.22")
@@ -68,7 +68,7 @@ class ServerMigrationsController(wsgi.Controller):
     @wsgi.action('force_complete')
     @validation.schema(server_migrations.force_complete)
     def _force_complete(self, req, id, server_id, body):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='force_complete')
 
         instance = common.get_instance(self.compute_api, context, server_id)
@@ -90,7 +90,7 @@ class ServerMigrationsController(wsgi.Controller):
     @extensions.expected_errors(404)
     def index(self, req, server_id):
         """Return all migrations of an instance in progress."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action="index")
 
         # NOTE(Shaohe Feng) just check the instance is available. To keep
@@ -106,7 +106,7 @@ class ServerMigrationsController(wsgi.Controller):
     @extensions.expected_errors(404)
     def show(self, req, server_id, id):
         """Return the migration of an instance in progress by id."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action="show")
 
         # NOTE(Shaohe Feng) just check the instance is available. To keep
@@ -140,7 +140,7 @@ class ServerMigrationsController(wsgi.Controller):
     @extensions.expected_errors((400, 404, 409))
     def delete(self, req, server_id, id):
         """Abort an in progress migration of an instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action="delete")
 
         instance = common.get_instance(self.compute_api, context, server_id)

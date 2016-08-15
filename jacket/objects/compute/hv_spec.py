@@ -15,7 +15,7 @@
 
 from oslo_utils import versionutils
 
-from jacket.compute.compute import hv_type
+from jacket.compute.cloud import hv_type
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 

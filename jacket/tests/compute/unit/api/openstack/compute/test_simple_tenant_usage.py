@@ -25,7 +25,7 @@ from jacket.api.compute.openstack.compute.legacy_v2.contrib import simple_tenant
     simple_tenant_usage_v2
 from jacket.api.compute.openstack.compute import simple_tenant_usage as \
     simple_tenant_usage_v21
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import vm_states
 from jacket.compute import context
 from jacket.db import compute
 from jacket.compute import exception

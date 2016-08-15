@@ -16,7 +16,7 @@ import os
 
 import mock
 
-from jacket.compute.compute import arch
+from jacket.compute.cloud import arch
 from jacket.compute import exception
 from jacket.compute import test
 

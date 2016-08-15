@@ -15,7 +15,7 @@
 from lxml import etree
 import six
 
-from jacket.compute.compute import arch
+from jacket.compute.cloud import arch
 from jacket.compute import test
 import jacket.tests.compute.unit.virt.libvirt.fakelibvirt as libvirt
 

@@ -22,7 +22,7 @@ from jacket.api.compute.openstack.compute.legacy_v2.contrib import server_passwo
     as server_password_v2
 from jacket.api.compute.openstack.compute import server_password \
     as server_password_v21
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.compute import test
 from jacket.tests.compute.unit.api.openstack import fakes
@@ -31,7 +31,7 @@ from jacket.tests.compute.unit import fake_instance
 
 CONF = cfg.CONF
 CONF.import_opt('osapi_compute_ext_list',
-                'compute.api.openstack.compute.legacy_v2.contrib')
+                'cloud.api.openstack.cloud.legacy_v2.contrib')
 
 
 class ServerPasswordTestV21(test.NoDBTestCase):
@@ -43,7 +43,7 @@ class ServerPasswordTestV21(test.NoDBTestCase):
         super(ServerPasswordTestV21, self).setUp()
         fakes.stub_out_nw_api(self)
         self.stubs.Set(
-            compute.api.API, 'get',
+            cloud.api.API, 'get',
             lambda self, ctxt, *a, **kw:
                 fake_instance.fake_instance_obj(
                 ctxt,
@@ -68,7 +68,7 @@ class ServerPasswordTestV21(test.NoDBTestCase):
         self.assertEqual(res['password'], 'fakepass')
 
     def test_reset_password(self):
-        with mock.patch('compute.objects.Instance._save_flavor'):
+        with mock.patch('cloud.objects.Instance._save_flavor'):
             eval(self.delete_call)(self.fake_req, 'fake')
         self.assertEqual(eval(self.delete_call).wsgi_code, 204)
 

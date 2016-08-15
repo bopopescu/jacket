@@ -21,19 +21,19 @@ from webob import exc
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions as exts
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.compute import utils
 
 
-authorize = exts.extension_authorizer('compute', 'rescue')
+authorize = exts.extension_authorizer('cloud', 'rescue')
 
 
 class RescueController(wsgi.Controller):
     def __init__(self, ext_mgr, *args, **kwargs):
         super(RescueController, self).__init__(*args, **kwargs)
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
         self.ext_mgr = ext_mgr
 
     def _rescue_image_validation(self, image_ref):
@@ -48,7 +48,7 @@ class RescueController(wsgi.Controller):
     @wsgi.action('rescue')
     def _rescue(self, req, id, body):
         """Rescue an instance."""
-        context = req.environ["compute.context"]
+        context = req.environ["cloud.context"]
         authorize(context)
 
         if body['rescue'] and 'adminPass' in body['rescue']:
@@ -81,7 +81,7 @@ class RescueController(wsgi.Controller):
     @wsgi.action('unrescue')
     def _unrescue(self, req, id, body):
         """Unrescue an instance."""
-        context = req.environ["compute.context"]
+        context = req.environ["cloud.context"]
         authorize(context)
         instance = common.get_instance(self.compute_api, context, id)
         try:
@@ -101,7 +101,7 @@ class Rescue(exts.ExtensionDescriptor):
 
     name = "Rescue"
     alias = "os-rescue"
-    namespace = "http://docs.openstack.org/compute/ext/rescue/api/v1.1"
+    namespace = "http://docs.openstack.org/cloud/ext/rescue/api/v1.1"
     updated = "2011-08-18T00:00:00Z"
 
     def get_controller_extensions(self):

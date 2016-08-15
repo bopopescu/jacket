@@ -22,7 +22,7 @@ from oslo_vmware.objects import datastore as ds_obj
 from oslo_vmware import vim_util as vutil
 import six
 
-from jacket.compute.compute import power_state
+from jacket.compute.cloud import power_state
 from jacket.compute import context
 from jacket.compute import exception
 from jacket.compute.network import model as network_model

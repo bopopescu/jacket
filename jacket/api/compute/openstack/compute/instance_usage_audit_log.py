@@ -21,12 +21,12 @@ import webob.exc
 
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.i18n import _
 from jacket.compute import utils
 
 CONF = cfg.CONF
-CONF.import_opt('compute_topic', 'compute.compute.rpcapi')
+CONF.import_opt('compute_topic', 'cloud.cloud.rpcapi')
 
 
 ALIAS = 'os-instance-usage-audit-log'
@@ -35,18 +35,18 @@ authorize = extensions.os_compute_authorizer(ALIAS)
 
 class InstanceUsageAuditLogController(wsgi.Controller):
     def __init__(self):
-        self.host_api = compute.HostAPI()
+        self.host_api = cloud.HostAPI()
 
     @extensions.expected_errors(())
     def index(self, req):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         task_log = self._get_audit_task_logs(context)
         return {'instance_usage_audit_logs': task_log}
 
     @extensions.expected_errors(400)
     def show(self, req, id):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         try:
             if '.' in id:
@@ -85,7 +85,7 @@ class InstanceUsageAuditLogController(wsgi.Controller):
         task_logs = self.host_api.task_log_get_all(context,
                                                    "instance_usage_audit",
                                                    begin, end)
-        # We do this this way to include disabled compute services,
+        # We do this this way to include disabled cloud services,
         # which can have instances on them. (mdragon)
         filters = {'topic': CONF.compute_topic}
         services = self.host_api.service_get_all(context, filters=filters)

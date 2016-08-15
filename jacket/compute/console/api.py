@@ -17,7 +17,7 @@
 
 from oslo_config import cfg
 
-from jacket.compute.compute import rpcapi as jacket_rpcapi
+from jacket.compute.cloud import rpcapi as compute_rpcapi
 from jacket.compute.console import rpcapi as console_rpcapi
 from jacket.db.compute import base
 from jacket.objects import compute
@@ -60,5 +60,5 @@ class API(base.Base):
         rpcapi.add_console(context, instance.id)
 
     def _get_console_topic(self, context, instance_host):
-        rpcapi = jacket_rpcapi.JacketAPI()
+        rpcapi = compute_rpcapi.ComputeAPI()
         return rpcapi.get_console_topic(context, instance_host)

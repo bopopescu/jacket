@@ -29,7 +29,7 @@ from oslo_utils import uuidutils
 import six
 
 from jacket.api.compute.openstack import extensions
-from jacket.compute.compute import utils as compute_utils
+from jacket.compute.cloud import utils as compute_utils
 from jacket.compute import exception
 from jacket.i18n import _, _LE, _LI, _LW
 from jacket.compute.network import base_api

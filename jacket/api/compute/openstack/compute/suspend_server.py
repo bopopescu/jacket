@@ -17,7 +17,7 @@ from webob import exc
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 
 ALIAS = "os-suspend-server"
@@ -29,14 +29,14 @@ authorize = extensions.os_compute_authorizer(ALIAS)
 class SuspendServerController(wsgi.Controller):
     def __init__(self, *args, **kwargs):
         super(SuspendServerController, self).__init__(*args, **kwargs)
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
 
     @wsgi.response(202)
     @extensions.expected_errors((404, 409))
     @wsgi.action('suspend')
     def _suspend(self, req, id, body):
         """Permit admins to suspend the server."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='suspend')
         try:
             server = common.get_instance(self.compute_api, context, id)
@@ -54,7 +54,7 @@ class SuspendServerController(wsgi.Controller):
     @wsgi.action('resume')
     def _resume(self, req, id, body):
         """Permit admins to resume the server from suspend."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='resume')
         try:
             server = common.get_instance(self.compute_api, context, id)

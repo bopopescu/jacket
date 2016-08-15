@@ -17,20 +17,20 @@ import webob.exc
 
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
 
 
-authorize = extensions.extension_authorizer('compute', 'server_diagnostics')
+authorize = extensions.extension_authorizer('cloud', 'server_diagnostics')
 
 
 class ServerDiagnosticsController(object):
     def __init__(self):
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
 
     def index(self, req, server_id):
-        context = req.environ["compute.context"]
+        context = req.environ["cloud.context"]
         authorize(context)
 
         instance = common.get_instance(self.compute_api, context, server_id)
@@ -50,7 +50,7 @@ class Server_diagnostics(extensions.ExtensionDescriptor):
 
     name = "ServerDiagnostics"
     alias = "os-server-diagnostics"
-    namespace = ("http://docs.openstack.org/compute/ext/"
+    namespace = ("http://docs.openstack.org/cloud/ext/"
                  "server-diagnostics/api/v1.1")
     updated = "2011-12-21T00:00:00Z"
 

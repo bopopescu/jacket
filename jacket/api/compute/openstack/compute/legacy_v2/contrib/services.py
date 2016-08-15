@@ -16,27 +16,27 @@ import webob.exc
 
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import context as nova_context
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.compute import servicegroup
 from jacket.compute import utils
 
-authorize = extensions.extension_authorizer('compute', 'services')
+authorize = extensions.extension_authorizer('cloud', 'services')
 
 
 class ServiceController(object):
 
     def __init__(self, ext_mgr=None, *args, **kwargs):
-        self.host_api = compute.HostAPI()
+        self.host_api = cloud.HostAPI()
         self.servicegroup_api = servicegroup.API()
         self.ext_mgr = ext_mgr
 
     def _get_services(self, req):
-        api_services = ('compute-osapi_compute', 'compute-ec2', 'compute-metadata')
+        api_services = ('cloud-osapi_compute', 'cloud-ec2', 'cloud-metadata')
 
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         # NOTE(alex_xu): back-compatible with db layer hard-code admin
@@ -102,7 +102,7 @@ class ServiceController(object):
         if not self.ext_mgr.is_loaded('os-extended-services-delete'):
             raise webob.exc.HTTPMethodNotAllowed()
 
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         # NOTE(alex_xu): back-compatible with db layer hard-code admin
         # permission checks
@@ -128,7 +128,7 @@ class ServiceController(object):
 
     def update(self, req, id, body):
         """Enable/Disable scheduling for a service."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
         # NOTE(alex_xu): back-compatible with db layer hard-code admin
         # permission checks
@@ -187,7 +187,7 @@ class Services(extensions.ExtensionDescriptor):
 
     name = "Services"
     alias = "os-services"
-    namespace = "http://docs.openstack.org/compute/ext/services/api/v2"
+    namespace = "http://docs.openstack.org/cloud/ext/services/api/v2"
     updated = "2012-10-28T00:00:00Z"
 
     def get_resources(self):

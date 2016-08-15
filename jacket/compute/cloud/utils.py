@@ -24,8 +24,8 @@ from oslo_log import log
 import six
 
 from jacket.compute import block_device
-from jacket.compute.compute import power_state
-from jacket.compute.compute import task_states
+from jacket.compute.cloud import power_state
+from jacket.compute.cloud import task_states
 from jacket.compute import exception
 from jacket.i18n import _LW
 from jacket.compute.network import model as network_model

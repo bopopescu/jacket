@@ -51,13 +51,13 @@ from six.moves import builtins
 from six.moves import range
 
 from jacket.api.compute.metadata import base as instance_metadata
-from jacket.compute.compute import arch
-from jacket.compute.compute import cpumodel
-from jacket.compute.compute import manager
-from jacket.compute.compute import power_state
-from jacket.compute.compute import task_states
-from jacket.compute.compute import vm_mode
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import arch
+from jacket.compute.cloud import cpumodel
+from jacket.compute.cloud import manager
+from jacket.compute.cloud import power_state
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import vm_mode
+from jacket.compute.cloud import vm_states
 from jacket.compute import context
 from jacket.db import compute
 from jacket.compute import exception

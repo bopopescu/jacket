@@ -19,7 +19,7 @@ from oslo_serialization import jsonutils
 from oslo_utils import fixture as utils_fixture
 from oslo_utils import timeutils
 
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.objects.compute import instance as instance_obj
@@ -51,7 +51,7 @@ def fake_compute_get_all(*args, **kwargs):
     ]
     fields = instance_obj.INSTANCE_DEFAULT_FIELDS
     return instance_obj._make_instance_list(args[1],
-                                            compute.InstanceList(),
+                                            cloud.InstanceList(),
                                             db_list, fields)
 
 
@@ -63,14 +63,14 @@ class ServerUsageTestV21(test.TestCase):
     def setUp(self):
         super(ServerUsageTestV21, self).setUp()
         fakes.stub_out_nw_api(self)
-        self.stubs.Set(compute.api.API, 'get', fake_compute_get)
-        self.stubs.Set(compute.api.API, 'get_all', fake_compute_get_all)
+        self.stubs.Set(cloud.api.API, 'get', fake_compute_get)
+        self.stubs.Set(cloud.api.API, 'get_all', fake_compute_get_all)
         self.flags(
             osapi_compute_extension=[
-                'compute.api.openstack.compute.contrib.select_extensions'],
+                'cloud.api.openstack.cloud.contrib.select_extensions'],
             osapi_compute_ext_list=['Server_usage'])
         return_server = fakes.fake_instance_get()
-        self.stub_out('compute.db.instance_get_by_uuid', return_server)
+        self.stub_out('cloud.db.instance_get_by_uuid', return_server)
 
     def _make_request(self, url):
         req = fakes.HTTPRequest.blank(url)
@@ -125,7 +125,7 @@ class ServerUsageTestV21(test.TestCase):
         def fake_compute_get(*args, **kwargs):
             raise exception.InstanceNotFound(instance_id='fake')
 
-        self.stubs.Set(compute.api.API, 'get', fake_compute_get)
+        self.stubs.Set(cloud.api.API, 'get', fake_compute_get)
         url = self._prefix + '/servers/70f6db34-de8d-4fbd-aafb-4065bdfa6115'
         res = self._make_request(url)
 
@@ -138,7 +138,7 @@ class ServerUsageTestV20(ServerUsageTestV21):
         super(ServerUsageTestV20, self).setUp()
         self.flags(
             osapi_compute_extension=[
-                'compute.api.openstack.compute.contrib.select_extensions'],
+                'cloud.api.openstack.cloud.contrib.select_extensions'],
             osapi_compute_ext_list=['Server_usage'])
 
     def _get_app(self):

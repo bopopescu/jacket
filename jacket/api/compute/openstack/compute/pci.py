@@ -17,7 +17,7 @@ import webob.exc
 
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.objects import compute
 
@@ -41,7 +41,7 @@ class PciServerController(wsgi.Controller):
 
     @wsgi.extends
     def show(self, req, resp_obj, id):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         if soft_authorize(context):
             server = resp_obj.obj['server']
             instance = req.get_db_instance(server['id'])
@@ -49,7 +49,7 @@ class PciServerController(wsgi.Controller):
 
     @wsgi.extends
     def detail(self, req, resp_obj):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         if soft_authorize(context):
             servers = list(resp_obj.obj['servers'])
             for server in servers:
@@ -83,7 +83,7 @@ class PciHypervisorController(wsgi.Controller):
 class PciController(wsgi.Controller):
 
     def __init__(self):
-        self.host_api = compute.HostAPI()
+        self.host_api = cloud.HostAPI()
 
     def _view_pcidevice(self, device, detail=False):
         dev_dict = {}
@@ -98,12 +98,12 @@ class PciController(wsgi.Controller):
         return dev_dict
 
     def _get_all_nodes_pci_devices(self, req, detail, action):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action=action)
         compute_nodes = self.host_api.compute_node_get_all(context)
         results = []
         for node in compute_nodes:
-            pci_devs = compute.PciDeviceList.get_by_compute_node(
+            pci_devs = cloud.PciDeviceList.get_by_compute_node(
                 context, node['id'])
             results.extend([self._view_pcidevice(dev, detail)
                             for dev in pci_devs])
@@ -116,10 +116,10 @@ class PciController(wsgi.Controller):
 
     @extensions.expected_errors(404)
     def show(self, req, id):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='show')
         try:
-            pci_dev = compute.PciDevice.get_by_dev_id(context, id)
+            pci_dev = cloud.PciDevice.get_by_dev_id(context, id)
         except exception.PciDeviceNotFoundById as e:
             raise webob.exc.HTTPNotFound(explanation=e.format_message())
         result = self._view_pcidevice(pci_dev, True)

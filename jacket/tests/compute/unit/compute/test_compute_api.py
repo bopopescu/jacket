@@ -26,16 +26,16 @@ from oslo_utils import fixture as utils_fixture
 from oslo_utils import timeutils
 from oslo_utils import uuidutils
 
-from jacket.compute.compute import api as compute_api
-from jacket.compute.compute import arch
-from jacket.compute.compute import cells_api as compute_cells_api
-from jacket.compute.compute import flavors
-from jacket.compute.compute import instance_actions
-from jacket.compute.compute import rpcapi as compute_rpcapi
-from jacket.compute.compute import task_states
-from jacket.compute.compute import utils as compute_utils
-from jacket.compute.compute import vm_mode
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import api as compute_api
+from jacket.compute.cloud import arch
+from jacket.compute.cloud import cells_api as compute_cells_api
+from jacket.compute.cloud import flavors
+from jacket.compute.cloud import instance_actions
+from jacket.compute.cloud import rpcapi as compute_rpcapi
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import utils as compute_utils
+from jacket.compute.cloud import vm_mode
+from jacket.compute.cloud import vm_states
 from jacket.compute import conductor
 from jacket.compute import context
 from jacket.db import compute

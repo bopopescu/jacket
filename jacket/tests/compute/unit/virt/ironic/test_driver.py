@@ -24,9 +24,9 @@ import six
 from testtools.matchers import HasLength
 
 from jacket.api.compute.metadata import base as instance_metadata
-from jacket.compute.compute import power_state as nova_states
-from jacket.compute.compute import task_states
-from jacket.compute.compute import vm_states
+from jacket.compute.cloud import power_state as nova_states
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import vm_states
 from jacket.compute import context as nova_context
 from jacket.compute import exception
 from jacket.objects import compute

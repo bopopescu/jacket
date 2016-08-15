@@ -17,7 +17,7 @@ from oslo_serialization import jsonutils
 import six
 import webob
 
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.objects import compute
 from jacket.compute import test
 from jacket.tests.compute.unit.api.openstack import fakes
@@ -95,7 +95,7 @@ def fake_compute_get_all(*args, **kwargs):
         fakes.stub_instance_obj(None, 1, uuid=UUID1, nw_cache=NW_CACHE),
         fakes.stub_instance_obj(None, 2, uuid=UUID2, nw_cache=NW_CACHE),
     ]
-    return compute.InstanceList(compute=inst_list)
+    return cloud.InstanceList(cloud=inst_list)
 
 
 class ExtendedIpsTestV21(test.TestCase):
@@ -105,8 +105,8 @@ class ExtendedIpsTestV21(test.TestCase):
     def setUp(self):
         super(ExtendedIpsTestV21, self).setUp()
         fakes.stub_out_nw_api(self)
-        self.stubs.Set(compute.api.API, 'get', fake_compute_get)
-        self.stubs.Set(compute.api.API, 'get_all', fake_compute_get_all)
+        self.stubs.Set(cloud.api.API, 'get', fake_compute_get)
+        self.stubs.Set(cloud.api.API, 'get_all', fake_compute_get_all)
 
     def _make_request(self, url):
         req = webob.Request.blank(url)
@@ -155,7 +155,7 @@ class ExtendedIpsTestV2(ExtendedIpsTestV21):
         super(ExtendedIpsTestV2, self).setUp()
         self.flags(
             osapi_compute_extension=[
-                'compute.api.openstack.compute.contrib.select_extensions'],
+                'cloud.api.openstack.cloud.contrib.select_extensions'],
             osapi_compute_ext_list=['Extended_ips'])
 
     def _make_request(self, url):

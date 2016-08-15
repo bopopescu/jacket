@@ -31,7 +31,7 @@ from oslo_log import log as logging
 
 from jacket.api.compute.ec2 import ec2utils
 import jacket.compute.cert.rpcapi
-from jacket.compute.compute import arch
+from jacket.compute.cloud import arch
 from jacket.compute import exception
 from jacket.i18n import _, _LE, _LI
 from jacket.compute.image import glance

@@ -17,8 +17,8 @@ from oslo_config import cfg
 from oslo_serialization import jsonutils
 from six.moves import range
 
-from jacket.compute.compute import api as compute_api
-from jacket.compute.compute import manager as compute_manager
+from jacket.compute.cloud import api as compute_api
+from jacket.compute.cloud import manager as compute_manager
 import jacket.compute.context
 from jacket.db import compute
 from jacket.compute import exception

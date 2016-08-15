@@ -23,14 +23,14 @@ from jacket.api.compute.openstack.compute.schemas import evacuate
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.compute import utils
 
 CONF = cfg.CONF
 CONF.import_opt('enable_instance_password',
-                'compute.api.openstack.compute.legacy_v2.servers')
+                'cloud.api.openstack.cloud.legacy_v2.servers')
 
 ALIAS = "os-evacuate"
 authorize = extensions.os_compute_authorizer(ALIAS)
@@ -39,8 +39,8 @@ authorize = extensions.os_compute_authorizer(ALIAS)
 class EvacuateController(wsgi.Controller):
     def __init__(self, *args, **kwargs):
         super(EvacuateController, self).__init__(*args, **kwargs)
-        self.compute_api = compute.API(skip_policy_check=True)
-        self.host_api = compute.HostAPI()
+        self.compute_api = cloud.API(skip_policy_check=True)
+        self.host_api = cloud.HostAPI()
 
     def _get_on_shared_storage(self, req, evacuate_body):
         if api_version_request.is_supported(req, min_version='2.14'):
@@ -82,7 +82,7 @@ class EvacuateController(wsgi.Controller):
         """Permit admins to evacuate a server from a failed host
         to a new one.
         """
-        context = req.environ["compute.context"]
+        context = req.environ["cloud.context"]
         authorize(context)
 
         evacuate_body = body["evacuate"]

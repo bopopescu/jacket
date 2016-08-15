@@ -14,7 +14,7 @@
 
 from oslo_utils import importutils
 
-from jacket.compute.compute import power_state
+from jacket.compute.cloud import power_state
 import jacket.compute.conf
 from jacket.compute import context
 from jacket.objects import compute

@@ -20,7 +20,7 @@ import mock
 from oslo_config import cfg
 from oslo_utils import importutils
 
-from jacket.compute.compute import rpcapi as compute_rpcapi
+from jacket.compute.cloud import rpcapi as compute_rpcapi
 from jacket.compute.console import api as console_api
 from jacket.compute import context
 from jacket.db import compute

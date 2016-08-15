@@ -17,23 +17,23 @@ import webob
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
 
 
-authorize = extensions.extension_authorizer('compute', 'consoles')
+authorize = extensions.extension_authorizer('cloud', 'consoles')
 
 
 class ConsolesController(wsgi.Controller):
     def __init__(self, *args, **kwargs):
-        self.compute_api = compute.API()
+        self.compute_api = cloud.API()
         super(ConsolesController, self).__init__(*args, **kwargs)
 
     @wsgi.action('os-getVNCConsole')
     def get_vnc_console(self, req, id, body):
         """Get vnc connection information to access a server."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         # If type is not supplied or unknown, get_vnc_console below will cope
@@ -61,7 +61,7 @@ class ConsolesController(wsgi.Controller):
     @wsgi.action('os-getSPICEConsole')
     def get_spice_console(self, req, id, body):
         """Get spice connection information to access a server."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         # If type is not supplied or unknown, get_spice_console below will cope
@@ -89,7 +89,7 @@ class ConsolesController(wsgi.Controller):
     @wsgi.action('os-getRDPConsole')
     def get_rdp_console(self, req, id, body):
         """Get text console output."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         # If type is not supplied or unknown, get_rdp_console below will cope
@@ -116,7 +116,7 @@ class ConsolesController(wsgi.Controller):
     @wsgi.action('os-getSerialConsole')
     def get_serial_console(self, req, id, body):
         """Get connection to a serial console."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context)
 
         # If type is not supplied or unknown get_serial_console below will cope
@@ -148,7 +148,7 @@ class Consoles(extensions.ExtensionDescriptor):
     """Interactive Console support."""
     name = "Consoles"
     alias = "os-consoles"
-    namespace = "http://docs.openstack.org/compute/ext/os-consoles/api/v2"
+    namespace = "http://docs.openstack.org/cloud/ext/os-consoles/api/v2"
     updated = "2011-12-23T00:00:00Z"
 
     def get_controller_extensions(self):

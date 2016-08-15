@@ -35,8 +35,8 @@ from jacket.api.compute.openstack.compute.views import servers as views_servers
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
-from jacket.compute import compute
-from jacket.compute.compute import flavors
+from jacket.compute import cloud
+from jacket.compute.cloud import flavors
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.i18n import _LW
@@ -48,11 +48,11 @@ ALIAS = 'servers'
 
 CONF = cfg.CONF
 CONF.import_opt('enable_instance_password',
-                'compute.api.openstack.compute.legacy_v2.servers')
-CONF.import_opt('reclaim_instance_interval', 'compute.compute.manager')
-CONF.import_opt('extensions_blacklist', 'compute.api.openstack',
+                'cloud.api.openstack.cloud.legacy_v2.servers')
+CONF.import_opt('reclaim_instance_interval', 'cloud.cloud.manager')
+CONF.import_opt('extensions_blacklist', 'cloud.api.openstack',
                 group='osapi_v21')
-CONF.import_opt('extensions_whitelist', 'compute.api.openstack',
+CONF.import_opt('extensions_whitelist', 'cloud.api.openstack',
                 group='osapi_v21')
 
 LOG = logging.getLogger(__name__)
@@ -62,13 +62,13 @@ authorize = extensions.os_compute_authorizer(ALIAS)
 class ServersController(wsgi.Controller):
     """The Server API base controller class for the OpenStack API."""
 
-    EXTENSION_CREATE_NAMESPACE = 'compute.api.v21.extensions.server.create'
+    EXTENSION_CREATE_NAMESPACE = 'cloud.api.v21.extensions.server.create'
 
-    EXTENSION_REBUILD_NAMESPACE = 'compute.api.v21.extensions.server.rebuild'
+    EXTENSION_REBUILD_NAMESPACE = 'cloud.api.v21.extensions.server.rebuild'
 
-    EXTENSION_UPDATE_NAMESPACE = 'compute.api.v21.extensions.server.update'
+    EXTENSION_UPDATE_NAMESPACE = 'cloud.api.v21.extensions.server.update'
 
-    EXTENSION_RESIZE_NAMESPACE = 'compute.api.v21.extensions.server.resize'
+    EXTENSION_RESIZE_NAMESPACE = 'cloud.api.v21.extensions.server.resize'
 
     _view_builder_class = views_servers.ViewBuilderV21
 
@@ -154,7 +154,7 @@ class ServersController(wsgi.Controller):
 
         self.extension_info = kwargs.pop('extension_info')
         super(ServersController, self).__init__(**kwargs)
-        self.compute_api = compute.API(skip_policy_check=True)
+        self.compute_api = cloud.API(skip_policy_check=True)
 
         # Look for implementation of extension point of server creation
         self.create_extension_manager = \
@@ -277,7 +277,7 @@ class ServersController(wsgi.Controller):
     @extensions.expected_errors((400, 403))
     def index(self, req):
         """Returns a list of server names and ids for a given user."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action="index")
         try:
             servers = self._get_servers(req, is_detail=False)
@@ -288,7 +288,7 @@ class ServersController(wsgi.Controller):
     @extensions.expected_errors((400, 403))
     def detail(self, req):
         """Returns a list of server details for a given user."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action="detail")
         try:
             servers = self._get_servers(req, is_detail=True)
@@ -302,7 +302,7 @@ class ServersController(wsgi.Controller):
         search_opts = {}
         search_opts.update(req.GET)
 
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         remove_invalid_options(context, search_opts,
                 self._get_server_search_options(req))
 
@@ -329,7 +329,7 @@ class ServersController(wsgi.Controller):
                 raise exc.HTTPBadRequest(explanation=msg)
             search_opts['changes-since'] = parsed
 
-        # By default, compute's get_all() will return deleted instances.
+        # By default, cloud's get_all() will return deleted instances.
         # If an admin hasn't specified a 'deleted' search option, we need
         # to filter out deleted instances by setting the filter ourselves.
         # ... Unless 'changes-since' is specified, because 'changes-since'
@@ -369,7 +369,7 @@ class ServersController(wsgi.Controller):
             # id associated with the token is the tenant id
             # specified. This is done so a request that does not need
             # the all_tenants flag does not fail because of lack of
-            # policy permission for compute:get_all_tenants when it
+            # policy permission for cloud:get_all_tenants when it
             # doesn't actually need it.
             # if context.project_id != search_opts.get('tenant_id'):
             #    search_opts['all_tenants'] = 1
@@ -413,7 +413,7 @@ class ServersController(wsgi.Controller):
         except exception.FlavorNotFound:
             LOG.debug("Flavor '%s' could not be found ",
                       search_opts['flavor'])
-            instance_list = compute.InstanceList()
+            instance_list = cloud.InstanceList()
 
         if is_detail:
             instance_list._context = context
@@ -448,7 +448,7 @@ class ServersController(wsgi.Controller):
         networks = []
         network_uuids = []
         for network in requested_networks:
-            request = compute.NetworkRequest()
+            request = cloud.NetworkRequest()
             try:
                 # fixed IP address is optional
                 # if the fixed IP address is not provided then
@@ -497,7 +497,7 @@ class ServersController(wsgi.Controller):
                 expl = _('Bad networks format')
                 raise exc.HTTPBadRequest(explanation=expl)
 
-        return compute.NetworkRequestList(compute=networks)
+        return cloud.NetworkRequestList(cloud=networks)
 
     # NOTE(vish): Without this regex, b64decode will happily
     #             ignore illegal bytes in the base64 encoded
@@ -518,7 +518,7 @@ class ServersController(wsgi.Controller):
     @extensions.expected_errors(404)
     def show(self, req, id):
         """Returns server details by server id."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action="show")
         instance = self._get_server(context, req, id, is_detail=True)
         return self._view_builder.show(req, instance)
@@ -531,7 +531,7 @@ class ServersController(wsgi.Controller):
     def create(self, req, body):
         """Creates a new server for a given user."""
 
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         server_dict = body['server']
         password = self._get_server_admin_password(server_dict)
         name = common.normalize_name(server_dict['name'])
@@ -587,7 +587,7 @@ class ServersController(wsgi.Controller):
         # return_reservation_id in order to request that a reservation
         # id be returned to the client instead of the newly created
         # instance information we do not want to pass this parameter
-        # to the compute create call which always returns both. We use
+        # to the cloud create call which always returns both. We use
         # this flag after the instance create call to determine what
         # to return to the client
         return_reservation_id = create_kwargs.pop('return_reservation_id',
@@ -797,7 +797,7 @@ class ServersController(wsgi.Controller):
     def update(self, req, id, body):
         """Update server then pass on to version-specific controller."""
 
-        ctxt = req.environ['compute.context']
+        ctxt = req.environ['cloud.context']
         update_dict = {}
         authorize(ctxt, action='update')
 
@@ -832,7 +832,7 @@ class ServersController(wsgi.Controller):
     @extensions.expected_errors((400, 404, 409))
     @wsgi.action('confirmResize')
     def _action_confirm_resize(self, req, id, body):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='confirm_resize')
         instance = self._get_server(context, req, id)
         try:
@@ -852,7 +852,7 @@ class ServersController(wsgi.Controller):
     @extensions.expected_errors((400, 404, 409))
     @wsgi.action('revertResize')
     def _action_revert_resize(self, req, id, body):
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='revert_resize')
         instance = self._get_server(context, req, id)
         try:
@@ -878,7 +878,7 @@ class ServersController(wsgi.Controller):
     def _action_reboot(self, req, id, body):
 
         reboot_type = body['reboot']['type'].upper()
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='reboot')
         instance = self._get_server(context, req, id)
 
@@ -892,7 +892,7 @@ class ServersController(wsgi.Controller):
 
     def _resize(self, req, instance_id, flavor_id, **kwargs):
         """Begin the resize process with given instance/flavor."""
-        context = req.environ["compute.context"]
+        context = req.environ["cloud.context"]
         authorize(context, action='resize')
         instance = self._get_server(context, req, instance_id)
 
@@ -931,7 +931,7 @@ class ServersController(wsgi.Controller):
     def delete(self, req, id):
         """Destroys a server."""
         try:
-            self._delete(req.environ['compute.context'], req, id)
+            self._delete(req.environ['cloud.context'], req, id)
         except exception.InstanceNotFound:
             msg = _("Instance could not be found")
             raise exc.HTTPNotFound(explanation=msg)
@@ -944,7 +944,7 @@ class ServersController(wsgi.Controller):
                     'delete', id)
 
     def _image_uuid_from_href(self, image_href):
-        # If the image href was generated by compute api, strip image_href
+        # If the image href was generated by cloud api, strip image_href
         # down to an id and use the default glance connection params
         image_uuid = image_href.split('/').pop()
 
@@ -1007,7 +1007,7 @@ class ServersController(wsgi.Controller):
 
         password = self._get_server_admin_password(rebuild_dict)
 
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='rebuild')
         instance = self._get_server(context, req, id)
 
@@ -1082,7 +1082,7 @@ class ServersController(wsgi.Controller):
     @validation.schema(schema_servers.create_image, '2.1')
     def _action_create_image(self, req, id, body):
         """Snapshot a server instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         authorize(context, action='create_image')
 
         entity = body["createImage"]
@@ -1093,7 +1093,7 @@ class ServersController(wsgi.Controller):
 
         instance = self._get_server(context, req, id)
 
-        bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
                     context, instance.uuid)
 
         try:
@@ -1146,7 +1146,7 @@ class ServersController(wsgi.Controller):
     def _get_instance(self, context, instance_uuid):
         try:
             attrs = ['system_metadata', 'metadata']
-            return compute.Instance.get_by_uuid(context, instance_uuid,
+            return cloud.Instance.get_by_uuid(context, instance_uuid,
                                                 expected_attrs=attrs)
         except exception.InstanceNotFound as e:
             raise webob.exc.HTTPNotFound(explanation=e.format_message())
@@ -1156,7 +1156,7 @@ class ServersController(wsgi.Controller):
     @wsgi.action('os-start')
     def _start_server(self, req, id, body):
         """Start an instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         instance = self._get_instance(context, id)
         authorize(context, instance, 'start')
         LOG.debug('start instance', instance=instance)
@@ -1175,7 +1175,7 @@ class ServersController(wsgi.Controller):
     @wsgi.action('os-stop')
     def _stop_server(self, req, id, body):
         """Stop an instance."""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         instance = self._get_instance(context, id)
         authorize(context, instance, 'stop')
         LOG.debug('stop instance', instance=instance)
@@ -1196,7 +1196,7 @@ class ServersController(wsgi.Controller):
     @validation.schema(schema_servers.trigger_crash_dump)
     def _action_trigger_crash_dump(self, req, id, body):
         """Trigger crash dump in an instance"""
-        context = req.environ['compute.context']
+        context = req.environ['cloud.context']
         instance = self._get_instance(context, id)
         authorize(context, instance, 'trigger_crash_dump')
         try:

@@ -20,8 +20,8 @@ import uuid
 import mock
 import six
 
-from jacket.compute.compute import flavors
-from jacket.compute.compute import utils as compute_utils
+from jacket.compute.cloud import flavors
+from jacket.compute.cloud import utils as compute_utils
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket import rpc

@@ -25,10 +25,10 @@ from oslo_serialization import jsonutils
 from oslo_utils import importutils
 import six
 
-from jacket.compute.compute import flavors
-from jacket.compute.compute import power_state
-from jacket.compute.compute import task_states
-from jacket.compute.compute import utils as compute_utils
+from jacket.compute.cloud import flavors
+from jacket.compute.cloud import power_state
+from jacket.compute.cloud import task_states
+from jacket.compute.cloud import utils as compute_utils
 import jacket.compute.conf
 from jacket.compute import context
 from jacket.compute import exception

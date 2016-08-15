@@ -18,7 +18,7 @@ import webob
 
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import \
     extended_virtual_interfaces_net
-from jacket.compute import compute
+from jacket.compute import cloud
 from jacket.compute import network
 from jacket.objects.compute import virtual_interface as vif_obj
 from jacket.compute import test
@@ -68,7 +68,7 @@ class ExtendedServerVIFNetTest(test.NoDBTestCase):
 
     def setUp(self):
         super(ExtendedServerVIFNetTest, self).setUp()
-        self.stubs.Set(compute.api.API, "get",
+        self.stubs.Set(cloud.api.API, "get",
                        compute_api_get)
         self.stubs.Set(network.api.API, "get_vifs_by_instance",
                        get_vifs_by_instance)
@@ -76,7 +76,7 @@ class ExtendedServerVIFNetTest(test.NoDBTestCase):
                        get_vif_by_mac_address)
         self.flags(
             osapi_compute_extension=[
-                'compute.api.openstack.compute.contrib.select_extensions'],
+                'cloud.api.openstack.cloud.contrib.select_extensions'],
             osapi_compute_ext_list=['Virtual_interfaces',
                                     'Extended_virtual_interfaces_net'])
 

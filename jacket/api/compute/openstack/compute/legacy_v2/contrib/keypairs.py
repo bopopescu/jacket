@@ -21,7 +21,7 @@ import webob.exc
 from jacket.api.compute.openstack.compute.legacy_v2 import servers
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute.compute import api as compute_api
+from jacket.compute.cloud import api as compute_api
 from jacket.compute import exception
 from jacket.i18n import _
 

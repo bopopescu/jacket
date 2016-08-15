@@ -22,7 +22,7 @@ from webob import exc
 from jacket.api.compute.openstack.compute import cloudpipe as cloudpipe_v21
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import cloudpipe \
         as cloudpipe_v2
-from jacket.compute.compute import utils as compute_utils
+from jacket.compute.cloud import utils as compute_utils
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.compute import test
