@@ -128,7 +128,7 @@ class ServerMetaDataTestV21(test.TestCase):
         self.stub_out('jacket.compute.instance_metadata_get',
                       return_server_metadata)
 
-        self.stubs.Set(compute_rpcapi.ComputeAPI, 'change_instance_metadata',
+        self.stubs.Set(compute_rpcapi.JacketAPI, 'change_instance_metadata',
                        fake_change_instance_metadata)
         self._set_up_resources()
 
@@ -689,7 +689,7 @@ class BadStateServerMetaDataTestV21(test.TestCase):
         fakes.stub_out_key_pair_funcs(self.stubs)
         self.stub_out('jacket.compute.instance_metadata_get',
                       return_server_metadata)
-        self.stubs.Set(compute_rpcapi.ComputeAPI, 'change_instance_metadata',
+        self.stubs.Set(compute_rpcapi.JacketAPI, 'change_instance_metadata',
                        fake_change_instance_metadata)
         self.stub_out('jacket.compute.instance_get', self._return_server_in_build)
         self.stub_out('compute.db.instance_get_by_uuid',

@@ -1923,7 +1923,7 @@ class ComputeTestCase(BaseTestCase):
         self.stubs.Set(cinder.API, 'terminate_connection',
                        fake_terminate_connection)
         self.stubs.Set(cinder.API, 'detach', fake_detach)
-        self.stubs.Set(compute_rpcapi.ComputeAPI,
+        self.stubs.Set(compute_rpcapi.JacketAPI,
                        'reserve_block_device_name',
                        fake_rpc_reserve_block_device_name)
 
@@ -8456,7 +8456,7 @@ class ComputeAPITestCase(BaseTestCase):
         def fake_change_instance_metadata(inst, ctxt, diff, instance=None,
                                           instance_uuid=None):
             meta_changes[0] = diff
-        self.stubs.Set(compute_rpcapi.ComputeAPI, 'change_instance_metadata',
+        self.stubs.Set(compute_rpcapi.JacketAPI, 'change_instance_metadata',
                        fake_change_instance_metadata)
 
         _context = context.get_admin_context()
@@ -8510,7 +8510,7 @@ class ComputeAPITestCase(BaseTestCase):
         def fake_change_instance_metadata(inst, ctxt, diff, instance=None,
                                           instance_uuid=None):
             pass
-        self.stubs.Set(compute_rpcapi.ComputeAPI, 'change_instance_metadata',
+        self.stubs.Set(compute_rpcapi.JacketAPI, 'change_instance_metadata',
                        fake_change_instance_metadata)
 
         instance = self._create_fake_instance_obj(
@@ -9295,7 +9295,7 @@ class ComputeAPITestCase(BaseTestCase):
                              'instance_uuid': fake_instance.uuid,
                              'access_url': 'fake_console_url'}
 
-        rpcapi = compute_rpcapi.ComputeAPI
+        rpcapi = compute_rpcapi.JacketAPI
         self.mox.StubOutWithMock(rpcapi, 'get_vnc_console')
         rpcapi.get_vnc_console(
             self.context, instance=fake_instance,
@@ -9337,7 +9337,7 @@ class ComputeAPITestCase(BaseTestCase):
                              'instance_uuid': fake_instance.uuid,
                              'access_url': 'fake_console_url'}
 
-        rpcapi = compute_rpcapi.ComputeAPI
+        rpcapi = compute_rpcapi.JacketAPI
         self.mox.StubOutWithMock(rpcapi, 'get_spice_console')
         rpcapi.get_spice_console(
             self.context, instance=fake_instance,
@@ -9379,7 +9379,7 @@ class ComputeAPITestCase(BaseTestCase):
                              'instance_uuid': fake_instance.uuid,
                              'access_url': 'fake_console_url'}
 
-        rpcapi = compute_rpcapi.ComputeAPI
+        rpcapi = compute_rpcapi.JacketAPI
         self.mox.StubOutWithMock(rpcapi, 'get_rdp_console')
         rpcapi.get_rdp_console(
             self.context, instance=fake_instance,
@@ -9421,7 +9421,7 @@ class ComputeAPITestCase(BaseTestCase):
                              'instance_uuid': fake_instance.uuid,
                              'access_url': 'fake_access_url'}
 
-        rpcapi = compute_rpcapi.ComputeAPI
+        rpcapi = compute_rpcapi.JacketAPI
 
         with test.nested(
             mock.patch.object(rpcapi, 'get_serial_console',
@@ -9489,7 +9489,7 @@ class ComputeAPITestCase(BaseTestCase):
         fake_tail_length = 699
         fake_console_output = 'fake console output'
 
-        rpcapi = compute_rpcapi.ComputeAPI
+        rpcapi = compute_rpcapi.JacketAPI
         self.mox.StubOutWithMock(rpcapi, 'get_console_output')
         rpcapi.get_console_output(
             self.context, instance=fake_instance,
@@ -9647,9 +9647,9 @@ class ComputeAPITestCase(BaseTestCase):
             mock.patch.object(cinder.API, 'get', return_value=fake_volume),
             mock.patch.object(cinder.API, 'check_attach'),
             mock.patch.object(cinder.API, 'reserve_volume'),
-            mock.patch.object(compute_rpcapi.ComputeAPI,
+            mock.patch.object(compute_rpcapi.JacketAPI,
                 'reserve_block_device_name', return_value=bdm),
-            mock.patch.object(compute_rpcapi.ComputeAPI, 'attach_volume')
+            mock.patch.object(compute_rpcapi.JacketAPI, 'attach_volume')
         ) as (mock_get, mock_check_attach, mock_reserve_vol, mock_reserve_bdm,
                 mock_attach):
 
@@ -9718,10 +9718,10 @@ class ComputeAPITestCase(BaseTestCase):
         self.stubs.Set(cinder.API, 'check_attach', fake_check_attach)
         self.stubs.Set(cinder.API, 'reserve_volume',
                        fake_reserve_volume)
-        self.stubs.Set(compute_rpcapi.ComputeAPI,
+        self.stubs.Set(compute_rpcapi.JacketAPI,
                        'reserve_block_device_name',
                        fake_rpc_reserve_block_device_name)
-        self.stubs.Set(compute_rpcapi.ComputeAPI, 'attach_volume',
+        self.stubs.Set(compute_rpcapi.JacketAPI, 'attach_volume',
                        fake_rpc_attach_volume)
 
         instance = self._create_fake_instance_obj()
@@ -9750,7 +9750,7 @@ class ComputeAPITestCase(BaseTestCase):
 
         self.stubs.Set(cinder.API, 'check_detach', fake_check_detach)
         self.stubs.Set(cinder.API, 'begin_detaching', fake_begin_detaching)
-        self.stubs.Set(compute_rpcapi.ComputeAPI, 'detach_volume',
+        self.stubs.Set(compute_rpcapi.JacketAPI, 'detach_volume',
                        fake_rpc_detach_volume)
 
         self.compute_api.detach_volume(self.context,
@@ -10030,7 +10030,7 @@ class ComputeAPITestCase(BaseTestCase):
     def test_get_diagnostics(self):
         instance = self._create_fake_instance_obj()
 
-        rpcapi = compute_rpcapi.ComputeAPI
+        rpcapi = compute_rpcapi.JacketAPI
         self.mox.StubOutWithMock(rpcapi, 'get_diagnostics')
         rpcapi.get_diagnostics(self.context, instance=instance)
         self.mox.ReplayAll()
@@ -10040,14 +10040,14 @@ class ComputeAPITestCase(BaseTestCase):
     def test_get_instance_diagnostics(self):
         instance = self._create_fake_instance_obj()
 
-        rpcapi = compute_rpcapi.ComputeAPI
+        rpcapi = compute_rpcapi.JacketAPI
         self.mox.StubOutWithMock(rpcapi, 'get_instance_diagnostics')
         rpcapi.get_instance_diagnostics(self.context, instance=instance)
         self.mox.ReplayAll()
 
         self.compute_api.get_instance_diagnostics(self.context, instance)
 
-    @mock.patch.object(compute_rpcapi.ComputeAPI,
+    @mock.patch.object(compute_rpcapi.JacketAPI,
                        'refresh_instance_security_rules')
     def test_refresh_instance_security_rules(self, mock_refresh):
         inst1 = self._create_fake_instance_obj()
@@ -10057,7 +10057,7 @@ class ComputeAPITestCase(BaseTestCase):
             self.context, [inst1, inst2])
         mock_refresh.assert_called_once_with(self.context, inst1.host, inst1)
 
-    @mock.patch.object(compute_rpcapi.ComputeAPI,
+    @mock.patch.object(compute_rpcapi.JacketAPI,
                        'refresh_instance_security_rules')
     def test_refresh_instance_security_rules_empty(self, mock_refresh):
         self.security_group_api._refresh_instance_security_rules(self.context,
@@ -10401,8 +10401,8 @@ class ComputeAPIAggrTestCase(BaseTestCase):
         super(ComputeAPIAggrTestCase, self).setUp()
         self.api = compute_api.AggregateAPI()
         self.context = context.get_admin_context()
-        self.stubs.Set(self.api.compute_rpcapi.client, 'call', fake_rpc_method)
-        self.stubs.Set(self.api.compute_rpcapi.client, 'cast', fake_rpc_method)
+        self.stubs.Set(self.api.jacket_rpcapi.client, 'call', fake_rpc_method)
+        self.stubs.Set(self.api.jacket_rpcapi.client, 'cast', fake_rpc_method)
 
     def test_aggregate_no_zone(self):
         # Ensure we can create an aggregate without an availability  zone
@@ -10720,7 +10720,7 @@ class ComputeAPIAggrTestCase(BaseTestCase):
             hosts = kwargs["aggregate"].hosts
             self.assertIn(fake_host, hosts)
 
-        self.stubs.Set(self.api.compute_rpcapi, 'add_aggregate_host',
+        self.stubs.Set(self.api.jacket_rpcapi, 'add_aggregate_host',
                        fake_add_aggregate_host)
 
         self.mox.StubOutWithMock(availability_zones,
@@ -10831,7 +10831,7 @@ class ComputeAPIAggrTestCase(BaseTestCase):
             hosts = kwargs["aggregate"].hosts
             self.assertNotIn(host_to_remove, hosts)
 
-        self.stubs.Set(self.api.compute_rpcapi, 'remove_aggregate_host',
+        self.stubs.Set(self.api.jacket_rpcapi, 'remove_aggregate_host',
                        fake_remove_aggregate_host)
 
         self.mox.StubOutWithMock(availability_zones,

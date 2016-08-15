@@ -952,7 +952,7 @@ class _BaseTaskTestCase(object):
             select_dest_mock.assert_called_once_with(self.context, fake_spec)
             self.assertFalse(rebuild_mock.called)
 
-    @mock.patch.object(conductor_manager.compute_rpcapi.ComputeAPI,
+    @mock.patch.object(conductor_manager.jacket_rpcapi.JacketAPI,
                        'rebuild_instance')
     @mock.patch.object(scheduler_utils, 'setup_instance_group')
     @mock.patch.object(conductor_manager.scheduler_client.SchedulerClient,
@@ -1075,11 +1075,11 @@ class ConductorTaskTestCase(_BaseTaskTestCase, test_compute.BaseTestCase):
 
     def test_reset(self):
         with mock.patch('compute.compute.rpcapi.ComputeAPI') as mock_rpc:
-            old_rpcapi = self.conductor_manager.compute_rpcapi
+            old_rpcapi = self.conductor_manager.jacket_rpcapi
             self.conductor_manager.reset()
             mock_rpc.assert_called_once_with()
             self.assertNotEqual(old_rpcapi,
-                                self.conductor_manager.compute_rpcapi)
+                                self.conductor_manager.jacket_rpcapi)
 
     def test_migrate_server_fails_with_rebuild(self):
         self.assertRaises(NotImplementedError, self.conductor.migrate_server,
@@ -1395,7 +1395,7 @@ class ConductorTaskTestCase(_BaseTaskTestCase, test_compute.BaseTestCase):
     @mock.patch.object(conductor_manager.ComputeTaskManager,
                        '_set_vm_state_and_notify')
     @mock.patch.object(migrate.MigrationTask, 'rollback')
-    @mock.patch.object(compute_rpcapi.ComputeAPI, 'prep_resize')
+    @mock.patch.object(compute_rpcapi.JacketAPI, 'prep_resize')
     def test_cold_migrate_exception_host_in_error_state_and_raise(
             self, prep_resize_mock, rollback_mock, notify_mock,
             select_dest_mock, quotas_mock, metadata_mock, spec_fp_mock,
@@ -1498,7 +1498,7 @@ class ConductorTaskTestCase(_BaseTaskTestCase, test_compute.BaseTestCase):
                 'instance_properties': instances[0]}
         self.mox.StubOutWithMock(scheduler_utils, 'build_request_spec')
         self.mox.StubOutWithMock(self.conductor_manager, '_schedule_instances')
-        self.mox.StubOutWithMock(self.conductor_manager.compute_rpcapi,
+        self.mox.StubOutWithMock(self.conductor_manager.jacket_rpcapi,
                 'build_and_run_instance')
 
         scheduler_utils.build_request_spec(self.context, image,
@@ -1511,7 +1511,7 @@ class ConductorTaskTestCase(_BaseTaskTestCase, test_compute.BaseTestCase):
         instances[0].refresh().AndRaise(
                 exc.InstanceNotFound(instance_id=instances[0].uuid))
         instances[1].refresh()
-        self.conductor_manager.compute_rpcapi.build_and_run_instance(
+        self.conductor_manager.jacket_rpcapi.build_and_run_instance(
                 self.context, instance=instances[1], host='host2',
                 image={'fake-data': 'should_pass_silently'}, request_spec=spec,
                 filter_properties={'limits': [],
@@ -1560,7 +1560,7 @@ class ConductorTaskTestCase(_BaseTaskTestCase, test_compute.BaseTestCase):
                 mock.patch.object(compute.RequestSpec, 'from_primitives'),
                 mock.patch.object(self.conductor_manager.scheduler_client,
                     'select_destinations', return_value=destinations),
-                mock.patch.object(self.conductor_manager.compute_rpcapi,
+                mock.patch.object(self.conductor_manager.jacket_rpcapi,
                     'build_and_run_instance')
                 ) as (inst1_refresh, inst2_refresh, from_primitives,
                         select_destinations,

@@ -170,7 +170,7 @@ class ConsoleAPITestCase(test.NoDBTestCase):
                                         'fake_id')
         mock_remove.assert_called_once_with(self.context, 'fake_id')
 
-    @mock.patch.object(compute_rpcapi.ComputeAPI, 'get_console_topic',
+    @mock.patch.object(compute_rpcapi.JacketAPI, 'get_console_topic',
                        return_value='compute.fake_host')
     @mock.patch.object(compute.Instance, 'get_by_uuid')
     def test_create_console(self, mock_get_instance_by_uuid,

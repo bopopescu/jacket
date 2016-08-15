@@ -38,11 +38,11 @@ class ConsoleauthTestCase(test.NoDBTestCase):
 
     def test_reset(self):
         with mock.patch('compute.compute.rpcapi.ComputeAPI') as mock_rpc:
-            old_rpcapi = self.manager_api.compute_rpcapi
+            old_rpcapi = self.manager_api.jacket_rpcapi
             self.manager_api.reset()
             mock_rpc.assert_called_once_with()
             self.assertNotEqual(old_rpcapi,
-                                self.manager_api.compute_rpcapi)
+                                self.manager_api.jacket_rpcapi)
 
     @mock.patch('compute.objects.instance.Instance.get_by_uuid')
     def test_tokens_expire(self, mock_get):
@@ -66,7 +66,7 @@ class ConsoleauthTestCase(test.NoDBTestCase):
         def fake_validate_console_port(ctxt, instance, port, console_type):
             return result
 
-        self.stubs.Set(self.manager.compute_rpcapi,
+        self.stubs.Set(self.manager.jacket_rpcapi,
                        'validate_console_port',
                        fake_validate_console_port)
 

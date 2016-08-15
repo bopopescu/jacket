@@ -285,7 +285,7 @@ class _ComputeAPIUnitTestMixIn(object):
         self._test_specified_ip_and_multiple_instances_helper(
             requested_networks)
 
-    @mock.patch.object(compute_rpcapi.ComputeAPI, 'reserve_block_device_name')
+    @mock.patch.object(compute_rpcapi.JacketAPI, 'reserve_block_device_name')
     def test_create_volume_bdm_call_reserve_dev_name(self, mock_reserve):
         bdm = compute.BlockDeviceMapping(
                 **fake_block_device.FakeDbBlockDeviceDict(
@@ -336,8 +336,8 @@ class _ComputeAPIUnitTestMixIn(object):
         self.assertEqual(result.volume_id, bdm.volume_id)
         self.assertTrue(bdm_create.called)
 
-    @mock.patch.object(compute_rpcapi.ComputeAPI, 'reserve_block_device_name')
-    @mock.patch.object(compute_rpcapi.ComputeAPI, 'attach_volume')
+    @mock.patch.object(compute_rpcapi.JacketAPI, 'reserve_block_device_name')
+    @mock.patch.object(compute_rpcapi.JacketAPI, 'attach_volume')
     def test_attach_volume(self, mock_attach, mock_reserve):
         instance = self._create_instance_obj()
         volume = fake_volume.fake_volume(1, 'test-vol', 'test-vol',
@@ -361,8 +361,8 @@ class _ComputeAPIUnitTestMixIn(object):
             mock_attach.assert_called_once_with(self.context,
                                                 instance, fake_bdm)
 
-    @mock.patch.object(compute_rpcapi.ComputeAPI, 'reserve_block_device_name')
-    @mock.patch.object(compute_rpcapi.ComputeAPI, 'attach_volume')
+    @mock.patch.object(compute_rpcapi.JacketAPI, 'reserve_block_device_name')
+    @mock.patch.object(compute_rpcapi.JacketAPI, 'attach_volume')
     def test_attach_volume_reserve_fails(self, mock_attach, mock_reserve):
         instance = self._create_instance_obj()
         volume = fake_volume.fake_volume(1, 'test-vol', 'test-vol',
@@ -400,7 +400,7 @@ class _ComputeAPIUnitTestMixIn(object):
         if self.cell_type == 'api':
             rpcapi = self.compute_api.cells_rpcapi
         else:
-            rpcapi = self.compute_api.compute_rpcapi
+            rpcapi = self.compute_api.jacket_rpcapi
         self.mox.StubOutWithMock(rpcapi, 'suspend_instance')
 
         instance.save(expected_task_state=[None])
@@ -441,7 +441,7 @@ class _ComputeAPIUnitTestMixIn(object):
         if self.cell_type == 'api':
             rpcapi = self.compute_api.cells_rpcapi
         else:
-            rpcapi = self.compute_api.compute_rpcapi
+            rpcapi = self.compute_api.jacket_rpcapi
         self.mox.StubOutWithMock(rpcapi, 'resume_instance')
 
         instance.save(expected_task_state=[None])
@@ -471,7 +471,7 @@ class _ComputeAPIUnitTestMixIn(object):
         if self.cell_type == 'api':
             rpcapi = self.compute_api.cells_rpcapi
         else:
-            rpcapi = self.compute_api.compute_rpcapi
+            rpcapi = self.compute_api.jacket_rpcapi
 
         self.mox.StubOutWithMock(rpcapi, 'start_instance')
         rpcapi.start_instance(self.context, instance)
@@ -512,7 +512,7 @@ class _ComputeAPIUnitTestMixIn(object):
         if self.cell_type == 'api':
             rpcapi = self.compute_api.cells_rpcapi
         else:
-            rpcapi = self.compute_api.compute_rpcapi
+            rpcapi = self.compute_api.jacket_rpcapi
 
         self.mox.StubOutWithMock(rpcapi, 'stop_instance')
         rpcapi.stop_instance(self.context, instance, do_cast=True,
@@ -628,9 +628,9 @@ class _ComputeAPIUnitTestMixIn(object):
                               return_value=dict(id='fake-image-id')),
             mock.patch.object(instance, 'save'),
             mock.patch.object(self.compute_api, '_record_action_start'),
-            mock.patch.object(self.compute_api.compute_rpcapi,
+            mock.patch.object(self.compute_api.jacket_rpcapi,
                               'shelve_instance'),
-            mock.patch.object(self.compute_api.compute_rpcapi,
+            mock.patch.object(self.compute_api.jacket_rpcapi,
                               'shelve_offload_instance')
         ) as (
             volume_backed_inst, create_image, instance_save,
@@ -698,7 +698,7 @@ class _ComputeAPIUnitTestMixIn(object):
         instance = self._create_instance_obj(params=params)
         with test.nested(
             mock.patch.object(instance, 'save'),
-            mock.patch.object(self.compute_api.compute_rpcapi,
+            mock.patch.object(self.compute_api.jacket_rpcapi,
                               'shelve_offload_instance')
         ) as (
             instance_save, rpcapi_shelve_offload_instance
@@ -756,7 +756,7 @@ class _ComputeAPIUnitTestMixIn(object):
         if self.cell_type == 'api':
             rpcapi = self.compute_api.cells_rpcapi
         else:
-            rpcapi = self.compute_api.compute_rpcapi
+            rpcapi = self.compute_api.jacket_rpcapi
 
         self.mox.StubOutWithMock(rpcapi, 'reboot_instance')
         rpcapi.reboot_instance(self.context, instance=inst,
@@ -888,7 +888,7 @@ class _ComputeAPIUnitTestMixIn(object):
                                           inst).AndReturn(fake_quotas)
         self.compute_api._record_action_start(
             self.context, inst, instance_actions.CONFIRM_RESIZE)
-        self.compute_api.compute_rpcapi.confirm_resize(
+        self.compute_api.jacket_rpcapi.confirm_resize(
             self.context, inst, migration,
             migration['source_compute'], fake_quotas.reservations, cast=False)
 
@@ -969,7 +969,7 @@ class _ComputeAPIUnitTestMixIn(object):
         self.mox.StubOutWithMock(compute_utils,
                                  'notify_about_instance_usage')
         self.mox.StubOutWithMock(quota.QUOTAS, 'commit')
-        rpcapi = self.compute_api.compute_rpcapi
+        rpcapi = self.compute_api.jacket_rpcapi
         self.mox.StubOutWithMock(rpcapi, 'confirm_resize')
 
         if (inst.vm_state in
@@ -1004,7 +1004,7 @@ class _ComputeAPIUnitTestMixIn(object):
         #     * Commit reservations
         #   * If not downed host:
         #     * Record the action start.
-        #     * Cast to compute_rpcapi.<method> with the reservations
+        #     * Cast to jacket_rpcapi.<method> with the reservations
 
         cast = True
         commit_quotas = True
@@ -1144,7 +1144,7 @@ class _ComputeAPIUnitTestMixIn(object):
         if self.cell_type == 'api':
             rpcapi = self.compute_api.cells_rpcapi
         else:
-            rpcapi = self.compute_api.compute_rpcapi
+            rpcapi = self.compute_api.jacket_rpcapi
         self.mox.StubOutWithMock(rpcapi, 'terminate_instance')
 
         compute.block_device_mapping_get_all_by_instance(self.context,
@@ -1305,7 +1305,7 @@ class _ComputeAPIUnitTestMixIn(object):
         self.mox.StubOutWithMock(compute_utils, 'reserve_quota_delta')
         self.mox.StubOutWithMock(fake_mig, 'save')
         self.mox.StubOutWithMock(self.compute_api, '_record_action_start')
-        self.mox.StubOutWithMock(self.compute_api.compute_rpcapi,
+        self.mox.StubOutWithMock(self.compute_api.jacket_rpcapi,
                                  'confirm_resize')
 
         self.context.elevated().AndReturn(self.context)
@@ -1333,7 +1333,7 @@ class _ComputeAPIUnitTestMixIn(object):
         self.compute_api._record_action_start(self.context, fake_inst,
                                               'confirmResize')
 
-        self.compute_api.compute_rpcapi.confirm_resize(
+        self.compute_api.jacket_rpcapi.confirm_resize(
                 self.context, fake_inst, fake_mig, 'compute-source',
                 [] if self.cell_type else fake_quotas.reservations)
 
@@ -1367,7 +1367,7 @@ class _ComputeAPIUnitTestMixIn(object):
         self.mox.StubOutWithMock(fake_inst, 'save')
         self.mox.StubOutWithMock(fake_mig, 'save')
         self.mox.StubOutWithMock(self.compute_api, '_record_action_start')
-        self.mox.StubOutWithMock(self.compute_api.compute_rpcapi,
+        self.mox.StubOutWithMock(self.compute_api.jacket_rpcapi,
                                  'revert_resize')
 
         self.context.elevated().AndReturn(self.context)
@@ -1401,7 +1401,7 @@ class _ComputeAPIUnitTestMixIn(object):
         self.compute_api._record_action_start(self.context, fake_inst,
                                               'revertResize')
 
-        self.compute_api.compute_rpcapi.revert_resize(
+        self.compute_api.jacket_rpcapi.revert_resize(
                 self.context, fake_inst, fake_mig, 'compute-dest',
                 [] if self.cell_type else fake_quotas.reservations)
 
@@ -1809,7 +1809,7 @@ class _ComputeAPIUnitTestMixIn(object):
         if self.cell_type == 'api':
             rpcapi = self.compute_api.cells_rpcapi
         else:
-            rpcapi = self.compute_api.compute_rpcapi
+            rpcapi = self.compute_api.jacket_rpcapi
         self.mox.StubOutWithMock(rpcapi, 'pause_instance')
 
         instance.save(expected_task_state=[None])
@@ -1850,7 +1850,7 @@ class _ComputeAPIUnitTestMixIn(object):
         if self.cell_type == 'api':
             rpcapi = self.compute_api.cells_rpcapi
         else:
-            rpcapi = self.compute_api.compute_rpcapi
+            rpcapi = self.compute_api.jacket_rpcapi
         self.mox.StubOutWithMock(rpcapi, 'unpause_instance')
 
         instance.save(expected_task_state=[None])
@@ -2028,7 +2028,7 @@ class _ComputeAPIUnitTestMixIn(object):
                        fake_vol_api_reserve)
         self.stubs.Set(self.compute_api.volume_api, 'unreserve_volume',
                        fake_vol_api_unreserve)
-        self.stubs.Set(self.compute_api.compute_rpcapi, 'swap_volume',
+        self.stubs.Set(self.compute_api.jacket_rpcapi, 'swap_volume',
                        fake_swap_volume_exc)
         self.assertRaises(AttributeError,
                           self.compute_api.swap_volume, self.context, instance,
@@ -2037,7 +2037,7 @@ class _ComputeAPIUnitTestMixIn(object):
         self.assertEqual(volumes[new_volume_id]['status'], 'available')
 
         # Should succeed
-        self.stubs.Set(self.compute_api.compute_rpcapi, 'swap_volume',
+        self.stubs.Set(self.compute_api.jacket_rpcapi, 'swap_volume',
                        lambda c, instance, old_volume_id, new_volume_id: True)
         self.compute_api.swap_volume(self.context, instance,
                                      volumes[old_volume_id],
@@ -2103,9 +2103,9 @@ class _ComputeAPIUnitTestMixIn(object):
         self.mox.StubOutWithMock(self.compute_api.image_api,
                                  'create')
         self.mox.StubOutWithMock(instance, 'save')
-        self.mox.StubOutWithMock(self.compute_api.compute_rpcapi,
+        self.mox.StubOutWithMock(self.compute_api.jacket_rpcapi,
                                  'snapshot_instance')
-        self.mox.StubOutWithMock(self.compute_api.compute_rpcapi,
+        self.mox.StubOutWithMock(self.compute_api.jacket_rpcapi,
                                  'backup_instance')
 
         if not is_snapshot:
@@ -2136,10 +2136,10 @@ class _ComputeAPIUnitTestMixIn(object):
             instance.save(expected_task_state=[None]).WithSideEffects(
                     check_state)
             if is_snapshot:
-                self.compute_api.compute_rpcapi.snapshot_instance(
+                self.compute_api.jacket_rpcapi.snapshot_instance(
                         self.context, instance, fake_image['id'])
             else:
-                self.compute_api.compute_rpcapi.backup_instance(
+                self.compute_api.jacket_rpcapi.backup_instance(
                         self.context, instance, fake_image['id'],
                         'fake-backup-type', 'fake-rotation')
 
@@ -2307,9 +2307,9 @@ class _ComputeAPIUnitTestMixIn(object):
                        fake_volume_get)
         self.stubs.Set(self.compute_api.volume_api, 'create_snapshot_force',
                        fake_volume_create_snapshot)
-        self.stubs.Set(self.compute_api.compute_rpcapi, 'quiesce_instance',
+        self.stubs.Set(self.compute_api.jacket_rpcapi, 'quiesce_instance',
                        fake_quiesce_instance)
-        self.stubs.Set(self.compute_api.compute_rpcapi, 'unquiesce_instance',
+        self.stubs.Set(self.compute_api.jacket_rpcapi, 'unquiesce_instance',
                        fake_unquiesce_instance)
         fake_image.stub_out_image_service(self)
 
@@ -2413,14 +2413,14 @@ class _ComputeAPIUnitTestMixIn(object):
 
         self.mox.StubOutWithMock(compute.BlockDeviceMapping,
                                  'get_by_volume')
-        self.mox.StubOutWithMock(self.compute_api.compute_rpcapi,
+        self.mox.StubOutWithMock(self.compute_api.jacket_rpcapi,
                 'volume_snapshot_create')
 
         compute.BlockDeviceMapping.get_by_volume(
                 self.context, volume_id,
                 expected_attrs=['instance']).AndReturn(fake_bdm)
-        self.compute_api.compute_rpcapi.volume_snapshot_create(self.context,
-                fake_bdm['instance'], volume_id, create_info)
+        self.compute_api.jacket_rpcapi.volume_snapshot_create(self.context,
+                                                              fake_bdm['instance'], volume_id, create_info)
 
         self.mox.ReplayAll()
 
@@ -2454,14 +2454,14 @@ class _ComputeAPIUnitTestMixIn(object):
 
         self.mox.StubOutWithMock(compute.BlockDeviceMapping,
                                  'get_by_volume')
-        self.mox.StubOutWithMock(self.compute_api.compute_rpcapi,
+        self.mox.StubOutWithMock(self.compute_api.jacket_rpcapi,
                 'volume_snapshot_delete')
 
         compute.BlockDeviceMapping.get_by_volume(
                 self.context, volume_id,
                 expected_attrs=['instance']).AndReturn(fake_bdm)
-        self.compute_api.compute_rpcapi.volume_snapshot_delete(self.context,
-                fake_bdm['instance'], volume_id, snapshot_id, {})
+        self.compute_api.jacket_rpcapi.volume_snapshot_delete(self.context,
+                                                              fake_bdm['instance'], volume_id, snapshot_id, {})
 
         self.mox.ReplayAll()
 
@@ -2755,7 +2755,7 @@ class _ComputeAPIUnitTestMixIn(object):
         instance.vm_state = vm_states.SOFT_DELETED
         instance.task_state = None
         instance.save()
-        with mock.patch.object(self.compute_api, 'compute_rpcapi') as rpc:
+        with mock.patch.object(self.compute_api, 'jacket_rpcapi') as rpc:
             self.compute_api.restore(admin_context, instance)
             rpc.restore_instance.assert_called_once_with(admin_context,
                                                          instance)
@@ -2775,7 +2775,7 @@ class _ComputeAPIUnitTestMixIn(object):
         instance.vm_state = vm_states.SOFT_DELETED
         instance.task_state = None
         instance.save()
-        with mock.patch.object(self.compute_api, 'compute_rpcapi') as rpc:
+        with mock.patch.object(self.compute_api, 'jacket_rpcapi') as rpc:
             self.compute_api.restore(self.context, instance)
             rpc.restore_instance.assert_called_once_with(self.context,
                                                          instance)
@@ -2800,10 +2800,10 @@ class _ComputeAPIUnitTestMixIn(object):
             compute.InstanceExternalEvent(
                 instance_uuid=uuids.instance_3),
             ]
-        self.compute_api.compute_rpcapi = mock.MagicMock()
+        self.compute_api.jacket_rpcapi = mock.MagicMock()
         self.compute_api.external_instance_event(self.context,
                                                  instances, events)
-        method = self.compute_api.compute_rpcapi.external_instance_event
+        method = self.compute_api.jacket_rpcapi.external_instance_event
         method.assert_any_call(self.context, instances[0:2], events[0:2])
         method.assert_any_call(self.context, instances[2:], events[2:])
         self.assertEqual(2, method.call_count)
@@ -3165,7 +3165,7 @@ class _ComputeAPIUnitTestMixIn(object):
                               return_value=False),
             mock.patch.object(instance, 'save'),
             mock.patch.object(self.compute_api, '_record_action_start'),
-            mock.patch.object(self.compute_api.compute_rpcapi,
+            mock.patch.object(self.compute_api.jacket_rpcapi,
                               'rescue_instance')
         ) as (
             bdm_get_by_instance_uuid, volume_backed_inst, instance_save,
@@ -3215,7 +3215,7 @@ class _ComputeAPIUnitTestMixIn(object):
         with test.nested(
             mock.patch.object(instance, 'save'),
             mock.patch.object(self.compute_api, '_record_action_start'),
-            mock.patch.object(self.compute_api.compute_rpcapi,
+            mock.patch.object(self.compute_api.jacket_rpcapi,
                               'unrescue_instance')
         ) as (
             instance_save, record_action_start, rpcapi_unrescue_instance
@@ -3243,7 +3243,7 @@ class _ComputeAPIUnitTestMixIn(object):
 
         @mock.patch.object(compute.Instance, 'save')
         @mock.patch.object(self.compute_api, '_record_action_start')
-        @mock.patch.object(self.compute_api.compute_rpcapi,
+        @mock.patch.object(self.compute_api.jacket_rpcapi,
                            'set_admin_password')
         def do_test(compute_rpcapi_mock, record_mock, instance_save_mock):
             # call the API
@@ -3331,7 +3331,7 @@ class _ComputeAPIUnitTestMixIn(object):
 
     @mock.patch.object(compute.Instance, 'save')
     @mock.patch.object(compute.InstanceAction, 'action_start')
-    @mock.patch.object(compute_rpcapi.ComputeAPI, 'pause_instance')
+    @mock.patch.object(compute_rpcapi.JacketAPI, 'pause_instance')
     @mock.patch.object(compute.Instance, 'get_by_uuid')
     @mock.patch.object(compute_api.API, '_get_instances_by_filters',
                        return_value=[])
@@ -3475,7 +3475,7 @@ class _ComputeAPIUnitTestMixIn(object):
         if self.cell_type == 'api':
             # cell api has not been implemented.
             return
-        rpcapi = self.compute_api.compute_rpcapi
+        rpcapi = self.compute_api.jacket_rpcapi
 
         instance = self._create_instance_obj()
         instance.task_state = task_states.MIGRATING
@@ -3528,7 +3528,7 @@ class _ComputeAPIUnitTestMixIn(object):
         return migration
 
     @mock.patch('compute.compute.api.API._record_action_start')
-    @mock.patch.object(compute_rpcapi.ComputeAPI, 'live_migration_abort')
+    @mock.patch.object(compute_rpcapi.JacketAPI, 'live_migration_abort')
     @mock.patch.object(compute.Migration, 'get_by_id_and_instance')
     def test_live_migrate_abort_succeeded(self,
                                           mock_get_migration,

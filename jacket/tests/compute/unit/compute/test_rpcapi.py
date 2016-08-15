@@ -57,7 +57,7 @@ class ComputeRpcAPITestCase(test.NoDBTestCase):
         mock_get_min.return_value = 1
         self.flags(compute='auto', group='upgrade_levels')
         compute_rpcapi.LAST_VERSION = None
-        rpcapi = compute_rpcapi.ComputeAPI()
+        rpcapi = compute_rpcapi.JacketAPI()
         self.assertEqual('4.4', rpcapi.client.version_cap)
         mock_get_min.assert_called_once_with(mock.ANY, 'compute-compute')
 
@@ -67,14 +67,14 @@ class ComputeRpcAPITestCase(test.NoDBTestCase):
         self.flags(compute='auto', group='upgrade_levels')
         compute_rpcapi.LAST_VERSION = None
         self.assertRaises(exception.ServiceTooOld,
-                          compute_rpcapi.ComputeAPI)
+                          compute_rpcapi.JacketAPI)
 
     @mock.patch('compute.objects.Service.get_minimum_version')
     def test_auto_pin_kilo(self, mock_get_min):
         mock_get_min.return_value = 0
         self.flags(compute='auto', group='upgrade_levels')
         compute_rpcapi.LAST_VERSION = None
-        rpcapi = compute_rpcapi.ComputeAPI()
+        rpcapi = compute_rpcapi.JacketAPI()
         self.assertEqual('4.0', rpcapi.client.version_cap)
         mock_get_min.assert_called_once_with(mock.ANY, 'compute-compute')
 
@@ -83,8 +83,8 @@ class ComputeRpcAPITestCase(test.NoDBTestCase):
         mock_get_min.return_value = 1
         self.flags(compute='auto', group='upgrade_levels')
         compute_rpcapi.LAST_VERSION = None
-        compute_rpcapi.ComputeAPI()
-        compute_rpcapi.ComputeAPI()
+        compute_rpcapi.JacketAPI()
+        compute_rpcapi.JacketAPI()
         mock_get_min.assert_called_once_with(mock.ANY, 'compute-compute')
         self.assertEqual('4.4', compute_rpcapi.LAST_VERSION)
 
@@ -92,7 +92,7 @@ class ComputeRpcAPITestCase(test.NoDBTestCase):
                           expected_args=None, **kwargs):
         ctxt = context.RequestContext('fake_user', 'fake_project')
 
-        rpcapi = kwargs.pop('rpcapi_class', compute_rpcapi.ComputeAPI)()
+        rpcapi = kwargs.pop('rpcapi_class', compute_rpcapi.JacketAPI)()
         self.assertIsNotNone(rpcapi.client)
         self.assertEqual(rpcapi.client.target.topic, CONF.compute_topic)
 
@@ -201,7 +201,7 @@ class ComputeRpcAPITestCase(test.NoDBTestCase):
     def test_detach_volume_no_attachment_id(self):
         ctxt = context.RequestContext('fake_user', 'fake_project')
         instance = self.fake_instance_obj
-        rpcapi = compute_rpcapi.ComputeAPI()
+        rpcapi = compute_rpcapi.JacketAPI()
         cast_mock = mock.Mock()
         cctxt_mock = mock.Mock(cast=cast_mock)
         with test.nested(
@@ -561,7 +561,7 @@ class ComputeRpcAPITestCase(test.NoDBTestCase):
 
     def _test_simple_call(self, method, inargs, callargs, callret,
                                calltype='call', can_send=False):
-        rpc = compute_rpcapi.ComputeAPI()
+        rpc = compute_rpcapi.JacketAPI()
 
         @mock.patch.object(rpc, 'client')
         @mock.patch.object(compute_rpcapi, '_compute_host')

@@ -43,7 +43,7 @@ from jacket.compute.cells import opts as cells_opts
 from jacket.compute.compute import flavors
 from jacket.compute.compute import instance_actions
 from jacket.compute.compute import power_state
-from jacket.compute.compute import rpcapi as compute_rpcapi
+from jacket.compute.compute import rpcapi as jacket_rpcapi
 from jacket.compute.compute import task_states
 from jacket.compute.compute import utils as compute_utils
 from jacket.compute.compute import vm_states
@@ -220,7 +220,7 @@ class API(base.Base):
             openstack_driver.get_openstack_security_group_driver(
                 skip_policy_check=skip_policy_check))
         self.consoleauth_rpcapi = consoleauth_rpcapi.ConsoleAuthAPI()
-        self.compute_rpcapi = compute_rpcapi.ComputeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
         self.compute_task_api = conductor.ComputeTaskAPI()
         self.servicegroup_api = servicegroup.API()
         self.notifier = rpc.get_notifier('compute', CONF.host)
@@ -1751,10 +1751,10 @@ class API(base.Base):
         self._record_action_start(context, instance,
                                   instance_actions.CONFIRM_RESIZE)
 
-        self.compute_rpcapi.confirm_resize(context,
-                instance, migration,
-                src_host, quotas.reservations,
-                cast=False)
+        self.jacket_rpcapi.confirm_resize(context,
+                                          instance, migration,
+                                          src_host, quotas.reservations,
+                                          cast=False)
 
     def _create_reservations(self, context, instance, original_task_state,
                              project_id, user_id):
@@ -1856,9 +1856,9 @@ class API(base.Base):
             instance.terminated_at = timeutils.utcnow()
             instance.save()
         else:
-            self.compute_rpcapi.terminate_instance(context, instance, bdms,
-                                                   reservations=reservations,
-                                                   delete_type='delete')
+            self.jacket_rpcapi.terminate_instance(context, instance, bdms,
+                                                  reservations=reservations,
+                                                  delete_type='delete')
 
     def _do_force_delete(self, context, instance, bdms, reservations=None,
                          local=False):
@@ -1868,9 +1868,9 @@ class API(base.Base):
             instance.terminated_at = timeutils.utcnow()
             instance.save()
         else:
-            self.compute_rpcapi.terminate_instance(context, instance, bdms,
-                                                   reservations=reservations,
-                                                   delete_type='force_delete')
+            self.jacket_rpcapi.terminate_instance(context, instance, bdms,
+                                                  reservations=reservations,
+                                                  delete_type='force_delete')
 
     def _do_soft_delete(self, context, instance, bdms, reservations=None,
                         local=False):
@@ -1880,8 +1880,8 @@ class API(base.Base):
             instance.terminated_at = timeutils.utcnow()
             instance.save()
         else:
-            self.compute_rpcapi.soft_delete_instance(context, instance,
-                                                     reservations=reservations)
+            self.jacket_rpcapi.soft_delete_instance(context, instance,
+                                                    reservations=reservations)
 
     # NOTE(maoy): we allow delete to be called no matter what vm_state says.
     @wrap_check_policy
@@ -1931,7 +1931,7 @@ class API(base.Base):
                 instance.task_state = task_states.RESTORING
                 instance.deleted_at = None
                 instance.save(expected_task_state=[None])
-                self.compute_rpcapi.restore_instance(context, instance)
+                self.jacket_rpcapi.restore_instance(context, instance)
             else:
                 instance.vm_state = vm_states.ACTIVE
                 instance.task_state = None
@@ -1960,8 +1960,8 @@ class API(base.Base):
 
         self._record_action_start(context, instance, instance_actions.STOP)
 
-        self.compute_rpcapi.stop_instance(context, instance, do_cast=do_cast,
-                                          clean_shutdown=clean_shutdown)
+        self.jacket_rpcapi.stop_instance(context, instance, do_cast=do_cast,
+                                         clean_shutdown=clean_shutdown)
 
     @check_instance_lock
     @check_instance_host
@@ -1986,7 +1986,7 @@ class API(base.Base):
         # TODO(yamahata): injected_files isn't supported right now.
         #                 It is used only for osapi. not for ec2 api.
         #                 availability_zone isn't used by run_instance.
-        self.compute_rpcapi.start_instance(context, instance)
+        self.jacket_rpcapi.start_instance(context, instance)
 
     @check_instance_lock
     @check_instance_host
@@ -1999,7 +1999,7 @@ class API(base.Base):
         self._record_action_start(context, instance,
                                   instance_actions.TRIGGER_CRASH_DUMP)
 
-        self.compute_rpcapi.trigger_crash_dump(context, instance)
+        self.jacket_rpcapi.trigger_crash_dump(context, instance)
 
     def get(self, context, instance_id, want_objects=False,
             expected_attrs=None):
@@ -2214,10 +2214,10 @@ class API(base.Base):
         instance.task_state = task_states.IMAGE_BACKUP
         instance.save(expected_task_state=[None])
 
-        self.compute_rpcapi.backup_instance(context, instance,
-                                            image_meta['id'],
-                                            backup_type,
-                                            rotation)
+        self.jacket_rpcapi.backup_instance(context, instance,
+                                           image_meta['id'],
+                                           backup_type,
+                                           rotation)
         return image_meta
 
     # NOTE(melwitt): We don't check instance lock for snapshot because lock is
@@ -2244,8 +2244,8 @@ class API(base.Base):
         instance.task_state = task_states.IMAGE_SNAPSHOT_PENDING
         instance.save(expected_task_state=[None])
 
-        self.compute_rpcapi.snapshot_instance(context, instance,
-                                              image_meta['id'])
+        self.jacket_rpcapi.snapshot_instance(context, instance,
+                                             image_meta['id'])
 
         return image_meta
 
@@ -2336,7 +2336,7 @@ class API(base.Base):
         quiesced = False
         if instance.vm_state == vm_states.ACTIVE:
             try:
-                self.compute_rpcapi.quiesce_instance(context, instance)
+                self.jacket_rpcapi.quiesce_instance(context, instance)
                 quiesced = True
             except (exception.InstanceQuiesceNotSupported,
                     exception.QemuGuestAgentNotEnabled,
@@ -2377,7 +2377,7 @@ class API(base.Base):
             mapping.append(mapping_dict)
 
         if quiesced:
-            self.compute_rpcapi.unquiesce_instance(context, instance, mapping)
+            self.jacket_rpcapi.unquiesce_instance(context, instance, mapping)
 
         if mapping:
             properties['block_device_mapping'] = mapping
@@ -2403,9 +2403,9 @@ class API(base.Base):
 
         self._record_action_start(context, instance, instance_actions.REBOOT)
 
-        self.compute_rpcapi.reboot_instance(context, instance=instance,
-                                            block_device_info=None,
-                                            reboot_type='SOFT')
+        self.jacket_rpcapi.reboot_instance(context, instance=instance,
+                                           block_device_info=None,
+                                           reboot_type='SOFT')
 
     @check_instance_state(vm_state=set(vm_states.ALLOW_HARD_REBOOT),
                           task_state=task_states.ALLOW_REBOOT)
@@ -2423,9 +2423,9 @@ class API(base.Base):
 
         self._record_action_start(context, instance, instance_actions.REBOOT)
 
-        self.compute_rpcapi.reboot_instance(context, instance=instance,
-                                            block_device_info=None,
-                                            reboot_type='HARD')
+        self.jacket_rpcapi.reboot_instance(context, instance=instance,
+                                           block_device_info=None,
+                                           reboot_type='HARD')
 
     @wrap_check_policy
     @check_instance_lock
@@ -2540,10 +2540,10 @@ class API(base.Base):
         self._record_action_start(context, instance,
                                   instance_actions.REVERT_RESIZE)
 
-        self.compute_rpcapi.revert_resize(context, instance,
-                                          migration,
-                                          migration.dest_compute,
-                                          quotas.reservations or [])
+        self.jacket_rpcapi.revert_resize(context, instance,
+                                         migration,
+                                         migration.dest_compute,
+                                         quotas.reservations or [])
 
     @wrap_check_policy
     @check_instance_lock
@@ -2570,11 +2570,11 @@ class API(base.Base):
         self._record_action_start(context, instance,
                                   instance_actions.CONFIRM_RESIZE)
 
-        self.compute_rpcapi.confirm_resize(context,
-                                           instance,
-                                           migration,
-                                           migration.source_compute,
-                                           quotas.reservations or [])
+        self.jacket_rpcapi.confirm_resize(context,
+                                          instance,
+                                          migration,
+                                          migration.source_compute,
+                                          quotas.reservations or [])
 
     @staticmethod
     def _resize_cells_support(context, quotas, instance,
@@ -2727,11 +2727,11 @@ class API(base.Base):
             image_meta = self._create_image(context, instance, name,
                     'snapshot')
             image_id = image_meta['id']
-            self.compute_rpcapi.shelve_instance(context, instance=instance,
-                    image_id=image_id, clean_shutdown=clean_shutdown)
+            self.jacket_rpcapi.shelve_instance(context, instance=instance,
+                                               image_id=image_id, clean_shutdown=clean_shutdown)
         else:
-            self.compute_rpcapi.shelve_offload_instance(context,
-                    instance=instance, clean_shutdown=clean_shutdown)
+            self.jacket_rpcapi.shelve_offload_instance(context,
+                                                       instance=instance, clean_shutdown=clean_shutdown)
 
     @wrap_check_policy
     @check_instance_lock
@@ -2741,8 +2741,8 @@ class API(base.Base):
         instance.task_state = task_states.SHELVING_OFFLOADING
         instance.save(expected_task_state=[None])
 
-        self.compute_rpcapi.shelve_offload_instance(context, instance=instance,
-            clean_shutdown=clean_shutdown)
+        self.jacket_rpcapi.shelve_offload_instance(context, instance=instance,
+                                                   clean_shutdown=clean_shutdown)
 
     @wrap_check_policy
     @check_instance_lock
@@ -2769,15 +2769,15 @@ class API(base.Base):
     @check_instance_lock
     def add_fixed_ip(self, context, instance, network_id):
         """Add fixed_ip from specified network to given instance."""
-        self.compute_rpcapi.add_fixed_ip_to_instance(context,
-                instance=instance, network_id=network_id)
+        self.jacket_rpcapi.add_fixed_ip_to_instance(context,
+                                                    instance=instance, network_id=network_id)
 
     @wrap_check_policy
     @check_instance_lock
     def remove_fixed_ip(self, context, instance, address):
         """Remove fixed_ip from specified network to given instance."""
-        self.compute_rpcapi.remove_fixed_ip_from_instance(context,
-                instance=instance, address=address)
+        self.jacket_rpcapi.remove_fixed_ip_from_instance(context,
+                                                         instance=instance, address=address)
 
     @wrap_check_policy
     @check_instance_lock
@@ -2788,7 +2788,7 @@ class API(base.Base):
         instance.task_state = task_states.PAUSING
         instance.save(expected_task_state=[None])
         self._record_action_start(context, instance, instance_actions.PAUSE)
-        self.compute_rpcapi.pause_instance(context, instance)
+        self.jacket_rpcapi.pause_instance(context, instance)
 
     @wrap_check_policy
     @check_instance_lock
@@ -2799,18 +2799,18 @@ class API(base.Base):
         instance.task_state = task_states.UNPAUSING
         instance.save(expected_task_state=[None])
         self._record_action_start(context, instance, instance_actions.UNPAUSE)
-        self.compute_rpcapi.unpause_instance(context, instance)
+        self.jacket_rpcapi.unpause_instance(context, instance)
 
     @wrap_check_policy
     def get_diagnostics(self, context, instance):
         """Retrieve diagnostics for the given instance."""
-        return self.compute_rpcapi.get_diagnostics(context, instance=instance)
+        return self.jacket_rpcapi.get_diagnostics(context, instance=instance)
 
     @wrap_check_policy
     def get_instance_diagnostics(self, context, instance):
         """Retrieve diagnostics for the given instance."""
-        return self.compute_rpcapi.get_instance_diagnostics(context,
-                                                            instance=instance)
+        return self.jacket_rpcapi.get_instance_diagnostics(context,
+                                                           instance=instance)
 
     @wrap_check_policy
     @check_instance_lock
@@ -2821,7 +2821,7 @@ class API(base.Base):
         instance.task_state = task_states.SUSPENDING
         instance.save(expected_task_state=[None])
         self._record_action_start(context, instance, instance_actions.SUSPEND)
-        self.compute_rpcapi.suspend_instance(context, instance)
+        self.jacket_rpcapi.suspend_instance(context, instance)
 
     @wrap_check_policy
     @check_instance_lock
@@ -2832,7 +2832,7 @@ class API(base.Base):
         instance.task_state = task_states.RESUMING
         instance.save(expected_task_state=[None])
         self._record_action_start(context, instance, instance_actions.RESUME)
-        self.compute_rpcapi.resume_instance(context, instance)
+        self.jacket_rpcapi.resume_instance(context, instance)
 
     @wrap_check_policy
     @check_instance_lock
@@ -2858,9 +2858,9 @@ class API(base.Base):
 
         self._record_action_start(context, instance, instance_actions.RESCUE)
 
-        self.compute_rpcapi.rescue_instance(context, instance=instance,
-            rescue_password=rescue_password, rescue_image_ref=rescue_image_ref,
-            clean_shutdown=clean_shutdown)
+        self.jacket_rpcapi.rescue_instance(context, instance=instance,
+                                           rescue_password=rescue_password, rescue_image_ref=rescue_image_ref,
+                                           clean_shutdown=clean_shutdown)
 
     @wrap_check_policy
     @check_instance_lock
@@ -2872,7 +2872,7 @@ class API(base.Base):
 
         self._record_action_start(context, instance, instance_actions.UNRESCUE)
 
-        self.compute_rpcapi.unrescue_instance(context, instance=instance)
+        self.jacket_rpcapi.unrescue_instance(context, instance=instance)
 
     @wrap_check_policy
     @check_instance_lock
@@ -2891,16 +2891,16 @@ class API(base.Base):
         self._record_action_start(context, instance,
                                   instance_actions.CHANGE_PASSWORD)
 
-        self.compute_rpcapi.set_admin_password(context,
-                                               instance=instance,
-                                               new_pass=password)
+        self.jacket_rpcapi.set_admin_password(context,
+                                              instance=instance,
+                                              new_pass=password)
 
     @wrap_check_policy
     @check_instance_host
     def get_vnc_console(self, context, instance, console_type):
         """Get a url to an instance Console."""
-        connect_info = self.compute_rpcapi.get_vnc_console(context,
-                instance=instance, console_type=console_type)
+        connect_info = self.jacket_rpcapi.get_vnc_console(context,
+                                                          instance=instance, console_type=console_type)
 
         self.consoleauth_rpcapi.authorize_console(context,
                 connect_info['token'], console_type,
@@ -2913,16 +2913,16 @@ class API(base.Base):
     @check_instance_host
     def get_vnc_connect_info(self, context, instance, console_type):
         """Used in a child cell to get console info."""
-        connect_info = self.compute_rpcapi.get_vnc_console(context,
-                instance=instance, console_type=console_type)
+        connect_info = self.jacket_rpcapi.get_vnc_console(context,
+                                                          instance=instance, console_type=console_type)
         return connect_info
 
     @wrap_check_policy
     @check_instance_host
     def get_spice_console(self, context, instance, console_type):
         """Get a url to an instance Console."""
-        connect_info = self.compute_rpcapi.get_spice_console(context,
-                instance=instance, console_type=console_type)
+        connect_info = self.jacket_rpcapi.get_spice_console(context,
+                                                            instance=instance, console_type=console_type)
         self.consoleauth_rpcapi.authorize_console(context,
                 connect_info['token'], console_type,
                 connect_info['host'], connect_info['port'],
@@ -2934,16 +2934,16 @@ class API(base.Base):
     @check_instance_host
     def get_spice_connect_info(self, context, instance, console_type):
         """Used in a child cell to get console info."""
-        connect_info = self.compute_rpcapi.get_spice_console(context,
-                instance=instance, console_type=console_type)
+        connect_info = self.jacket_rpcapi.get_spice_console(context,
+                                                            instance=instance, console_type=console_type)
         return connect_info
 
     @wrap_check_policy
     @check_instance_host
     def get_rdp_console(self, context, instance, console_type):
         """Get a url to an instance Console."""
-        connect_info = self.compute_rpcapi.get_rdp_console(context,
-                instance=instance, console_type=console_type)
+        connect_info = self.jacket_rpcapi.get_rdp_console(context,
+                                                          instance=instance, console_type=console_type)
         self.consoleauth_rpcapi.authorize_console(context,
                 connect_info['token'], console_type,
                 connect_info['host'], connect_info['port'],
@@ -2955,16 +2955,16 @@ class API(base.Base):
     @check_instance_host
     def get_rdp_connect_info(self, context, instance, console_type):
         """Used in a child cell to get console info."""
-        connect_info = self.compute_rpcapi.get_rdp_console(context,
-                instance=instance, console_type=console_type)
+        connect_info = self.jacket_rpcapi.get_rdp_console(context,
+                                                          instance=instance, console_type=console_type)
         return connect_info
 
     @wrap_check_policy
     @check_instance_host
     def get_serial_console(self, context, instance, console_type):
         """Get a url to a serial console."""
-        connect_info = self.compute_rpcapi.get_serial_console(context,
-                instance=instance, console_type=console_type)
+        connect_info = self.jacket_rpcapi.get_serial_console(context,
+                                                             instance=instance, console_type=console_type)
 
         self.consoleauth_rpcapi.authorize_console(context,
                 connect_info['token'], console_type,
@@ -2976,16 +2976,16 @@ class API(base.Base):
     @check_instance_host
     def get_serial_console_connect_info(self, context, instance, console_type):
         """Used in a child cell to get serial console."""
-        connect_info = self.compute_rpcapi.get_serial_console(context,
-                instance=instance, console_type=console_type)
+        connect_info = self.jacket_rpcapi.get_serial_console(context,
+                                                             instance=instance, console_type=console_type)
         return connect_info
 
     @wrap_check_policy
     @check_instance_host
     def get_mks_console(self, context, instance, console_type):
         """Get a url to a MKS console."""
-        connect_info = self.compute_rpcapi.get_mks_console(context,
-                instance=instance, console_type=console_type)
+        connect_info = self.jacket_rpcapi.get_mks_console(context,
+                                                          instance=instance, console_type=console_type)
         self.consoleauth_rpcapi.authorize_console(context,
                 connect_info['token'], console_type,
                 connect_info['host'], connect_info['port'],
@@ -2997,8 +2997,8 @@ class API(base.Base):
     @check_instance_host
     def get_console_output(self, context, instance, tail_length=None):
         """Get console output for an instance."""
-        return self.compute_rpcapi.get_console_output(context,
-                instance=instance, tail_length=tail_length)
+        return self.jacket_rpcapi.get_console_output(context,
+                                                     instance=instance, tail_length=tail_length)
 
     @wrap_check_policy
     def lock(self, context, instance):
@@ -3042,14 +3042,14 @@ class API(base.Base):
     @check_instance_cell
     def reset_network(self, context, instance):
         """Reset networking on the instance."""
-        self.compute_rpcapi.reset_network(context, instance=instance)
+        self.jacket_rpcapi.reset_network(context, instance=instance)
 
     @wrap_check_policy
     @check_instance_lock
     @check_instance_cell
     def inject_network_info(self, context, instance):
         """Inject network info for the instance."""
-        self.compute_rpcapi.inject_network_info(context, instance=instance)
+        self.jacket_rpcapi.inject_network_info(context, instance=instance)
 
     def _create_volume_bdm(self, context, instance, device, volume_id,
                            disk_bus, device_type, is_local_creation=False):
@@ -3073,7 +3073,7 @@ class API(base.Base):
             #             the same time. When db access is removed from
             #             compute, the bdm will be created here and we will
             #             have to make sure that they are assigned atomically.
-            volume_bdm = self.compute_rpcapi.reserve_block_device_name(
+            volume_bdm = self.jacket_rpcapi.reserve_block_device_name(
                 context, instance, device, volume_id, disk_bus=disk_bus,
                 device_type=device_type)
         return volume_bdm
@@ -3095,7 +3095,7 @@ class API(base.Base):
             device_type=device_type)
         try:
             self._check_attach_and_reserve_volume(context, volume_id, instance)
-            self.compute_rpcapi.attach_volume(context, instance, volume_bdm)
+            self.jacket_rpcapi.attach_volume(context, instance, volume_bdm)
         except Exception:
             with excutils.save_and_reraise_exception():
                 volume_bdm.destroy()
@@ -3173,8 +3173,8 @@ class API(base.Base):
         attachment_id = None
         if attachments and instance.uuid in attachments:
             attachment_id = attachments[instance.uuid]['attachment_id']
-        self.compute_rpcapi.detach_volume(context, instance=instance,
-                volume_id=volume['id'], attachment_id=attachment_id)
+        self.jacket_rpcapi.detach_volume(context, instance=instance,
+                                         volume_id=volume['id'], attachment_id=attachment_id)
 
     def _detach_volume_shelved_offloaded(self, context, instance, volume):
         """Detach a volume from an instance in shelved offloaded state.
@@ -3228,7 +3228,7 @@ class API(base.Base):
         self.volume_api.begin_detaching(context, old_volume['id'])
         self.volume_api.reserve_volume(context, new_volume['id'])
         try:
-            self.compute_rpcapi.swap_volume(
+            self.jacket_rpcapi.swap_volume(
                     context, instance=instance,
                     old_volume_id=old_volume['id'],
                     new_volume_id=new_volume['id'])
@@ -3245,9 +3245,9 @@ class API(base.Base):
     def attach_interface(self, context, instance, network_id, port_id,
                          requested_ip):
         """Use hotplug to add an network adapter to an instance."""
-        return self.compute_rpcapi.attach_interface(context,
-            instance=instance, network_id=network_id, port_id=port_id,
-            requested_ip=requested_ip)
+        return self.jacket_rpcapi.attach_interface(context,
+                                                   instance=instance, network_id=network_id, port_id=port_id,
+                                                   requested_ip=requested_ip)
 
     @wrap_check_policy
     @check_instance_lock
@@ -3256,8 +3256,8 @@ class API(base.Base):
                           task_state=[None])
     def detach_interface(self, context, instance, port_id):
         """Detach an network adapter from an instance."""
-        self.compute_rpcapi.detach_interface(context, instance=instance,
-            port_id=port_id)
+        self.jacket_rpcapi.detach_interface(context, instance=instance,
+                                            port_id=port_id)
 
     @wrap_check_policy
     def get_instance_metadata(self, context, instance):
@@ -3297,9 +3297,9 @@ class API(base.Base):
     def delete_instance_metadata(self, context, instance, key):
         """Delete the given metadata item from an instance."""
         instance.delete_metadata_key(key)
-        self.compute_rpcapi.change_instance_metadata(context,
-                                                     instance=instance,
-                                                     diff={key: ['-']})
+        self.jacket_rpcapi.change_instance_metadata(context,
+                                                    instance=instance,
+                                                    diff={key: ['-']})
 
     @wrap_check_policy
     @check_instance_lock
@@ -3325,9 +3325,9 @@ class API(base.Base):
         instance.metadata = _metadata
         instance.save()
         diff = _diff_dict(orig, instance.metadata)
-        self.compute_rpcapi.change_instance_metadata(context,
-                                                     instance=instance,
-                                                     diff=diff)
+        self.jacket_rpcapi.change_instance_metadata(context,
+                                                    instance=instance,
+                                                    diff=diff)
         return _metadata
 
     def _get_root_bdm(self, context, instance, bdms=None):
@@ -3409,7 +3409,7 @@ class API(base.Base):
         self._record_action_start(
             context, instance, instance_actions.LIVE_MIGRATION_FORCE_COMPLETE)
 
-        self.compute_rpcapi.live_migration_force_complete(
+        self.jacket_rpcapi.live_migration_force_complete(
             context, instance, migration.id)
 
     @check_instance_lock
@@ -3436,8 +3436,8 @@ class API(base.Base):
         self._record_action_start(context, instance,
                                   instance_actions.LIVE_MIGRATION_CANCEL)
 
-        self.compute_rpcapi.live_migration_abort(context,
-                instance, migration.id)
+        self.jacket_rpcapi.live_migration_abort(context,
+                                                instance, migration.id)
 
     @check_instance_state(vm_state=[vm_states.ACTIVE, vm_states.STOPPED,
                                     vm_states.ERROR])
@@ -3522,8 +3522,8 @@ class API(base.Base):
     def volume_snapshot_create(self, context, volume_id, create_info):
         bdm = compute.BlockDeviceMapping.get_by_volume(
                 context, volume_id, expected_attrs=['instance'])
-        self.compute_rpcapi.volume_snapshot_create(context, bdm.instance,
-                volume_id, create_info)
+        self.jacket_rpcapi.volume_snapshot_create(context, bdm.instance,
+                                                  volume_id, create_info)
         snapshot = {
             'snapshot': {
                 'id': create_info.get('id'),
@@ -3537,8 +3537,8 @@ class API(base.Base):
                                delete_info):
         bdm = compute.BlockDeviceMapping.get_by_volume(
                 context, volume_id, expected_attrs=['instance'])
-        self.compute_rpcapi.volume_snapshot_delete(context, bdm.instance,
-                volume_id, snapshot_id, delete_info)
+        self.jacket_rpcapi.volume_snapshot_delete(context, bdm.instance,
+                                                  volume_id, snapshot_id, delete_info)
 
     def external_instance_event(self, context, instances, events):
         # NOTE(danms): The external API consumer just provides events,
@@ -3564,7 +3564,7 @@ class API(base.Base):
             # TODO(salv-orlando): Handle exceptions raised by the rpc api layer
             # in order to ensure that a failure in processing events on a host
             # will not prevent processing events on other hosts
-            self.compute_rpcapi.external_instance_event(
+            self.jacket_rpcapi.external_instance_event(
                 context, instances_by_host[host], events_by_host[host])
 
     def get_instance_host_status(self, instance):
@@ -3606,7 +3606,7 @@ class HostAPI(base.Base):
     """Sub-set of the Compute Manager API for managing host operations."""
 
     def __init__(self, rpcapi=None):
-        self.rpcapi = rpcapi or compute_rpcapi.ComputeAPI()
+        self.rpcapi = rpcapi or jacket_rpcapi.JacketAPI()
         self.servicegroup_api = servicegroup.API()
         super(HostAPI, self).__init__()
 
@@ -3773,7 +3773,7 @@ class InstanceActionAPI(base.Base):
 class AggregateAPI(base.Base):
     """Sub-set of the Compute Manager API for managing host aggregates."""
     def __init__(self, **kwargs):
-        self.compute_rpcapi = compute_rpcapi.ComputeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
         self.scheduler_client = scheduler_client.SchedulerClient()
         super(AggregateAPI, self).__init__(**kwargs)
 
@@ -3925,8 +3925,8 @@ class AggregateAPI(base.Base):
         self.scheduler_client.update_aggregates(context, [aggregate])
         self._update_az_cache_for_host(context, host_name, aggregate.metadata)
         # NOTE(jogo): Send message to host to support resource pools
-        self.compute_rpcapi.add_aggregate_host(context,
-                aggregate=aggregate, host_param=host_name, host=host_name)
+        self.jacket_rpcapi.add_aggregate_host(context,
+                                              aggregate=aggregate, host_param=host_name, host=host_name)
         aggregate_payload.update({'name': aggregate.name})
         compute_utils.notify_about_aggregate_update(context,
                                                     "addhost.end",
@@ -3947,8 +3947,8 @@ class AggregateAPI(base.Base):
         aggregate.delete_host(host_name)
         self.scheduler_client.update_aggregates(context, [aggregate])
         self._update_az_cache_for_host(context, host_name, aggregate.metadata)
-        self.compute_rpcapi.remove_aggregate_host(context,
-                aggregate=aggregate, host_param=host_name, host=host_name)
+        self.jacket_rpcapi.remove_aggregate_host(context,
+                                                 aggregate=aggregate, host_param=host_name, host=host_name)
         compute_utils.notify_about_aggregate_update(context,
                                                     "removehost.end",
                                                     aggregate_payload)
@@ -4076,7 +4076,7 @@ class SecurityGroupAPI(base.Base, security_group_base.SecurityGroupBase):
     def __init__(self, skip_policy_check=False, **kwargs):
         super(SecurityGroupAPI, self).__init__(**kwargs)
         self.skip_policy_check = skip_policy_check
-        self.compute_rpcapi = compute_rpcapi.ComputeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
 
     def validate_property(self, value, property, allowed):
         """Validate given security group property.
@@ -4272,7 +4272,7 @@ class SecurityGroupAPI(base.Base, security_group_base.SecurityGroupBase):
                                             instance_uuid,
                                             security_group['id'])
         if instance.host:
-            self.compute_rpcapi.refresh_instance_security_rules(
+            self.jacket_rpcapi.refresh_instance_security_rules(
                     context, instance.host, instance)
 
     @wrap_check_security_groups_policy
@@ -4294,7 +4294,7 @@ class SecurityGroupAPI(base.Base, security_group_base.SecurityGroupBase):
                                                instance_uuid,
                                                security_group['id'])
         if instance.host:
-            self.compute_rpcapi.refresh_instance_security_rules(
+            self.jacket_rpcapi.refresh_instance_security_rules(
                     context, instance.host, instance)
 
     def get_rule(self, context, id):
@@ -4394,7 +4394,7 @@ class SecurityGroupAPI(base.Base, security_group_base.SecurityGroupBase):
     def _refresh_instance_security_rules(self, context, instances):
         for instance in instances:
             if instance.host is not None:
-                self.compute_rpcapi.refresh_instance_security_rules(
+                self.jacket_rpcapi.refresh_instance_security_rules(
                         context, instance.host, instance)
 
     def trigger_rules_refresh(self, context, id):

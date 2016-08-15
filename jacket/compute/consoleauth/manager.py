@@ -25,7 +25,7 @@ from oslo_serialization import jsonutils
 
 from jacket.compute import cache_utils
 from jacket.compute.cells import rpcapi as cells_rpcapi
-from jacket.compute.compute import rpcapi as compute_rpcapi
+from jacket.compute.compute import rpcapi as jacket_rpcapi
 import jacket.compute.conf
 from jacket.i18n import _LI, _LW
 from jacket import manager
@@ -54,7 +54,7 @@ class ConsoleAuthManager(manager.Manager):
                                                  *args, **kwargs)
         self._mc = None
         self._mc_instance = None
-        self.compute_rpcapi = compute_rpcapi.ComputeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
         self.cells_rpcapi = cells_rpcapi.CellsAPI()
 
     @property
@@ -71,8 +71,8 @@ class ConsoleAuthManager(manager.Manager):
 
     def reset(self):
         LOG.info(_LI('Reloading compute RPC API'))
-        compute_rpcapi.LAST_VERSION = None
-        self.compute_rpcapi = compute_rpcapi.ComputeAPI()
+        jacket_rpcapi.LAST_VERSION = None
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
 
     def _get_tokens_for_instance(self, instance_uuid):
         tokens_str = self.mc_instance.get(instance_uuid.encode('UTF-8'))
@@ -134,10 +134,10 @@ class ConsoleAuthManager(manager.Manager):
 
         instance = compute.Instance.get_by_uuid(context, instance_uuid)
 
-        return self.compute_rpcapi.validate_console_port(context,
-                                            instance,
-                                            token['port'],
-                                            token['console_type'])
+        return self.jacket_rpcapi.validate_console_port(context,
+                                                        instance,
+                                                        token['port'],
+                                                        token['console_type'])
 
     def check_token(self, context, token):
         token_str = self.mc.get(token.encode('UTF-8'))

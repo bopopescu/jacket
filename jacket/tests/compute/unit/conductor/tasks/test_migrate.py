@@ -50,14 +50,14 @@ class MigrationTaskTestCase(test.NoDBTestCase):
         return migrate.MigrationTask(self.context, self.instance, self.flavor,
                                      self.filter_properties, self.request_spec,
                                      self.reservations, self.clean_shutdown,
-                                     compute_rpcapi.ComputeAPI(),
+                                     compute_rpcapi.JacketAPI(),
                                      scheduler_client.SchedulerClient())
 
     @mock.patch.object(scheduler_utils, 'build_request_spec')
     @mock.patch.object(scheduler_utils, 'setup_instance_group')
     @mock.patch.object(compute.RequestSpec, 'from_primitives')
     @mock.patch.object(scheduler_client.SchedulerClient, 'select_destinations')
-    @mock.patch.object(compute_rpcapi.ComputeAPI, 'prep_resize')
+    @mock.patch.object(compute_rpcapi.JacketAPI, 'prep_resize')
     @mock.patch.object(compute.Quotas, 'from_reservations')
     def test_execute(self, quotas_mock, prep_resize_mock,
                      sel_dest_mock, spec_fp_mock, sig_mock, brs_mock):

@@ -61,7 +61,7 @@ from jacket.compute.compute import build_results
 from jacket.compute.compute import claims
 from jacket.compute.compute import power_state
 from jacket.compute.compute import resource_tracker
-from jacket.compute.compute import rpcapi as compute_rpcapi
+from jacket.compute.compute import rpcapi as jacket_rpcapi
 from jacket.compute.compute import task_states
 from jacket.compute.compute import utils as compute_utils
 from jacket.compute.compute import vm_states
@@ -694,7 +694,7 @@ class ComputeManager(manager.Manager):
         self._bw_usage_supported = True
         self._last_bw_usage_cell_update = 0
         self.compute_api = compute.API()
-        self.compute_rpcapi = compute_rpcapi.ComputeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
         self.conductor_api = conductor.API()
         self.compute_task_api = conductor.ComputeTaskAPI()
         self.is_neutron_security_groups = (
@@ -730,8 +730,8 @@ class ComputeManager(manager.Manager):
 
     def reset(self):
         LOG.info(_LI('Reloading compute RPC API'))
-        compute_rpcapi.LAST_VERSION = None
-        self.compute_rpcapi = compute_rpcapi.ComputeAPI()
+        jacket_rpcapi.LAST_VERSION = None
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
 
     def _get_resource_tracker(self, nodename):
         rt = self._resource_tracker_dict.get(nodename)
@@ -872,7 +872,7 @@ class ComputeManager(manager.Manager):
             data = self.driver.check_instance_shared_storage_local(context,
                                                        instance)
             if data:
-                shared_storage = (self.compute_rpcapi.
+                shared_storage = (self.jacket_rpcapi.
                                   check_instance_shared_storage(context,
                                   instance, data, host=host))
         except NotImplementedError:
@@ -3635,9 +3635,9 @@ class ComputeManager(manager.Manager):
             rt = self._get_resource_tracker(instance.node)
             rt.drop_move_claim(context, instance)
 
-            self.compute_rpcapi.finish_revert_resize(context, instance,
-                    migration, migration.source_compute,
-                    quotas.reservations)
+            self.jacket_rpcapi.finish_revert_resize(context, instance,
+                                                    migration, migration.source_compute,
+                                                    quotas.reservations)
 
     @wrap_exception()
     @reverts_task_state
@@ -3752,7 +3752,7 @@ class ComputeManager(manager.Manager):
         with rt.resize_claim(context, instance, instance_type,
                              image_meta=image, limits=limits) as claim:
             LOG.info(_LI('Migrating'), context=context, instance=instance)
-            self.compute_rpcapi.resize_instance(
+            self.jacket_rpcapi.resize_instance(
                     context, instance, claim.migration, image,
                     instance_type, quotas.reservations,
                     clean_shutdown)
@@ -3923,9 +3923,9 @@ class ComputeManager(manager.Manager):
             instance.task_state = task_states.RESIZE_MIGRATED
             instance.save(expected_task_state=task_states.RESIZE_MIGRATING)
 
-            self.compute_rpcapi.finish_resize(context, instance,
-                    migration, image, disk_info,
-                    migration.dest_compute, reservations=quotas.reservations)
+            self.jacket_rpcapi.finish_resize(context, instance,
+                                             migration, image, disk_info,
+                                             migration.dest_compute, reservations=quotas.reservations)
 
             self._notify_about_instance_usage(context, instance, "resize.end",
                                               network_info=network_info)
@@ -5147,7 +5147,7 @@ class ComputeManager(manager.Manager):
             block_migration, disk_over_commit)
         LOG.debug('destination check data is %s', dest_check_data)
         try:
-            migrate_data = self.compute_rpcapi.\
+            migrate_data = self.jacket_rpcapi.\
                                 check_can_live_migrate_source(ctxt, instance,
                                                               dest_check_data)
         finally:
@@ -5275,7 +5275,7 @@ class ComputeManager(manager.Manager):
             else:
                 disk = None
 
-            migrate_data = self.compute_rpcapi.pre_live_migration(
+            migrate_data = self.jacket_rpcapi.pre_live_migration(
                 context, instance,
                 block_migration, disk, dest, migrate_data)
         except Exception:
@@ -5491,8 +5491,8 @@ class ComputeManager(manager.Manager):
 
         # Define domain at destination host, without doing it,
         # pause/suspend/terminate do not work.
-        self.compute_rpcapi.post_live_migration_at_destination(ctxt,
-                instance, block_migration, dest)
+        self.jacket_rpcapi.post_live_migration_at_destination(ctxt,
+                                                              instance, block_migration, dest)
 
         do_cleanup, destroy_disks = self._live_migration_cleanup_flags(
                 migrate_data)
@@ -5655,7 +5655,7 @@ class ComputeManager(manager.Manager):
                 context, instance.uuid)
         for bdm in bdms:
             if bdm.is_volume:
-                self.compute_rpcapi.remove_volume_connection(
+                self.jacket_rpcapi.remove_volume_connection(
                         context, bdm.volume_id, instance, dest)
 
         self._notify_about_instance_usage(context, instance,
@@ -5665,7 +5665,7 @@ class ComputeManager(manager.Manager):
                 migrate_data)
 
         if do_cleanup:
-            self.compute_rpcapi.rollback_live_migration_at_destination(
+            self.jacket_rpcapi.rollback_live_migration_at_destination(
                     context, instance, dest, destroy_disks=destroy_disks,
                     migrate_data=migrate_data)
 
