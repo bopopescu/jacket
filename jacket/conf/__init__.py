@@ -2,7 +2,7 @@
 # have a central place where the config options of Nova can be maintained.
 # For more background see the blueprint "centralize-config-options"
 
-from oslo_config import cfg
-
 from jacket.compute import conf
+
+CONF = conf.CONF
 
