@@ -7,7 +7,7 @@ JACKET_PRODUCT = "OpenStack Jacket"
 JACKET_PACKAGE = None  # OS distro package version suffix
 
 loaded = False
-version_info = pbr.version.VersionInfo('compute')
+version_info = pbr.version.VersionInfo('jacket')
 version_string = version_info.version_string
 
 

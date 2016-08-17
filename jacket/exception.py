@@ -24,18 +24,18 @@ SHOULD include dedicated exception logging.
 
 import sys
 
+from oslo_config import cfg
 from oslo_log import log as logging
 import six
 import webob.exc
 from webob import util as woutil
 
-import jacket.conf
 from jacket.i18n import _, _LE
 
 LOG = logging.getLogger(__name__)
 
 
-CONF = jacket.conf.CONF
+CONF = cfg.CONF
 
 
 class ConvertedException(webob.exc.WSGIHTTPException):
@@ -184,3 +184,17 @@ class InvalidStrTime(Invalid):
 class InvalidName(Invalid):
     msg_fmt = _("An invalid 'name' value was provided. "
                 "The name must be: %(reason)s")
+
+
+class OrphanedObjectError(JacketException):
+    msg_fmt = _('Cannot call %(method)s on orphaned %(objtype)s object')
+
+
+class ConfigNotFound(JacketException):
+    msg_fmt = _("Could not find config at %(path)s")
+
+
+class PasteAppNotFound(JacketException):
+    msg_fmt = _("Could not load paste app '%(name)s' from %(path)s")
+
+

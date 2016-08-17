@@ -42,5 +42,9 @@ def translate(value, user_locale):
     return oslo_i18n.translate(value, user_locale)
 
 
+def enable_lazy(enable=True):
+    return oslo_i18n.enable_lazy(enable)
+
+
 def get_available_languages():
     return oslo_i18n.get_available_languages(DOMAIN)

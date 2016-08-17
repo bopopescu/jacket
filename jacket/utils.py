@@ -939,3 +939,7 @@ def validate_dictionary_string_length(specs):
 def service_expired_time(with_timezone=False):
     return (timeutils.utcnow(with_timezone=with_timezone) -
             datetime.timedelta(seconds=CONF.service_down_time))
+
+
+def strtime(at):
+    return at.strftime("%Y-%m-%dT%H:%M:%S.%f")

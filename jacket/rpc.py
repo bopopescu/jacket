@@ -34,8 +34,8 @@ from oslo_log import log as logging
 import oslo_messaging as messaging
 from oslo_serialization import jsonutils
 
-import jacket.compute.context
-import jacket.compute.exception
+import jacket.context
+import jacket.exception
 
 
 CONF = cfg.CONF
@@ -44,7 +44,7 @@ notification_opts = [
                choices=['unversioned', 'versioned', 'both'],
                default='both',
                help='Specifies which notification format shall be used by '
-                    'compute.'),
+                    'jacket.'),
 ]
 
 CONF.register_opts(notification_opts)
