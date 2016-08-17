@@ -50,7 +50,7 @@ from jacket.storage import utils
 from jacket.storage.volume.flows.api import create_volume
 from jacket.storage.volume.flows.api import manage_existing
 from jacket.storage.volume import qos_specs
-from jacket.storage.volume import rpcapi as volume_rpcapi
+from jacket.worker import rpcapi as jacket_rpcapi
 from jacket.storage.volume import utils as volume_utils
 from jacket.storage.volume import volume_types
 
@@ -128,7 +128,7 @@ class API(base.Base):
         self.image_service = (image_service or
                               glance.get_default_image_service())
         self.scheduler_rpcapi = scheduler_rpcapi.SchedulerAPI()
-        self.volume_rpcapi = volume_rpcapi.VolumeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
         self.availability_zones = []
         self.availability_zones_last_fetched = None
         self.key_manager = keymgr.API()
@@ -307,14 +307,14 @@ class API(base.Base):
         try:
             sched_rpcapi = (self.scheduler_rpcapi if (not cgsnapshot and
                             not source_cg) else None)
-            volume_rpcapi = (self.volume_rpcapi if (not cgsnapshot and
-                             not source_cg) else None)
+            jacket_rpcapi = (self.jacket_rpcapi if (not cgsnapshot and
+                                                    not source_cg) else None)
             flow_engine = create_volume.get_flow(self.db,
                                                  self.image_service,
                                                  availability_zones,
                                                  create_what,
                                                  sched_rpcapi,
-                                                 volume_rpcapi)
+                                                 jacket_rpcapi)
         except Exception:
             msg = _('Failed to create api volume flow.')
             LOG.exception(msg)
@@ -428,7 +428,7 @@ class API(base.Base):
                 LOG.warning(_LW("Unable to delete encryption key for "
                                 "volume: %s."), e.msg, resource=volume)
 
-        self.volume_rpcapi.delete_volume(context,
+        self.jacket_rpcapi.delete_volume(context,
                                          volume,
                                          unmanage_only,
                                          cascade)
@@ -633,7 +633,7 @@ class API(base.Base):
             raise exception.InvalidVolumeAttachMode(mode=mode,
                                                     volume_id=volume['id'])
 
-        attach_results = self.volume_rpcapi.attach_volume(context,
+        attach_results = self.jacket_rpcapi.attach_volume(context,
                                                           volume,
                                                           instance_uuid,
                                                           host_name,
@@ -650,7 +650,7 @@ class API(base.Base):
                          'because it is in maintenance.'), resource=volume)
             msg = _("The volume cannot be detached in maintenance mode.")
             raise exception.InvalidVolume(reason=msg)
-        detach_results = self.volume_rpcapi.detach_volume(context, volume,
+        detach_results = self.jacket_rpcapi.detach_volume(context, volume,
                                                           attachment_id)
         LOG.info(_LI("Detach volume completed successfully."),
                  resource=volume)
@@ -665,7 +665,7 @@ class API(base.Base):
             msg = _("The volume connection cannot be initialized in "
                     "maintenance mode.")
             raise exception.InvalidVolume(reason=msg)
-        init_results = self.volume_rpcapi.initialize_connection(context,
+        init_results = self.jacket_rpcapi.initialize_connection(context,
                                                                 volume,
                                                                 connector)
         LOG.info(_LI("Initialize volume connection completed successfully."),
@@ -674,7 +674,7 @@ class API(base.Base):
 
     @wrap_check_policy
     def terminate_connection(self, context, volume, connector, force=False):
-        self.volume_rpcapi.terminate_connection(context,
+        self.jacket_rpcapi.terminate_connection(context,
                                                 volume,
                                                 connector,
                                                 force)
@@ -689,7 +689,7 @@ class API(base.Base):
                          'because it is in maintenance.'), resource=volume)
             msg = _("The volume cannot accept transfer in maintenance mode.")
             raise exception.InvalidVolume(reason=msg)
-        results = self.volume_rpcapi.accept_transfer(context,
+        results = self.jacket_rpcapi.accept_transfer(context,
                                                      volume,
                                                      new_user,
                                                      new_project)
@@ -704,7 +704,7 @@ class API(base.Base):
         snapshot = self.create_snapshot_in_db(
             context, volume, name,
             description, force, metadata, cgsnapshot_id)
-        self.volume_rpcapi.create_snapshot(context, volume, snapshot)
+        self.jacket_rpcapi.create_snapshot(context, volume, snapshot)
 
         return snapshot
 
@@ -955,7 +955,7 @@ class API(base.Base):
 
         # Make RPC call to the right host
         volume = storage.Volume.get_by_id(context, snapshot.volume_id)
-        self.volume_rpcapi.delete_snapshot(context, snapshot, volume.host,
+        self.jacket_rpcapi.delete_snapshot(context, snapshot, volume.host,
                                            unmanage_only=unmanage_only)
         LOG.info(_LI("Snapshot delete request issued successfully."),
                  resource=snapshot)
@@ -1178,7 +1178,7 @@ class API(base.Base):
         recv_metadata = self.image_service.create(
             context, self.image_service._translate_to_glance(metadata))
         self.update(context, volume, {'status': 'uploading'})
-        self.volume_rpcapi.copy_volume_to_image(context,
+        self.jacket_rpcapi.copy_volume_to_image(context,
                                                 volume,
                                                 recv_metadata)
 
@@ -1240,7 +1240,7 @@ class API(base.Base):
                 quota=quotas['gigabytes'])
 
         self.update(context, volume, {'status': 'extending'})
-        self.volume_rpcapi.extend_volume(context, volume, new_size,
+        self.jacket_rpcapi.extend_volume(context, volume, new_size,
                                          reservations)
         LOG.info(_LI("Extend volume request issued successfully."),
                  resource=volume)
@@ -1376,7 +1376,7 @@ class API(base.Base):
 
         LOG.info(_LI("Migrate volume completion issued successfully."),
                  resource=volume)
-        return self.volume_rpcapi.migrate_volume_completion(context, volume,
+        return self.jacket_rpcapi.migrate_volume_completion(context, volume,
                                                             new_volume, error)
 
     @wrap_check_policy
@@ -1599,7 +1599,7 @@ class API(base.Base):
                                                      description, False,
                                                      metadata, None,
                                                      commit_quota=False)
-        self.volume_rpcapi.manage_existing_snapshot(context, snapshot_object,
+        self.jacket_rpcapi.manage_existing_snapshot(context, snapshot_object,
                                                     ref, host)
         return snapshot_object
 
@@ -1627,7 +1627,7 @@ class API(base.Base):
                    % expected_status)
             LOG.error(msg)
             raise exception.InvalidInput(reason=msg)
-        self.volume_rpcapi.failover_host(ctxt, host, secondary_id)
+        self.jacket_rpcapi.failover_host(ctxt, host, secondary_id)
 
     def freeze_host(self, ctxt, host):
 
@@ -1647,7 +1647,7 @@ class API(base.Base):
         # Should we set service status to disabled to keep
         # scheduler calls from being sent? Just use existing
         # `storage service-disable reason=freeze`
-        self.volume_rpcapi.freeze_host(ctxt, host)
+        self.jacket_rpcapi.freeze_host(ctxt, host)
 
     def thaw_host(self, ctxt, host):
 
@@ -1663,7 +1663,7 @@ class API(base.Base):
             msg = _('Host is NOT Frozen.')
             LOG.error(msg)
             raise exception.InvalidInput(reason=msg)
-        if not self.volume_rpcapi.thaw_host(ctxt, host):
+        if not self.jacket_rpcapi.thaw_host(ctxt, host):
             return "Backend reported error during thaw_host operation."
 
     def check_volume_filters(self, filters):

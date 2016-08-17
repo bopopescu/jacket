@@ -379,62 +379,73 @@ class ComputeTaskManager(base.Base):
             flavor = compute.Flavor.get_by_id(context, flavor['id'])
             filter_properties = dict(filter_properties, instance_type=flavor)
 
-        request_spec = {}
-        try:
-            # check retry policy. Rather ugly use of instances[0]...
-            # but if we've exceeded max retries... then we really only
-            # have a single instance.
-            scheduler_utils.populate_retry(
-                filter_properties, instances[0].uuid)
-            request_spec = scheduler_utils.build_request_spec(
-                    context, image, instances)
-            hosts = self._schedule_instances(
-                    context, request_spec, filter_properties)
-        except Exception as exc:
-            updates = {'vm_state': vm_states.ERROR, 'task_state': None}
-            for instance in instances:
-                self._set_vm_state_and_notify(
-                    context, instance.uuid, 'build_instances', updates,
-                    exc, request_spec)
-                self._cleanup_allocated_networks(
-                    context, instance, requested_networks)
-            return
+        # request_spec = {}
+        # try:
+        #     # check retry policy. Rather ugly use of instances[0]...
+        #     # but if we've exceeded max retries... then we really only
+        #     # have a single instance.
+        #     scheduler_utils.populate_retry(
+        #         filter_properties, instances[0].uuid)
+        #     request_spec = scheduler_utils.build_request_spec(
+        #             context, image, instances)
+        #     hosts = self._schedule_instances(
+        #             context, request_spec, filter_properties)
+        # except Exception as exc:
+        #     updates = {'vm_state': vm_states.ERROR, 'task_state': None}
+        #     for instance in instances:
+        #         self._set_vm_state_and_notify(
+        #             context, instance.uuid, 'build_instances', updates,
+        #             exc, request_spec)
+        #         self._cleanup_allocated_networks(
+        #             context, instance, requested_networks)
+        #     return
 
-        for (instance, host) in six.moves.zip(instances, hosts):
+        #for (instance, host) in six.moves.zip(instances, hosts):
+        for instance in instances:
             try:
                 instance.refresh()
             except (exception.InstanceNotFound,
                     exception.InstanceInfoCacheNotFound):
                 LOG.debug('Instance deleted during build', instance=instance)
                 continue
-            local_filter_props = copy.deepcopy(filter_properties)
-            scheduler_utils.populate_filter_properties(local_filter_props,
-                host)
+            # local_filter_props = copy.deepcopy(filter_properties)
+            # scheduler_utils.populate_filter_properties(local_filter_props,
+            #     host)
             # The block_device_mapping passed from the api doesn't contain
             # instance specific information
             bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
                     context, instance.uuid)
 
             self.jacket_rpcapi.build_and_run_instance(context,
-                                                      instance=instance, host=host['host'], image=image,
-                                                      request_spec=request_spec,
-                                                      filter_properties=local_filter_props,
+                                                      instance=instance, host=None, image=image,
+                                                      request_spec=None,
+                                                      filter_properties=None,
                                                       admin_password=admin_password,
                                                       injected_files=injected_files,
                                                       requested_networks=requested_networks,
                                                       security_groups=security_groups,
-                                                      block_device_mapping=bdms, node=host['nodename'],
-                                                      limits=host['limits'])
+                                                      block_device_mapping=bdms, node=None,
+                                                      limits=None)
+            # self.jacket_rpcapi.build_and_run_instance(context,
+            #                                           instance=instance, host=host['host'], image=image,
+            #                                           request_spec=request_spec,
+            #                                           filter_properties=local_filter_props,
+            #                                           admin_password=admin_password,
+            #                                           injected_files=injected_files,
+            #                                           requested_networks=requested_networks,
+            #                                           security_groups=security_groups,
+            #                                           block_device_mapping=bdms, node=host['nodename'],
+            #                                           limits=host['limits'])
 
-    def _schedule_instances(self, context, request_spec, filter_properties):
-        scheduler_utils.setup_instance_group(context, request_spec,
-                                             filter_properties)
-        # TODO(sbauza): Hydrate here the object until we modify the
-        # scheduler.utils methods to directly use the RequestSpec object
-        spec_obj = compute.RequestSpec.from_primitives(
-            context, request_spec, filter_properties)
-        hosts = self.scheduler_client.select_destinations(context, spec_obj)
-        return hosts
+    # def _schedule_instances(self, context, request_spec, filter_properties):
+    #     scheduler_utils.setup_instance_group(context, request_spec,
+    #                                          filter_properties)
+    #     # TODO(sbauza): Hydrate here the object until we modify the
+    #     # scheduler.utils methods to directly use the RequestSpec object
+    #     spec_obj = compute.RequestSpec.from_primitives(
+    #         context, request_spec, filter_properties)
+    #     hosts = self.scheduler_client.select_destinations(context, spec_obj)
+    #     return hosts
 
     def unshelve_instance(self, context, instance, request_spec=None):
         sys_meta = instance.system_metadata
@@ -474,37 +485,40 @@ class ComputeTaskManager(base.Base):
             try:
                 with compute_utils.EventReporter(context, 'schedule_instances',
                                                  instance.uuid):
-                    if not request_spec:
-                        # NOTE(sbauza): We were unable to find an original
-                        # RequestSpec object - probably because the instance is
-                        # old. We need to mock that the old way
-                        filter_properties = {}
-                        request_spec = scheduler_utils.build_request_spec(
-                            context, image, [instance])
-                    else:
-                        # NOTE(sbauza): Force_hosts/nodes needs to be reset
-                        # if we want to make sure that the next destination
-                        # is not forced to be the original host
-                        request_spec.reset_forced_destinations()
-                        # TODO(sbauza): Provide directly the RequestSpec object
-                        # when _schedule_instances(),
-                        # populate_filter_properties and populate_retry()
-                        # accept it
-                        filter_properties = request_spec.\
-                            to_legacy_filter_properties_dict()
-                        request_spec = request_spec.\
-                            to_legacy_request_spec_dict()
-                    scheduler_utils.populate_retry(filter_properties,
-                                                   instance.uuid)
-                    hosts = self._schedule_instances(
-                            context, request_spec, filter_properties)
-                    host_state = hosts[0]
-                    scheduler_utils.populate_filter_properties(
-                            filter_properties, host_state)
-                    (host, node) = (host_state['host'], host_state['nodename'])
+                    # if not request_spec:
+                    #     # NOTE(sbauza): We were unable to find an original
+                    #     # RequestSpec object - probably because the instance is
+                    #     # old. We need to mock that the old way
+                    #     filter_properties = {}
+                    #     request_spec = scheduler_utils.build_request_spec(
+                    #         context, image, [instance])
+                    # else:
+                    #     # NOTE(sbauza): Force_hosts/nodes needs to be reset
+                    #     # if we want to make sure that the next destination
+                    #     # is not forced to be the original host
+                    #     request_spec.reset_forced_destinations()
+                    #     # TODO(sbauza): Provide directly the RequestSpec object
+                    #     # when _schedule_instances(),
+                    #     # populate_filter_properties and populate_retry()
+                    #     # accept it
+                    #     filter_properties = request_spec.\
+                    #         to_legacy_filter_properties_dict()
+                    #     request_spec = request_spec.\
+                    #         to_legacy_request_spec_dict()
+                    # scheduler_utils.populate_retry(filter_properties,
+                    #                                instance.uuid)
+                    # hosts = self._schedule_instances(
+                    #         context, request_spec, filter_properties)
+                    # host_state = hosts[0]
+                    # scheduler_utils.populate_filter_properties(
+                    #         filter_properties, host_state)
+                    # (host, node) = (host_state['host'], host_state['nodename'])
+                    # self.jacket_rpcapi.unshelve_instance(
+                    #         context, instance, host, image=image,
+                    #         filter_properties=filter_properties, node=node)
                     self.jacket_rpcapi.unshelve_instance(
-                            context, instance, host, image=image,
-                            filter_properties=filter_properties, node=node)
+                             context, instance, host=None, image=image,
+                             filter_properties=None, node=None)
             except (exception.NoValidHost,
                     exception.UnsupportedPolicyException):
                 instance.task_state = None
@@ -533,54 +547,54 @@ class ComputeTaskManager(base.Base):
 
         with compute_utils.EventReporter(context, 'rebuild_server',
                                           instance.uuid):
-            node = limits = None
-            if not host:
-                if not request_spec:
-                    # NOTE(sbauza): We were unable to find an original
-                    # RequestSpec object - probably because the instance is old
-                    # We need to mock that the old way
-                    filter_properties = {'ignore_hosts': [instance.host]}
-                    request_spec = scheduler_utils.build_request_spec(
-                            context, image_ref, [instance])
-                else:
-                    # NOTE(sbauza): Augment the RequestSpec object by excluding
-                    # the source host for avoiding the scheduler to pick it
-                    request_spec.ignore_hosts = request_spec.ignore_hosts or []
-                    request_spec.ignore_hosts.append(instance.host)
-                    # NOTE(sbauza): Force_hosts/nodes needs to be reset
-                    # if we want to make sure that the next destination
-                    # is not forced to be the original host
-                    request_spec.reset_forced_destinations()
-                    # TODO(sbauza): Provide directly the RequestSpec object
-                    # when _schedule_instances() and _set_vm_state_and_notify()
-                    # accept it
-                    filter_properties = request_spec.\
-                        to_legacy_filter_properties_dict()
-                    request_spec = request_spec.to_legacy_request_spec_dict()
-                try:
-                    hosts = self._schedule_instances(
-                            context, request_spec, filter_properties)
-                    host_dict = hosts.pop(0)
-                    host, node, limits = (host_dict['host'],
-                                          host_dict['nodename'],
-                                          host_dict['limits'])
-                except exception.NoValidHost as ex:
-                    with excutils.save_and_reraise_exception():
-                        self._set_vm_state_and_notify(context, instance.uuid,
-                                'rebuild_server',
-                                {'vm_state': instance.vm_state,
-                                 'task_state': None}, ex, request_spec)
-                        LOG.warning(_LW("No valid host found for rebuild"),
-                                    instance=instance)
-                except exception.UnsupportedPolicyException as ex:
-                    with excutils.save_and_reraise_exception():
-                        self._set_vm_state_and_notify(context, instance.uuid,
-                                'rebuild_server',
-                                {'vm_state': instance.vm_state,
-                                 'task_state': None}, ex, request_spec)
-                        LOG.warning(_LW("Server with unsupported policy "
-                                        "cannot be rebuilt"),
-                                    instance=instance)
+            # node = limits = None
+            # if not host:
+            #     if not request_spec:
+            #         # NOTE(sbauza): We were unable to find an original
+            #         # RequestSpec object - probably because the instance is old
+            #         # We need to mock that the old way
+            #         filter_properties = {'ignore_hosts': [instance.host]}
+            #         request_spec = scheduler_utils.build_request_spec(
+            #                 context, image_ref, [instance])
+            #     else:
+            #         # NOTE(sbauza): Augment the RequestSpec object by excluding
+            #         # the source host for avoiding the scheduler to pick it
+            #         request_spec.ignore_hosts = request_spec.ignore_hosts or []
+            #         request_spec.ignore_hosts.append(instance.host)
+            #         # NOTE(sbauza): Force_hosts/nodes needs to be reset
+            #         # if we want to make sure that the next destination
+            #         # is not forced to be the original host
+            #         request_spec.reset_forced_destinations()
+            #         # TODO(sbauza): Provide directly the RequestSpec object
+            #         # when _schedule_instances() and _set_vm_state_and_notify()
+            #         # accept it
+            #         filter_properties = request_spec.\
+            #             to_legacy_filter_properties_dict()
+            #         request_spec = request_spec.to_legacy_request_spec_dict()
+            #     try:
+            #         hosts = self._schedule_instances(
+            #                 context, request_spec, filter_properties)
+            #         host_dict = hosts.pop(0)
+            #         host, node, limits = (host_dict['host'],
+            #                               host_dict['nodename'],
+            #                               host_dict['limits'])
+            #     except exception.NoValidHost as ex:
+            #         with excutils.save_and_reraise_exception():
+            #             self._set_vm_state_and_notify(context, instance.uuid,
+            #                     'rebuild_server',
+            #                     {'vm_state': instance.vm_state,
+            #                      'task_state': None}, ex, request_spec)
+            #             LOG.warning(_LW("No valid host found for rebuild"),
+            #                         instance=instance)
+            #     except exception.UnsupportedPolicyException as ex:
+            #         with excutils.save_and_reraise_exception():
+            #             self._set_vm_state_and_notify(context, instance.uuid,
+            #                     'rebuild_server',
+            #                     {'vm_state': instance.vm_state,
+            #                      'task_state': None}, ex, request_spec)
+            #             LOG.warning(_LW("Server with unsupported policy "
+            #                             "cannot be rebuilt"),
+            #                         instance=instance)
 
             try:
                 migration = compute.Migration.get_by_instance_and_status(
@@ -605,4 +619,4 @@ class ComputeTaskManager(base.Base):
                                                 on_shared_storage=on_shared_storage,
                                                 preserve_ephemeral=preserve_ephemeral,
                                                 migration=migration,
-                                                host=host, node=node, limits=limits)
+                                                host=None, node=None, limits=None)

@@ -89,7 +89,7 @@ from jacket.objects.compute import migrate_data as migrate_data_obj
 from jacket.compute import paths
 from jacket import rpc
 from jacket.compute import safe_utils
-from jacket.compute.scheduler import client as scheduler_client
+# from jacket.compute.scheduler import client as scheduler_client
 from jacket.compute import utils
 from jacket.compute.virt import block_device as driver_block_device
 from jacket.compute.virt import configdrive
@@ -701,7 +701,7 @@ class ComputeManager(manager.Manager):
             openstack_driver.is_neutron_security_groups())
         self.consoleauth_rpcapi = consoleauth.rpcapi.ConsoleAuthAPI()
         self.cells_rpcapi = cells_rpcapi.CellsAPI()
-        self.scheduler_client = scheduler_client.SchedulerClient()
+        # self.scheduler_client = scheduler_client.SchedulerClient()
         self._resource_tracker_dict = {}
         self.instance_events = InstanceEvents()
         self._sync_power_pool = eventlet.GreenPool()
@@ -923,7 +923,7 @@ class ComputeManager(manager.Manager):
                 system_metadata=system_meta)
 
         self._clean_instance_console_tokens(context, instance)
-        self._delete_scheduler_instance_info(context, instance.uuid)
+        #self._delete_scheduler_instance_info(context, instance.uuid)
 
     def _create_reservations(self, context, instance, project_id, user_id):
         vcpus = instance.vcpus
@@ -1328,7 +1328,7 @@ class ComputeManager(manager.Manager):
         finally:
             if CONF.defer_iptables_apply:
                 self.driver.filter_defer_apply_off()
-            self._update_scheduler_instance_info(context, instances)
+            #self._update_scheduler_instance_info(context, instances)
 
     def cleanup_host(self):
         self.driver.register_event_listener(None)
@@ -1774,6 +1774,7 @@ class ComputeManager(manager.Manager):
         instance.launched_at = timeutils.utcnow()
         configdrive.update_instance(instance)
 
+    '''
     def _update_scheduler_instance_info(self, context, instance):
         """Sends an InstanceList with created or updated Instance cloud to
         the Scheduler client.
@@ -1790,6 +1791,7 @@ class ComputeManager(manager.Manager):
         context = context.elevated()
         self.scheduler_client.update_instance_info(context, self.host,
                                                    instance)
+
 
     def _delete_scheduler_instance_info(self, context, instance_uuid):
         """Sends the uuid of the deleted Instance to the Scheduler client."""
@@ -1809,6 +1811,7 @@ class ComputeManager(manager.Manager):
                                                      use_slave=True)
         uuids = [instance.uuid for instance in instances]
         self.scheduler_client.sync_instance_info(context, self.host, uuids)
+    '''
 
     def _notify_about_instance_usage(self, context, instance, event_suffix,
                                      network_info=None, system_metadata=None,
@@ -2144,7 +2147,7 @@ class ComputeManager(manager.Manager):
                 self._notify_about_instance_usage(context, instance,
                     'create.end', fault=e)
 
-        self._update_scheduler_instance_info(context, instance)
+        #self._update_scheduler_instance_info(context, instance)
         self._notify_about_instance_usage(context, instance, 'create.end',
                 extra_usage_info={'message': _('Success')},
                 network_info=network_info)
@@ -2978,7 +2981,7 @@ class ComputeManager(manager.Manager):
             instance.progress = 0
             instance.save()
             self.stop_instance(context, instance, False)
-        self._update_scheduler_instance_info(context, instance)
+        #self._update_scheduler_instance_info(context, instance)
         self._notify_about_instance_usage(
                 context, instance, "rebuild.end",
                 network_info=network_info,
@@ -4015,7 +4018,7 @@ class ComputeManager(manager.Manager):
         instance.launched_at = timeutils.utcnow()
         instance.save(expected_task_state=task_states.RESIZE_FINISH)
 
-        self._update_scheduler_instance_info(context, instance)
+        #self._update_scheduler_instance_info(context, instance)
         self._notify_about_instance_usage(
             context, instance, "finish_resize.end",
             network_info=network_info)
@@ -4330,7 +4333,7 @@ class ComputeManager(manager.Manager):
         # NOTE(ndipanov): This frees the resources with the resource_tracker
         self._update_resource_tracker(context, instance)
 
-        self._delete_scheduler_instance_info(context, instance.uuid)
+        #self._delete_scheduler_instance_info(context, instance.uuid)
         self._notify_about_instance_usage(context, instance,
                 'shelve_offload.end')
 
@@ -4426,7 +4429,7 @@ class ComputeManager(manager.Manager):
         compute_utils.remove_shelved_keys_from_system_metadata(instance)
 
         instance.save(expected_task_state=task_states.SPAWNING)
-        self._update_scheduler_instance_info(context, instance)
+        #self._update_scheduler_instance_info(context, instance)
         self._notify_about_instance_usage(context, instance, 'unshelve.end')
 
     @messaging.expected_exceptions(NotImplementedError)
@@ -5511,7 +5514,7 @@ class ComputeManager(manager.Manager):
         # host even before next periodic task.
         self.update_available_resource(ctxt)
 
-        self._update_scheduler_instance_info(ctxt, instance)
+        #self._update_scheduler_instance_info(ctxt, instance)
         self._notify_about_instance_usage(ctxt, instance,
                                           "live_migration._post.end",
                                           network_info=network_info)

@@ -935,10 +935,10 @@ def get_flow(context, manager, db, driver, scheduler_rpcapi, host, volume_id,
     # Always add OnFailureRescheduleTask and we handle the change of volume's
     # status when reverting the flow. Meanwhile, no need to revert process of
     # ExtractVolumeRefTask.
-    do_reschedule = allow_reschedule and request_spec and retry
-    volume_flow.add(OnFailureRescheduleTask(reschedule_context, db,
-                                            scheduler_rpcapi,
-                                            do_reschedule))
+    # do_reschedule = allow_reschedule and request_spec and retry
+    # volume_flow.add(OnFailureRescheduleTask(reschedule_context, db,
+    #                                         scheduler_rpcapi,
+    #                                         do_reschedule))
 
     LOG.debug("Volume reschedule parameters: %(allow)s "
               "retry: %(retry)s", {'allow': allow_reschedule, 'retry': retry})

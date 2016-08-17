@@ -101,7 +101,7 @@ class SnapshotManageTest(test.TestCase):
         # We should commit quota in storage-volume layer for this operation.
         self.assertFalse(named_args['commit_quota'])
 
-        # Check the volume_rpcapi.manage_existing_snapshot was called with
+        # Check the jacket_rpcapi.manage_existing_snapshot was called with
         # correct arguments.
         self.assertEqual(1, mock_rpcapi.call_count)
         args = mock_rpcapi.call_args[0]

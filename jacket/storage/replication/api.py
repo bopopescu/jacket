@@ -24,7 +24,7 @@ from jacket.storage import exception
 from jacket.storage.i18n import _
 from jacket.storage import policy
 from jacket.storage import volume as cinder_volume
-from jacket.storage.volume import rpcapi as volume_rpcapi
+from jacket.worker import rpcapi as jacket_rpcapi
 from jacket.storage.volume import utils as volume_utils
 
 
@@ -62,7 +62,7 @@ class API(base.Base):
 
     def __init__(self, db_driver=None):
         super(API, self).__init__(db_driver)
-        self.volume_rpcapi = volume_rpcapi.VolumeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
         self.volume_api = cinder_volume.API()
 
     @wrap_check_policy
@@ -89,7 +89,7 @@ class API(base.Base):
         volume_utils.notify_about_replication_usage(context,
                                                     vol,
                                                     'promote')
-        self.volume_rpcapi.promote_replica(context, vol)
+        self.jacket_rpcapi.promote_replica(context, vol)
 
     @wrap_check_policy
     def reenable(self, context, vol):
@@ -109,4 +109,4 @@ class API(base.Base):
         volume_utils.notify_about_replication_usage(context,
                                                     vol,
                                                     'sync')
-        self.volume_rpcapi.reenable_replication(context, vol)
+        self.jacket_rpcapi.reenable_replication(context, vol)

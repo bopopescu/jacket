@@ -78,7 +78,7 @@ class AdminActionsTest(BaseAdminTest):
                             group='oslo_concurrency')
         self.flags(rpc_backend='storage.openstack.common.rpc.impl_fake')
 
-        cast_as_call.mock_cast_as_call(self.volume_api.volume_rpcapi.client)
+        cast_as_call.mock_cast_as_call(self.volume_api.jacket_rpcapi.client)
         cast_as_call.mock_cast_as_call(self.volume_api.scheduler_rpcapi.client)
 
         # start service to handle rpc messages for attach requests

@@ -51,7 +51,7 @@ from jacket.objects.storage import fields
 from jacket.storage import quota
 from jacket.storage import rpc
 from jacket.storage import utils
-from jacket.storage.volume import rpcapi as volume_rpcapi
+from jacket.worker import rpcapi as jacket_rpcapi
 from jacket.storage.volume import utils as volume_utils
 
 LOG = logging.getLogger(__name__)
@@ -98,7 +98,7 @@ class BackupManager(manager.SchedulerDependentManager):
         if CONF.backup_use_same_host:
             self._setup_volume_drivers()
         self.backup_rpcapi = backup_rpcapi.BackupAPI()
-        self.volume_rpcapi = volume_rpcapi.VolumeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
         super(BackupManager, self).__init__(service_name='backup',
                                             *args, **kwargs)
         self.additional_endpoints.append(_BackupV1Proxy(self))
@@ -221,7 +221,7 @@ class BackupManager(manager.SchedulerDependentManager):
     def reset(self):
         super(BackupManager, self).reset()
         self.backup_rpcapi = backup_rpcapi.BackupAPI()
-        self.volume_rpcapi = volume_rpcapi.VolumeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
 
     def _cleanup_incomplete_backup_operations(self, ctxt):
         LOG.info(_LI("Cleaning up incomplete backup operations."))
@@ -295,7 +295,7 @@ class BackupManager(manager.SchedulerDependentManager):
             if (attachment['attached_host'] == self.host and
                     attachment['instance_uuid'] is None):
                 try:
-                    rpcapi = self.volume_rpcapi
+                    rpcapi = self.jacket_rpcapi
                     rpcapi.detach_volume(ctxt, volume, attachment['id'])
                 except Exception:
                     LOG.exception(_LE("Detach attachment %(attach_id)s"
@@ -307,7 +307,7 @@ class BackupManager(manager.SchedulerDependentManager):
         try:
             temp_volume = storage.Volume.get_by_id(
                 ctxt, backup.temp_volume_id)
-            self.volume_rpcapi.delete_volume(ctxt, temp_volume)
+            self.jacket_rpcapi.delete_volume(ctxt, temp_volume)
         except exception.VolumeNotFound:
             LOG.debug("Could not find temp volume %(vol)s to clean up "
                       "for backup %(backup)s.",
@@ -324,7 +324,7 @@ class BackupManager(manager.SchedulerDependentManager):
                 ctxt, backup.volume_id)
             # The temp snapshot should be deleted directly thru the
             # volume driver, not thru the volume manager.
-            self.volume_rpcapi.delete_snapshot(ctxt, temp_snapshot,
+            self.jacket_rpcapi.delete_snapshot(ctxt, temp_snapshot,
                                                volume.host)
         except exception.SnapshotNotFound:
             LOG.debug("Could not find temp snapshot %(snap)s to clean "
@@ -426,7 +426,7 @@ class BackupManager(manager.SchedulerDependentManager):
         backup_service = self.service.get_backup_driver(context)
 
         properties = utils.brick_get_connector_properties()
-        backup_dic = self.volume_rpcapi.get_backup_device(context,
+        backup_dic = self.jacket_rpcapi.get_backup_device(context,
                                                           backup, volume)
         try:
             backup_device = backup_dic.get('backup_device')
@@ -535,7 +535,7 @@ class BackupManager(manager.SchedulerDependentManager):
 
         properties = utils.brick_get_connector_properties()
         secure_enabled = (
-            self.volume_rpcapi.secure_file_operations_enabled(context,
+            self.jacket_rpcapi.secure_file_operations_enabled(context,
                                                               volume))
         attach_info = self._attach_device(context, volume, properties)
         try:
@@ -914,14 +914,14 @@ class BackupManager(manager.SchedulerDependentManager):
         """Attach a volume."""
 
         try:
-            conn = self.volume_rpcapi.initialize_connection(context,
+            conn = self.jacket_rpcapi.initialize_connection(context,
                                                             volume,
                                                             properties)
             return self._connect_device(conn)
         except Exception:
             with excutils.save_and_reraise_exception():
                 try:
-                    self.volume_rpcapi.terminate_connection(context, volume,
+                    self.jacket_rpcapi.terminate_connection(context, volume,
                                                             properties,
                                                             force=True)
                 except Exception:
@@ -951,7 +951,7 @@ class BackupManager(manager.SchedulerDependentManager):
         connector.disconnect_volume(attach_info['conn']['data'],
                                     attach_info['device'])
 
-        rpcapi = self.volume_rpcapi
+        rpcapi = self.jacket_rpcapi
         if not is_snapshot:
             rpcapi.terminate_connection(context, device, properties,
                                         force=force)

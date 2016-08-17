@@ -30,7 +30,7 @@ from jacket.storage.i18n import _, _LE, _LW
 from jacket.storage.image import image_utils
 from jacket.objects import storage
 from jacket.storage import utils
-from jacket.storage.volume import rpcapi as volume_rpcapi
+from jacket.worker import rpcapi as jacket_rpcapi
 from jacket.storage.volume import throttling
 
 LOG = logging.getLogger(__name__)
@@ -380,7 +380,7 @@ class BaseVD(object):
         if remote:
             # Call remote manager's terminate_connection which includes
             # driver's terminate_connection and remove export
-            rpcapi = volume_rpcapi.VolumeAPI()
+            rpcapi = jacket_rpcapi.JacketAPI()
             rpcapi.terminate_connection(context, volume, properties,
                                         force=force)
         else:
@@ -848,7 +848,7 @@ class BaseVD(object):
         if remote:
             # Call remote manager's initialize_connection which includes
             # driver's create_export and initialize_connection
-            rpcapi = volume_rpcapi.VolumeAPI()
+            rpcapi = jacket_rpcapi.JacketAPI()
             try:
                 conn = rpcapi.initialize_connection(context, volume,
                                                     properties)

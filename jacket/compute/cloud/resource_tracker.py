@@ -37,7 +37,7 @@ from jacket.objects.compute import base as obj_base
 from jacket.objects.compute import migration as migration_obj
 from jacket.compute.pci import manager as pci_manager
 from jacket import rpc
-from jacket.compute.scheduler import client as scheduler_client
+# from jacket.compute.scheduler import client as scheduler_client
 from jacket.compute import utils
 from jacket.compute.virt import hardware
 
@@ -150,7 +150,7 @@ class ResourceTracker(object):
         self.ext_resources_handler = \
             ext_resources.ResourceHandler(CONF.compute_resources)
         self.old_resources = compute.ComputeNode()
-        self.scheduler_client = scheduler_client.SchedulerClient()
+        # self.scheduler_client = scheduler_client.SchedulerClient()
         self.ram_allocation_ratio = CONF.ram_allocation_ratio
         self.cpu_allocation_ratio = CONF.cpu_allocation_ratio
         self.disk_allocation_ratio = CONF.disk_allocation_ratio
@@ -703,7 +703,7 @@ class ResourceTracker(object):
         if not self._resource_change():
             return
         # Persist the stats to the Scheduler
-        self.scheduler_client.update_resource_stats(self.compute_node)
+        # self.scheduler_client.update_resource_stats(self.compute_node)
         if self.pci_tracker:
             self.pci_tracker.save(context)
 

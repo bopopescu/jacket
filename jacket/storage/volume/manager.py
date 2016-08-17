@@ -70,7 +70,7 @@ from jacket.storage.volume import configuration as config
 from jacket.storage.volume.flows.manager import create_volume
 from jacket.storage.volume.flows.manager import manage_existing
 from jacket.storage.volume.flows.manager import manage_existing_snapshot
-from jacket.storage.volume import rpcapi as volume_rpcapi
+from jacket.worker import rpcapi as jacket_rpcapi
 from jacket.storage.volume import utils as vol_utils
 from jacket.storage.volume import volume_types
 
@@ -1623,7 +1623,7 @@ class VolumeManager(manager.SchedulerDependentManager):
         status = volume['status']
 
         if remote:
-            rpcapi = volume_rpcapi.VolumeAPI()
+            rpcapi = jacket_rpcapi.JacketAPI()
             try:
                 conn = rpcapi.initialize_connection(ctxt, volume, properties)
             except Exception:
@@ -1644,7 +1644,7 @@ class VolumeManager(manager.SchedulerDependentManager):
                                     attach_info['device'])
 
         if remote:
-            rpcapi = volume_rpcapi.VolumeAPI()
+            rpcapi = jacket_rpcapi.JakcetAPI()
             rpcapi.terminate_connection(ctxt, volume, properties, force=force)
             rpcapi.remove_export(ctxt, volume)
         else:
@@ -1680,7 +1680,7 @@ class VolumeManager(manager.SchedulerDependentManager):
                                     properties, remote=dest_remote)
 
         # Check the backend capabilities of migration destination host.
-        rpcapi = volume_rpcapi.VolumeAPI()
+        rpcapi = jacket_rpcapi.JakcetAPI()
         capabilities = rpcapi.get_capabilities(ctxt, dest_vol['host'],
                                                False)
         sparse_copy_volume = bool(capabilities and
@@ -1711,7 +1711,7 @@ class VolumeManager(manager.SchedulerDependentManager):
                                     remote=src_remote)
 
     def _migrate_volume_generic(self, ctxt, volume, host, new_type_id):
-        rpcapi = volume_rpcapi.VolumeAPI()
+        rpcapi = jacket_rpcapi.JakcetAPI()
 
         # Create new volume on remote host
         skip = self._VOLUME_CLONE_SKIP_PROPERTIES | {'host'}
@@ -1801,7 +1801,7 @@ class VolumeManager(manager.SchedulerDependentManager):
                     new_volume.destroy()
                 else:
                     # The temporary volume is already created
-                    rpcapi = volume_rpcapi.VolumeAPI()
+                    rpcapi = jacket_rpcapi.JakcetAPI()
                     rpcapi.delete_volume(ctxt, new_volume)
             except exception.VolumeNotFound:
                 LOG.info(_LI("Couldn't find the temporary volume "
@@ -1850,7 +1850,7 @@ class VolumeManager(manager.SchedulerDependentManager):
         LOG.debug("migrate_volume_completion: completing migration for "
                   "volume %(vol1)s (temporary volume %(vol2)s",
                   {'vol1': volume.id, 'vol2': new_volume.id})
-        rpcapi = volume_rpcapi.VolumeAPI()
+        rpcapi = jacket_rpcapi.JakcetAPI()
 
         orig_volume_status = volume.previous_status
 
