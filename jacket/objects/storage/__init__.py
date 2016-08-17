@@ -24,11 +24,12 @@ def register_all():
     # NOTE(danms): You must make sure your object gets imported in this
     # function in order for it to be registered by services that may
     # need to receive it via RPC.
-    __import__('storage.objects.backup')
-    __import__('storage.objects.cgsnapshot')
-    __import__('storage.objects.consistencygroup')
-    __import__('storage.objects.service')
-    __import__('storage.objects.snapshot')
-    __import__('storage.objects.volume')
-    __import__('storage.objects.volume_attachment')
-    __import__('storage.objects.volume_type')
+    __import__('jacket.objects.storage.backup')
+    __import__('jacket.objects.storage.cgsnapshot')
+    __import__('jacket.objects.storage.consistencygroup')
+    # NOTE(nkapotoxin): Use compute service instead
+    #__import__('jacket.objects.storage.service')
+    __import__('jacket.objects.storage.snapshot')
+    __import__('jacket.objects.storage.volume')
+    __import__('jacket.objects.storage.volume_attachment')
+    __import__('jacket.objects.storage.volume_type')
