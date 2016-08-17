@@ -726,14 +726,14 @@ class VolumeCastTask(flow_utils.CinderTask):
     created volume.
     """
 
-    def __init__(self, scheduler_rpcapi, volume_rpcapi, db):
+    def __init__(self, scheduler_rpcapi, jacket_rpcapi, db):
         requires = ['image_id', 'scheduler_hints', 'snapshot_id',
                     'source_volid', 'volume_id', 'volume', 'volume_type',
                     'volume_properties', 'source_replicaid',
                     'consistencygroup_id', 'cgsnapshot_id', ]
         super(VolumeCastTask, self).__init__(addons=[ACTION],
                                              requires=requires)
-        self.volume_rpcapi = volume_rpcapi
+        self.jacket_rpcapi = jacket_rpcapi
         self.scheduler_rpcapi = scheduler_rpcapi
         self.db = db
 
@@ -777,32 +777,44 @@ class VolumeCastTask(flow_utils.CinderTask):
                                                          source_replicaid)
             host = source_volume_ref.host
 
-        if not host:
-            # Cast to the scheduler and let it handle whatever is needed
-            # to select the target host for this volume.
-            self.scheduler_rpcapi.create_volume(
+        # if not host:
+        #     # Cast to the scheduler and let it handle whatever is needed
+        #     # to select the target host for this volume.
+        #     self.scheduler_rpcapi.create_volume(
+        #         context,
+        #         CONF.volume_topic,
+        #         volume_id,
+        #         snapshot_id=snapshot_id,
+        #         image_id=image_id,
+        #         request_spec=request_spec,
+        #         filter_properties=filter_properties,
+        #         volume=volume)
+        # else:
+        #     # Bypass the scheduler and send the request directly to the volume
+        #     # manager.
+        #     volume.host = host
+        #     volume.scheduled_at = timeutils.utcnow()
+        #     volume.save()
+        #     if not cgsnapshot_id:
+        #         self.jacket_rpcapi.create_volume(
+        #             context,
+        #             volume,
+        #             volume.host,
+        #             request_spec,
+        #             filter_properties,
+        #             allow_reschedule=False)
+
+        volume.host = host
+        volume.scheduled_at = timeutils.utcnow()
+        volume.save()
+        if not cgsnapshot_id:
+            self.jacket_rpcapi.create_volume(
                 context,
-                CONF.volume_topic,
-                volume_id,
-                snapshot_id=snapshot_id,
-                image_id=image_id,
-                request_spec=request_spec,
-                filter_properties=filter_properties,
-                volume=volume)
-        else:
-            # Bypass the scheduler and send the request directly to the volume
-            # manager.
-            volume.host = host
-            volume.scheduled_at = timeutils.utcnow()
-            volume.save()
-            if not cgsnapshot_id:
-                self.volume_rpcapi.create_volume(
-                    context,
-                    volume,
-                    volume.host,
-                    request_spec,
-                    filter_properties,
-                    allow_reschedule=False)
+                volume,
+                volume.host,
+                request_spec,
+                filter_properties,
+                allow_reschedule=False)
 
     def execute(self, context, **kwargs):
         scheduler_hints = kwargs.pop('scheduler_hints', None)
@@ -828,7 +840,7 @@ class VolumeCastTask(flow_utils.CinderTask):
 
 
 def get_flow(db_api, image_service_api, availability_zones, create_what,
-             scheduler_rpcapi=None, volume_rpcapi=None):
+             scheduler_rpcapi=None, jacket_rpcapi=None):
     """Constructs and returns the api entrypoint flow.
 
     This flow will do the following:
@@ -854,10 +866,10 @@ def get_flow(db_api, image_service_api, availability_zones, create_what,
                  EntryCreateTask(db_api),
                  QuotaCommitTask())
 
-    if scheduler_rpcapi and volume_rpcapi:
+    if scheduler_rpcapi and jacket_rpcapi:
         # This will cast it out to either the scheduler or volume manager via
         # the rpc apis provided.
-        api_flow.add(VolumeCastTask(scheduler_rpcapi, volume_rpcapi, db_api))
+        api_flow.add(VolumeCastTask(scheduler_rpcapi, jacket_rpcapi, db_api))
 
     # Now load (but do not run) the flow using the provided initial data.
     return taskflow.engines.load(api_flow, store=create_what)

@@ -601,7 +601,7 @@ class _BaseMessageMethods(base.Base):
         self.msg_runner = msg_runner
         self.state_manager = msg_runner.state_manager
         self.compute_api = cloud.API()
-        self.jacket_rpcapi = jacket_rpcapi.ComputeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
         self.consoleauth_rpcapi = consoleauth_rpcapi.ConsoleAuthAPI()
         self.host_api = cloud.HostAPI()
 

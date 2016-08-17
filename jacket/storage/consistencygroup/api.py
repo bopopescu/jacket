@@ -34,7 +34,7 @@ import jacket.storage.policy
 from jacket.storage import quota
 from jacket.storage.scheduler import rpcapi as scheduler_rpcapi
 from jacket.storage.volume import api as volume_api
-from jacket.storage.volume import rpcapi as volume_rpcapi
+from jacket.worker import rpcapi as jacket_rpcapi
 from jacket.storage.volume import utils as vol_utils
 from jacket.storage.volume import volume_types
 
@@ -83,7 +83,7 @@ class API(base.Base):
 
     def __init__(self, db_driver=None):
         self.scheduler_rpcapi = scheduler_rpcapi.SchedulerAPI()
-        self.volume_rpcapi = volume_rpcapi.VolumeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
         self.availability_zone_names = ()
         self.volume_api = volume_api.API()
 
@@ -302,7 +302,7 @@ class API(base.Base):
             self.db.volume_update(context, vol['id'],
                                   {'host': group.get('host')})
 
-        self.volume_rpcapi.create_consistencygroup_from_src(
+        self.jacket_rpcapi.create_consistencygroup_from_src(
             context, group, cgsnapshot)
 
     def _create_cg_from_source_cg(self, context, group, source_cg):
@@ -363,7 +363,7 @@ class API(base.Base):
             self.db.volume_update(context, vol['id'],
                                   {'host': group.host})
 
-        self.volume_rpcapi.create_consistencygroup_from_src(context, group,
+        self.jacket_rpcapi.create_consistencygroup_from_src(context, group,
                                                             None, source_cg)
 
     def _cast_create_consistencygroup(self, context, group,
@@ -491,7 +491,7 @@ class API(base.Base):
         group.terminated_at = timeutils.utcnow()
         group.save()
 
-        self.volume_rpcapi.delete_consistencygroup(context, group)
+        self.jacket_rpcapi.delete_consistencygroup(context, group)
 
     def update(self, context, group, name, description,
                add_volumes, remove_volumes):
@@ -569,7 +569,7 @@ class API(base.Base):
         # are strings of volume UUIDs separated by commas with no spaces
         # in between.
         if add_volumes_new or remove_volumes_new:
-            self.volume_rpcapi.update_consistencygroup(
+            self.jacket_rpcapi.update_consistencygroup(
                 context, group,
                 add_volumes=add_volumes_new,
                 remove_volumes=remove_volumes_new)
@@ -756,7 +756,7 @@ class API(base.Base):
                     LOG.error(_LE("Error occurred when creating cgsnapshot"
                                   " %s."), cgsnapshot_id)
 
-        self.volume_rpcapi.create_cgsnapshot(context, cgsnapshot)
+        self.jacket_rpcapi.create_cgsnapshot(context, cgsnapshot)
 
         return cgsnapshot
 
@@ -766,7 +766,7 @@ class API(base.Base):
             raise exception.InvalidCgSnapshot(reason=msg)
         cgsnapshot.update({'status': 'deleting'})
         cgsnapshot.save()
-        self.volume_rpcapi.delete_cgsnapshot(context.elevated(), cgsnapshot)
+        self.jacket_rpcapi.delete_cgsnapshot(context.elevated(), cgsnapshot)
 
     def update_cgsnapshot(self, context, cgsnapshot, fields):
         cgsnapshot.update(fields)

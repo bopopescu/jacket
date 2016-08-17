@@ -1,0 +1,9 @@
+2016-08-17 20:05:16: -- Analysis Started by User
+2016-08-17 20:05:23: Changes: 1, Conflicts: , CopyTime: , CopyState: /, Errors: , All: 5853
+2016-08-17 20:05:23: Left to Right: Copy File: 1 
+2016-08-17 20:05:23: -- Analysis Complete. Time 00:00:08, Speed: 723 files/s
+2016-08-17 20:05:23: 
+2016-08-17 20:05:24: == Sync Started by User
+2016-08-17 20:05:24: Copy Over 'D:/work/jacket/jacket/objects/__init__.py' -> 'sftp://162.3.254.249/usr/local/lib/python2.7/dist-packages/jacket/objects/__init__.py'
+2016-08-17 20:05:25: == Sync Complete. Time: 00:00:01, Speed: 47.8 KB/s, OK: 1, Errors: 
+2016-08-17 20:05:25: 

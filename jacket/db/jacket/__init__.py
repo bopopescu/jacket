@@ -1,4 +1,6 @@
-#    Copyright 2013 IBM Corp.
+# Copyright 2010 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration.
+# All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -11,14 +13,8 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+"""
+DB abstraction for Cinder
+"""
 
-# NOTE(comstud): You may scratch your head as you see code that imports
-# this module and then accesses attributes for objects such as Instance,
-# etc, yet you do not see these attributes in here. Never fear, there is
-# a little bit of magic. When objects are registered, an attribute is set
-# on this module automatically, pointing to the newest/latest version of
-# the object.
-
-
-def register_all():
-    pass
+from jacket.db.jacket.api import *  # noqa

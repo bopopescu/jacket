@@ -62,12 +62,12 @@ class ConsoleProxyManager(manager.Manager):
         super(ConsoleProxyManager, self).__init__(service_name='console',
                                                   *args, **kwargs)
         self.driver.host = self.host
-        self.jacket_rpcapi = jacket_rpcapi.ComputeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
 
     def reset(self):
         LOG.info(_LI('Reloading compute RPC API'))
         jacket_rpcapi.LAST_VERSION = None
-        self.jacket_rpcapi = jacket_rpcapi.ComputeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
 
     def init_host(self):
         self.driver.init_host()

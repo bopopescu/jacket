@@ -320,7 +320,7 @@ class BackupTestCase(BaseBackupTest):
         backup_mgr = manager.BackupManager()
 
         backup_rpcapi = backup_mgr.backup_rpcapi
-        volume_rpcapi = backup_mgr.volume_rpcapi
+        volume_rpcapi = backup_mgr.jacket_rpcapi
         self.assertEqual('1.3', backup_rpcapi.client.version_cap)
         self.assertEqual('1.2',
                          backup_rpcapi.client.serializer._base.version_cap)
@@ -331,7 +331,7 @@ class BackupTestCase(BaseBackupTest):
         backup_mgr.reset()
 
         backup_rpcapi = backup_mgr.backup_rpcapi
-        volume_rpcapi = backup_mgr.volume_rpcapi
+        volume_rpcapi = backup_mgr.jacket_rpcapi
         self.assertEqual(get_min_rpc.return_value,
                          backup_rpcapi.client.version_cap)
         self.assertEqual(get_min_obj.return_value,

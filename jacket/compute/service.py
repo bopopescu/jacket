@@ -92,30 +92,30 @@ service_opts = [
     # NOTE(sdague): Ironic is still using this facility for their HA
     # manager. Ensure they are sorted before removing this.
     cfg.StrOpt('compute_manager',
-               default='compute.compute.manager.ComputeManager',
+               default='jacket.compute.cloud.manager.ComputeManager',
                help='DEPRECATED: Full class name for the Manager for compute',
                deprecated_for_removal=True),
     cfg.StrOpt('console_manager',
-               default='compute.console.manager.ConsoleProxyManager',
+               default='jacket.compute.console.manager.ConsoleProxyManager',
                help='DEPRECATED: Full class name for the Manager for '
                    'console proxy',
                deprecated_for_removal=True),
     cfg.StrOpt('consoleauth_manager',
-               default='compute.consoleauth.manager.ConsoleAuthManager',
+               default='jacket.compute.consoleauth.manager.ConsoleAuthManager',
                help='DEPRECATED: Manager for console auth',
                deprecated_for_removal=True),
     cfg.StrOpt('cert_manager',
-               default='compute.cert.manager.CertManager',
+               default='jacket.compute.cert.manager.CertManager',
                help='DEPRECATED: Full class name for the Manager for cert',
                deprecated_for_removal=True),
     # NOTE(sdague): the network_manager has a bunch of different in
     # tree classes that are still legit options. In Newton we should
     # turn this into a selector.
     cfg.StrOpt('network_manager',
-               default='compute.network.manager.VlanManager',
+               default='jacket.compute.network.manager.VlanManager',
                help='Full class name for the Manager for network'),
     cfg.StrOpt('scheduler_manager',
-               default='compute.scheduler.manager.SchedulerManager',
+               default='jacket.compute.scheduler.manager.SchedulerManager',
                help='DEPRECATED: Full class name for the Manager for '
                    'scheduler',
                deprecated_for_removal=True),
@@ -261,7 +261,7 @@ class Service(service.Service):
 
         :param host: defaults to CONF.host
         :param binary: defaults to basename of executable
-        :param topic: defaults to bin_name - 'compute-' part
+        :param topic: defaults to bin_name - 'jacket-' part
         :param manager: defaults to CONF.<topic>_manager
         :param report_interval: defaults to CONF.report_interval
         :param periodic_enable: defaults to CONF.periodic_enable
@@ -274,10 +274,10 @@ class Service(service.Service):
         if not binary:
             binary = os.path.basename(sys.argv[0])
         if not topic:
-            topic = binary.rpartition('compute-')[2]
+            topic = binary.rpartition('nova-')[2]
         if not manager:
             manager_cls = ('%s_manager' %
-                           binary.rpartition('compute-')[2])
+                           binary.rpartition('nova-')[2])
             manager = CONF.get(manager_cls, None)
         if report_interval is None:
             report_interval = CONF.report_interval
