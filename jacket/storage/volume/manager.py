@@ -231,8 +231,7 @@ class VolumeManager(manager.SchedulerDependentManager):
                  *args, **kwargs):
         """Load the driver from the one specified in args, or from flags."""
         # update_service_capabilities needs service_name to be volume
-        super(VolumeManager, self).__init__(service_name='volume',
-                                            *args, **kwargs)
+        super(VolumeManager, self).__init__(*args, **kwargs)
         self.additional_endpoints.append(_VolumeV1Proxy(self))
         self.configuration = config.Configuration(volume_manager_opts,
                                                   config_group=service_name)

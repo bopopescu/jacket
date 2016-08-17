@@ -1,21 +1,4 @@
-# Copyright 2010 United States Government as represented by the
-# Administrator of the National Aeronautics and Space Administration.
-# Copyright 2011 Justin Santa Barbara
-# All Rights Reserved.
-#
-#    Licensed under the Apache License, Version 2.0 (the "License"); you may
-#    not use this file except in compliance with the License. You may obtain
-#    a copy of the License at
-#
-#         http://www.apache.org/licenses/LICENSE-2.0
-#
-#    Unless required by applicable law or agreed to in writing, software
-#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-#    License for the specific language governing permissions and limitations
-#    under the License.
-
-"""Generic Node base class for all workers that run on hosts."""
+"""Generic Node base class for all workers that run for cloud."""
 
 import os
 import random
@@ -34,103 +17,32 @@ from jacket.compute import context
 from jacket.compute import debugger
 from jacket.compute import exception
 from jacket.i18n import _, _LE, _LI, _LW
-from jacket.objects import compute
+from jacket import objects
 from jacket.objects.compute import base as objects_base
 from jacket.objects.compute import service as service_obj
 from jacket import rpc
 from jacket.compute import servicegroup
 from jacket.compute import utils
 from jacket import version
-from jacket.wsgi import compute
+from jacket.wsgi import wsgi
+from jacket.compute.service import service_opts as com_service_opts
+from jacket.storage.service import service_opts as sto_service_opts
 
 LOG = logging.getLogger(__name__)
 
 service_opts = [
-    cfg.IntOpt('report_interval',
-               default=10,
-               help='Seconds between nodes reporting state to datastore'),
-    cfg.BoolOpt('periodic_enable',
-               default=True,
-               help='Enable periodic tasks'),
-    cfg.IntOpt('periodic_fuzzy_delay',
-               default=60,
-               help='Range of seconds to randomly delay when starting the'
-                    ' periodic task scheduler to reduce stampeding.'
-                    ' (Disable by setting to 0)'),
-    cfg.ListOpt('enabled_apis',
-                default=['osapi_compute', 'metadata'],
-                help='A list of APIs to enable by default'),
-    cfg.ListOpt('enabled_ssl_apis',
-                default=[],
-                help='A list of APIs with enabled SSL'),
-    cfg.StrOpt('osapi_compute_listen',
-               default="0.0.0.0",
-               help='The IP address on which the OpenStack API will listen.'),
-    cfg.IntOpt('osapi_compute_listen_port',
-               default=8774,
-               min=1,
-               max=65535,
-               help='The port on which the OpenStack API will listen.'),
-    cfg.IntOpt('osapi_compute_workers',
-               help='Number of workers for OpenStack API service. The default '
-                    'will be the number of CPUs available.'),
-    cfg.StrOpt('metadata_manager',
-               default='compute.api.manager.MetadataManager',
-               help='DEPRECATED: OpenStack metadata service manager',
-               deprecated_for_removal=True),
-    cfg.StrOpt('metadata_listen',
-               default="0.0.0.0",
-               help='The IP address on which the metadata API will listen.'),
-    cfg.IntOpt('metadata_listen_port',
-               default=8775,
-               min=1,
-               max=65535,
-               help='The port on which the metadata API will listen.'),
-    cfg.IntOpt('metadata_workers',
-               help='Number of workers for metadata service. The default will '
-                    'be the number of CPUs available.'),
-    # NOTE(sdague): Ironic is still using this facility for their HA
-    # manager. Ensure they are sorted before removing this.
-    cfg.StrOpt('compute_manager',
-               default='jacket.compute.cloud.manager.ComputeManager',
-               help='DEPRECATED: Full class name for the Manager for compute',
-               deprecated_for_removal=True),
-    cfg.StrOpt('console_manager',
-               default='jacket.compute.console.manager.ConsoleProxyManager',
-               help='DEPRECATED: Full class name for the Manager for '
-                   'console proxy',
-               deprecated_for_removal=True),
-    cfg.StrOpt('consoleauth_manager',
-               default='jacket.compute.consoleauth.manager.ConsoleAuthManager',
-               help='DEPRECATED: Manager for console auth',
-               deprecated_for_removal=True),
-    cfg.StrOpt('cert_manager',
-               default='jacket.compute.cert.manager.CertManager',
-               help='DEPRECATED: Full class name for the Manager for cert',
-               deprecated_for_removal=True),
-    # NOTE(sdague): the network_manager has a bunch of different in
-    # tree classes that are still legit options. In Newton we should
-    # turn this into a selector.
-    cfg.StrOpt('network_manager',
-               default='jacket.compute.network.manager.VlanManager',
-               help='Full class name for the Manager for network'),
-    cfg.StrOpt('scheduler_manager',
-               default='jacket.compute.scheduler.manager.SchedulerManager',
-               help='DEPRECATED: Full class name for the Manager for '
-                   'scheduler',
-               deprecated_for_removal=True),
-    cfg.IntOpt('service_down_time',
-               default=60,
-               help='Maximum time since last check-in for up service'),
+    cfg.StrOpt('worker_manager',
+               default='jacket.worker.manager.WorkerManager',
+               help='DEPRECATED: Full class name for the Manager for worker'),
     ]
 
 CONF = cfg.CONF
-CONF.register_opts(service_opts)
-CONF.import_opt('host', 'compute.netconf')
+CONF.register_opts([com_service_opts, sto_service_opts, service_opts])
+CONF.import_opt('host', 'jacket.netconf')
 
 
 def _create_service_ref(this_service, context):
-    service = compute.Service(context)
+    service = objects.Service(context)
     service.host = this_service.host
     service.binary = this_service.binary
     service.topic = this_service.topic
@@ -140,7 +52,7 @@ def _create_service_ref(this_service, context):
 
 
 def _update_service_ref(this_service, context):
-    service = compute.Service.get_by_host_and_binary(context,
+    service = objects.Service.get_by_host_and_binary(context,
                                                      this_service.host,
                                                      this_service.binary)
     if not service:
@@ -198,7 +110,7 @@ class Service(service.Service):
         self.manager.init_host()
         self.model_disconnected = False
         ctxt = context.get_admin_context()
-        self.service_ref = compute.Service.get_by_host_and_binary(
+        self.service_ref = objects.Service.get_by_host_and_binary(
             ctxt, self.host, self.binary)
         if not self.service_ref:
             try:
@@ -261,7 +173,7 @@ class Service(service.Service):
 
         :param host: defaults to CONF.host
         :param binary: defaults to basename of executable
-        :param topic: defaults to bin_name - 'jacket-' part
+        :param topic: defaults to bin_name - 'compute-' part
         :param manager: defaults to CONF.<topic>_manager
         :param report_interval: defaults to CONF.report_interval
         :param periodic_enable: defaults to CONF.periodic_enable
@@ -274,10 +186,10 @@ class Service(service.Service):
         if not binary:
             binary = os.path.basename(sys.argv[0])
         if not topic:
-            topic = binary.rpartition('nova-')[2]
+            topic = binary.rpartition('jacket-')[2]
         if not manager:
             manager_cls = ('%s_manager' %
-                           binary.rpartition('nova-')[2])
+                           binary.rpartition('jacket-')[2])
             manager = CONF.get(manager_cls, None)
         if report_interval is None:
             report_interval = CONF.report_interval
@@ -359,10 +271,10 @@ class WSGIService(service.Service):
         self.name = name
         # NOTE(danms): Name can be metadata, os_compute, or ec2, per
         # compute.service's enabled_apis
-        self.binary = 'compute-%s' % name
+        self.binary = 'jacket-%s' % name
         self.topic = None
         self.manager = self._get_manager()
-        self.loader = loader or compute.Loader()
+        self.loader = loader or wsgi.Loader()
         self.app = self.loader.load_app(name)
         # inherit all compute_api worker counts from osapi_compute
         if name.startswith('openstack_compute_api'):
@@ -381,7 +293,7 @@ class WSGIService(service.Service):
                     'workers': str(self.workers)})
             raise exception.InvalidInput(msg)
         self.use_ssl = use_ssl
-        self.server = compute.Server(name,
+        self.server = wsgi.Server(name,
                                   self.app,
                                   host=self.host,
                                   port=self.port,
@@ -430,7 +342,7 @@ class WSGIService(service.Service):
 
         """
         ctxt = context.get_admin_context()
-        service_ref = compute.Service.get_by_host_and_binary(ctxt, self.host,
+        service_ref = objects.Service.get_by_host_and_binary(ctxt, self.host,
                                                              self.binary)
         if not service_ref:
             try:
@@ -439,7 +351,7 @@ class WSGIService(service.Service):
                     exception.ServiceBinaryExists):
                 # NOTE(danms): If we race to create a record wth a sibling,
                 # don't fail here.
-                service_ref = compute.Service.get_by_host_and_binary(
+                service_ref = objects.Service.get_by_host_and_binary(
                     ctxt, self.host, self.binary)
         _update_service_ref(service_ref, ctxt)
 
