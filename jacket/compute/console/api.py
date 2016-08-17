@@ -60,5 +60,5 @@ class API(base.Base):
         rpcapi.add_console(context, instance.id)
 
     def _get_console_topic(self, context, instance_host):
-        rpcapi = jacket_rpcapi.ComputeAPI()
+        rpcapi = jacket_rpcapi.JacketAPI()
         return rpcapi.get_console_topic(context, instance_host)

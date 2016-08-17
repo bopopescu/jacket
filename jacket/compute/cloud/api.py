@@ -220,7 +220,7 @@ class API(base.Base):
             openstack_driver.get_openstack_security_group_driver(
                 skip_policy_check=skip_policy_check))
         self.consoleauth_rpcapi = consoleauth_rpcapi.ConsoleAuthAPI()
-        self.jacket_rpcapi = jacket_rpcapi.ComputeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
         self.compute_task_api = conductor.ComputeTaskAPI()
         self.servicegroup_api = servicegroup.API()
         self.notifier = rpc.get_notifier('compute', CONF.host)
@@ -3606,7 +3606,7 @@ class HostAPI(base.Base):
     """Sub-set of the Compute Manager API for managing host operations."""
 
     def __init__(self, rpcapi=None):
-        self.rpcapi = rpcapi or jacket_rpcapi.ComputeAPI()
+        self.rpcapi = rpcapi or jacket_rpcapi.JacketAPI()
         self.servicegroup_api = servicegroup.API()
         super(HostAPI, self).__init__()
 
@@ -3773,7 +3773,7 @@ class InstanceActionAPI(base.Base):
 class AggregateAPI(base.Base):
     """Sub-set of the Compute Manager API for managing host aggregates."""
     def __init__(self, **kwargs):
-        self.jacket_rpcapi = jacket_rpcapi.ComputeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
         self.scheduler_client = scheduler_client.SchedulerClient()
         super(AggregateAPI, self).__init__(**kwargs)
 
@@ -4076,7 +4076,7 @@ class SecurityGroupAPI(base.Base, security_group_base.SecurityGroupBase):
     def __init__(self, skip_policy_check=False, **kwargs):
         super(SecurityGroupAPI, self).__init__(**kwargs)
         self.skip_policy_check = skip_policy_check
-        self.jacket_rpcapi = jacket_rpcapi.ComputeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
 
     def validate_property(self, value, property, allowed):
         """Validate given security group property.

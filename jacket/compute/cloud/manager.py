@@ -694,7 +694,7 @@ class ComputeManager(manager.Manager):
         self._bw_usage_supported = True
         self._last_bw_usage_cell_update = 0
         self.compute_api = cloud.API()
-        self.jacket_rpcapi = jacket_rpcapi.ComputeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
         self.conductor_api = conductor.API()
         self.compute_task_api = conductor.ComputeTaskAPI()
         self.is_neutron_security_groups = (
@@ -731,7 +731,7 @@ class ComputeManager(manager.Manager):
     def reset(self):
         LOG.info(_LI('Reloading cloud RPC API'))
         jacket_rpcapi.LAST_VERSION = None
-        self.jacket_rpcapi = jacket_rpcapi.ComputeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
 
     def _get_resource_tracker(self, nodename):
         rt = self._resource_tracker_dict.get(nodename)

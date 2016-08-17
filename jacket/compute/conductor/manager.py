@@ -148,7 +148,7 @@ class ComputeTaskManager(base.Base):
 
     def __init__(self):
         super(ComputeTaskManager, self).__init__()
-        self.jacket_rpcapi = jacket_rpcapi.ComputeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
         self.image_api = image.API()
         self.network_api = network.API()
         self.servicegroup_api = servicegroup.API()
@@ -158,7 +158,7 @@ class ComputeTaskManager(base.Base):
     def reset(self):
         LOG.info(_LI('Reloading compute RPC API'))
         jacket_rpcapi.LAST_VERSION = None
-        self.jacket_rpcapi = jacket_rpcapi.ComputeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
 
     @messaging.expected_exceptions(
         exception.NoValidHost,

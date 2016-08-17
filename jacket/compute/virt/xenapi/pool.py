@@ -51,7 +51,7 @@ class ResourcePool(object):
         self._host_uuid = host_rec['uuid']
         self._session = session
         self._virtapi = virtapi
-        self.jacket_rpcapi = jacket_rpcapi.ComputeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
 
     def undo_aggregate_operation(self, context, op, aggregate,
                                   host, set_error):

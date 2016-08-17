@@ -54,7 +54,7 @@ class ConsoleAuthManager(manager.Manager):
                                                  *args, **kwargs)
         self._mc = None
         self._mc_instance = None
-        self.jacket_rpcapi = jacket_rpcapi.ComputeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
         self.cells_rpcapi = cells_rpcapi.CellsAPI()
 
     @property
@@ -72,7 +72,7 @@ class ConsoleAuthManager(manager.Manager):
     def reset(self):
         LOG.info(_LI('Reloading compute RPC API'))
         jacket_rpcapi.LAST_VERSION = None
-        self.jacket_rpcapi = jacket_rpcapi.ComputeAPI()
+        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
 
     def _get_tokens_for_instance(self, instance_uuid):
         tokens_str = self.mc_instance.get(instance_uuid.encode('UTF-8'))
