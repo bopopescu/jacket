@@ -38,6 +38,11 @@ address. When False (the default), the 'remote_address' header is used.
 
 You should only enable this if you have an HTML sanitizing proxy.
 """),
+
+    cfg.IntOpt('osapi_max_limit',
+               default=1000,
+               help='The maximum number of items that a collection '
+                    'resource returns in a single response'),
 ]
 
 ALL_OPTS = (auth_opts)

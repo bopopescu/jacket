@@ -89,7 +89,7 @@ wrap_exception = functools.partial(exception.wrap_exception,
                                    get_notifier=get_notifier)
 
 CONF = jacket.compute.conf.CONF
-CONF.import_opt('compute_topic', 'jacket.compute.compute.rpcapi')
+CONF.import_opt('compute_topic', 'jacket.compute.cloud.rpcapi')
 
 MAX_USERDATA_SIZE = 65535
 RO_SECURITY_GROUPS = ['default']

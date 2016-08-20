@@ -33,10 +33,6 @@ from jacket.storage import utils
 
 
 api_common_opts = [
-    cfg.IntOpt('osapi_max_limit',
-               default=1000,
-               help='The maximum number of items that a collection '
-                    'resource returns in a single response'),
     cfg.StrOpt('osapi_volume_base_URL',
                help='Base URL that will be presented to users in links '
                     'to the OpenStack Volume API',

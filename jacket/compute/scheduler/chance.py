@@ -28,7 +28,7 @@ from jacket.i18n import _
 from jacket.compute.scheduler import driver
 
 CONF = cfg.CONF
-CONF.import_opt('compute_topic', 'jacket.compute.compute.rpcapi')
+CONF.import_opt('compute_topic', 'jacket.compute.cloud.rpcapi')
 
 
 class ChanceScheduler(driver.Scheduler):

@@ -144,8 +144,8 @@ CONF.import_opt('use_ipv6', 'jacket.compute.netconf')
 CONF.import_opt('my_ip', 'jacket.compute.netconf')
 CONF.import_opt('network_topic', 'jacket.compute.network.rpcapi')
 CONF.import_opt('fake_network', 'jacket.compute.network.linux_net')
-CONF.import_opt('share_dhcp_address', 'jacket.compute.compute.network')
-CONF.import_opt('network_device_mtu', 'jacket.compute.compute.network')
+CONF.import_opt('share_dhcp_address', 'jacket.objects.compute.network')
+CONF.import_opt('network_device_mtu', 'jacket.objects.compute.network')
 
 
 class RPCAllocateFixedIP(object):

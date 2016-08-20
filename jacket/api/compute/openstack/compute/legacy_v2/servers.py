@@ -53,7 +53,7 @@ server_opts = [
 ]
 CONF = cfg.CONF
 CONF.register_opts(server_opts)
-CONF.import_opt('reclaim_instance_interval', 'cloud.cloud.manager')
+CONF.import_opt('reclaim_instance_interval', 'jacket.compute.cloud.manager')
 
 LOG = logging.getLogger(__name__)
 

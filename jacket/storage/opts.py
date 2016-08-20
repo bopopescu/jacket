@@ -54,7 +54,7 @@ from jacket.storage.scheduler.weights import capacity as \
     cinder_scheduler_weights_capacity
 from jacket.storage.scheduler.weights import volume_number as \
     cinder_scheduler_weights_volumenumber
-from jacket.storage import service as cinder_service
+# from jacket.storage import service as cinder_service
 from jacket.storage import ssh_utils as cinder_sshutils
 from jacket.storage.transfer import api as cinder_transfer_api
 from jacket.storage.volume import api as cinder_volume_api
@@ -183,7 +183,7 @@ def list_opts():
                 cinder_zonemanager_drivers_brocade_brcdfczonedriver.brcd_opts,
                 cinder_zonemanager_drivers_cisco_ciscofczonedriver.cisco_opts,
             )),
-        ('KEYMGR',
+        ('STORAGE_KEYMGR',
             itertools.chain(
                 cinder_keymgr_keymgr.encryption_opts,
                 jacket.storage.keymgr.keymgr_opts,
@@ -226,7 +226,7 @@ def list_opts():
                 cinder_volume_drivers_nexenta_options.NEXENTA_RRMGR_OPTS,
                 cinder_volume_drivers_nexenta_options.NEXENTA_EDGE_OPTS,
                 cinder_exception.exc_log_opts,
-                cinder_common_config.global_opts,
+                # cinder_common_config.global_opts,
                 cinder_scheduler_weights_capacity.capacity_weight_opts,
                 cinder_volume_drivers_sheepdog.sheepdog_opts,
                 [cinder_api_middleware_sizelimit.max_request_body_size_opt],
@@ -240,7 +240,7 @@ def list_opts():
                 cloudbyte_connection_opts,
                 cinder_volume_drivers_cloudbyte_options.
                 cloudbyte_update_volume_opts,
-                cinder_service.service_opts,
+                # cinder_service.service_opts,
                 jacket.storage.compute.compute_opts,
                 cinder_volume_drivers_drbdmanagedrv.drbd_opts,
                 cinder_volume_drivers_dothill_dothillcommon.common_opts,
@@ -283,7 +283,7 @@ def list_opts():
                 cinder_volume_drivers_remotefs.volume_opts,
                 cinder_volume_drivers_emc_xtremio.XTREMIO_OPTS,
                 cinder_backup_drivers_google.gcsbackup_service_opts,
-                [cinder_api_middleware_auth.use_forwarded_for_opt],
+                # [cinder_api_middleware_auth.use_forwarded_for_opt],
                 cinder_volume_drivers_hitachi_hbsdcommon.volume_opts,
                 cinder_volume_drivers_infortrend_eonstor_ds_cli_commoncli.
                 infortrend_esds_opts,

@@ -26,9 +26,9 @@ from jacket.objects.compute import fields
 from jacket.objects.compute import pci_device_pool
 
 CONF = cfg.CONF
-CONF.import_opt('cpu_allocation_ratio', 'jacket.compute.compute.resource_tracker')
-CONF.import_opt('ram_allocation_ratio', 'jacket.compute.compute.resource_tracker')
-CONF.import_opt('disk_allocation_ratio', 'jacket.compute.compute.resource_tracker')
+CONF.import_opt('cpu_allocation_ratio', 'jacket.compute.cloud.resource_tracker')
+CONF.import_opt('ram_allocation_ratio', 'jacket.compute.cloud.resource_tracker')
+CONF.import_opt('disk_allocation_ratio', 'jacket.compute.cloud.resource_tracker')
 LOG = logging.getLogger(__name__)
 
 

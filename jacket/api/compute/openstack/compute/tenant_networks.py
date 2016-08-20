@@ -34,13 +34,13 @@ from jacket.compute import quota
 
 
 CONF = cfg.CONF
-CONF.import_opt('enable_network_quota', 'jacket.compute.api.openstack.compute.'
+CONF.import_opt('enable_network_quota', 'jacket.api.compute.openstack.compute.'
                 'legacy_v2.contrib.os_tenant_networks')
-CONF.import_opt('use_neutron_default_nets', 'jacket.compute.api.openstack.compute.'
+CONF.import_opt('use_neutron_default_nets', 'jacket.api.compute.openstack.compute.'
                 'legacy_v2.contrib.os_tenant_networks')
-CONF.import_opt('neutron_default_tenant_id', 'jacket.compute.api.openstack.compute.'
+CONF.import_opt('neutron_default_tenant_id', 'jacket.api.compute.openstack.compute.'
                 'legacy_v2.contrib.os_tenant_networks')
-CONF.import_opt('quota_networks', 'jacket.compute.api.openstack.compute.'
+CONF.import_opt('quota_networks', 'jacket.api.compute.openstack.compute.'
                 'legacy_v2.contrib.os_tenant_networks')
 
 

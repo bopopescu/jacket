@@ -20,7 +20,7 @@ from jacket.i18n import _LW
 
 LOG = logging.getLogger(__name__)
 
-RESOURCE_NAMESPACE = 'jacket.compute.compute.resources'
+RESOURCE_NAMESPACE = 'jacket.compute.cloud.resources'
 
 
 class ResourceHandler(object):

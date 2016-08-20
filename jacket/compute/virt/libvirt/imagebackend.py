@@ -74,11 +74,11 @@ __imagebackend_opts = [
 CONF = jacket.compute.conf.CONF
 CONF.register_opts(__imagebackend_opts, 'libvirt')
 CONF.import_opt('image_cache_subdirectory_name', 'jacket.compute.virt.imagecache')
-CONF.import_opt('enabled', 'jacket.compute.compute.api',
+CONF.import_opt('enabled', 'jacket.compute.cloud.api',
                 group='ephemeral_storage_encryption')
-CONF.import_opt('cipher', 'jacket.compute.compute.api',
+CONF.import_opt('cipher', 'jacket.compute.cloud.api',
                 group='ephemeral_storage_encryption')
-CONF.import_opt('key_size', 'jacket.compute.compute.api',
+CONF.import_opt('key_size', 'jacket.compute.cloud.api',
                 group='ephemeral_storage_encryption')
 CONF.import_opt('rbd_user', 'jacket.compute.virt.libvirt.volume.net', group='libvirt')
 CONF.import_opt('rbd_secret_uuid', 'jacket.compute.virt.libvirt.volume.net',

@@ -48,7 +48,7 @@ from jacket.api.compute.openstack import wsgi
 from jacket.i18n import _
 from jacket.compute import quota
 from jacket.compute import utils
-from jacket.wsgi import compute as base_wsgi
+from jacket.wsgi import base_wsgi
 
 
 QUOTAS = quota.QUOTAS

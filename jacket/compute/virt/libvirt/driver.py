@@ -314,13 +314,13 @@ CONF = jacket.compute.conf.CONF
 CONF.register_opts(libvirt_opts, 'libvirt')
 CONF.import_opt('host', 'jacket.compute.netconf')
 CONF.import_opt('my_ip', 'jacket.compute.netconf')
-CONF.import_opt('enabled', 'jacket.compute.compute.api',
+CONF.import_opt('enabled', 'jacket.compute.cloud.api',
                 group='ephemeral_storage_encryption')
-CONF.import_opt('cipher', 'jacket.compute.compute.api',
+CONF.import_opt('cipher', 'jacket.compute.cloud.api',
                 group='ephemeral_storage_encryption')
-CONF.import_opt('key_size', 'jacket.compute.compute.api',
+CONF.import_opt('key_size', 'jacket.compute.cloud.api',
                 group='ephemeral_storage_encryption')
-CONF.import_opt('live_migration_retry_count', 'jacket.compute.compute.manager')
+CONF.import_opt('live_migration_retry_count', 'jacket.compute.cloud.manager')
 CONF.import_opt('server_proxyclient_address', 'jacket.compute.spice', group='spice')
 CONF.import_opt('vcpu_pin_set', 'jacket.compute.virt')
 CONF.import_opt('hw_disk_discard', 'jacket.compute.virt.libvirt.imagebackend',

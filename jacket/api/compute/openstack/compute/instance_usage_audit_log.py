@@ -26,7 +26,7 @@ from jacket.i18n import _
 from jacket.compute import utils
 
 CONF = cfg.CONF
-CONF.import_opt('compute_topic', 'cloud.cloud.rpcapi')
+CONF.import_opt('compute_topic', 'jacket.compute.cloud.rpcapi')
 
 
 ALIAS = 'os-instance-usage-audit-log'

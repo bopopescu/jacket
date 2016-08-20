@@ -61,7 +61,7 @@ service_opts = [
                help='Number of workers for OpenStack API service. The default '
                     'will be the number of CPUs available.'),
     cfg.StrOpt('metadata_manager',
-               default='jacket.compute.api.manager.MetadataManager',
+               default='jacket.api.compute.manager.MetadataManager',
                help='DEPRECATED: OpenStack metadata service manager',
                deprecated_for_removal=True),
     cfg.StrOpt('metadata_listen',
@@ -100,7 +100,7 @@ service_opts = [
     cfg.StrOpt('network_manager',
                default='jacket.compute.network.manager.VlanManager',
                help='Full class name for the Manager for network'),
-    cfg.StrOpt('scheduler_manager',
+    cfg.StrOpt('compute_scheduler_manager',
                default='jacket.compute.scheduler.manager.SchedulerManager',
                help='DEPRECATED: Full class name for the Manager for '
                    'scheduler',
@@ -119,6 +119,16 @@ service_opts = [
                 help='Port on which OpenStack Volume API listens'),
     cfg.IntOpt('osapi_volume_workers',
                help='Number of workers for OpenStack Volume API service. '
+                    'The default is equal to the number of CPUs available.'),
+
+    cfg.StrOpt('osapi_jacket_listen',
+               default="0.0.0.0",
+               help='IP address on which OpenStack jacket API listens'),
+    cfg.PortOpt('osapi_jacket_listen_port',
+                default=9776,
+                help='Port on which OpenStack jacket API listens'),
+    cfg.IntOpt('osapi_jacket_workers',
+               help='Number of workers for OpenStack Jacket API service. '
                     'The default is equal to the number of CPUs available.'),
     ]
 

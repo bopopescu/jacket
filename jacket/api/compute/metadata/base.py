@@ -50,7 +50,7 @@ metadata_opts = [
                help='List of metadata versions to skip placing into the '
                     'config drive'),
     cfg.StrOpt('vendordata_driver',
-               default='jacket.compute.api.metadata.vendordata_json.JsonFileVendorData',
+               default='jacket.api.compute.metadata.vendordata_json.JsonFileVendorData',
                help='DEPRECATED: Driver to use for vendor data',
                deprecated_for_removal=True),
 ]

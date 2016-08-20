@@ -23,9 +23,9 @@ keymgr_opts = [
 ]
 
 CONF = cfg.CONF
-CONF.register_opts(keymgr_opts, group='keymgr')
+CONF.register_opts(keymgr_opts, group='storage_keymgr')
 
 
 def API():
-    cls = importutils.import_class(CONF.keymgr.api_class)
+    cls = importutils.import_class(CONF.storage_keymgr.api_class)
     return cls()

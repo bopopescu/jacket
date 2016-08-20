@@ -69,7 +69,7 @@ imagecache_opts = [
 
 CONF = cfg.CONF
 CONF.register_opts(imagecache_opts, 'libvirt')
-CONF.import_opt('instances_path', 'jacket.compute.compute.manager')
+CONF.import_opt('instances_path', 'jacket.compute.cloud.manager')
 CONF.import_opt('image_cache_subdirectory_name', 'jacket.compute.virt.imagecache')
 
 

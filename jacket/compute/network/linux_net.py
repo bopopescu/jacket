@@ -145,7 +145,7 @@ CONF.register_opts(linux_net_opts)
 CONF.import_opt('host', 'jacket.compute.netconf')
 CONF.import_opt('use_ipv6', 'jacket.compute.netconf')
 CONF.import_opt('my_ip', 'jacket.compute.netconf')
-CONF.import_opt('network_device_mtu', 'jacket.compute.compute.network')
+CONF.import_opt('network_device_mtu', 'jacket.objects.compute.network')
 
 
 # NOTE(vish): Iptables supports chain names of up to 28 characters,  and we

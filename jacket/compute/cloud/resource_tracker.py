@@ -47,7 +47,7 @@ resource_tracker_opts = [
     cfg.IntOpt('reserved_host_memory_mb', default=512,
                help='Amount of memory in MB to reserve for the host'),
     cfg.StrOpt('compute_stats_class',
-               default='jacket.compute.compute.stats.Stats',
+               default='jacket.compute.cloud.stats.Stats',
                help='DEPRECATED: Class that will manage stats for the '
                    'local compute host',
                deprecated_for_removal=True),

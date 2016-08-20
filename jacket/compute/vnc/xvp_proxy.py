@@ -31,7 +31,7 @@ from jacket.compute import context
 from jacket.i18n import _LI
 from jacket.compute import utils
 from jacket import version
-from jacket.wsgi import compute
+from jacket.wsgi import base_wsgi as compute
 
 
 LOG = logging.getLogger(__name__)

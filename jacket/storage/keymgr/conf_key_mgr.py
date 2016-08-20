@@ -49,7 +49,7 @@ key_mgr_opts = [
 ]
 
 CONF = cfg.CONF
-CONF.register_opts(key_mgr_opts, group='keymgr')
+CONF.register_opts(key_mgr_opts, group='storage_keymgr')
 
 
 LOG = logging.getLogger(__name__)
@@ -75,12 +75,12 @@ class ConfKeyManager(key_mgr.KeyManager):
         return key.SymmetricKey('AES', key_list)
 
     def _generate_hex_key(self, **kwargs):
-        if CONF.keymgr.fixed_key is None:
+        if CONF.storage_keymgr.fixed_key is None:
             LOG.warning(
-                _LW('config option keymgr.fixed_key has not been defined:'
+                _LW('config option storage_keymgr.fixed_key has not been defined:'
                     ' some operations may fail unexpectedly'))
-            raise ValueError(_('keymgr.fixed_key not defined'))
-        return CONF.keymgr.fixed_key
+            raise ValueError(_('storage_keymgr.fixed_key not defined'))
+        return CONF.storage_keymgr.fixed_key
 
     def create_key(self, ctxt, **kwargs):
         """Creates a key.

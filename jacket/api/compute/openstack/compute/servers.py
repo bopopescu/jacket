@@ -49,7 +49,7 @@ ALIAS = 'servers'
 CONF = cfg.CONF
 CONF.import_opt('enable_instance_password',
                 'cloud.api.openstack.cloud.legacy_v2.servers')
-CONF.import_opt('reclaim_instance_interval', 'cloud.cloud.manager')
+CONF.import_opt('reclaim_instance_interval', 'jacket.compute.cloud.manager')
 CONF.import_opt('extensions_blacklist', 'cloud.api.openstack',
                 group='osapi_v21')
 CONF.import_opt('extensions_whitelist', 'cloud.api.openstack',

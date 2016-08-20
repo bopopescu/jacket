@@ -27,7 +27,7 @@ IMPL = None
 
 def reset_backend():
     global IMPL
-    IMPL = driver.DriverManager("jacket.compute.ipv6_backend",
+    IMPL = driver.DriverManager("compute.ipv6_backend",
                                 CONF.ipv6_backend).driver
 
 
