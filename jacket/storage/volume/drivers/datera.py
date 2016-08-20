@@ -46,7 +46,7 @@ d_opts = [
 
 
 CONF = cfg.CONF
-CONF.import_opt('driver_use_ssl', 'storage.volume.driver')
+CONF.import_opt('driver_use_ssl', 'jacket.storage.volume.driver')
 CONF.register_opts(d_opts)
 
 DEFAULT_STORAGE_NAME = 'storage-1'

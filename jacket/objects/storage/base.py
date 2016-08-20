@@ -25,7 +25,6 @@ from oslo_versionedobjects import fields
 from jacket.db import storage
 from jacket.storage import exception
 from jacket.storage.i18n import _
-from jacket.objects import storage
 
 
 LOG = logging.getLogger('object')

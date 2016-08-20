@@ -27,11 +27,11 @@ from oslo_utils import fileutils
 from oslo_utils import units
 from six.moves import urllib
 
-from cinder import exception
-from cinder.i18n import _, _LE, _LI, _LW
-from cinder.image import image_utils
-from cinder import utils
-from cinder.volume import driver
+from jacket.storage import exception
+from jacket.storage.i18n import _, _LE, _LI, _LW
+from jacket.storage.image import image_utils
+from jacket.storage import utils
+from jacket.storage.volume import driver
 
 try:
     import rados

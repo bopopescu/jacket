@@ -50,14 +50,14 @@ metadata_opts = [
                help='List of metadata versions to skip placing into the '
                     'config drive'),
     cfg.StrOpt('vendordata_driver',
-               default='compute.api.metadata.vendordata_json.JsonFileVendorData',
+               default='jacket.compute.api.metadata.vendordata_json.JsonFileVendorData',
                help='DEPRECATED: Driver to use for vendor data',
                deprecated_for_removal=True),
 ]
 
 CONF = cfg.CONF
 CONF.register_opts(metadata_opts)
-CONF.import_opt('dhcp_domain', 'compute.network.manager')
+CONF.import_opt('dhcp_domain', 'jacket.compute.network.manager')
 
 VERSIONS = [
     '1.0',

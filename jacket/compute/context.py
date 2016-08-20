@@ -291,7 +291,7 @@ def target_cell(context, cell_mapping):
     """
     original_db_connection = context.db_connection
     # avoid circular import
-    from jacket.db import compute
+    from jacket import db
     connection_string = cell_mapping.database_connection
     context.db_connection = compute.create_context_manager(connection_string)
 

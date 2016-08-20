@@ -31,7 +31,7 @@ from oslo_config import cfg
 from oslo_db import concurrency
 from oslo_log import log as logging
 
-from jacket.compute.cells import rpcapi as cells_rpcapi
+# from jacket.compute.cells import rpcapi as cells_rpcapi
 from jacket.i18n import _LE
 
 
@@ -50,12 +50,14 @@ db_opts = [
 CONF = cfg.CONF
 CONF.register_opts(db_opts)
 
-_BACKEND_MAPPING = {'sqlalchemy': 'compute.db.sqlalchemy.api'}
+_BACKEND_MAPPING = {'sqlalchemy': 'jacket.db.compute.sqlalchemy.api'}
 
 
 IMPL = concurrency.TpoolDbapiWrapper(CONF, backend_mapping=_BACKEND_MAPPING)
 
 LOG = logging.getLogger(__name__)
+
+LOG.info("+++hw, dir = %s", dir(IMPL))
 
 # The maximum value a signed INT type may have
 MAX_INT = 0x7FFFFFFF
@@ -1703,9 +1705,10 @@ def bw_usage_update(context, uuid, mac, start_period, bw_in, bw_out,
             bw_out, last_ctr_in, last_ctr_out, last_refreshed=last_refreshed)
     if update_cells:
         try:
-            cells_rpcapi.CellsAPI().bw_usage_update_at_top(context,
-                    uuid, mac, start_period, bw_in, bw_out,
-                    last_ctr_in, last_ctr_out, last_refreshed)
+            pass
+            #cells_rpcapi.CellsAPI().bw_usage_update_at_top(context,
+            #        uuid, mac, start_period, bw_in, bw_out,
+            #        last_ctr_in, last_ctr_out, last_refreshed)
         except Exception:
             LOG.exception(_LE("Failed to notify cells of bw_usage update"))
     return rv

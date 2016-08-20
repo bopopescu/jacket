@@ -19,7 +19,7 @@ from jacket.api.jacket_api.views import versions as jacket_api_views_versions
 from jacket.api.middleware import auth as jacket_api_auth
 from jacket.api.middleware import sizelimit as jacket_api_sizelimit
 from jacket.common import config as jacket_config
-from jacket.db.jacket import base as jacket_db_base
+from jacket.db import base as jacket_db_base
 from jacket.wsgi import common as wsgi_common
 from jacket import jacket_service as jacket_base_service
 

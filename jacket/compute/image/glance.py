@@ -39,11 +39,11 @@ import six
 from six.moves import range
 import six.moves.urllib.parse as urlparse
 
-from nova import exception
-from nova.i18n import _LE, _LI, _LW
+from jacket.compute import exception
+from jacket.i18n import _LE, _LI, _LW
 import jacket.compute.image.download as image_xfers
-from nova import objects
-from nova import signature_utils
+from jacket.objects import compute as objects
+from jacket.compute import signature_utils
 
 
 glance_opts = [
@@ -97,8 +97,8 @@ should be fully qualified urls of the form
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 CONF.register_opts(glance_opts, 'glance')
-CONF.import_opt('auth_strategy', 'compute.api.auth')
-CONF.import_opt('my_ip', 'compute.netconf')
+CONF.import_opt('auth_strategy', 'jacket.api.compute.auth')
+CONF.import_opt('my_ip', 'jacket.compute.netconf')
 
 supported_glance_versions = (1, 2)
 

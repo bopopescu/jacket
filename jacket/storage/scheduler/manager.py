@@ -40,8 +40,8 @@ from jacket.storage.scheduler.flows import create_volume
 from jacket.storage.volume import rpcapi as volume_rpcapi
 
 
-scheduler_driver_opt = cfg.StrOpt('scheduler_driver',
-                                  default='storage.scheduler.filter_scheduler.'
+scheduler_driver_opt = cfg.StrOpt('storage_scheduler_driver',
+                                  default='jacket.storage.scheduler.filter_scheduler.'
                                           'FilterScheduler',
                                   help='Default scheduler driver to use')
 
@@ -63,7 +63,7 @@ class SchedulerManager(manager.Manager):
     def __init__(self, scheduler_driver=None, service_name=None,
                  *args, **kwargs):
         if not scheduler_driver:
-            scheduler_driver = CONF.scheduler_driver
+            scheduler_driver = CONF.storage_scheduler_driver
         self.driver = importutils.import_object(scheduler_driver)
         super(SchedulerManager, self).__init__(*args, **kwargs)
         self.additional_endpoints.append(_SchedulerV1Proxy(self))

@@ -36,7 +36,7 @@ topic = cfg.StrOpt(
 
 manager = cfg.StrOpt(
     'manager',
-    default='compute.conductor.manager.ConductorManager',
+    default='jacket.compute.conductor.manager.ConductorManager',
     help=('DEPRECATED: Full class name for the Manager for conductor. '
           'Removal in 14.0'),
     deprecated_for_removal=True)

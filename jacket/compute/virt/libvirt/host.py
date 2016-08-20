@@ -66,8 +66,8 @@ native_threading = patcher.original("threading")
 native_Queue = patcher.original("Queue" if six.PY2 else "queue")
 
 CONF = cfg.CONF
-CONF.import_opt('host', 'compute.netconf')
-CONF.import_opt('my_ip', 'compute.netconf')
+CONF.import_opt('host', 'jacket.compute.netconf')
+CONF.import_opt('my_ip', 'jacket.compute.netconf')
 
 
 # This list is for libvirt hypervisor drivers that need special handling.
@@ -532,7 +532,7 @@ class Host(object):
                            method='_connect',
                            reason=ex)
             rpc.get_notifier('compute').error(nova_context.get_admin_context(),
-                                              'compute.libvirt.error',
+                                              'jacket.compute.libvirt.error',
                                               payload)
             raise exception.HypervisorUnavailable(host=CONF.host)
 

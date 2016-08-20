@@ -34,7 +34,7 @@ from jacket.storage.volume import utils as vol_utils
 
 
 host_manager_opts = [
-    cfg.ListOpt('scheduler_default_filters',
+    cfg.ListOpt('storage_scheduler_default_filters',
                 default=[
                     'AvailabilityZoneFilter',
                     'CapacityFilter',
@@ -51,8 +51,8 @@ host_manager_opts = [
 
 CONF = cfg.CONF
 CONF.register_opts(host_manager_opts)
-CONF.import_opt('scheduler_driver', 'storage.scheduler.manager')
-CONF.import_opt('max_over_subscription_ratio', 'storage.volume.driver')
+CONF.import_opt('storage_scheduler_driver', 'jacket.storage.scheduler.manager')
+CONF.import_opt('max_over_subscription_ratio', 'jacket.storage.volume.driver')
 
 LOG = logging.getLogger(__name__)
 
@@ -354,10 +354,10 @@ class HostManager(object):
 
         This function checks input filter names against a predefined set
         of acceptable filterss (all loaded filters).  If input is None,
-        it uses CONF.scheduler_default_filters instead.
+        it uses CONF.storage_scheduler_default_filters instead.
         """
         if filter_cls_names is None:
-            filter_cls_names = CONF.scheduler_default_filters
+            filter_cls_names = CONF.storage_scheduler_default_filters
         if not isinstance(filter_cls_names, (list, tuple)):
             filter_cls_names = [filter_cls_names]
         good_filters = []

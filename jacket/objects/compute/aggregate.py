@@ -16,7 +16,7 @@ from oslo_log import log as logging
 from oslo_utils import uuidutils
 
 from jacket.compute.cloud import utils as compute_utils
-from jacket.db import compute
+from jacket import db
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.objects.compute import base

@@ -25,7 +25,7 @@ from oslo_utils import uuidutils
 import six
 
 from jacket.compute import context
-from jacket.db.compute import base
+from jacket.db import base
 from jacket.compute import exception
 from jacket.i18n import _LE, _LI, _LW
 from jacket.compute.network import rpcapi as network_rpcapi
@@ -47,10 +47,10 @@ floating_opts = [
                 default=False,
                 help='Autoassigning floating IP to VM'),
     cfg.StrOpt('floating_ip_dns_manager',
-               default='compute.network.noop_dns_driver.NoopDNSDriver',
+               default='jacket.compute.network.noop_dns_driver.NoopDNSDriver',
                help='Full class name for the DNS Manager for floating IPs'),
     cfg.StrOpt('instance_dns_manager',
-               default='compute.network.noop_dns_driver.NoopDNSDriver',
+               default='jacket.compute.network.noop_dns_driver.NoopDNSDriver',
                help='Full class name for the DNS Manager for instance IPs'),
     cfg.StrOpt('instance_dns_domain',
                default='',
@@ -59,8 +59,8 @@ floating_opts = [
 
 CONF = cfg.CONF
 CONF.register_opts(floating_opts)
-CONF.import_opt('public_interface', 'compute.network.linux_net')
-CONF.import_opt('network_topic', 'compute.network.rpcapi')
+CONF.import_opt('public_interface', 'jacket.compute.network.linux_net')
+CONF.import_opt('network_topic', 'jacket.compute.network.rpcapi')
 
 
 class FloatingIP(object):

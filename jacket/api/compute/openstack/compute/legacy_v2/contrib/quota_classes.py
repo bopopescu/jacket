@@ -18,7 +18,7 @@ import webob
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 import jacket.compute.context
-from jacket.db import compute
+from jacket import db
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.compute import quota

@@ -43,7 +43,7 @@ from sqlalchemy.sql import null
 
 from jacket.common import sqlalchemyutils
 import jacket.context
-from jacket.db.jacket.sqlalchemy import models
+from jacket.db.cloud_config.sqlalchemy import models
 from jacket import exception
 from jacket.i18n import _, _LW, _LE, _LI
 
@@ -71,7 +71,7 @@ def _create_facade_lazily():
             # group here.  Dependency cycle is objects.base requires db.api,
             # which requires db.sqlalchemy.api, which requires service which
             # requires objects.base
-            CONF.import_group("profiler", "jacket.service")
+            CONF.import_group("profiler", "jacket.jacket_service")
             if CONF.profiler.enabled:
                 if CONF.profiler.trace_sqlalchemy:
                     osprofiler_sqlalchemy.add_tracing(sqlalchemy,

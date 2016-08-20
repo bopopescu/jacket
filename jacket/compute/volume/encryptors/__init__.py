@@ -38,11 +38,11 @@ def get_volume_encryptor(connection_info, **kwargs):
         provider = kwargs.get('provider')
 
         if provider == 'LuksEncryptor':
-            provider = 'compute.volume.encryptors.luks.' + provider
+            provider = 'jacket.compute.volume.encryptors.luks.' + provider
         elif provider == 'CryptsetupEncryptor':
-            provider = 'compute.volume.encryptors.cryptsetup.' + provider
+            provider = 'jacket.compute.volume.encryptors.cryptsetup.' + provider
         elif provider == 'NoOpEncryptor':
-            provider = 'compute.volume.encryptors.nop.' + provider
+            provider = 'jacket.compute.volume.encryptors.nop.' + provider
         try:
             encryptor = importutils.import_object(provider, connection_info,
                                                   **kwargs)

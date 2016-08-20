@@ -27,7 +27,7 @@ from oslo_log import log as logging
 from oslo_utils import excutils
 import six
 
-from jacket.db.storage import base
+from jacket.db import base
 from jacket.storage import exception
 from jacket.storage.i18n import _, _LE, _LI, _LW
 from jacket.storage import quota

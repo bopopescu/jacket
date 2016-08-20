@@ -53,7 +53,7 @@ class SchedulerAPI(rpc.RPCAPI):
     """
 
     RPC_API_VERSION = '2.0'
-    TOPIC = CONF.scheduler_topic
+    TOPIC = CONF.storage_scheduler_topic
     BINARY = 'storage-scheduler'
 
     def _compat_ver(self, current, legacy):

@@ -39,7 +39,7 @@ xenapi_pool_opts = [
 
 CONF = cfg.CONF
 CONF.register_opts(xenapi_pool_opts, 'xenserver')
-CONF.import_opt('host', 'compute.netconf')
+CONF.import_opt('host', 'jacket.compute.netconf')
 
 
 class ResourcePool(object):

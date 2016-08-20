@@ -33,7 +33,7 @@ import six
 from jacket.compute.cells import rpc_driver
 import jacket.compute.conf
 from jacket.compute import context
-from jacket.db.compute import base
+from jacket.db import base
 from jacket.compute import exception
 from jacket.i18n import _LE
 from jacket.objects import compute

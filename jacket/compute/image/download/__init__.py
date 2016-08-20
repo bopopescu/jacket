@@ -26,10 +26,10 @@ def load_transfer_modules():
 
     module_dictionary = {}
 
-    ex = stevedore.extension.ExtensionManager('compute.image.download.modules')
+    ex = stevedore.extension.ExtensionManager('jacket.compute.image.download.modules')
     for module_name in ex.names():
         mgr = stevedore.driver.DriverManager(
-            namespace='compute.image.download.modules',
+            namespace='jacket.compute.image.download.modules',
             name=module_name,
             invoke_on_load=False)
 

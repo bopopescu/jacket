@@ -51,7 +51,7 @@ from jacket.compute import conductor
 import jacket.compute.conf
 from jacket.compute.consoleauth import rpcapi as consoleauth_rpcapi
 from jacket.compute import crypto
-from jacket.db.compute import base
+from jacket.db import base
 from jacket.compute import exception
 from jacket.compute import hooks
 from jacket.i18n import _
@@ -89,7 +89,7 @@ wrap_exception = functools.partial(exception.wrap_exception,
                                    get_notifier=get_notifier)
 
 CONF = jacket.compute.conf.CONF
-CONF.import_opt('compute_topic', 'compute.compute.rpcapi')
+CONF.import_opt('compute_topic', 'jacket.compute.compute.rpcapi')
 
 MAX_USERDATA_SIZE = 65535
 RO_SECURITY_GROUPS = ['default']

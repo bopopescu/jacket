@@ -49,7 +49,7 @@ sheepdog_opts = [
 ]
 
 CONF = cfg.CONF
-CONF.import_opt("image_conversion_dir", "storage.image.image_utils")
+CONF.import_opt("image_conversion_dir", "jacket.storage.image.image_utils")
 CONF.register_opts(sheepdog_opts)
 
 

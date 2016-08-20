@@ -25,7 +25,7 @@ from jacket.compute.servicegroup.drivers import base
 
 
 CONF = cfg.CONF
-CONF.import_opt('service_down_time', 'compute.service')
+CONF.import_opt('service_down_time', 'jacket.compute.service')
 
 LOG = logging.getLogger(__name__)
 

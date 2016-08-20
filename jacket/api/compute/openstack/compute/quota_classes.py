@@ -20,7 +20,7 @@ from jacket.api.compute.openstack.compute.schemas import quota_classes
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
-from jacket.db import compute
+from jacket import db
 from jacket.compute import exception
 from jacket.compute import quota
 from jacket.compute import utils

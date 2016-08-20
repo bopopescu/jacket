@@ -58,7 +58,7 @@ xenapi_session_opts = [
 
 CONF = cfg.CONF
 CONF.register_opts(xenapi_session_opts, 'xenserver')
-CONF.import_opt('host', 'compute.netconf')
+CONF.import_opt('host', 'jacket.compute.netconf')
 
 
 def apply_session_helpers(session):

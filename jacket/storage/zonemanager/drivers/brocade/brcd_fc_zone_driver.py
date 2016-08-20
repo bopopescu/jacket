@@ -455,7 +455,7 @@ class BrcdFCZoneDriver(fc_zone_driver.FCZoneDriver):
             sb_connector = self.configuration.brcd_sb_connector
         try:
             conn_factory = importutils.import_object(
-                "storage.zonemanager.drivers.brocade."
+                "jacket.storage.zonemanager.drivers.brocade."
                 "brcd_fc_zone_connector_factory."
                 "BrcdFCZoneFactory")
             client = conn_factory.get_connector(fabric_info,

@@ -43,14 +43,10 @@ from oslo_db import options as db_options
 from jacket.common import constants
 
 
-db_opts = []
-
-
 CONF = cfg.CONF
-CONF.register_opts(db_opts)
 db_options.set_defaults(CONF)
 
-_BACKEND_MAPPING = {'sqlalchemy': 'jacket.db.jacket.sqlalchemy.api'}
+_BACKEND_MAPPING = {'sqlalchemy': 'jacket.db.sqlalchemy.api'}
 
 
 IMPL = oslo_db_api.DBAPI.from_config(conf=CONF,

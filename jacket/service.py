@@ -24,7 +24,7 @@ from jacket import rpc
 from jacket.compute import servicegroup
 from jacket import utils
 from jacket import version
-from jacket.wsgi import wsgi
+from jacket.wsgi import base_wsgi
 
 LOG = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ service_opts = [
                help='Number of workers for OpenStack API service. The default '
                     'will be the number of CPUs available.'),
     cfg.StrOpt('metadata_manager',
-               default='compute.api.manager.MetadataManager',
+               default='jacket.compute.api.manager.MetadataManager',
                help='DEPRECATED: OpenStack metadata service manager',
                deprecated_for_removal=True),
     cfg.StrOpt('metadata_listen',
@@ -360,7 +360,7 @@ class WSGIService(service.Service):
         self.binary = 'jacket-%s' % name
         self.topic = None
         self.manager = self._get_manager()
-        self.loader = loader or wsgi.Loader()
+        self.loader = loader or base_wsgi.Loader()
         self.app = self.loader.load_app(name)
         # inherit all compute_api worker counts from osapi_compute
         if name.startswith('openstack_compute_api'):
@@ -379,7 +379,7 @@ class WSGIService(service.Service):
                     'workers': str(self.workers)})
             raise exception.InvalidInput(msg)
         self.use_ssl = use_ssl
-        self.server = wsgi.Server(name,
+        self.server = base_wsgi.Server(name,
                                   self.app,
                                   host=self.host,
                                   port=self.port,

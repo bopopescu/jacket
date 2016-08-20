@@ -57,7 +57,7 @@ from oslo_log import log as logging
 import oslo_messaging as messaging
 from oslo_service import periodic_task
 
-from jacket.db.storage import base
+from jacket.db import base
 from jacket.storage.i18n import _LI
 from jacket.storage import rpc
 from jacket.storage.scheduler import rpcapi as scheduler_rpcapi

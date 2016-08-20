@@ -36,8 +36,8 @@ from six.moves import range
 from jacket import exception
 import jacket.policy
 from jacket import base_rpc
-from jacket.db.jacket import base
-from jacket.db.jacket import api as db_api
+from jacket.db import base
+from jacket.db import api as db_api
 
 
 LOG = logging.getLogger(__name__)

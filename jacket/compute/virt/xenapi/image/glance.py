@@ -27,7 +27,7 @@ from jacket.compute import utils
 from jacket.compute.virt.xenapi import vm_utils
 
 CONF = cfg.CONF
-CONF.import_opt('num_retries', 'compute.image.glance', group='glance')
+CONF.import_opt('num_retries', 'jacket.compute.image.glance', group='glance')
 LOG = logging.getLogger(__name__)
 
 

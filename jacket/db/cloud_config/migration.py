@@ -23,7 +23,7 @@ from oslo_config import cfg
 from oslo_db import options
 from stevedore import driver
 
-from jacket.db.sqlalchemy import api as db_api
+from jacket.db.cloud_config.sqlalchemy import api as db_api
 from jacket import exception
 from jacket.i18n import _
 

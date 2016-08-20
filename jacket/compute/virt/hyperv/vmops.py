@@ -115,8 +115,8 @@ def check_admin_permissions(function):
         return function(self, *args, **kwds)
     return wrapper
 
-NEUTRON_VIF_DRIVER = 'compute.virt.hyperv.vif.HyperVNeutronVIFDriver'
-NOVA_VIF_DRIVER = 'compute.virt.hyperv.vif.HyperVNovaNetworkVIFDriver'
+NEUTRON_VIF_DRIVER = 'jacket.compute.virt.hyperv.vif.HyperVNeutronVIFDriver'
+NOVA_VIF_DRIVER = 'jacket.compute.virt.hyperv.vif.HyperVNovaNetworkVIFDriver'
 
 
 def get_network_driver():

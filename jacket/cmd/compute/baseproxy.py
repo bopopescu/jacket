@@ -29,13 +29,13 @@ from jacket import version
 
 
 CONF = cfg.CONF
-CONF.import_opt('record', 'compute.cmd.novnc')
-CONF.import_opt('daemon', 'compute.cmd.novnc')
-CONF.import_opt('ssl_only', 'compute.cmd.novnc')
-CONF.import_opt('source_is_ipv6', 'compute.cmd.novnc')
-CONF.import_opt('cert', 'compute.cmd.novnc')
-CONF.import_opt('key', 'compute.cmd.novnc')
-CONF.import_opt('web', 'compute.cmd.novnc')
+CONF.import_opt('record', 'jacket.compute.cmd.novnc')
+CONF.import_opt('daemon', 'jacket.compute.cmd.novnc')
+CONF.import_opt('ssl_only', 'jacket.compute.cmd.novnc')
+CONF.import_opt('source_is_ipv6', 'jacket.compute.cmd.novnc')
+CONF.import_opt('cert', 'jacket.compute.cmd.novnc')
+CONF.import_opt('key', 'jacket.compute.cmd.novnc')
+CONF.import_opt('web', 'jacket.compute.cmd.novnc')
 
 
 def exit_with_error(msg, errno=-1):

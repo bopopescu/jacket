@@ -45,7 +45,7 @@ import six
 import testtools
 
 from jacket.compute import context
-from jacket.db import compute
+from jacket import db
 from jacket.compute.network import manager as network_manager
 from jacket.compute.network.security_group import openstack_driver
 from jacket.objects.compute import base as objects_base
@@ -56,7 +56,7 @@ from jacket.compute import utils
 
 
 CONF = cfg.CONF
-CONF.import_opt('enabled', 'compute.api.openstack', group='osapi_v21')
+CONF.import_opt('enabled', 'jacket.compute.api.openstack', group='osapi_v21')
 
 logging.register_options(CONF)
 CONF.set_override('use_stderr', False)

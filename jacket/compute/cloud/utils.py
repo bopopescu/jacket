@@ -36,7 +36,7 @@ from jacket.compute import utils
 from jacket.compute.virt import driver
 
 CONF = cfg.CONF
-CONF.import_opt('host', 'compute.netconf')
+CONF.import_opt('host', 'jacket.compute.netconf')
 LOG = log.getLogger(__name__)
 
 

@@ -84,7 +84,7 @@ class API(base_api.NetworkAPI):
         networks. Otherwise api will only return the networks which
         belong to the user's project.
         """
-        if "compute.network.manager.Flat" in CONF.network_manager:
+        if "jacket.compute.network.manager.Flat" in CONF.network_manager:
             project_only = "allow_none"
         else:
             project_only = True

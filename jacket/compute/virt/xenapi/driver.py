@@ -95,7 +95,7 @@ xenapi_opts = [
 
 CONF = cfg.CONF
 CONF.register_opts(xenapi_opts, 'xenserver')
-CONF.import_opt('host', 'compute.netconf')
+CONF.import_opt('host', 'jacket.compute.netconf')
 
 OVERHEAD_BASE = 3
 OVERHEAD_PER_MB = 0.00781

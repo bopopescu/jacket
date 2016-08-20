@@ -43,8 +43,8 @@ class Scheduler(object):
     def __init__(self):
         try:
             self.host_manager = driver.DriverManager(
-                    "compute.scheduler.host_manager",
-                    CONF.scheduler_host_manager,
+                    "jacket.compute.scheduler.host_manager",
+                    CONF.compute_scheduler_host_manager,
                     invoke_on_load=True).driver
         # TODO(Yingxin): Change to catch stevedore.exceptions.NoMatches
         # after stevedore v1.9.0
@@ -53,17 +53,17 @@ class Scheduler(object):
             # should be removed in the N release.
             try:
                 self.host_manager = importutils.import_object(
-                    CONF.scheduler_host_manager)
-                LOG.warning(_LW("DEPRECATED: scheduler_host_manager uses "
+                    CONF.compute_scheduler_host_manager)
+                LOG.warning(_LW("DEPRECATED: compute_scheduler_host_manager uses "
                                 "classloader to load %(path)s. This legacy "
                                 "loading style will be removed in the "
                                 "N release."),
-                            {'path': CONF.scheduler_host_manager})
+                            {'path': CONF.compute_scheduler_host_manager})
             except (ImportError, ValueError):
                 raise RuntimeError(
                         _("Cannot load host manager from configuration "
-                          "scheduler_host_manager = %(conf)s."),
-                        {'conf': CONF.scheduler_host_manager})
+                          "compute_scheduler_host_manager = %(conf)s."),
+                        {'conf': CONF.compute_scheduler_host_manager})
         self.servicegroup_api = servicegroup.API()
 
     def run_periodic_tasks(self, context):

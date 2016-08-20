@@ -75,7 +75,7 @@ service_opts = [
                help='Number of workers for OpenStack API service. The default '
                     'will be the number of CPUs available.'),
     cfg.StrOpt('metadata_manager',
-               default='compute.api.manager.MetadataManager',
+               default='jacket.compute.api.manager.MetadataManager',
                help='DEPRECATED: OpenStack metadata service manager',
                deprecated_for_removal=True),
     cfg.StrOpt('metadata_listen',
@@ -126,7 +126,7 @@ service_opts = [
 
 CONF = cfg.CONF
 CONF.register_opts(service_opts)
-CONF.import_opt('host', 'compute.netconf')
+CONF.import_opt('host', 'jacket.compute.netconf')
 
 
 def _create_service_ref(this_service, context):

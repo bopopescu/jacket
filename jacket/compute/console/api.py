@@ -19,11 +19,11 @@ from oslo_config import cfg
 
 from jacket.worker import rpcapi as jacket_rpcapi
 from jacket.compute.console import rpcapi as console_rpcapi
-from jacket.db.compute import base
+from jacket.db import base
 from jacket.objects import compute
 
 CONF = cfg.CONF
-CONF.import_opt('console_topic', 'compute.console.rpcapi')
+CONF.import_opt('console_topic', 'jacket.compute.console.rpcapi')
 
 
 class API(base.Base):

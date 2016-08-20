@@ -48,7 +48,7 @@ def get_backend():
         with _LOCK:
             if _IMPL is None:
                 _IMPL = driver.DriverManager(
-                    "storage.database.migration_backend",
+                    "jacket.storage.database.migration_backend",
                     cfg.CONF.database.backend).driver
     return _IMPL
 

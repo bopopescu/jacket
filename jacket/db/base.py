@@ -16,19 +16,14 @@
 
 """Base class for classes that need modular database access."""
 
+
 from oslo_config import cfg
 from oslo_utils import importutils
 
-# NOTE(sdague): we know of at least 1 instance of out of tree usage
-# for this config in RAX. They used this because of performance issues
-# with some queries. We think the right path forward is fixing the
-# SQLA queries to be more performant for everyone.
-db_driver_opt = cfg.StrOpt(
-    'db_driver',
-    default='compute.db',
-    help='DEPRECATED: The driver to use for database access',
-    deprecated_for_removal=True)
 
+db_driver_opt = cfg.StrOpt('db_driver',
+                           default='jacket.db',
+                           help='Driver to use for database access')
 
 CONF = cfg.CONF
 CONF.register_opt(db_driver_opt)
@@ -38,7 +33,10 @@ class Base(object):
     """DB driver is injected in the init method."""
 
     def __init__(self, db_driver=None):
+        # NOTE(mriedem): Without this call, multiple inheritance involving
+        # the db Base class does not work correctly.
         super(Base, self).__init__()
         if not db_driver:
             db_driver = CONF.db_driver
-        self.db = importutils.import_module(db_driver)
+        self.db = importutils.import_module(db_driver)  # pylint: disable=C0103
+        self.db.dispose_engine()

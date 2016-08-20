@@ -35,8 +35,8 @@ from jacket.storage.keymgr import key as keymgr_key
 from jacket.storage.keymgr import key_mgr
 
 CONF = cfg.CONF
-CONF.import_opt('encryption_auth_url', 'storage.keymgr.key_mgr', group='keymgr')
-CONF.import_opt('encryption_api_url', 'storage.keymgr.key_mgr', group='keymgr')
+CONF.import_opt('encryption_auth_url', jacket.storage.keymgr.key_mgr', group='keymgr')
+CONF.import_opt('encryption_api_url', 'jacket.storage.keymgr.key_mgr', group='keymgr')
 LOG = logging.getLogger(__name__)
 URL_PATTERN = re.compile(
     "(?P<url_base>http[s]?://[^/]*)[/]?(?P<url_version>(v[0-9.]+)?).*")

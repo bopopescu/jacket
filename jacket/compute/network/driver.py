@@ -22,7 +22,7 @@ from jacket.i18n import _LE, _LI
 
 driver_opts = [
     cfg.StrOpt('network_driver',
-               default='compute.network.linux_net',
+               default='jacket.compute.network.linux_net',
                help='Driver to use for network creation'),
 ]
 CONF = cfg.CONF

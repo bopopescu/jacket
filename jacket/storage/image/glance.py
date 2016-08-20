@@ -56,7 +56,7 @@ glance_core_properties_opts = [
 CONF = cfg.CONF
 CONF.register_opts(glance_opts)
 CONF.register_opts(glance_core_properties_opts)
-CONF.import_opt('glance_api_version', 'storage.common.config')
+CONF.import_opt('glance_api_version', 'jacket.common.storage.config')
 
 LOG = logging.getLogger(__name__)
 

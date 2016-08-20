@@ -91,7 +91,7 @@ VALID_CREATE_CG_SRC_CG_STATUS = ('available',)
 
 volume_manager_opts = [
     cfg.StrOpt('volume_driver',
-               default='storage.volume.drivers.lvm.LVMVolumeDriver',
+               default='jacket.storage.volume.drivers.lvm.LVMVolumeDriver',
                help='Driver to use for volume creation'),
     cfg.IntOpt('migration_create_volume_timeout_secs',
                default=300,
@@ -122,30 +122,30 @@ CONF = cfg.CONF
 CONF.register_opts(volume_manager_opts)
 
 MAPPING = {
-    'storage.volume.drivers.huawei.huawei_18000.Huawei18000ISCSIDriver':
-    'storage.volume.drivers.huawei.huawei_driver.HuaweiISCSIDriver',
-    'storage.volume.drivers.huawei.huawei_driver.Huawei18000ISCSIDriver':
-    'storage.volume.drivers.huawei.huawei_driver.HuaweiISCSIDriver',
-    'storage.volume.drivers.huawei.huawei_18000.Huawei18000FCDriver':
-    'storage.volume.drivers.huawei.huawei_driver.HuaweiFCDriver',
-    'storage.volume.drivers.huawei.huawei_driver.Huawei18000FCDriver':
-    'storage.volume.drivers.huawei.huawei_driver.HuaweiFCDriver',
-    'storage.volume.drivers.fujitsu_eternus_dx_fc.FJDXFCDriver':
-    'storage.volume.drivers.fujitsu.eternus_dx_fc.FJDXFCDriver',
-    'storage.volume.drivers.fujitsu_eternus_dx_iscsi.FJDXISCSIDriver':
-    'storage.volume.drivers.fujitsu.eternus_dx_iscsi.FJDXISCSIDriver',
-    'storage.volume.drivers.hds.nfs.HDSNFSDriver':
-    'storage.volume.drivers.hitachi.hnas_nfs.HDSNFSDriver',
-    'storage.volume.drivers.hds.iscsi.HDSISCSIDriver':
-    'storage.volume.drivers.hitachi.hnas_iscsi.HDSISCSIDriver',
-    'storage.volume.drivers.san.hp.hp_3par_fc.HP3PARFCDriver':
-    'storage.volume.drivers.hpe.hpe_3par_fc.HPE3PARFCDriver',
-    'storage.volume.drivers.san.hp.hp_3par_iscsi.HP3PARISCSIDriver':
-    'storage.volume.drivers.hpe.hpe_3par_iscsi.HPE3PARISCSIDriver',
-    'storage.volume.drivers.san.hp.hp_lefthand_iscsi.HPLeftHandISCSIDriver':
-    'storage.volume.drivers.hpe.hpe_lefthand_iscsi.HPELeftHandISCSIDriver',
-    'storage.volume.drivers.san.hp.hp_xp_fc.HPXPFCDriver':
-    'storage.volume.drivers.hpe.hpe_xp_fc.HPEXPFCDriver',
+    'jacket.storage.volume.drivers.huawei.huawei_18000.Huawei18000ISCSIDriver':
+    'jacket.storage.volume.drivers.huawei.huawei_driver.HuaweiISCSIDriver',
+    'jacket.storage.volume.drivers.huawei.huawei_driver.Huawei18000ISCSIDriver':
+    'jacket.storage.volume.drivers.huawei.huawei_driver.HuaweiISCSIDriver',
+    'jacket.storage.volume.drivers.huawei.huawei_18000.Huawei18000FCDriver':
+    'jacket.storage.volume.drivers.huawei.huawei_driver.HuaweiFCDriver',
+    'jacket.storage.volume.drivers.huawei.huawei_driver.Huawei18000FCDriver':
+    'jacket.storage.volume.drivers.huawei.huawei_driver.HuaweiFCDriver',
+    'jacket.storage.volume.drivers.fujitsu_eternus_dx_fc.FJDXFCDriver':
+    'jacket.storage.volume.drivers.fujitsu.eternus_dx_fc.FJDXFCDriver',
+    'jacket.storage.volume.drivers.fujitsu_eternus_dx_iscsi.FJDXISCSIDriver':
+    'jacket.storage.volume.drivers.fujitsu.eternus_dx_iscsi.FJDXISCSIDriver',
+    'jacket.storage.volume.drivers.hds.nfs.HDSNFSDriver':
+    'jacket.storage.volume.drivers.hitachi.hnas_nfs.HDSNFSDriver',
+    'jacket.storage.volume.drivers.hds.iscsi.HDSISCSIDriver':
+    'jacket.storage.volume.drivers.hitachi.hnas_iscsi.HDSISCSIDriver',
+    'jacket.storage.volume.drivers.san.hp.hp_3par_fc.HP3PARFCDriver':
+    'jacket.storage.volume.drivers.hpe.hpe_3par_fc.HPE3PARFCDriver',
+    'jacket.storage.volume.drivers.san.hp.hp_3par_iscsi.HP3PARISCSIDriver':
+    'jacket.storage.volume.drivers.hpe.hpe_3par_iscsi.HPE3PARISCSIDriver',
+    'jacket.storage.volume.drivers.san.hp.hp_lefthand_iscsi.HPLeftHandISCSIDriver':
+    'jacket.storage.volume.drivers.hpe.hpe_lefthand_iscsi.HPELeftHandISCSIDriver',
+    'jacket.storage.volume.drivers.san.hp.hp_xp_fc.HPXPFCDriver':
+    'jacket.storage.volume.drivers.hpe.hpe_xp_fc.HPEXPFCDriver',
 }
 
 

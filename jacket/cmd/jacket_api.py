@@ -45,7 +45,7 @@ CONF = cfg.CONF
 
 
 def main():
-    objects.register_all()
+    # objects.register_all()
     gmr_opts.set_defaults(CONF)
     CONF(sys.argv[1:], project='jacket',
          version=version.version_string())

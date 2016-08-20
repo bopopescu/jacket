@@ -34,7 +34,7 @@ hyperv_opts = [
 
 CONF = cfg.CONF
 CONF.register_opts(hyperv_opts, 'hyperv')
-CONF.import_opt('instances_path', 'compute.compute.manager')
+CONF.import_opt('instances_path', 'jacket.compute.compute.manager')
 
 ERROR_INVALID_NAME = 123
 

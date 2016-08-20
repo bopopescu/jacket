@@ -24,7 +24,7 @@ from oslo_utils import importutils
 from oslo_utils import timeutils
 import six
 
-from jacket.db import compute
+from jacket import db
 from jacket.compute import exception
 from jacket.i18n import _LE
 from jacket.objects import compute
@@ -75,26 +75,8 @@ quota_opts = [
     cfg.IntOpt('quota_server_group_members',
                default=10,
                help='Number of servers per server group'),
-    cfg.IntOpt('reservation_expire',
-               default=86400,
-               help='Number of seconds until a reservation expires'),
-    cfg.IntOpt('until_refresh',
-               default=0,
-               help='Count of reservations until usage is refreshed. This '
-                    'defaults to 0(off) to avoid additional load but it is '
-                    'useful to turn on to help keep quota usage up to date '
-                    'and reduce the impact of out of sync usage issues.'),
-    cfg.IntOpt('max_age',
-               default=0,
-               help='Number of seconds between subsequent usage refreshes. '
-                    'This defaults to 0(off) to avoid additional load but it '
-                    'is useful to turn on to help keep quota usage up to date '
-                    'and reduce the impact of out of sync usage issues. '
-                    'Note that quotas are not updated on a periodic task, '
-                    'they will update on a new reservation if max_age has '
-                    'passed since the last reservation'),
-    cfg.StrOpt('quota_driver',
-               default='compute.quota.DbQuotaDriver',
+    cfg.StrOpt('compute_quota_driver',
+               default='jacket.compute.quota.DbQuotaDriver',
                help='Default driver to use for quota checks'),
     ]
 
@@ -1126,7 +1108,7 @@ class QuotaEngine(object):
         if self.__driver:
             return self.__driver
         if not self._driver_cls:
-            self._driver_cls = CONF.quota_driver
+            self._driver_cls = CONF.compute_quota_driver
         if isinstance(self._driver_cls, six.string_types):
             self._driver_cls = importutils.import_object(self._driver_cls)
         self.__driver = self._driver_cls
@@ -1477,7 +1459,7 @@ resources = [
     AbsoluteResource('injected_file_path_bytes',
                      'quota_injected_file_path_length'),
     CountableResource('security_group_rules',
-                      compute.security_group_rule_count_by_group,
+                      db.security_group_rule_count_by_group,
                       'quota_security_group_rules'),
     CountableResource('key_pairs', _keypair_get_count_by_user,
                       'quota_key_pairs'),

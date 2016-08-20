@@ -73,8 +73,8 @@ _neutron_options = ks_loading.register_session_conf_options(
 ks_loading.register_auth_conf_options(CONF, NEUTRON_GROUP)
 
 
-CONF.import_opt('default_floating_pool', 'compute.network.floating_ips')
-CONF.import_opt('flat_injected', 'compute.network.manager')
+CONF.import_opt('default_floating_pool', 'jacket.compute.network.floating_ips')
+CONF.import_opt('flat_injected', 'jacket.compute.network.manager')
 LOG = logging.getLogger(__name__)
 
 soft_external_network_attach_authorize = extensions.soft_core_authorizer(

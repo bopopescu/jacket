@@ -193,10 +193,10 @@ class FilterScheduler(driver.Scheduler):
         hosts.append(host)
 
     def _max_attempts(self):
-        max_attempts = CONF.scheduler_max_attempts
+        max_attempts = CONF.storage_scheduler_max_attempts
         if max_attempts < 1:
             raise exception.InvalidParameterValue(
-                err=_("Invalid value for 'scheduler_max_attempts', "
+                err=_("Invalid value for 'storage_scheduler_max_attempts', "
                       "must be >=1"))
         return max_attempts
 

@@ -37,7 +37,7 @@ from jacket.compute.network.neutronv2 import api as neutronapi
 from jacket.wsgi import compute
 
 CONF = cfg.CONF
-CONF.import_opt('use_forwarded_for', 'compute.api.auth')
+CONF.import_opt('use_forwarded_for', 'jacket.compute.api.auth')
 
 metadata_proxy_opts = [
     cfg.BoolOpt(

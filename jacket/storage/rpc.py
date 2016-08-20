@@ -53,12 +53,12 @@ EXTRA_EXMODS = []
 # for backwards compat with Havana rpc_backend configuration
 # values. The storage.rpc entries are for compat with Folsom values.
 TRANSPORT_ALIASES = {
-    'storage.openstack.common.rpc.impl_kombu': 'rabbit',
-    'storage.openstack.common.rpc.impl_qpid': 'qpid',
-    'storage.openstack.common.rpc.impl_zmq': 'zmq',
-    'storage.rpc.impl_kombu': 'rabbit',
-    'storage.rpc.impl_qpid': 'qpid',
-    'storage.rpc.impl_zmq': 'zmq',
+    'jacket.storage.openstack.common.rpc.impl_kombu': 'rabbit',
+    'jacket.storage.openstack.common.rpc.impl_qpid': 'qpid',
+    'jacket.storage.openstack.common.rpc.impl_zmq': 'zmq',
+    'jacket.storage.rpc.impl_kombu': 'rabbit',
+    'jacket.storage.rpc.impl_qpid': 'qpid',
+    'jacket.storage.rpc.impl_zmq': 'zmq',
 }
 
 

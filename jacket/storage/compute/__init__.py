@@ -19,7 +19,7 @@ from oslo_utils import importutils
 
 compute_opts = [
     cfg.StrOpt('compute_api_class',
-               default='storage.compute.nova.API',
+               default='jacket.storage.compute.nova.API',
                help='The full class name of the '
                'compute API class to use'),
 ]

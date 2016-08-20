@@ -35,8 +35,8 @@ from jacket.compute import utils
 from jacket import version
 
 CONF = jacket.compute.conf.CONF
-CONF.import_opt('network_topic', 'compute.network.rpcapi')
-LOG = logging.getLogger('compute.network')
+CONF.import_opt('network_topic', 'jacket.compute.network.rpcapi')
+LOG = logging.getLogger('jacket.compute.network')
 
 
 def block_db_access():

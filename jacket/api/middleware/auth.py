@@ -32,15 +32,7 @@ from jacket import context
 from jacket.i18n import _
 from jacket.wsgi import common as base_wsgi
 
-
-use_forwarded_for_opt = cfg.BoolOpt(
-    'use_forwarded_for',
-    default=False,
-    help='Treat X-Forwarded-For as the canonical remote address. '
-         'Only enable this if you have a sanitizing proxy.')
-
 CONF = cfg.CONF
-CONF.register_opt(use_forwarded_for_opt)
 
 LOG = logging.getLogger(__name__)
 

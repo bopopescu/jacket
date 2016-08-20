@@ -134,18 +134,18 @@ network_opts = [
                default='novalocal',
                help='Domain to use for building the hostnames'),
     cfg.StrOpt('l3_lib',
-               default='compute.network.l3.LinuxNetL3',
+               default='jacket.compute.network.l3.LinuxNetL3',
                help="Indicates underlying L3 management library"),
     ]
 
 CONF = cfg.CONF
 CONF.register_opts(network_opts)
-CONF.import_opt('use_ipv6', 'compute.netconf')
-CONF.import_opt('my_ip', 'compute.netconf')
-CONF.import_opt('network_topic', 'compute.network.rpcapi')
-CONF.import_opt('fake_network', 'compute.network.linux_net')
-CONF.import_opt('share_dhcp_address', 'compute.compute.network')
-CONF.import_opt('network_device_mtu', 'compute.compute.network')
+CONF.import_opt('use_ipv6', 'jacket.compute.netconf')
+CONF.import_opt('my_ip', 'jacket.compute.netconf')
+CONF.import_opt('network_topic', 'jacket.compute.network.rpcapi')
+CONF.import_opt('fake_network', 'jacket.compute.network.linux_net')
+CONF.import_opt('share_dhcp_address', 'jacket.compute.compute.network')
+CONF.import_opt('network_device_mtu', 'jacket.compute.compute.network')
 
 
 class RPCAllocateFixedIP(object):
@@ -1419,7 +1419,7 @@ class NetworkManager(manager.Manager):
 
                 net.netmask_v6 = str(subnet_v6.netmask)
 
-            if CONF.network_manager == 'compute.network.manager.VlanManager':
+            if CONF.network_manager == 'jacket.compute.network.manager.VlanManager':
                 vlan = kwargs.get('vlan', None)
                 if not vlan:
                     index_vlan = index + num_used_nets

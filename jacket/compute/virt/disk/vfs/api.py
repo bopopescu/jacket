@@ -54,7 +54,7 @@ class VFS(object):
         try:
             LOG.debug("Using primary VFSGuestFS")
             vfs = importutils.import_object(
-                "compute.virt.disk.vfs.guestfs.VFSGuestFS",
+                "jacket.compute.virt.disk.vfs.guestfs.VFSGuestFS",
                 image, partition)
             if not VFS.guestfs_ready:
                 # Inspect for capabilities and keep
@@ -73,7 +73,7 @@ class VFS(object):
                              "falling back to VFSLocalFS"))
 
         return importutils.import_object(
-            "compute.virt.disk.vfs.localfs.VFSLocalFS",
+            "jacket.compute.virt.disk.vfs.localfs.VFSLocalFS",
             image, partition)
 
     def __init__(self, image, partition):

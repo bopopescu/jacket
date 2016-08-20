@@ -54,12 +54,12 @@ This module provides Manager, a base class for managers.
 from oslo_config import cfg
 from oslo_service import periodic_task
 
-from jacket.db.compute import base
+from jacket.db import base
 from jacket import rpc
 
 
 CONF = cfg.CONF
-CONF.import_opt('host', 'compute.netconf')
+CONF.import_opt('host', 'jacket.compute.netconf')
 
 
 class PeriodicTasks(periodic_task.PeriodicTasks):

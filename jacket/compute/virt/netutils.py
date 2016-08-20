@@ -28,7 +28,7 @@ import jacket.compute.conf
 from jacket.compute.network import model
 
 CONF = jacket.compute.conf.CONF
-CONF.import_opt('use_ipv6', 'compute.netconf')
+CONF.import_opt('use_ipv6', 'jacket.compute.netconf')
 
 
 def get_net_and_mask(cidr):

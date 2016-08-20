@@ -43,7 +43,7 @@ lvm_opts = [
 
 CONF = cfg.CONF
 CONF.register_opts(lvm_opts, 'libvirt')
-CONF.import_opt('instances_path', 'compute.compute.manager')
+CONF.import_opt('instances_path', 'jacket.compute.compute.manager')
 LOG = logging.getLogger(__name__)
 
 

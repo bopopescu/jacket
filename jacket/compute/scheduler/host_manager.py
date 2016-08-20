@@ -351,7 +351,7 @@ class HostManager(object):
             self._init_instance_info()
 
     def _load_filters(self):
-        return CONF.scheduler_default_filters
+        return CONF.compute_scheduler_default_filters
 
     def _init_aggregates(self):
         elevated = context_module.get_admin_context()

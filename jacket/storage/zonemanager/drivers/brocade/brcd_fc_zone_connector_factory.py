@@ -62,7 +62,7 @@ class BrcdFCZoneFactory(object):
             if sb_connector.lower() in (fc_zone_constants.HTTP,
                                         fc_zone_constants.HTTPS):
                 client = importutils.import_object(
-                    "storage.zonemanager.drivers.brocade."
+                    "jacket.storage.zonemanager.drivers.brocade."
                     "brcd_http_fc_zone_client.BrcdHTTPFCZoneClient",
                     ipaddress=fabric_ip,
                     username=fabric_user,
@@ -73,7 +73,7 @@ class BrcdFCZoneFactory(object):
                 )
             else:
                 client = importutils.import_object(
-                    "storage.zonemanager.drivers.brocade."
+                    "jacket.storage.zonemanager.drivers.brocade."
                     "brcd_fc_zone_client_cli.BrcdFCZoneClientCLI",
                     ipaddress=fabric_ip,
                     username=fabric_user,

@@ -58,7 +58,7 @@ LOG = logging.getLogger(__name__)
 
 backup_manager_opts = [
     cfg.StrOpt('backup_driver',
-               default='storage.backup.drivers.swift',
+               default='jacket.storage.backup.drivers.swift',
                help='Driver to use for backups.',),
     cfg.BoolOpt('backup_service_inithost_offload',
                 default=False,
@@ -68,13 +68,13 @@ backup_manager_opts = [
 
 # This map doesn't need to be extended in the future since it's only
 # for old backup services
-mapper = {'storage.backup.services.swift': 'storage.backup.drivers.swift',
-          'storage.backup.services.ceph': 'storage.backup.drivers.ceph'}
+mapper = {'jacket.storage.backup.services.swift': 'jacket.storage.backup.drivers.swift',
+          'jacket.storage.backup.services.ceph': 'jacket.storage.backup.drivers.ceph'}
 
 CONF = cfg.CONF
 CONF.register_opts(backup_manager_opts)
-CONF.import_opt('use_multipath_for_image_xfer', 'storage.volume.driver')
-CONF.import_opt('num_volume_device_scan_tries', 'storage.volume.driver')
+CONF.import_opt('use_multipath_for_image_xfer', 'jacket.storage.volume.driver')
+CONF.import_opt('num_volume_device_scan_tries', 'jacket.storage.volume.driver')
 QUOTAS = quota.QUOTAS
 
 

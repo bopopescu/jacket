@@ -47,7 +47,7 @@ resource_tracker_opts = [
     cfg.IntOpt('reserved_host_memory_mb', default=512,
                help='Amount of memory in MB to reserve for the host'),
     cfg.StrOpt('compute_stats_class',
-               default='compute.compute.stats.Stats',
+               default='jacket.compute.compute.stats.Stats',
                help='DEPRECATED: Class that will manage stats for the '
                    'local compute host',
                deprecated_for_removal=True),
@@ -108,7 +108,7 @@ CONF.register_opts(allocation_ratio_opts)
 LOG = logging.getLogger(__name__)
 COMPUTE_RESOURCE_SEMAPHORE = "compute_resources"
 
-CONF.import_opt('my_ip', 'compute.netconf')
+CONF.import_opt('my_ip', 'jacket.compute.netconf')
 
 
 def _instance_in_resize_state(instance):

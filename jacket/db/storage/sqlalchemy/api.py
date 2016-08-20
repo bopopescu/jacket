@@ -51,7 +51,7 @@ from sqlalchemy.sql.expression import true
 from sqlalchemy.sql import func
 from sqlalchemy.sql import sqltypes
 
-from jacket.api.storage.storage import common
+from jacket.api.storage import common
 from jacket.common.storage import sqlalchemyutils
 from jacket.db import storage
 from jacket.db.storage.sqlalchemy import models
@@ -83,7 +83,7 @@ def _create_facade_lazily():
             # group here.  Dependency cycle is objects.base requires storage.api,
             # which requires storage.sqlalchemy.api, which requires service which
             # requires objects.base
-            CONF.import_group("profiler", "storage.service")
+            CONF.import_group("profiler", "jacket.storage.service")
             if CONF.profiler.enabled:
                 if CONF.profiler.trace_sqlalchemy:
                     osprofiler_sqlalchemy.add_tracing(sqlalchemy,

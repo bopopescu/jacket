@@ -29,8 +29,8 @@ security_group_opts = [
 CONF = cfg.CONF
 CONF.register_opts(security_group_opts)
 
-NOVA_DRIVER = ('compute.compute.api.SecurityGroupAPI')
-NEUTRON_DRIVER = ('compute.network.security_group.neutron_driver.'
+NOVA_DRIVER = ('jacket.compute.compute.api.SecurityGroupAPI')
+NEUTRON_DRIVER = ('jacket.compute.network.security_group.neutron_driver.'
                   'SecurityGroupAPI')
 DRIVER_CACHE = {}
 

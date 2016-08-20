@@ -22,7 +22,7 @@ from sqlalchemy import MetaData, Table
 # configuration or via storage.conf if the user has configured
 # default values for quotas there.
 CONF = cfg.CONF
-CONF.import_opt('quota_consistencygroups', 'storage.quota')
+CONF.import_opt('quota_consistencygroups', 'jacket.storage.quota')
 
 CLASS_NAME = 'default'
 CREATED_AT = datetime.datetime.now()  # noqa

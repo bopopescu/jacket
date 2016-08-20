@@ -22,7 +22,7 @@ from jacket.storage.volume import driver
 from jacket.storage.volume.drivers.hpe import hpe_xp_opts as opts
 from jacket.storage.zonemanager import utils as fczm_utils
 
-_DRIVER_DIR = 'storage.volume.drivers.hpe'
+_DRIVER_DIR = 'jacket.storage.volume.drivers.hpe'
 _DRIVER_CLASS = 'hpe_xp_horcm_fc.HPEXPHORCMFC'
 
 

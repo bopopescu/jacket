@@ -21,7 +21,7 @@ import unicodedata
 
 import six
 
-from jacket.db import compute
+from jacket import db
 from jacket.i18n import _
 
 
@@ -354,5 +354,5 @@ volume_size = {
     'type': ['integer', 'string'],
     'pattern': '^[0-9]+$',
     'minimum': 1,
-    'maximum': compute.MAX_INT
+    'maximum': db.MAX_INT
 }

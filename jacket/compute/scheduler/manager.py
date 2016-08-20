@@ -50,10 +50,10 @@ class SchedulerManager(manager.Manager):
 
     def __init__(self, scheduler_driver=None, *args, **kwargs):
         if not scheduler_driver:
-            scheduler_driver = CONF.scheduler_driver
+            scheduler_driver = CONF.compute_scheduler_driver
         try:
             self.driver = driver.DriverManager(
-                    "compute.scheduler.driver",
+                    "jacket.compute.scheduler.driver",
                     scheduler_driver,
                     invoke_on_load=True).driver
         # TODO(Yingxin): Change to catch stevedore.exceptions.NoMatches after

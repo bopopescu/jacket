@@ -14,10 +14,10 @@
 
 import itertools
 
-from jacket.api.storage.storage import common as cinder_api_common
-from jacket.api.storage.storage.middleware import auth as cinder_api_middleware_auth
-from jacket.api.storage.storage.middleware import sizelimit as cinder_api_middleware_sizelimit
-from jacket.api.storage.storage.views import versions as cinder_api_views_versions
+from jacket.api.storage import common as cinder_api_common
+from jacket.api.middleware import auth as cinder_api_middleware_auth
+from jacket.api.middleware import sizelimit as cinder_api_middleware_sizelimit
+from jacket.api.storage.views import versions as cinder_api_views_versions
 from jacket.storage.backup import api as cinder_backup_api
 from jacket.storage.backup import chunkeddriver as cinder_backup_chunkeddriver
 from jacket.storage.backup import driver as cinder_backup_driver
@@ -36,8 +36,8 @@ import jacket.storage.compute
 from jacket.storage.compute import nova as cinder_compute_nova
 from jacket.storage import context as cinder_context
 from jacket.storage import coordination as cinder_coordination
-from jacket.db.storage import api as cinder_db_api
-from jacket.db.storage import base as cinder_db_base
+from jacket.db import api as cinder_db_api
+from jacket.db import base as cinder_db_base
 from jacket.storage import exception as cinder_exception
 from jacket.storage.image import glance as cinder_image_glance
 from jacket.storage.image import image_utils as cinder_image_imageutils

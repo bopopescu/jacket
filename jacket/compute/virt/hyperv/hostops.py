@@ -36,7 +36,7 @@ from jacket.compute.virt.hyperv import constants
 from jacket.compute.virt.hyperv import pathutils
 
 CONF = cfg.CONF
-CONF.import_opt('my_ip', 'compute.netconf')
+CONF.import_opt('my_ip', 'jacket.compute.netconf')
 LOG = logging.getLogger(__name__)
 
 

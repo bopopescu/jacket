@@ -36,8 +36,8 @@ from jacket import rpc
 LOG = logging.getLogger(__name__)
 
 CONF = jacket.compute.conf.CONF
-CONF.import_opt('scheduler_default_filters', 'compute.scheduler.host_manager')
-CONF.import_opt('scheduler_weight_classes', 'compute.scheduler.host_manager')
+CONF.import_opt('compute_scheduler_default_filters', 'jacket.compute.scheduler.host_manager')
+CONF.import_opt('scheduler_weight_classes', 'jacket.compute.scheduler.host_manager')
 
 GroupDetails = collections.namedtuple('GroupDetails', ['hosts', 'policies',
                                                        'members'])
@@ -153,7 +153,7 @@ def populate_filter_properties(filter_properties, host_state):
 
 
 def populate_retry(filter_properties, instance_uuid):
-    max_attempts = CONF.scheduler_max_attempts
+    max_attempts = CONF.compute_scheduler_max_attempts
     force_hosts = filter_properties.get('force_hosts', [])
     force_nodes = filter_properties.get('force_nodes', [])
 
@@ -254,12 +254,12 @@ def parse_options(opts, sep='=', converter=str, name=""):
 
 def validate_filter(filter):
     """Validates that the filter is configured in the default filters."""
-    return filter in CONF.scheduler_default_filters
+    return filter in CONF.compute_scheduler_default_filters
 
 
 def validate_weigher(weigher):
     """Validates that the weigher is configured in the default weighers."""
-    if 'compute.scheduler.weights.all_weighers' in CONF.scheduler_weight_classes:
+    if 'jacket.compute.scheduler.weights.all_weighers' in CONF.scheduler_weight_classes:
         return True
     return weigher in CONF.scheduler_weight_classes
 
@@ -291,11 +291,11 @@ def _get_group_details(context, instance_uuid, user_group_hosts=None):
     global _SUPPORTS_SOFT_AFFINITY
     if _SUPPORTS_SOFT_AFFINITY is None:
         _SUPPORTS_SOFT_AFFINITY = validate_weigher(
-            'compute.scheduler.weights.affinity.ServerGroupSoftAffinityWeigher')
+            'jacket.compute.scheduler.weights.affinity.ServerGroupSoftAffinityWeigher')
     global _SUPPORTS_SOFT_ANTI_AFFINITY
     if _SUPPORTS_SOFT_ANTI_AFFINITY is None:
         _SUPPORTS_SOFT_ANTI_AFFINITY = validate_weigher(
-            'compute.scheduler.weights.affinity.'
+            'jacket.compute.scheduler.weights.affinity.'
             'ServerGroupSoftAntiAffinityWeigher')
 
     if not instance_uuid:
@@ -383,4 +383,4 @@ def retry_on_timeout(retries=1):
         return wrapped
     return outer
 
-retry_select_destinations = retry_on_timeout(CONF.scheduler_max_attempts - 1)
+retry_select_destinations = retry_on_timeout(CONF.compute_scheduler_max_attempts - 1)

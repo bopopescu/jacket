@@ -14,7 +14,7 @@
 
 from oslo_utils import timeutils
 
-from jacket.db import compute
+from jacket import db
 from jacket.objects import compute
 from jacket.objects.compute import base
 from jacket.objects.compute import fields

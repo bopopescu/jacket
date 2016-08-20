@@ -36,8 +36,8 @@ from jacket.compute import utils
 from jacket import version
 
 CONF = cfg.CONF
-CONF.import_opt('enabled_apis', 'compute.service')
-CONF.import_opt('enabled_ssl_apis', 'compute.service')
+CONF.import_opt('enabled_apis', 'jacket.compute.service')
+CONF.import_opt('enabled_ssl_apis', 'jacket.compute.service')
 
 
 def main():

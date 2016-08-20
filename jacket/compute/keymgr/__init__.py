@@ -20,7 +20,7 @@ from oslo_utils import importutils
 
 keymgr_opts = [
     cfg.StrOpt('api_class',
-               default='compute.keymgr.conf_key_mgr.ConfKeyManager',
+               default='jacket.compute.keymgr.conf_key_mgr.ConfKeyManager',
                help='The full class name of the key manager API class'),
 ]
 

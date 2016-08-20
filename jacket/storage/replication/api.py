@@ -19,7 +19,7 @@ import functools
 
 from oslo_log import log as logging
 
-from jacket.db.storage import base
+from jacket.db import base
 from jacket.storage import exception
 from jacket.storage.i18n import _
 from jacket.storage import policy

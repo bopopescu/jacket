@@ -49,7 +49,7 @@ def qemu_img_info(path, format=None):
     # flag.
     # NOTE(sirp): The config option import must go here to avoid an import
     # cycle
-    CONF.import_opt('images_type', 'compute.virt.libvirt.imagebackend',
+    CONF.import_opt('images_type', 'jacket.compute.virt.libvirt.imagebackend',
                     group='libvirt')
     if not os.path.exists(path) and CONF.libvirt.images_type != 'rbd':
         raise exception.DiskNotFound(location=path)

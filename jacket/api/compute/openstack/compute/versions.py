@@ -21,7 +21,7 @@ from jacket.api.compute.openstack import wsgi
 
 
 CONF = cfg.CONF
-CONF.import_opt('enabled', 'compute.api.openstack', group='osapi_v21')
+CONF.import_opt('enabled', 'jacket.compute.api.openstack', group='osapi_v21')
 
 LINKS = {
    'v2.0': {

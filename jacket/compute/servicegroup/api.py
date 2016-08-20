@@ -25,8 +25,8 @@ from jacket.i18n import _LW
 LOG = logging.getLogger(__name__)
 
 _driver_name_class_mapping = {
-    'db': 'compute.servicegroup.drivers.db.DbDriver',
-    'mc': 'compute.servicegroup.drivers.mc.MemcachedDriver'
+    'db': 'jacket.compute.servicegroup.drivers.db.DbDriver',
+    'mc': 'jacket.compute.servicegroup.drivers.mc.MemcachedDriver'
 }
 _default_driver = 'db'
 servicegroup_driver_opt = cfg.StrOpt('servicegroup_driver',

@@ -29,7 +29,7 @@ from jacket.compute.cloud import instance_actions
 from jacket.compute.cloud import vm_states
 from jacket.compute import conductor
 import jacket.compute.conf
-from jacket.db.compute import base
+from jacket.db import base
 from jacket.compute import exception
 from jacket.i18n import _LE, _LI
 from jacket.objects import compute

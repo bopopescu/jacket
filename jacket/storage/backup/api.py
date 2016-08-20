@@ -31,7 +31,7 @@ import random
 
 from jacket.storage.backup import rpcapi as backup_rpcapi
 from jacket.storage import context
-from jacket.db.storage import base
+from jacket.db import base
 from jacket.storage import exception
 from jacket.storage.i18n import _, _LI, _LW
 from jacket.objects import storage

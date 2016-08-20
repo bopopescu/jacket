@@ -50,7 +50,7 @@ LOG = logging.getLogger(__name__)
 
 CONF = cfg.CONF
 CONF.import_opt('remove_unused_original_minimum_age_seconds',
-                'compute.virt.imagecache')
+                'jacket.compute.virt.imagecache')
 
 TIMESTAMP_PREFIX = 'ts-'
 TIMESTAMP_FORMAT = '%Y-%m-%d-%H-%M-%S'

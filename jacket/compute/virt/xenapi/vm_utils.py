@@ -121,7 +121,7 @@ xenapi_vm_utils_opts = [
 
 CONF = jacket.compute.conf.CONF
 CONF.register_opts(xenapi_vm_utils_opts, 'xenserver')
-CONF.import_opt('use_ipv6', 'compute.netconf')
+CONF.import_opt('use_ipv6', 'jacket.compute.netconf')
 
 XENAPI_POWER_STATE = {
     'Halted': power_state.SHUTDOWN,
@@ -1393,13 +1393,13 @@ def _image_uses_bittorrent(context, instance):
 def _default_download_handler():
     # TODO(sirp):  This should be configurable like upload_handler
     return importutils.import_object(
-            'compute.virt.xenapi.image.glance.GlanceStore')
+            'jacket.compute.virt.xenapi.image.glance.GlanceStore')
 
 
 def _choose_download_handler(context, instance):
     if _image_uses_bittorrent(context, instance):
         return importutils.import_object(
-                'compute.virt.xenapi.image.bittorrent.BittorrentStore')
+                'jacket.compute.virt.xenapi.image.bittorrent.BittorrentStore')
     else:
         return _default_download_handler()
 

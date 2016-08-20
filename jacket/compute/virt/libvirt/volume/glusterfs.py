@@ -24,7 +24,7 @@ from jacket.compute.virt.libvirt.volume import fs
 
 CONF = cfg.CONF
 CONF.import_opt('qemu_allowed_storage_drivers',
-                'compute.virt.libvirt.volume.volume',
+                'jacket.compute.virt.libvirt.volume.volume',
                 group='libvirt')
 
 volume_opts = [

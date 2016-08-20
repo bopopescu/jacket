@@ -16,7 +16,7 @@ from oslo_log import log as logging
 from oslo_utils import versionutils
 
 from jacket.compute import availability_zones
-from jacket.db import compute
+from jacket import db
 from jacket.compute import exception
 from jacket.i18n import _LW
 from jacket.objects import compute

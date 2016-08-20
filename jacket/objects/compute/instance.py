@@ -24,7 +24,7 @@ from oslo_utils import versionutils
 from jacket.compute.cells import opts as cells_opts
 from jacket.compute.cells import rpcapi as cells_rpcapi
 from jacket.compute.cells import utils as cells_utils
-from jacket.db import compute
+from jacket import db
 from jacket.compute import exception
 from jacket.i18n import _LE
 from jacket.compute import notifications
