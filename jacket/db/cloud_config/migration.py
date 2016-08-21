@@ -28,7 +28,7 @@ from jacket import exception
 from jacket.i18n import _
 
 
-INIT_VERSION = 45
+INIT_VERSION = 000
 
 _IMPL = None
 _LOCK = threading.Lock()

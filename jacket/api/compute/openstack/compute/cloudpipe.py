@@ -33,7 +33,7 @@ from jacket.objects import compute
 from jacket.compute import utils
 
 CONF = cfg.CONF
-CONF.import_opt('keys_path', 'cloud.crypto')
+CONF.import_opt('keys_path', 'jacket.compute.crypto')
 
 ALIAS = 'os-cloudpipe'
 authorize = extensions.os_compute_authorizer(ALIAS)

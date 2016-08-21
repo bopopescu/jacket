@@ -32,7 +32,7 @@ from jacket.compute import utils
 ALIAS = "os-rescue"
 CONF = cfg.CONF
 CONF.import_opt('enable_instance_password',
-                'cloud.api.openstack.cloud.legacy_v2.servers')
+                'jacket.api.compute.openstack.legacy_v2.servers')
 
 authorize = extensions.os_compute_authorizer(ALIAS)
 

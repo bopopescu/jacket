@@ -11,6 +11,11 @@ import oslo_messaging as messaging
 from oslo_service import service
 from oslo_utils import importutils
 
+osprofiler_notifier = importutils.try_import('osprofiler.notifier')
+profiler = importutils.try_import('osprofiler.profiler')
+osprofiler_web = importutils.try_import('osprofiler.web')
+profiler_opts = importutils.try_import('osprofiler.opts')
+
 from jacket.compute import baserpc
 from jacket.compute import conductor
 from jacket import context
@@ -44,7 +49,7 @@ service_opts = [
                     ' periodic task scheduler to reduce stampeding.'
                     ' (Disable by setting to 0)'),
     cfg.ListOpt('enabled_apis',
-                default=['osapi_compute', 'metadata'],
+                default=['osapi_compute', 'metadata', 'osapi_jacket'],
                 help='A list of APIs to enable by default'),
     cfg.ListOpt('enabled_ssl_apis',
                 default=[],
@@ -135,6 +140,37 @@ service_opts = [
 CONF = cfg.CONF
 CONF.register_opts(service_opts)
 CONF.import_opt('host', 'jacket.netconf')
+
+if profiler_opts:
+    profiler_opts.set_defaults(CONF)
+
+
+def setup_profiler(binary, host):
+    if (osprofiler_notifier is None or
+            profiler is None or
+            osprofiler_web is None or
+            profiler_opts is None):
+        LOG.debug('osprofiler is not present')
+        return
+
+    if CONF.profiler.enabled:
+        _notifier = osprofiler_notifier.create(
+            "Messaging", messaging, context.get_admin_context().to_dict(),
+            rpc.TRANSPORT, "cinder", binary, host)
+        osprofiler_notifier.set(_notifier)
+        osprofiler_web.enable(CONF.profiler.hmac_keys)
+        LOG.warning(
+            _LW("OSProfiler is enabled.\nIt means that person who knows "
+                "any of hmac_keys that are specified in "
+                "/etc/cinder/cinder.conf can trace his requests. \n"
+                "In real life only operator can read this file so there "
+                "is no security issue. Note that even if person can "
+                "trigger profiler, only admin user can retrieve trace "
+                "information.\n"
+                "To disable OSprofiler set in cinder.conf:\n"
+                "[profiler]\nenabled=false"))
+    else:
+        osprofiler_web.disable()
 
 
 def _create_service_ref(this_service, context):
@@ -370,7 +406,7 @@ class WSGIService(service.Service):
         self.binary = 'jacket-%s' % name
         self.topic = None
         self.manager = self._get_manager()
-        self.loader = loader or base_wsgi.Loader()
+        self.loader = loader or base_wsgi.Loader(name)
         self.app = self.loader.load_app(name)
         # inherit all compute_api worker counts from osapi_compute
         if name.startswith('openstack_compute_api'):
@@ -389,6 +425,9 @@ class WSGIService(service.Service):
                     'workers': str(self.workers)})
             raise exception.InvalidInput(msg)
         self.use_ssl = use_ssl
+
+        setup_profiler(name, self.host)
+
         self.server = base_wsgi.Server(name,
                                   self.app,
                                   host=self.host,

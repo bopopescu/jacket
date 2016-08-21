@@ -36,7 +36,7 @@ i18n.enable_lazy()
 # Need to register global_opts
 from jacket.common import config
 from jacket import base_rpc
-from jacket import jacket_service
+from jacket import service
 from jacket import utils
 from jacket import version
 
@@ -57,7 +57,7 @@ def main():
     gmr.TextGuruMeditation.setup_autorun(version, conf=CONF)
 
     base_rpc.init(CONF)
-    launcher = jacket_service.process_launcher()
-    server = jacket_service.WSGIService('osapi_jacket')
+    launcher = service.process_launcher()
+    server = service.WSGIService('osapi_jacket')
     launcher.launch_service(server, workers=server.workers)
     launcher.wait()

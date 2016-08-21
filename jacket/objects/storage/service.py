@@ -16,10 +16,10 @@ from oslo_log import log as logging
 from oslo_utils import versionutils
 from oslo_versionedobjects import fields
 
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
-from jacket.storage.i18n import _
-from jacket.objects import storage
+from jacket.i18n import _
+from jacket.objects import storage as objects
 from jacket.objects.storage import base
 from jacket.objects.storage import fields as c_fields
 
@@ -44,7 +44,7 @@ class Service(base.CinderPersistentObject, base.CinderObject,
         'report_count': fields.IntegerField(default=0),
         'disabled': fields.BooleanField(default=False, nullable=True),
         'availability_zone': fields.StringField(nullable=True,
-                                                default='storage'),
+                                                default='cinder'),
         'disabled_reason': fields.StringField(nullable=True),
 
         'modified_at': fields.DateTimeField(nullable=True),
@@ -73,12 +73,12 @@ class Service(base.CinderPersistentObject, base.CinderObject,
 
     @base.remotable_classmethod
     def get_by_host_and_topic(cls, context, host, topic):
-        db_service = storage.service_get_by_host_and_topic(context, host, topic)
+        db_service = db.service_get_by_host_and_topic(context, host, topic)
         return cls._from_db_object(context, cls(context), db_service)
 
     @base.remotable_classmethod
     def get_by_args(cls, context, host, binary_key):
-        db_service = storage.service_get_by_args(context, host, binary_key)
+        db_service = db.service_get_by_args(context, host, binary_key)
         return cls._from_db_object(context, cls(context), db_service)
 
     @base.remotable
@@ -87,20 +87,20 @@ class Service(base.CinderPersistentObject, base.CinderObject,
             raise exception.ObjectActionError(action='create',
                                               reason=_('already created'))
         updates = self.cinder_obj_get_changes()
-        db_service = storage.service_create(self._context, updates)
+        db_service = db.service_create(self._context, updates)
         self._from_db_object(self._context, self, db_service)
 
     @base.remotable
     def save(self):
         updates = self.cinder_obj_get_changes()
         if updates:
-            storage.service_update(self._context, self.id, updates)
+            db.service_update(self._context, self.id, updates)
             self.obj_reset_changes()
 
     @base.remotable
     def destroy(self):
         with self.obj_as_admin():
-            storage.service_destroy(self._context, self.id)
+            db.service_destroy(self._context, self.id)
 
     @classmethod
     def _get_minimum_version(cls, attribute, context, binary):
@@ -140,25 +140,25 @@ class ServiceList(base.ObjectListBase, base.CinderObject):
     VERSION = '1.1'
 
     fields = {
-        'storage': fields.ListOfObjectsField('Service'),
+        'objects': fields.ListOfObjectsField('Service'),
     }
 
     @base.remotable_classmethod
     def get_all(cls, context, filters=None):
-        services = storage.service_get_all(context, filters)
-        return base.obj_make_list(context, cls(context), storage.Service,
+        services = db.service_get_all(context, filters)
+        return base.obj_make_list(context, cls(context), objects.Service,
                                   services)
 
     @base.remotable_classmethod
     def get_all_by_topic(cls, context, topic, disabled=None):
-        services = storage.service_get_all_by_topic(context, topic,
+        services = db.service_get_all_by_topic(context, topic,
                                                disabled=disabled)
-        return base.obj_make_list(context, cls(context), storage.Service,
+        return base.obj_make_list(context, cls(context), objects.Service,
                                   services)
 
     @base.remotable_classmethod
     def get_all_by_binary(cls, context, binary, disabled=None):
-        services = storage.service_get_all_by_binary(context, binary,
+        services = db.service_get_all_by_binary(context, binary,
                                                 disabled=disabled)
-        return base.obj_make_list(context, cls(context), storage.Service,
+        return base.obj_make_list(context, cls(context), objects.Service,
                                   services)

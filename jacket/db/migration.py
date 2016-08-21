@@ -16,37 +16,22 @@
 
 """Database setup and migration commands."""
 
-import threading
-
-from oslo_config import cfg
-from oslo_db import options
-from stevedore import extension
-
-INIT_VERSION = 000
-
-_IMPL = None
-_LOCK = threading.Lock()
-
-options.set_defaults(cfg.CONF)
-
-def get_backend(project=None):
-    global _IMPL
-    if _IMPL is None:
-        with _LOCK:
-            if _IMPL is None:
-                ext_manager = extension.ExtensionManager("database.migration")
-                _IMPL = {}
-                for ext in ext_manager:
-                    _IMPL[ext.name] = ext.obj if ext.obj else ext.plugin
-
-    if project is not None:
-        return [_IMPL[project]]
-    else:
-        return [one for one in _IMPL.values()]
+from oslo_log import log as logging
 
 
-def db_sync(version=None,  project=None):
+from jacket.db.sqlalchemy import migration
+
+LOG = logging.getLogger(__name__)
+
+IMPL = migration
+
+
+def db_sync(version=None, database='main'):
     """Migrate the database to `version` or the most recent version."""
-    backends = get_backend(project)
-    for one in backends:
-        one.db_sync(version)
+
+    return IMPL.db_sync(version=version, database=database)
+
+
+def db_version(database='main'):
+    """Display the current database version."""
+    return IMPL.db_version(database=database)

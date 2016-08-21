@@ -343,7 +343,7 @@ class APIRouterV21(base_wsgi.Router):
 
     @staticmethod
     def api_extension_namespace():
-        return 'jacket.api.compute.v21.extensions'
+        return 'jacket.api.v21.extensions'
 
     def __init__(self, init_only=None, v3mode=False):
         # TODO(cyeoh): bp v3-api-extension-framework. Currently load

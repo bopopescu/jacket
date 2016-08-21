@@ -31,13 +31,13 @@ from jacket.compute import config
 from jacket.compute import exception
 from jacket.i18n import _LE, _LW
 from jacket.objects import compute
-from jacket.compute import service
+from jacket import service
 from jacket.compute import utils
 from jacket import version
 
 CONF = cfg.CONF
-CONF.import_opt('enabled_apis', 'jacket.compute.service')
-CONF.import_opt('enabled_ssl_apis', 'jacket.compute.service')
+CONF.import_opt('enabled_apis', 'jacket.service')
+CONF.import_opt('enabled_ssl_apis', 'jacket.service')
 
 
 def main():

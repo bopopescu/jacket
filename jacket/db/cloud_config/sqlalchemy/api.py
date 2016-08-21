@@ -71,7 +71,7 @@ def _create_facade_lazily():
             # group here.  Dependency cycle is objects.base requires db.api,
             # which requires db.sqlalchemy.api, which requires service which
             # requires objects.base
-            CONF.import_group("profiler", "jacket.jacket_service")
+            CONF.import_group("profiler", "jacket.service")
             if CONF.profiler.enabled:
                 if CONF.profiler.trace_sqlalchemy:
                     osprofiler_sqlalchemy.add_tracing(sqlalchemy,

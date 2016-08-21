@@ -179,10 +179,9 @@ class DbCommands(object):
 
     @args('version', nargs='?', default=None,
           help='Database version')
-    @args('project', nargs='?', default=None, help='Database project')
     def sync(self, version=None, project=None):
         """Sync the database up to the most recent version."""
-        return db_migration.db_sync(version, project)
+        return db_migration.db_sync(version)
 
     def version(self):
         """Print the current database version."""

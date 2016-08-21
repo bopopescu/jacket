@@ -71,10 +71,6 @@ global_opts = [
     cfg.ListOpt('monkey_patch_modules',
                 default=[],
                 help='List of modules/decorators to monkey patch'),
-    cfg.IntOpt('service_down_time',
-               default=60,
-               help='Maximum time since last check-in for a service to be '
-                    'considered up'),
     cfg.StrOpt('worker_api_class',
                default='jacket.worker.api.API',
                help='The full class name of the volume API class to use'),
@@ -161,10 +157,6 @@ global_opts = [
                help='Time period for which to generate volume usages. '
                     'The options are hour, day, month, or year.'),
 
-    cfg.IntOpt('service_down_time',
-               default=60,
-               help='Maximum time since last check-in for a service to be '
-                    'considered up'),
     cfg.StrOpt('volume_api_class',
                default='jacket.storage.volume.api.API',
                help='The full class name of the volume API class to use'),

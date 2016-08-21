@@ -62,9 +62,9 @@ db_opts = [
 CONF = cfg.CONF
 CONF.register_opts(db_opts)
 db_options.set_defaults(CONF)
-CONF.set_default('sqlite_db', 'jacket.storage.sqlite', group='database')
+CONF.set_default('sqlite_db', 'jacket.db.storage.sqlite', group='database')
 
-_BACKEND_MAPPING = {'sqlalchemy': 'jacket.storage.db.sqlalchemy.api'}
+_BACKEND_MAPPING = {'sqlalchemy': 'jacket.db.storage.sqlalchemy.api'}
 
 
 IMPL = db_concurrency.TpoolDbapiWrapper(CONF, _BACKEND_MAPPING)

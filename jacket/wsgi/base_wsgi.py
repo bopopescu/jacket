@@ -448,16 +448,25 @@ class Router(object):
 class Loader(object):
     """Used to load WSGI applications from paste configurations."""
 
-    def __init__(self, config_path=None):
+    def __init__(self, name=None, config_path=None):
         """Initialize the loader, and attempt to find the config.
 
         :param config_path: Full or relative path to the paste config.
         :returns: None
 
         """
+        CONF_FILES = {"osapi_jacket": "jacket-api",
+                      "metadata": "compute-api",
+                      "osapi_compute": "compute-api",
+                      "osapi_storage": "storage-api"}
         self.config_path = None
+        paste_suffix = '-paste.ini'
 
-        config_path = config_path or CONF.api_paste_config
+        if name is not None:
+            config_path = CONF_FILES.get(name, "api") + paste_suffix
+        else:
+            config_path = config_path or CONF.api_paste_config
+
         if not os.path.isabs(config_path):
             self.config_path = CONF.find_file(config_path)
         elif os.path.exists(config_path):

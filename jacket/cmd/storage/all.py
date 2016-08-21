@@ -45,7 +45,7 @@ from jacket.db import api as session
 from jacket.storage.i18n import _LE
 from jacket.objects import storage
 from jacket.storage import rpc
-from jacket.storage import service
+from jacket import service
 from jacket.storage import utils
 from jacket.storage import version
 

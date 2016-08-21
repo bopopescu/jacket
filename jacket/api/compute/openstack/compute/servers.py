@@ -48,11 +48,11 @@ ALIAS = 'servers'
 
 CONF = cfg.CONF
 CONF.import_opt('enable_instance_password',
-                'cloud.api.openstack.cloud.legacy_v2.servers')
+                'jacket.api.compute.openstack.legacy_v2.servers')
 CONF.import_opt('reclaim_instance_interval', 'jacket.compute.cloud.manager')
-CONF.import_opt('extensions_blacklist', 'cloud.api.openstack',
+CONF.import_opt('extensions_blacklist', 'jacket.api.compute.openstack',
                 group='osapi_v21')
-CONF.import_opt('extensions_whitelist', 'cloud.api.openstack',
+CONF.import_opt('extensions_whitelist', 'jacket.api.compute.openstack',
                 group='osapi_v21')
 
 LOG = logging.getLogger(__name__)

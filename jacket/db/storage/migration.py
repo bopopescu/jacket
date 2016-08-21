@@ -19,6 +19,7 @@
 import os
 import threading
 
+from oslo_log import log as logging
 from oslo_config import cfg
 from oslo_db import options
 from stevedore import driver
@@ -26,6 +27,9 @@ from stevedore import driver
 from jacket.db.storage.sqlalchemy import api as db_api
 from jacket.storage import exception
 from jacket.storage.i18n import _
+
+
+LOG = logging.getLogger(__name__)
 
 
 INIT_VERSION = 000
@@ -48,7 +52,7 @@ def get_backend():
         with _LOCK:
             if _IMPL is None:
                 _IMPL = driver.DriverManager(
-                    "jacket.storage.database.migration_backend",
+                    "storage.database.migration_backend",
                     cfg.CONF.database.backend).driver
     return _IMPL
 
@@ -58,6 +62,8 @@ def db_sync(version=None, init_version=INIT_VERSION, engine=None):
 
     if engine is None:
         engine = db_api.get_engine()
+
+    LOG.debug("+++hw, MIGRATE_REPO_PATH = %s", MIGRATE_REPO_PATH)
 
     current_db_version = get_backend().db_version(engine,
                                                   MIGRATE_REPO_PATH,

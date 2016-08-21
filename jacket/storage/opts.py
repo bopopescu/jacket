@@ -54,7 +54,7 @@ from jacket.storage.scheduler.weights import capacity as \
     cinder_scheduler_weights_capacity
 from jacket.storage.scheduler.weights import volume_number as \
     cinder_scheduler_weights_volumenumber
-# from jacket.storage import service as cinder_service
+# from jacket import service as cinder_service
 from jacket.storage import ssh_utils as cinder_sshutils
 from jacket.storage.transfer import api as cinder_transfer_api
 from jacket.storage.volume import api as cinder_volume_api

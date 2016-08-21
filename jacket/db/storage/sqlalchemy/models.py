@@ -55,7 +55,7 @@ class CinderBase(models.TimestampMixin,
 class Service(BASE, CinderBase):
     """Represents a running service on a host."""
 
-    __tablename__ = 'services'
+    __tablename__ = 'storage_services'
     id = Column(Integer, primary_key=True)
     host = Column(String(255))  # , ForeignKey('hosts.id'))
     binary = Column(String(255))
@@ -378,7 +378,7 @@ class Quota(BASE, CinderBase):
     Null, then the resource is unlimited.
     """
 
-    __tablename__ = 'quotas'
+    __tablename__ = 'storage_quotas'
     id = Column(Integer, primary_key=True)
 
     project_id = Column(String(255), index=True)
@@ -396,7 +396,7 @@ class QuotaClass(BASE, CinderBase):
     hard limit is Null, then the resource is unlimited.
     """
 
-    __tablename__ = 'quota_classes'
+    __tablename__ = 'storage_quota_classes'
     id = Column(Integer, primary_key=True)
 
     class_name = Column(String(255), index=True)
@@ -408,7 +408,7 @@ class QuotaClass(BASE, CinderBase):
 class QuotaUsage(BASE, CinderBase):
     """Represents the current usage for a given resource."""
 
-    __tablename__ = 'quota_usages'
+    __tablename__ = 'storage_quota_usages'
     id = Column(Integer, primary_key=True)
 
     project_id = Column(String(255), index=True)
@@ -427,12 +427,12 @@ class QuotaUsage(BASE, CinderBase):
 class Reservation(BASE, CinderBase):
     """Represents a resource reservation for quotas."""
 
-    __tablename__ = 'reservations'
+    __tablename__ = 'storage_reservations'
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), nullable=False)
 
-    usage_id = Column(Integer, ForeignKey('quota_usages.id'), nullable=True)
-    allocated_id = Column(Integer, ForeignKey('quotas.id'), nullable=True)
+    usage_id = Column(Integer, ForeignKey('storage_quota_usages.id'), nullable=True)
+    allocated_id = Column(Integer, ForeignKey('storage_quotas.id'), nullable=True)
 
     project_id = Column(String(255), index=True)
     resource = Column(String(255))
@@ -453,7 +453,7 @@ class Reservation(BASE, CinderBase):
 
 class Snapshot(BASE, CinderBase):
     """Represents a snapshot of volume."""
-    __tablename__ = 'snapshots'
+    __tablename__ = 'storage_snapshots'
     id = Column(String(36), primary_key=True)
 
     @property
@@ -483,13 +483,13 @@ class Snapshot(BASE, CinderBase):
     provider_id = Column(String(255))
     provider_auth = Column(String(255))
 
-    volume = relationship(Volume, backref="snapshots",
+    volume = relationship(Volume, backref="storage_snapshots",
                           foreign_keys=volume_id,
                           primaryjoin='Snapshot.volume_id == Volume.id')
 
     cgsnapshot = relationship(
         Cgsnapshot,
-        backref="snapshots",
+        backref="storage_snapshots",
         foreign_keys=cgsnapshot_id,
         primaryjoin='Snapshot.cgsnapshot_id == Cgsnapshot.id')
 
@@ -501,7 +501,7 @@ class SnapshotMetadata(BASE, CinderBase):
     key = Column(String(255))
     value = Column(String(255))
     snapshot_id = Column(String(36),
-                         ForeignKey('snapshots.id'),
+                         ForeignKey('storage_snapshots.id'),
                          nullable=False)
     snapshot = relationship(Snapshot, backref="snapshot_metadata",
                             foreign_keys=snapshot_id,

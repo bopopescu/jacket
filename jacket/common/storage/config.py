@@ -35,7 +35,7 @@ from jacket.common import config
 
 
 CONF = config.CONF
-logging.register_options(CONF)
+# logging.register_options(CONF)
 
 core_opts = []
 

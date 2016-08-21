@@ -39,7 +39,7 @@ CONF = jacket.compute.conf.CONF
 IMAGE_API = image.API()
 
 QEMU_IMG_LIMITS = processutils.ProcessLimits(
-    cpu_time=2,
+    #cpu_time=2,
     address_space=1 * units.Gi)
 
 

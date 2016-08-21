@@ -46,7 +46,7 @@ from jacket.db.storage.sqlalchemy import api as sqla_api
 from jacket.storage import i18n
 from jacket.objects.storage import base as objects_base
 from jacket.storage import rpc
-from jacket.storage import service
+from jacket import service
 from jacket.tests.storage import fixtures as cinder_fixtures
 from jacket.tests.storage.unit import conf_fixture
 from jacket.tests.storage.unit import fake_notifier
