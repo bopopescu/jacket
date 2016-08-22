@@ -33,6 +33,7 @@ from cinder.volume import volume_types
 LOG = logging.getLogger(__name__)
 
 ACTION = 'volume:create'
+
 CONF = cfg.CONF
 GB = units.Gi
 QUOTAS = quota.QUOTAS

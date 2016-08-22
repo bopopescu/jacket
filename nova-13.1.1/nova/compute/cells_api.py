@@ -39,9 +39,9 @@ check_instance_cell = compute_api.check_instance_cell
 
 class ComputeRPCAPIRedirect(object):
     # NOTE(comstud): These are a list of methods where the cells_rpcapi
-    # and the compute_rpcapi methods have the same signatures.  This
+    # and the jacket_rpcapi methods have the same signatures.  This
     # is for transitioning to a common interface where we can just
-    # swap out the compute_rpcapi class with the cells_rpcapi class.
+    # swap out the jacket_rpcapi class with the cells_rpcapi class.
     cells_compatible = ['start_instance', 'stop_instance',
                         'reboot_instance', 'suspend_instance',
                         'resume_instance', 'terminate_instance',
