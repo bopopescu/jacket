@@ -45,25 +45,25 @@ class SecurityGroup(base.NovaPersistentObject, base.NovaObject,
 
     @base.remotable_classmethod
     def get(cls, context, secgroup_id):
-        db_secgroup = compute.security_group_get(context, secgroup_id)
+        db_secgroup = db.security_group_get(context, secgroup_id)
         return cls._from_db_object(context, cls(), db_secgroup)
 
     @base.remotable_classmethod
     def get_by_name(cls, context, project_id, group_name):
-        db_secgroup = compute.security_group_get_by_name(context,
+        db_secgroup = db.security_group_get_by_name(context,
                                                     project_id,
                                                     group_name)
         return cls._from_db_object(context, cls(), db_secgroup)
 
     @base.remotable
     def in_use(self):
-        return compute.security_group_in_use(self._context, self.id)
+        return db.security_group_in_use(self._context, self.id)
 
     @base.remotable
     def save(self):
         updates = self.obj_get_changes()
         if updates:
-            db_secgroup = compute.security_group_update(self._context, self.id,
+            db_secgroup = db.security_group_update(self._context, self.id,
                                                    updates)
             self._from_db_object(self._context, self, db_secgroup)
         self.obj_reset_changes()
@@ -71,7 +71,7 @@ class SecurityGroup(base.NovaPersistentObject, base.NovaObject,
     @base.remotable
     def refresh(self):
         self._from_db_object(self._context, self,
-                             compute.security_group_get(self._context, self.id))
+                             db.security_group_get(self._context, self.id))
 
 
 @base.NovaObjectRegistry.register
@@ -91,19 +91,19 @@ class SecurityGroupList(base.ObjectListBase, base.NovaObject):
 
     @base.remotable_classmethod
     def get_all(cls, context):
-        groups = compute.security_group_get_all(context)
+        groups = db.security_group_get_all(context)
         return base.obj_make_list(context, cls(context),
                                   compute.SecurityGroup, groups)
 
     @base.remotable_classmethod
     def get_by_project(cls, context, project_id):
-        groups = compute.security_group_get_by_project(context, project_id)
+        groups = db.security_group_get_by_project(context, project_id)
         return base.obj_make_list(context, cls(context),
                                   compute.SecurityGroup, groups)
 
     @base.remotable_classmethod
     def get_by_instance(cls, context, instance):
-        groups = compute.security_group_get_by_instance(context, instance.uuid)
+        groups = db.security_group_get_by_instance(context, instance.uuid)
         return base.obj_make_list(context, cls(context),
                                   compute.SecurityGroup, groups)
 

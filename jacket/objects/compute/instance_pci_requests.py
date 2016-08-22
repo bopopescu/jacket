@@ -93,7 +93,7 @@ class InstancePCIRequests(base.NovaObject,
 
     @base.remotable_classmethod
     def get_by_instance_uuid(cls, context, instance_uuid):
-        db_pci_requests = compute.instance_extra_get_by_instance_uuid(
+        db_pci_requests = db.instance_extra_get_by_instance_uuid(
                 context, instance_uuid, columns=['pci_requests'])
         if db_pci_requests is not None:
             db_pci_requests = db_pci_requests['pci_requests']

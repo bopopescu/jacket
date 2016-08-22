@@ -46,7 +46,7 @@ class VirtCPUModel(base.NovaObject):
 
     @base.remotable_classmethod
     def get_by_instance_uuid(cls, context, instance_uuid):
-        db_extra = compute.instance_extra_get_by_instance_uuid(
+        db_extra = db.instance_extra_get_by_instance_uuid(
                 context, instance_uuid, columns=['vcpu_model'])
         if not db_extra or not db_extra['vcpu_model']:
             return None

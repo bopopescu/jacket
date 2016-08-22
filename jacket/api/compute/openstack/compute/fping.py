@@ -32,8 +32,9 @@ ALIAS = "os-fping"
 
 authorize = extensions.os_compute_authorizer(ALIAS)
 
+
 CONF = cfg.CONF
-CONF.import_opt('fping_path', 'jacket.compute.api.openstack.legacy_v2.contrib.'
+CONF.import_opt('fping_path', 'jacket.api.compute.openstack.compute.legacy_v2.contrib.'
                 'fping')
 
 

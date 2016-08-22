@@ -58,7 +58,7 @@ class InstanceFault(base.NovaPersistentObject, base.NovaObject,
 
     @base.remotable_classmethod
     def get_latest_for_instance(cls, context, instance_uuid):
-        db_faults = compute.instance_fault_get_by_instance_uuids(context,
+        db_faults = db.instance_fault_get_by_instance_uuids(context,
                                                             [instance_uuid])
         if instance_uuid in db_faults and db_faults[instance_uuid]:
             return cls._from_db_object(context, cls(),
@@ -76,7 +76,7 @@ class InstanceFault(base.NovaPersistentObject, base.NovaObject,
             'details': self.details,
             'host': self.host,
             }
-        db_fault = compute.instance_fault_create(self._context, values)
+        db_fault = db.instance_fault_create(self._context, values)
         self._from_db_object(self._context, self, db_fault)
         self.obj_reset_changes()
         # Cells should only try sending a message over to compute-cells
@@ -104,7 +104,7 @@ class InstanceFaultList(base.ObjectListBase, base.NovaObject):
 
     @base.remotable_classmethod
     def get_by_instance_uuids(cls, context, instance_uuids):
-        db_faultdict = compute.instance_fault_get_by_instance_uuids(context,
+        db_faultdict = db.instance_fault_get_by_instance_uuids(context,
                                                                instance_uuids)
         db_faultlist = itertools.chain(*db_faultdict.values())
         return base.obj_make_list(context, cls(context), compute.InstanceFault,

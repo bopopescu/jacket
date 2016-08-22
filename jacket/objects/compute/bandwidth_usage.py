@@ -49,7 +49,7 @@ class BandwidthUsage(base.NovaPersistentObject, base.NovaObject,
     @staticmethod
     @db.select_db_reader_mode
     def _db_bw_usage_get(context, uuid, start_period, mac, use_slave=False):
-        return compute.bw_usage_get(context, uuid=uuid, start_period=start_period,
+        return db.bw_usage_get(context, uuid=uuid, start_period=start_period,
                                mac=mac)
 
     @base.serialize_args
@@ -67,7 +67,7 @@ class BandwidthUsage(base.NovaPersistentObject, base.NovaObject,
     def create(self, uuid, mac, bw_in, bw_out, last_ctr_in,
                last_ctr_out, start_period=None, last_refreshed=None,
                update_cells=True):
-        db_bw_usage = compute.bw_usage_update(
+        db_bw_usage = db.bw_usage_update(
             self._context, uuid, mac, start_period, bw_in, bw_out,
             last_ctr_in, last_ctr_out, last_refreshed=last_refreshed,
             update_cells=update_cells)
@@ -89,7 +89,7 @@ class BandwidthUsageList(base.ObjectListBase, base.NovaObject):
     @db.select_db_reader_mode
     def _db_bw_usage_get_by_uuids(context, uuids, start_period,
                                   use_slave=False):
-        return compute.bw_usage_get_by_uuids(context, uuids=uuids,
+        return db.bw_usage_get_by_uuids(context, uuids=uuids,
                                         start_period=start_period)
 
     @base.serialize_args

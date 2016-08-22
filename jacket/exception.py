@@ -198,3 +198,13 @@ class PasteAppNotFound(JacketException):
     msg_fmt = _("Could not load paste app '%(name)s' from %(path)s")
 
 
+class ServiceNotFound(JacketException):
+    msg_fmt = _("Service %(service_id)s could not be found.")
+
+
+class ServiceBinaryExists(JacketException):
+    msg_fmt = _("Service with host %(host)s binary %(binary)s exists.")
+
+
+class ServiceTopicExists(JacketException):
+    msg_fmt = _("Service with host %(host)s topic %(topic)s exists.")

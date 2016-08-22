@@ -215,18 +215,18 @@ class Service(base.NovaPersistentObject, base.NovaObject,
 
     @base.remotable_classmethod
     def get_by_id(cls, context, service_id):
-        db_service = compute.service_get(context, service_id)
+        db_service = db.service_get(context, service_id)
         return cls._from_db_object(context, cls(), db_service)
 
     @base.remotable_classmethod
     def get_by_host_and_topic(cls, context, host, topic):
-        db_service = compute.service_get_by_host_and_topic(context, host, topic)
+        db_service = db.service_get_by_host_and_topic(context, host, topic)
         return cls._from_db_object(context, cls(), db_service)
 
     @base.remotable_classmethod
     def get_by_host_and_binary(cls, context, host, binary):
         try:
-            db_service = compute.service_get_by_host_and_binary(context,
+            db_service = db.service_get_by_host_and_binary(context,
                                                            host, binary)
         except exception.HostBinaryNotFound:
             return
@@ -235,7 +235,7 @@ class Service(base.NovaPersistentObject, base.NovaObject,
     @staticmethod
     @db.select_db_reader_mode
     def _db_service_get_by_compute_host(context, host, use_slave=False):
-        return compute.service_get_by_compute_host(context, host)
+        return db.service_get_by_compute_host(context, host)
 
     @base.remotable_classmethod
     def get_by_compute_host(cls, context, host, use_slave=False):
@@ -247,7 +247,7 @@ class Service(base.NovaPersistentObject, base.NovaObject,
     # major version bump
     @base.remotable_classmethod
     def get_by_args(cls, context, host, binary):
-        db_service = compute.service_get_by_host_and_binary(context, host, binary)
+        db_service = db.service_get_by_host_and_binary(context, host, binary)
         return cls._from_db_object(context, cls(), db_service)
 
     def _check_minimum_version(self):
@@ -281,7 +281,7 @@ class Service(base.NovaPersistentObject, base.NovaObject,
                                               reason='already created')
         self._check_minimum_version()
         updates = self.obj_get_changes()
-        db_service = compute.service_create(self._context, updates)
+        db_service = db.service_create(self._context, updates)
         self._from_db_object(self._context, self, db_service)
 
     @base.remotable
@@ -294,7 +294,7 @@ class Service(base.NovaPersistentObject, base.NovaObject,
             # "save is a no-op if nothing has changed" behavior.
             return
         self._check_minimum_version()
-        db_service = compute.service_update(self._context, self.id, updates)
+        db_service = db.service_update(self._context, self.id, updates)
         self._from_db_object(self._context, self, db_service)
 
         self._send_status_update_notification(updates)
@@ -317,7 +317,7 @@ class Service(base.NovaPersistentObject, base.NovaObject,
 
     @base.remotable
     def destroy(self):
-        compute.service_destroy(self._context, self.id)
+        db.service_destroy(self._context, self.id)
 
     @classmethod
     def enable_min_version_cache(cls):
@@ -331,11 +331,11 @@ class Service(base.NovaPersistentObject, base.NovaObject,
     @staticmethod
     @db.select_db_reader_mode
     def _db_service_get_minimum_version(context, binary, use_slave=False):
-        return compute.service_get_minimum_version(context, binary)
+        return db.service_get_minimum_version(context, binary)
 
     @base.remotable_classmethod
     def get_minimum_version(cls, context, binary, use_slave=False):
-        if not binary.startswith('compute-'):
+        if not binary.startswith('jacket-'):
             LOG.warning(_LW('get_minimum_version called with likely-incorrect '
                             'binary `%s\''), binary)
             raise exception.ObjectActionError(action='get_minimum_version',
@@ -387,7 +387,7 @@ class ServiceList(base.ObjectListBase, base.NovaObject):
 
     @base.remotable_classmethod
     def get_by_topic(cls, context, topic):
-        db_services = compute.service_get_all_by_topic(context, topic)
+        db_services = db.service_get_all_by_topic(context, topic)
         return base.obj_make_list(context, cls(context), compute.Service,
                                   db_services)
 
@@ -395,20 +395,20 @@ class ServiceList(base.ObjectListBase, base.NovaObject):
     # will be removed so both enabled and disabled hosts are returned
     @base.remotable_classmethod
     def get_by_binary(cls, context, binary, include_disabled=False):
-        db_services = compute.service_get_all_by_binary(
+        db_services = db.service_get_all_by_binary(
             context, binary, include_disabled=include_disabled)
         return base.obj_make_list(context, cls(context), compute.Service,
                                   db_services)
 
     @base.remotable_classmethod
     def get_by_host(cls, context, host):
-        db_services = compute.service_get_all_by_host(context, host)
+        db_services = db.service_get_all_by_host(context, host)
         return base.obj_make_list(context, cls(context), compute.Service,
                                   db_services)
 
     @base.remotable_classmethod
     def get_all(cls, context, disabled=None, set_zones=False):
-        db_services = compute.service_get_all(context, disabled=disabled)
+        db_services = db.service_get_all(context, disabled=disabled)
         if set_zones:
             db_services = availability_zones.set_availability_zones(
                 context, db_services)

@@ -185,7 +185,7 @@ class InstanceNUMATopology(base.NovaObject,
     # That's OK since we only call it from inside Instance.save() which is.
     def _save(self):
         values = {'numa_topology': self._to_json()}
-        compute.instance_extra_update_by_uuid(self._context, self.instance_uuid,
+        db.instance_extra_update_by_uuid(self._context, self.instance_uuid,
                                          values)
         self.obj_reset_changes()
 
@@ -195,12 +195,12 @@ class InstanceNUMATopology(base.NovaObject,
     @classmethod
     def delete_by_instance_uuid(cls, context, instance_uuid):
         values = {'numa_topology': None}
-        compute.instance_extra_update_by_uuid(context, instance_uuid,
+        db.instance_extra_update_by_uuid(context, instance_uuid,
                                          values)
 
     @base.remotable_classmethod
     def get_by_instance_uuid(cls, context, instance_uuid):
-        db_extra = compute.instance_extra_get_by_instance_uuid(
+        db_extra = db.instance_extra_get_by_instance_uuid(
                 context, instance_uuid, columns=['numa_topology'])
         if not db_extra:
             raise exception.NumaTopologyNotFound(instance_uuid=instance_uuid)

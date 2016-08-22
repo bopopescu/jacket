@@ -25,7 +25,8 @@ from oslo_versionedobjects import fields
 from jacket import db
 from jacket.storage import exception
 from jacket.i18n import _
-from jacket.objects import storage as objects
+from jacket.objects import storage
+from jacket import objects
 
 
 LOG = logging.getLogger('object')
@@ -104,6 +105,7 @@ OBJ_VERSIONS.add('1.3', {'Service': '1.3'})
 
 class CinderObjectRegistry(base.VersionedObjectRegistry):
     def registration_hook(self, cls, index):
+        setattr(storage, cls.obj_name(), cls)
         setattr(objects, cls.obj_name(), cls)
         # For Versioned Object Classes that have a model store the model in
         # a Class attribute named model

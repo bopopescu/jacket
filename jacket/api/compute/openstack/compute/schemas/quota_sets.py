@@ -22,7 +22,7 @@ common_quota = {
     'pattern': '^-?[0-9]+$',
     # -1 is a flag value for unlimited
     'minimum': -1,
-    'maximum': compute.MAX_INT
+    'maximum': db.MAX_INT
 }
 
 quota_resources = {

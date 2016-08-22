@@ -133,14 +133,14 @@ class Quotas(base.NovaObject):
         # NOTE(danms,comstud): Quotas likely needs an overhaul and currently
         # doesn't map very well to objects. Since there is quite a bit of
         # logic in the compute api layer for this, just pass this through for now.
-        compute.quota_create(context, project_id, resource, limit, user_id=user_id)
+        db.quota_create(context, project_id, resource, limit, user_id=user_id)
 
     @base.remotable_classmethod
     def update_limit(cls, context, project_id, resource, limit, user_id=None):
         # NOTE(danms,comstud): Quotas likely needs an overhaul and currently
         # doesn't map very well to objects. Since there is quite a bit of
         # logic in the compute api layer for this, just pass this through for now.
-        compute.quota_update(context, project_id, resource, limit, user_id=user_id)
+        db.quota_update(context, project_id, resource, limit, user_id=user_id)
 
 
 @base.NovaObjectRegistry.register

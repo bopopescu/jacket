@@ -78,7 +78,7 @@ class Flavor(base.NovaPersistentObject, base.NovaObject,
     @base.remotable
     def _load_projects(self):
         self.projects = [x['project_id'] for x in
-                         compute.flavor_access_get_by_flavor_id(self._context,
+                         db.flavor_access_get_by_flavor_id(self._context,
                                                            self.flavorid)]
         self.obj_reset_changes(['projects'])
 
@@ -130,19 +130,19 @@ class Flavor(base.NovaPersistentObject, base.NovaObject,
 
     @base.remotable_classmethod
     def get_by_id(cls, context, id):
-        db_flavor = compute.flavor_get(context, id)
+        db_flavor = db.flavor_get(context, id)
         return cls._from_db_object(context, cls(context), db_flavor,
                                    expected_attrs=['extra_specs'])
 
     @base.remotable_classmethod
     def get_by_name(cls, context, name):
-        db_flavor = compute.flavor_get_by_name(context, name)
+        db_flavor = db.flavor_get_by_name(context, name)
         return cls._from_db_object(context, cls(context), db_flavor,
                                    expected_attrs=['extra_specs'])
 
     @base.remotable_classmethod
     def get_by_flavor_id(cls, context, flavor_id, read_deleted=None):
-        db_flavor = compute.flavor_get_by_flavor_id(context, flavor_id,
+        db_flavor = db.flavor_get_by_flavor_id(context, flavor_id,
                                                read_deleted)
         return cls._from_db_object(context, cls(context), db_flavor,
                                    expected_attrs=['extra_specs'])
@@ -152,7 +152,7 @@ class Flavor(base.NovaPersistentObject, base.NovaObject,
         if 'projects' in self.obj_what_changed():
             raise exception.ObjectActionError(action='add_access',
                                               reason='projects modified')
-        compute.flavor_access_add(self._context, self.flavorid, project_id)
+        db.flavor_access_add(self._context, self.flavorid, project_id)
         self._load_projects()
 
     @base.remotable
@@ -160,7 +160,7 @@ class Flavor(base.NovaPersistentObject, base.NovaObject,
         if 'projects' in self.obj_what_changed():
             raise exception.ObjectActionError(action='remove_access',
                                               reason='projects modified')
-        compute.flavor_access_remove(self._context, self.flavorid, project_id)
+        db.flavor_access_remove(self._context, self.flavorid, project_id)
         self._load_projects()
 
     @base.remotable
@@ -174,7 +174,7 @@ class Flavor(base.NovaPersistentObject, base.NovaObject,
             if attr in updates:
                 expected_attrs.append(attr)
         projects = updates.pop('projects', [])
-        db_flavor = compute.flavor_create(self._context, updates, projects=projects)
+        db_flavor = db.flavor_create(self._context, updates, projects=projects)
         self._from_db_object(self._context, self, db_flavor,
                              expected_attrs=expected_attrs)
 
@@ -190,9 +190,9 @@ class Flavor(base.NovaPersistentObject, base.NovaObject,
         to_delete = to_delete if to_delete is not None else []
 
         for project_id in to_add:
-            compute.flavor_access_add(self._context, self.flavorid, project_id)
+            db.flavor_access_add(self._context, self.flavorid, project_id)
         for project_id in to_delete:
-            compute.flavor_access_remove(self._context, self.flavorid, project_id)
+            db.flavor_access_remove(self._context, self.flavorid, project_id)
         self.obj_reset_changes(['projects'])
 
     @base.remotable
@@ -207,12 +207,12 @@ class Flavor(base.NovaPersistentObject, base.NovaObject,
         to_delete = to_delete if to_delete is not None else []
 
         if to_add:
-            compute.flavor_extra_specs_update_or_create(self._context,
+            db.flavor_extra_specs_update_or_create(self._context,
                                                    self.flavorid,
                                                    to_add)
 
         for key in to_delete:
-            compute.flavor_extra_specs_delete(self._context, self.flavorid, key)
+            db.flavor_extra_specs_delete(self._context, self.flavorid, key)
         self.obj_reset_changes(['extra_specs'])
 
     def save(self):
@@ -249,7 +249,7 @@ class Flavor(base.NovaPersistentObject, base.NovaObject,
 
     @base.remotable
     def destroy(self):
-        compute.flavor_destroy(self._context, self.name)
+        db.flavor_destroy(self._context, self.name)
 
 
 @base.NovaObjectRegistry.register
@@ -263,7 +263,7 @@ class FlavorList(base.ObjectListBase, base.NovaObject):
     @base.remotable_classmethod
     def get_all(cls, context, inactive=False, filters=None,
                 sort_key='flavorid', sort_dir='asc', limit=None, marker=None):
-        db_flavors = compute.flavor_get_all(context, inactive=inactive,
+        db_flavors = db.flavor_get_all(context, inactive=inactive,
                                        filters=filters, sort_key=sort_key,
                                        sort_dir=sort_dir, limit=limit,
                                        marker=marker)

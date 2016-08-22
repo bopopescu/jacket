@@ -251,7 +251,7 @@ class Service(service.Service):
                     exception.ServiceBinaryExists):
                 # NOTE(danms): If we race to create a record with a sibling
                 # worker, don't fail here.
-                self.service_ref = compute.Service.get_by_host_and_binary(
+                self.service_ref = objects.Service.get_by_host_and_binary(
                     ctxt, self.host, self.binary)
 
         self.manager.pre_start_hook()

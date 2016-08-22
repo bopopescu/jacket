@@ -203,13 +203,13 @@ class PciDevice(base.NovaPersistentObject, base.NovaObject):
 
     @base.remotable_classmethod
     def get_by_dev_addr(cls, context, compute_node_id, dev_addr):
-        db_dev = compute.pci_device_get_by_addr(
+        db_dev = db.pci_device_get_by_addr(
             context, compute_node_id, dev_addr)
         return cls._from_db_object(context, cls(), db_dev)
 
     @base.remotable_classmethod
     def get_by_dev_id(cls, context, id):
-        db_dev = compute.pci_device_get_by_id(context, id)
+        db_dev = db.pci_device_get_by_id(context, id)
         return cls._from_db_object(context, cls(), db_dev)
 
     @classmethod
@@ -229,7 +229,7 @@ class PciDevice(base.NovaPersistentObject, base.NovaObject):
     def save(self):
         if self.status == fields.PciDeviceStatus.REMOVED:
             self.status = fields.PciDeviceStatus.DELETED
-            compute.pci_device_destroy(self._context, self.compute_node_id,
+            db.pci_device_destroy(self._context, self.compute_node_id,
                                   self.address)
         elif self.status != fields.PciDeviceStatus.DELETED:
             updates = self.obj_get_changes()
@@ -254,7 +254,7 @@ class PciDevice(base.NovaPersistentObject, base.NovaObject):
             if 'extra_info' in updates:
                 updates['extra_info'] = jsonutils.dumps(updates['extra_info'])
             if updates:
-                db_pci = compute.pci_device_update(self._context,
+                db_pci = db.pci_device_update(self._context,
                                               self.compute_node_id,
                                               self.address, updates)
                 self._from_db_object(self._context, self, db_pci)
@@ -472,19 +472,19 @@ class PciDeviceList(base.ObjectListBase, base.NovaObject):
 
     @base.remotable_classmethod
     def get_by_compute_node(cls, context, node_id):
-        db_dev_list = compute.pci_device_get_all_by_node(context, node_id)
+        db_dev_list = db.pci_device_get_all_by_node(context, node_id)
         return base.obj_make_list(context, cls(context), compute.PciDevice,
                                   db_dev_list)
 
     @base.remotable_classmethod
     def get_by_instance_uuid(cls, context, uuid):
-        db_dev_list = compute.pci_device_get_all_by_instance_uuid(context, uuid)
+        db_dev_list = db.pci_device_get_all_by_instance_uuid(context, uuid)
         return base.obj_make_list(context, cls(context), compute.PciDevice,
                                   db_dev_list)
 
     @base.remotable_classmethod
     def get_by_parent_address(cls, context, node_id, parent_addr):
-        db_dev_list = compute.pci_device_get_all_by_parent_addr(context,
+        db_dev_list = db.pci_device_get_all_by_parent_addr(context,
                                                            node_id,
                                                            parent_addr)
         return base.obj_make_list(context, cls(context), compute.PciDevice,

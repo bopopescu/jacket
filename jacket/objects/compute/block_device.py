@@ -133,10 +133,10 @@ class BlockDeviceMapping(base.NovaPersistentObject, base.NovaObject,
 
         cells_create = update_or_create or None
         if update_or_create:
-            db_bdm = compute.block_device_mapping_update_or_create(
+            db_bdm = db.block_device_mapping_update_or_create(
                     context, updates, legacy=False)
         else:
-            db_bdm = compute.block_device_mapping_create(
+            db_bdm = db.block_device_mapping_create(
                     context, updates, legacy=False)
 
         self._from_db_object(context, self, db_bdm)
@@ -162,7 +162,7 @@ class BlockDeviceMapping(base.NovaPersistentObject, base.NovaObject,
         if not self.obj_attr_is_set('id'):
             raise exception.ObjectActionError(action='destroy',
                                               reason='already destroyed')
-        compute.block_device_mapping_destroy(self._context, self.id)
+        db.block_device_mapping_destroy(self._context, self.id)
         delattr(self, base.get_attrname('id'))
 
         cell_type = cells_opts.get_cell_type()
@@ -179,7 +179,7 @@ class BlockDeviceMapping(base.NovaPersistentObject, base.NovaObject,
             raise exception.ObjectActionError(action='save',
                                               reason='instance changed')
         updates.pop('id', None)
-        updated = compute.block_device_mapping_update(self._context, self.id,
+        updated = db.block_device_mapping_update(self._context, self.id,
                                                  updates, legacy=False)
         if not updated:
             raise exception.BDMNotFound(id=self.id)
@@ -204,7 +204,7 @@ class BlockDeviceMapping(base.NovaPersistentObject, base.NovaObject,
                          instance_uuid=None, expected_attrs=None):
         if expected_attrs is None:
             expected_attrs = []
-        db_bdms = compute.block_device_mapping_get_all_by_volume_id(
+        db_bdms = db.block_device_mapping_get_all_by_volume_id(
                 context, volume_id, _expected_cols(expected_attrs))
         if not db_bdms:
             raise exception.VolumeBDMNotFound(volume_id=volume_id)
@@ -227,7 +227,7 @@ class BlockDeviceMapping(base.NovaPersistentObject, base.NovaObject,
                                    expected_attrs=None):
         if expected_attrs is None:
             expected_attrs = []
-        db_bdm = compute.block_device_mapping_get_by_instance_and_volume_id(
+        db_bdm = db.block_device_mapping_get_by_instance_and_volume_id(
             context, volume_id, instance_uuid,
             _expected_cols(expected_attrs))
         if not db_bdm:
@@ -239,7 +239,7 @@ class BlockDeviceMapping(base.NovaPersistentObject, base.NovaObject,
     def get_by_volume(cls, context, volume_id, expected_attrs=None):
         if expected_attrs is None:
             expected_attrs = []
-        db_bdms = compute.block_device_mapping_get_all_by_volume_id(
+        db_bdms = db.block_device_mapping_get_all_by_volume_id(
                 context, volume_id, _expected_cols(expected_attrs))
         if not db_bdms:
             raise exception.VolumeBDMNotFound(volume_id=volume_id)
@@ -278,7 +278,7 @@ class BlockDeviceMapping(base.NovaPersistentObject, base.NovaObject,
                    'name': self.obj_name(),
                    'uuid': self.uuid,
                    })
-        self.instance = compute.Instance.get_by_uuid(self._context,
+        self.instance = db.Instance.get_by_uuid(self._context,
                                                      self.instance_uuid)
         self.obj_reset_changes(fields=['instance'])
 
@@ -326,7 +326,7 @@ class BlockDeviceMappingList(base.ObjectListBase, base.NovaObject):
     @db.select_db_reader_mode
     def _db_block_device_mapping_get_all_by_instance_uuids(
             context, instance_uuids, use_slave=False):
-        return compute.block_device_mapping_get_all_by_instance_uuids(
+        return db.block_device_mapping_get_all_by_instance_uuids(
                 context, instance_uuids)
 
     @base.remotable_classmethod
@@ -334,13 +334,13 @@ class BlockDeviceMappingList(base.ObjectListBase, base.NovaObject):
         db_bdms = cls._db_block_device_mapping_get_all_by_instance_uuids(
             context, instance_uuids, use_slave=use_slave)
         return base.obj_make_list(
-                context, cls(), compute.BlockDeviceMapping, db_bdms or [])
+                context, cls(), db.BlockDeviceMapping, db_bdms or [])
 
     @staticmethod
     @db.select_db_reader_mode
     def _db_block_device_mapping_get_all_by_instance(
             context, instance_uuid, use_slave=False):
-        return compute.block_device_mapping_get_all_by_instance(
+        return db.block_device_mapping_get_all_by_instance(
             context, instance_uuid)
 
     @base.remotable_classmethod
@@ -348,7 +348,7 @@ class BlockDeviceMappingList(base.ObjectListBase, base.NovaObject):
         db_bdms = cls._db_block_device_mapping_get_all_by_instance(
             context, instance_uuid, use_slave=use_slave)
         return base.obj_make_list(
-                context, cls(), compute.BlockDeviceMapping, db_bdms or [])
+                context, cls(), db.BlockDeviceMapping, db_bdms or [])
 
     def root_bdm(self):
         """It only makes sense to call this method when the

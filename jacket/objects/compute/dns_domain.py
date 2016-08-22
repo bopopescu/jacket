@@ -40,21 +40,21 @@ class DNSDomain(base.NovaPersistentObject, base.NovaObject):
 
     @base.remotable_classmethod
     def get_by_domain(cls, context, domain):
-        db_dnsd = compute.dnsdomain_get(context, domain)
+        db_dnsd = db.dnsdomain_get(context, domain)
         if db_dnsd:
             return cls._from_db_object(context, cls(), db_dnsd)
 
     @base.remotable_classmethod
     def register_for_zone(cls, context, domain, zone):
-        compute.dnsdomain_register_for_zone(context, domain, zone)
+        db.dnsdomain_register_for_zone(context, domain, zone)
 
     @base.remotable_classmethod
     def register_for_project(cls, context, domain, project):
-        compute.dnsdomain_register_for_project(context, domain, project)
+        db.dnsdomain_register_for_project(context, domain, project)
 
     @base.remotable_classmethod
     def delete_by_domain(cls, context, domain):
-        compute.dnsdomain_unregister(context, domain)
+        db.dnsdomain_unregister(context, domain)
 
 
 @base.NovaObjectRegistry.register
@@ -67,6 +67,6 @@ class DNSDomainList(base.ObjectListBase, base.NovaObject):
 
     @base.remotable_classmethod
     def get_all(cls, context):
-        db_domains = compute.dnsdomain_get_all(context)
+        db_domains = db.dnsdomain_get_all(context)
         return base.obj_make_list(context, cls(context), compute.DNSDomain,
                                   db_domains)

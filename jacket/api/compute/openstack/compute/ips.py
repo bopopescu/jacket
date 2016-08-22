@@ -15,7 +15,7 @@
 
 from webob import exc
 
-from jacket import compute
+from jacket.compute import cloud
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack.compute.views import addresses as views_addresses
 from jacket.api.compute.openstack import extensions
@@ -36,7 +36,7 @@ class IPsController(wsgi.Controller):
 
     def __init__(self, **kwargs):
         super(IPsController, self).__init__(**kwargs)
-        self._compute_api = compute.compute.API(skip_policy_check=True)
+        self._compute_api = cloud.API(skip_policy_check=True)
 
     @extensions.expected_errors(404)
     def index(self, req, server_id):

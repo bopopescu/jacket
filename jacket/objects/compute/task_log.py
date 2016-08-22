@@ -44,21 +44,21 @@ class TaskLog(base.NovaPersistentObject, base.NovaObject):
     @base.remotable_classmethod
     def get(cls, context, task_name, period_beginning, period_ending, host,
             state=None):
-        db_task_log = compute.task_log_get(context, task_name, period_beginning,
+        db_task_log = db.task_log_get(context, task_name, period_beginning,
                                       period_ending, host, state=state)
         if db_task_log:
             return cls._from_db_object(context, cls(context), db_task_log)
 
     @base.remotable
     def begin_task(self):
-        compute.task_log_begin_task(
+        db.task_log_begin_task(
             self._context, self.task_name, self.period_beginning,
             self.period_ending, self.host, task_items=self.task_items,
             message=self.message)
 
     @base.remotable
     def end_task(self):
-        compute.task_log_end_task(
+        db.task_log_end_task(
             self._context, self.task_name, self.period_beginning,
             self.period_ending, self.host, errors=self.errors,
             message=self.message)
@@ -76,7 +76,7 @@ class TaskLogList(base.ObjectListBase, base.NovaObject):
     @base.remotable_classmethod
     def get_all(cls, context, task_name, period_beginning, period_ending,
                 host=None, state=None):
-        db_task_logs = compute.task_log_get_all(context, task_name,
+        db_task_logs = db.task_log_get_all(context, task_name,
                                            period_beginning, period_ending,
                                            host=host, state=state)
         return base.obj_make_list(context, cls(context), TaskLog, db_task_logs)

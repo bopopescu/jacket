@@ -81,28 +81,28 @@ class FloatingIP(obj_base.NovaPersistentObject, obj_base.NovaObject,
 
     @obj_base.remotable_classmethod
     def get_by_id(cls, context, id):
-        db_floatingip = compute.floating_ip_get(context, id)
+        db_floatingip = db.floating_ip_get(context, id)
         # XXX joins fixed.instance
         return cls._from_db_object(context, cls(context), db_floatingip,
                                    expected_attrs=['fixed_ip'])
 
     @obj_base.remotable_classmethod
     def get_by_address(cls, context, address):
-        db_floatingip = compute.floating_ip_get_by_address(context, str(address))
+        db_floatingip = db.floating_ip_get_by_address(context, str(address))
         return cls._from_db_object(context, cls(context), db_floatingip)
 
     @obj_base.remotable_classmethod
     def get_pool_names(cls, context):
-        return [x['name'] for x in compute.floating_ip_get_pools(context)]
+        return [x['name'] for x in db.floating_ip_get_pools(context)]
 
     @obj_base.remotable_classmethod
     def allocate_address(cls, context, project_id, pool, auto_assigned=False):
-        return compute.floating_ip_allocate_address(context, project_id, pool,
+        return db.floating_ip_allocate_address(context, project_id, pool,
                                                auto_assigned=auto_assigned)
 
     @obj_base.remotable_classmethod
     def associate(cls, context, floating_address, fixed_address, host):
-        db_fixed = compute.floating_ip_fixed_ip_associate(context,
+        db_fixed = db.floating_ip_fixed_ip_associate(context,
                                                      str(floating_address),
                                                      str(fixed_address),
                                                      host)
@@ -119,15 +119,15 @@ class FloatingIP(obj_base.NovaPersistentObject, obj_base.NovaObject,
 
     @obj_base.remotable_classmethod
     def deallocate(cls, context, address):
-        return compute.floating_ip_deallocate(context, str(address))
+        return db.floating_ip_deallocate(context, str(address))
 
     @obj_base.remotable_classmethod
     def destroy(cls, context, address):
-        compute.floating_ip_destroy(context, str(address))
+        db.floating_ip_destroy(context, str(address))
 
     @obj_base.remotable_classmethod
     def disassociate(cls, context, address):
-        db_fixed = compute.floating_ip_disassociate(context, str(address))
+        db_fixed = db.floating_ip_disassociate(context, str(address))
 
         return cls(context=context, address=address,
                    fixed_ip_id=db_fixed['id'],
@@ -137,7 +137,7 @@ class FloatingIP(obj_base.NovaPersistentObject, obj_base.NovaObject,
 
     @obj_base.remotable_classmethod
     def _get_addresses_by_instance_uuid(cls, context, instance_uuid):
-        return compute.instance_floating_address_get_all(context, instance_uuid)
+        return db.instance_floating_address_get_all(context, instance_uuid)
 
     @classmethod
     def get_addresses_by_instance(cls, context, instance):
@@ -157,7 +157,7 @@ class FloatingIP(obj_base.NovaPersistentObject, obj_base.NovaObject,
         # relationship to the DB update method
         updates.pop('fixed_ip', None)
 
-        db_floatingip = compute.floating_ip_update(self._context, str(self.address),
+        db_floatingip = db.floating_ip_update(self._context, str(self.address),
                                               updates)
         self._from_db_object(self._context, self, db_floatingip)
 
@@ -180,32 +180,32 @@ class FloatingIPList(obj_base.ObjectListBase, obj_base.NovaObject):
 
     @obj_base.remotable_classmethod
     def get_all(cls, context):
-        db_floatingips = compute.floating_ip_get_all(context)
+        db_floatingips = db.floating_ip_get_all(context)
         return obj_base.obj_make_list(context, cls(context),
-                                      compute.FloatingIP, db_floatingips)
+                                      db.FloatingIP, db_floatingips)
 
     @obj_base.remotable_classmethod
     def get_by_host(cls, context, host):
-        db_floatingips = compute.floating_ip_get_all_by_host(context, host)
+        db_floatingips = db.floating_ip_get_all_by_host(context, host)
         return obj_base.obj_make_list(context, cls(context),
                                       compute.FloatingIP, db_floatingips)
 
     @obj_base.remotable_classmethod
     def get_by_project(cls, context, project_id):
-        db_floatingips = compute.floating_ip_get_all_by_project(context, project_id)
+        db_floatingips = db.floating_ip_get_all_by_project(context, project_id)
         return obj_base.obj_make_list(context, cls(context),
                                       compute.FloatingIP, db_floatingips)
 
     @obj_base.remotable_classmethod
     def get_by_fixed_address(cls, context, fixed_address):
-        db_floatingips = compute.floating_ip_get_by_fixed_address(
+        db_floatingips = db.floating_ip_get_by_fixed_address(
             context, str(fixed_address))
         return obj_base.obj_make_list(context, cls(context),
                                       compute.FloatingIP, db_floatingips)
 
     @obj_base.remotable_classmethod
     def get_by_fixed_ip_id(cls, context, fixed_ip_id):
-        db_floatingips = compute.floating_ip_get_by_fixed_ip_id(context,
+        db_floatingips = db.floating_ip_get_by_fixed_ip_id(context,
                                                            fixed_ip_id)
         return obj_base.obj_make_list(context, cls(), FloatingIP,
                                       db_floatingips)
@@ -218,7 +218,7 @@ class FloatingIPList(obj_base.ObjectListBase, obj_base.NovaObject):
 
     @obj_base.remotable_classmethod
     def create(cls, context, ip_info, want_result=False):
-        db_floatingips = compute.floating_ip_bulk_create(context, ip_info,
+        db_floatingips = db.floating_ip_bulk_create(context, ip_info,
                                                     want_result=want_result)
         if want_result:
             return obj_base.obj_make_list(context, cls(), FloatingIP,
@@ -226,4 +226,4 @@ class FloatingIPList(obj_base.ObjectListBase, obj_base.NovaObject):
 
     @obj_base.remotable_classmethod
     def destroy(cls, context, ips):
-        compute.floating_ip_bulk_destroy(context, ips)
+        db.floating_ip_bulk_destroy(context, ips)

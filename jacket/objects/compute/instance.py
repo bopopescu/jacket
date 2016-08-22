@@ -387,7 +387,7 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
     @db.select_db_reader_mode
     def _db_instance_get_by_uuid(context, uuid, columns_to_join,
                                  use_slave=False):
-        return compute.instance_get_by_uuid(context, uuid,
+        return db.instance_get_by_uuid(context, uuid,
                                        columns_to_join=columns_to_join)
 
     @base.remotable_classmethod
@@ -405,7 +405,7 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
         if expected_attrs is None:
             expected_attrs = ['info_cache', 'security_groups']
         columns_to_join = _expected_cols(expected_attrs)
-        db_inst = compute.instance_get(context, inst_id,
+        db_inst = db.instance_get(context, inst_id,
                                   columns_to_join=columns_to_join)
         return cls._from_db_object(context, cls(), db_inst,
                                    expected_attrs)
@@ -461,7 +461,7 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
                 jsonutils.dumps(vcpu_model.obj_to_primitive()))
         else:
             updates['extra']['vcpu_model'] = None
-        db_inst = compute.instance_create(self._context, updates)
+        db_inst = db.instance_create(self._context, updates)
         self._from_db_object(self._context, self, db_inst, expected_attrs)
 
         # NOTE(danms): The EC2 ids are created on their first load. In order
@@ -481,7 +481,7 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
                                               reason='no uuid')
         if not self.obj_attr_is_set('host') or not self.host:
             # NOTE(danms): If our host is not set, avoid a race
-            constraint = compute.constraint(host=compute.equal_any(None))
+            constraint = db.constraint(host=compute.equal_any(None))
         else:
             constraint = None
 
@@ -490,7 +490,7 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
             stale_instance = self.obj_clone()
 
         try:
-            db_inst = compute.instance_destroy(self._context, self.uuid,
+            db_inst = db.instance_destroy(self._context, self.uuid,
                                           constraint=constraint)
             self._from_db_object(self._context, self, db_inst)
         except exception.ConstraintNotMet:
@@ -549,7 +549,7 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
             'new': (self.new_flavor and
                     self.new_flavor.obj_to_primitive() or None),
         }
-        compute.instance_extra_update_by_uuid(
+        db.instance_extra_update_by_uuid(
             context, self.uuid,
             {'flavor': jsonutils.dumps(flavor_info)})
         self.obj_reset_changes(['flavor', 'old_flavor', 'new_flavor'])
@@ -570,7 +570,7 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
                 update = jsonutils.dumps(self.vcpu_model.obj_to_primitive())
             else:
                 update = None
-            compute.instance_extra_update_by_uuid(
+            db.instance_extra_update_by_uuid(
                 context, self.uuid,
                 {'vcpu_model': update})
 
@@ -696,7 +696,7 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
         if 'system_metadata' not in expected_attrs:
             expected_attrs.append('system_metadata')
             expected_attrs.append('flavor')
-        old_ref, inst_ref = compute.instance_update_and_get_original(
+        old_ref, inst_ref = db.instance_update_and_get_original(
                 context, self.uuid, updates,
                 columns_to_join=_expected_cols(expected_attrs))
         self._from_db_object(context, self, inst_ref,
@@ -948,7 +948,7 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
         with the key still present in self.metadata, which it will update
         after completion.
         """
-        compute.instance_metadata_delete(self._context, self.uuid, key)
+        db.instance_metadata_delete(self._context, self.uuid, key)
         md_was_changed = 'metadata' in self.obj_what_changed()
         del self.metadata[key]
         self._orig_metadata.pop(key, None)
@@ -1043,12 +1043,12 @@ class InstanceList(base.ObjectListBase, base.NovaObject):
                        marker=None, expected_attrs=None, use_slave=False,
                        sort_keys=None, sort_dirs=None):
         if sort_keys or sort_dirs:
-            db_inst_list = compute.instance_get_all_by_filters_sort(
+            db_inst_list = db.instance_get_all_by_filters_sort(
                 context, filters, limit=limit, marker=marker,
                 columns_to_join=_expected_cols(expected_attrs),
                 sort_keys=sort_keys, sort_dirs=sort_dirs)
         else:
-            db_inst_list = compute.instance_get_all_by_filters(
+            db_inst_list = db.instance_get_all_by_filters(
                 context, filters, sort_key, sort_dir, limit=limit,
                 marker=marker, columns_to_join=_expected_cols(expected_attrs))
         return _make_instance_list(context, cls(), db_inst_list,
@@ -1068,7 +1068,7 @@ class InstanceList(base.ObjectListBase, base.NovaObject):
     @db.select_db_reader_mode
     def _db_instance_get_all_by_host(context, host, columns_to_join,
                                      use_slave=False):
-        return compute.instance_get_all_by_host(context, host,
+        return db.instance_get_all_by_host(context, host,
                                            columns_to_join=columns_to_join)
 
     @base.remotable_classmethod
@@ -1081,7 +1081,7 @@ class InstanceList(base.ObjectListBase, base.NovaObject):
 
     @base.remotable_classmethod
     def get_by_host_and_node(cls, context, host, node, expected_attrs=None):
-        db_inst_list = compute.instance_get_all_by_host_and_node(
+        db_inst_list = db.instance_get_all_by_host_and_node(
             context, host, node,
             columns_to_join=_expected_cols(expected_attrs))
         return _make_instance_list(context, cls(), db_inst_list,
@@ -1090,7 +1090,7 @@ class InstanceList(base.ObjectListBase, base.NovaObject):
     @base.remotable_classmethod
     def get_by_host_and_not_type(cls, context, host, type_id=None,
                                  expected_attrs=None):
-        db_inst_list = compute.instance_get_all_by_host_and_not_type(
+        db_inst_list = db.instance_get_all_by_host_and_not_type(
             context, host, type_id=type_id)
         return _make_instance_list(context, cls(), db_inst_list,
                                    expected_attrs)
@@ -1098,7 +1098,7 @@ class InstanceList(base.ObjectListBase, base.NovaObject):
     @base.remotable_classmethod
     def get_all(cls, context, expected_attrs=None):
         """Returns all instances on all nodes."""
-        db_instances = compute.instance_get_all(
+        db_instances = db.instance_get_all(
                 context, columns_to_join=_expected_cols(expected_attrs))
         return _make_instance_list(context, cls(), db_instances,
                                    expected_attrs)
@@ -1106,7 +1106,7 @@ class InstanceList(base.ObjectListBase, base.NovaObject):
     @base.remotable_classmethod
     def get_hung_in_rebooting(cls, context, reboot_window,
                               expected_attrs=None):
-        db_inst_list = compute.instance_get_all_hung_in_rebooting(context,
+        db_inst_list = db.instance_get_all_hung_in_rebooting(context,
                                                              reboot_window)
         return _make_instance_list(context, cls(), db_inst_list,
                                    expected_attrs)
@@ -1116,7 +1116,7 @@ class InstanceList(base.ObjectListBase, base.NovaObject):
     def _db_instance_get_active_by_window_joined(
             context, begin, end, project_id, host, columns_to_join,
             use_slave=False):
-        return compute.instance_get_active_by_window_joined(
+        return db.instance_get_active_by_window_joined(
             context, begin, end, project_id, host,
             columns_to_join=columns_to_join)
 
@@ -1165,7 +1165,7 @@ class InstanceList(base.ObjectListBase, base.NovaObject):
 
     @base.remotable_classmethod
     def get_by_security_group_id(cls, context, security_group_id):
-        db_secgroup = compute.security_group_get(
+        db_secgroup = db.security_group_get(
             context, security_group_id,
             columns_to_join=['instances.info_cache',
                              'instances.system_metadata'])
@@ -1178,7 +1178,7 @@ class InstanceList(base.ObjectListBase, base.NovaObject):
 
     @base.remotable_classmethod
     def get_by_grantee_security_group_ids(cls, context, security_group_ids):
-        db_instances = compute.instance_get_all_by_grantee_security_groups(
+        db_instances = db.instance_get_all_by_grantee_security_groups(
             context, security_group_ids)
         return _make_instance_list(context, cls(), db_instances, [])
 

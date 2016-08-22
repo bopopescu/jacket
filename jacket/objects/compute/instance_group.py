@@ -94,7 +94,7 @@ class InstanceGroup(base.NovaPersistentObject, base.NovaObject,
 
     @base.remotable_classmethod
     def get_by_uuid(cls, context, uuid):
-        db_inst = compute.instance_group_get(context, uuid)
+        db_inst = db.instance_group_get(context, uuid)
         return cls._from_db_object(context, cls(), db_inst)
 
     @base.remotable_classmethod
@@ -113,7 +113,7 @@ class InstanceGroup(base.NovaPersistentObject, base.NovaObject,
 
     @base.remotable_classmethod
     def get_by_instance_uuid(cls, context, instance_uuid):
-        db_inst = compute.instance_group_get_by_instance(context, instance_uuid)
+        db_inst = db.instance_group_get_by_instance(context, instance_uuid)
         return cls._from_db_object(context, cls(), db_inst)
 
     @classmethod
@@ -147,8 +147,8 @@ class InstanceGroup(base.NovaPersistentObject, base.NovaObject,
         payload = dict(updates)
         payload['server_group_id'] = self.uuid
 
-        compute.instance_group_update(self._context, self.uuid, updates)
-        db_inst = compute.instance_group_get(self._context, self.uuid)
+        db.instance_group_update(self._context, self.uuid, updates)
+        db_inst = db.instance_group_get(self._context, self.uuid)
         self._from_db_object(self._context, self, db_inst)
         compute_utils.notify_about_server_group_update(self._context,
                                                        "update", payload)
@@ -173,7 +173,7 @@ class InstanceGroup(base.NovaPersistentObject, base.NovaObject,
         policies = updates.pop('policies', None)
         members = updates.pop('members', None)
 
-        db_inst = compute.instance_group_create(self._context, updates,
+        db_inst = db.instance_group_create(self._context, updates,
                                            policies=policies,
                                            members=members)
         self._from_db_object(self._context, self, db_inst)
@@ -184,7 +184,7 @@ class InstanceGroup(base.NovaPersistentObject, base.NovaObject,
     @base.remotable
     def destroy(self):
         payload = {'server_group_id': self.uuid}
-        compute.instance_group_delete(self._context, self.uuid)
+        db.instance_group_delete(self._context, self.uuid)
         self.obj_reset_changes()
         compute_utils.notify_about_server_group_update(self._context,
                                                        "delete", payload)
@@ -193,7 +193,7 @@ class InstanceGroup(base.NovaPersistentObject, base.NovaObject,
     def add_members(cls, context, group_uuid, instance_uuids):
         payload = {'server_group_id': group_uuid,
                    'instance_uuids': instance_uuids}
-        members = compute.instance_group_members_add(context, group_uuid,
+        members = db.instance_group_members_add(context, group_uuid,
                 instance_uuids)
         compute_utils.notify_about_server_group_update(context,
                                                        "addmember", payload)
@@ -246,12 +246,12 @@ class InstanceGroupList(base.ObjectListBase, base.NovaObject):
 
     @base.remotable_classmethod
     def get_by_project_id(cls, context, project_id):
-        groups = compute.instance_group_get_all_by_project_id(context, project_id)
+        groups = db.instance_group_get_all_by_project_id(context, project_id)
         return base.obj_make_list(context, cls(context), compute.InstanceGroup,
                                   groups)
 
     @base.remotable_classmethod
     def get_all(cls, context):
-        groups = compute.instance_group_get_all(context)
+        groups = db.instance_group_get_all(context)
         return base.obj_make_list(context, cls(context), compute.InstanceGroup,
                                   groups)

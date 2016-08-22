@@ -42,18 +42,18 @@ class EC2InstanceMapping(base.NovaPersistentObject, base.NovaObject):
         if self.obj_attr_is_set('id'):
             raise exception.ObjectActionError(action='create',
                                               reason='already created')
-        db_imap = compute.ec2_instance_create(self._context, self.uuid)
+        db_imap = db.ec2_instance_create(self._context, self.uuid)
         self._from_db_object(self._context, self, db_imap)
 
     @base.remotable_classmethod
     def get_by_uuid(cls, context, instance_uuid):
-        db_imap = compute.ec2_instance_get_by_uuid(context, instance_uuid)
+        db_imap = db.ec2_instance_get_by_uuid(context, instance_uuid)
         if db_imap:
             return cls._from_db_object(context, cls(), db_imap)
 
     @base.remotable_classmethod
     def get_by_id(cls, context, ec2_id):
-        db_imap = compute.ec2_instance_get_by_id(context, ec2_id)
+        db_imap = db.ec2_instance_get_by_id(context, ec2_id)
         if db_imap:
             return cls._from_db_object(context, cls(), db_imap)
 
@@ -81,18 +81,18 @@ class EC2VolumeMapping(base.NovaPersistentObject, base.NovaObject):
         if self.obj_attr_is_set('id'):
             raise exception.ObjectActionError(action='create',
                                               reason='already created')
-        db_vmap = compute.ec2_volume_create(self._context, self.uuid)
+        db_vmap = db.ec2_volume_create(self._context, self.uuid)
         self._from_db_object(self._context, self, db_vmap)
 
     @base.remotable_classmethod
     def get_by_uuid(cls, context, volume_uuid):
-        db_vmap = compute.ec2_volume_get_by_uuid(context, volume_uuid)
+        db_vmap = db.ec2_volume_get_by_uuid(context, volume_uuid)
         if db_vmap:
             return cls._from_db_object(context, cls(context), db_vmap)
 
     @base.remotable_classmethod
     def get_by_id(cls, context, ec2_id):
-        db_vmap = compute.ec2_volume_get_by_id(context, ec2_id)
+        db_vmap = db.ec2_volume_get_by_id(context, ec2_id)
         if db_vmap:
             return cls._from_db_object(context, cls(context), db_vmap)
 
@@ -120,18 +120,18 @@ class EC2SnapshotMapping(base.NovaPersistentObject, base.NovaObject):
         if self.obj_attr_is_set('id'):
             raise exception.ObjectActionError(action='create',
                                               reason='already created')
-        db_smap = compute.ec2_snapshot_create(self._context, self.uuid)
+        db_smap = db.ec2_snapshot_create(self._context, self.uuid)
         self._from_db_object(self._context, self, db_smap)
 
     @base.remotable_classmethod
     def get_by_uuid(cls, context, snapshot_uuid):
-        db_smap = compute.ec2_snapshot_get_by_uuid(context, snapshot_uuid)
+        db_smap = db.ec2_snapshot_get_by_uuid(context, snapshot_uuid)
         if db_smap:
             return cls._from_db_object(context, cls(context), db_smap)
 
     @base.remotable_classmethod
     def get_by_id(cls, context, ec2_id):
-        db_smap = compute.ec2_snapshot_get_by_ec2_id(context, ec2_id)
+        db_smap = db.ec2_snapshot_get_by_ec2_id(context, ec2_id)
         if db_smap:
             return cls._from_db_object(context, cls(context), db_smap)
 
@@ -161,18 +161,18 @@ class S3ImageMapping(base.NovaPersistentObject, base.NovaObject,
         if self.obj_attr_is_set('id'):
             raise exception.ObjectActionError(action='create',
                                               reason='already created')
-        db_s3imap = compute.s3_image_create(self._context, self.uuid)
+        db_s3imap = db.s3_image_create(self._context, self.uuid)
         self._from_db_object(self._context, self, db_s3imap)
 
     @base.remotable_classmethod
     def get_by_uuid(cls, context, s3_image_uuid):
-        db_s3imap = compute.s3_image_get_by_uuid(context, s3_image_uuid)
+        db_s3imap = db.s3_image_get_by_uuid(context, s3_image_uuid)
         if db_s3imap:
             return cls._from_db_object(context, cls(context), db_s3imap)
 
     @base.remotable_classmethod
     def get_by_id(cls, context, s3_id):
-        db_s3imap = compute.s3_image_get(context, s3_id)
+        db_s3imap = db.s3_image_get(context, s3_id)
         if db_s3imap:
             return cls._from_db_object(context, cls(context), db_s3imap)
 

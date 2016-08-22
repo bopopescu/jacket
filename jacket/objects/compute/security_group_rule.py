@@ -70,12 +70,12 @@ class SecurityGroupRule(base.NovaPersistentObject, base.NovaObject):
         grantee_group = updates.pop('grantee_group', None)
         if grantee_group:
             updates['group_id'] = grantee_group.id
-        db_rule = compute.security_group_rule_create(self._context, updates)
+        db_rule = db.security_group_rule_create(self._context, updates)
         self._from_db_object(self._context, self, db_rule)
 
     @base.remotable_classmethod
     def get_by_id(cls, context, rule_id):
-        db_rule = compute.security_group_rule_get(context, rule_id)
+        db_rule = db.security_group_rule_get(context, rule_id)
         return cls._from_db_object(context, cls(), db_rule)
 
 
@@ -88,7 +88,7 @@ class SecurityGroupRuleList(base.ObjectListBase, base.NovaObject):
 
     @base.remotable_classmethod
     def get_by_security_group_id(cls, context, secgroup_id):
-        db_rules = compute.security_group_rule_get_by_security_group(
+        db_rules = db.security_group_rule_get_by_security_group(
             context, secgroup_id, columns_to_join=['grantee_group'])
         return base.obj_make_list(context, cls(context),
                                   compute.SecurityGroupRule, db_rules,
@@ -100,7 +100,7 @@ class SecurityGroupRuleList(base.ObjectListBase, base.NovaObject):
 
     @base.remotable_classmethod
     def get_by_instance_uuid(cls, context, instance_uuid):
-        db_rules = compute.security_group_rule_get_by_instance(context,
+        db_rules = db.security_group_rule_get_by_instance(context,
                                                           instance_uuid)
         return base.obj_make_list(context, cls(context),
                                   compute.SecurityGroupRule, db_rules,

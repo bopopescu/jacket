@@ -51,7 +51,7 @@ class VolumeUsage(base.NovaPersistentObject, base.NovaObject):
 
     @base.remotable
     def save(self, update_totals=False):
-        db_vol_usage = compute.vol_usage_update(
+        db_vol_usage = db.vol_usage_update(
             self._context, self.volume_id, self.curr_reads,
             self.curr_read_bytes, self.curr_writes, self.curr_write_bytes,
             self.instance_uuid, self.project_id, self.user_id,

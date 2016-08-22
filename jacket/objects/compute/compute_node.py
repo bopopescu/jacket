@@ -250,14 +250,14 @@ class ComputeNode(base.NovaPersistentObject, base.NovaObject,
 
     @base.remotable_classmethod
     def get_by_id(cls, context, compute_id):
-        db_compute = compute.compute_node_get(context, compute_id)
+        db_compute = db.compute_node_get(context, compute_id)
         return cls._from_db_object(context, cls(), db_compute)
 
     # NOTE(hanlind): This is deprecated and should be removed on the next
     # major version bump
     @base.remotable_classmethod
     def get_by_service_id(cls, context, service_id):
-        db_computes = compute.compute_nodes_get_by_service_id(context, service_id)
+        db_computes = db.compute_nodes_get_by_service_id(context, service_id)
         # NOTE(sbauza): Old version was returning an item, we need to keep this
         # behaviour for backwards compatibility
         db_compute = db_computes[0]
@@ -265,7 +265,7 @@ class ComputeNode(base.NovaPersistentObject, base.NovaObject,
 
     @base.remotable_classmethod
     def get_by_host_and_nodename(cls, context, host, nodename):
-        db_compute = compute.compute_node_get_by_host_and_nodename(
+        db_compute = db.compute_node_get_by_host_and_nodename(
             context, host, nodename)
         return cls._from_db_object(context, cls(), db_compute)
 
@@ -321,7 +321,7 @@ class ComputeNode(base.NovaPersistentObject, base.NovaObject,
         self._convert_supported_instances_to_db_format(updates)
         self._convert_pci_stats_to_db_format(updates)
 
-        db_compute = compute.compute_node_create(self._context, updates)
+        db_compute = db.compute_node_create(self._context, updates)
         self._from_db_object(self._context, self, db_compute)
 
     @base.remotable
@@ -335,12 +335,12 @@ class ComputeNode(base.NovaPersistentObject, base.NovaObject,
         self._convert_supported_instances_to_db_format(updates)
         self._convert_pci_stats_to_db_format(updates)
 
-        db_compute = compute.compute_node_update(self._context, self.id, updates)
+        db_compute = db.compute_node_update(self._context, self.id, updates)
         self._from_db_object(self._context, self, db_compute)
 
     @base.remotable
     def destroy(self):
-        compute.compute_node_delete(self._context, self.id)
+        db.compute_node_delete(self._context, self.id)
 
     def update_from_virt_driver(self, resources):
         # NOTE(pmurray): the virt driver provides a dict of values that
@@ -387,13 +387,13 @@ class ComputeNodeList(base.ObjectListBase, base.NovaObject):
 
     @base.remotable_classmethod
     def get_all(cls, context):
-        db_computes = compute.compute_node_get_all(context)
+        db_computes = db.compute_node_get_all(context)
         return base.obj_make_list(context, cls(context), compute.ComputeNode,
                                   db_computes)
 
     @base.remotable_classmethod
     def get_by_hypervisor(cls, context, hypervisor_match):
-        db_computes = compute.compute_node_search_by_hypervisor(context,
+        db_computes = db.compute_node_search_by_hypervisor(context,
                                                            hypervisor_match)
         return base.obj_make_list(context, cls(context), compute.ComputeNode,
                                   db_computes)
@@ -403,7 +403,7 @@ class ComputeNodeList(base.ObjectListBase, base.NovaObject):
     @base.remotable_classmethod
     def _get_by_service(cls, context, service_id, use_slave=False):
         try:
-            db_computes = compute.compute_nodes_get_by_service_id(
+            db_computes = db.compute_nodes_get_by_service_id(
                 context, service_id)
         except exception.ServiceNotFound:
             # NOTE(sbauza): Previous behaviour was returning an empty list
@@ -415,7 +415,7 @@ class ComputeNodeList(base.ObjectListBase, base.NovaObject):
     @staticmethod
     @db.select_db_reader_mode
     def _db_compute_node_get_all_by_host(context, host, use_slave=False):
-        return compute.compute_node_get_all_by_host(context, host)
+        return db.compute_node_get_all_by_host(context, host)
 
     @base.remotable_classmethod
     def get_all_by_host(cls, context, host, use_slave=False):

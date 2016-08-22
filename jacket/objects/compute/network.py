@@ -135,32 +135,32 @@ class Network(obj_base.NovaPersistentObject, obj_base.NovaObject,
 
     @obj_base.remotable_classmethod
     def get_by_id(cls, context, network_id, project_only='allow_none'):
-        db_network = compute.network_get(context, network_id,
+        db_network = db.network_get(context, network_id,
                                     project_only=project_only)
         return cls._from_db_object(context, cls(), db_network)
 
     @obj_base.remotable_classmethod
     def get_by_uuid(cls, context, network_uuid):
-        db_network = compute.network_get_by_uuid(context, network_uuid)
+        db_network = db.network_get_by_uuid(context, network_uuid)
         return cls._from_db_object(context, cls(), db_network)
 
     @obj_base.remotable_classmethod
     def get_by_cidr(cls, context, cidr):
-        db_network = compute.network_get_by_cidr(context, cidr)
+        db_network = db.network_get_by_cidr(context, cidr)
         return cls._from_db_object(context, cls(), db_network)
 
     @obj_base.remotable_classmethod
     def associate(cls, context, project_id, network_id=None, force=False):
-        compute.network_associate(context, project_id, network_id=network_id,
+        db.network_associate(context, project_id, network_id=network_id,
                              force=force)
 
     @obj_base.remotable_classmethod
     def disassociate(cls, context, network_id, host=False, project=False):
-        compute.network_disassociate(context, network_id, host, project)
+        db.network_disassociate(context, network_id, host, project)
 
     @obj_base.remotable_classmethod
     def in_use_on_host(cls, context, network_id, host):
-        return compute.network_in_use_on_host(context, network_id, host)
+        return db.network_in_use_on_host(context, network_id, host)
 
     def _get_primitive_changes(self):
         changes = {}
@@ -177,12 +177,12 @@ class Network(obj_base.NovaPersistentObject, obj_base.NovaObject,
         if 'id' in updates:
             raise exception.ObjectActionError(action='create',
                                               reason='already created')
-        db_network = compute.network_create_safe(self._context, updates)
+        db_network = db.network_create_safe(self._context, updates)
         self._from_db_object(self._context, self, db_network)
 
     @obj_base.remotable
     def destroy(self):
-        compute.network_delete_safe(self._context, self.id)
+        db.network_delete_safe(self._context, self.id)
         self.deleted = True
         self.obj_reset_changes(['deleted'])
 
@@ -198,11 +198,11 @@ class Network(obj_base.NovaPersistentObject, obj_base.NovaObject,
                 updates['netmask_v6']).netmask
         set_host = 'host' in updates
         if set_host:
-            compute.network_set_host(context, self.id, updates.pop('host'))
+            db.network_set_host(context, self.id, updates.pop('host'))
         if updates:
-            db_network = compute.network_update(context, self.id, updates)
+            db_network = db.network_update(context, self.id, updates)
         elif set_host:
-            db_network = compute.network_get(context, self.id)
+            db_network = db.network_get(context, self.id)
         else:
             db_network = None
         if db_network is not None:
@@ -222,26 +222,26 @@ class NetworkList(obj_base.ObjectListBase, obj_base.NovaObject):
 
     @obj_base.remotable_classmethod
     def get_all(cls, context, project_only='allow_none'):
-        db_networks = compute.network_get_all(context, project_only)
+        db_networks = db.network_get_all(context, project_only)
         return obj_base.obj_make_list(context, cls(context), compute.Network,
                                       db_networks)
 
     @obj_base.remotable_classmethod
     def get_by_uuids(cls, context, network_uuids, project_only='allow_none'):
-        db_networks = compute.network_get_all_by_uuids(context, network_uuids,
+        db_networks = db.network_get_all_by_uuids(context, network_uuids,
                                                   project_only)
         return obj_base.obj_make_list(context, cls(context), compute.Network,
                                       db_networks)
 
     @obj_base.remotable_classmethod
     def get_by_host(cls, context, host):
-        db_networks = compute.network_get_all_by_host(context, host)
+        db_networks = db.network_get_all_by_host(context, host)
         return obj_base.obj_make_list(context, cls(context), compute.Network,
                                       db_networks)
 
     @obj_base.remotable_classmethod
     def get_by_project(cls, context, project_id, associate=True):
-        db_networks = compute.project_get_networks(context, project_id,
+        db_networks = db.project_get_networks(context, project_id,
                                               associate=associate)
         return obj_base.obj_make_list(context, cls(context), compute.Network,
                                       db_networks)

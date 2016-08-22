@@ -67,7 +67,7 @@ class InstanceAction(base.NovaPersistentObject, base.NovaObject,
 
     @base.remotable_classmethod
     def get_by_request_id(cls, context, instance_uuid, request_id):
-        db_action = compute.action_get_by_request_id(context, instance_uuid,
+        db_action = db.action_get_by_request_id(context, instance_uuid,
                                                 request_id)
         if db_action:
             return cls._from_db_object(context, cls(), db_action)
@@ -76,21 +76,21 @@ class InstanceAction(base.NovaPersistentObject, base.NovaObject,
     def action_start(cls, context, instance_uuid, action_name,
                      want_result=True):
         values = cls.pack_action_start(context, instance_uuid, action_name)
-        db_action = compute.action_start(context, values)
+        db_action = db.action_start(context, values)
         if want_result:
             return cls._from_db_object(context, cls(), db_action)
 
     @base.remotable_classmethod
     def action_finish(cls, context, instance_uuid, want_result=True):
         values = cls.pack_action_finish(context, instance_uuid)
-        db_action = compute.action_finish(context, values)
+        db_action = db.action_finish(context, values)
         if want_result:
             return cls._from_db_object(context, cls(), db_action)
 
     @base.remotable
     def finish(self):
         values = self.pack_action_finish(self._context, self.instance_uuid)
-        db_action = compute.action_finish(self._context, values)
+        db_action = db.action_finish(self._context, values)
         self._from_db_object(self._context, self, db_action)
 
 
@@ -105,7 +105,7 @@ class InstanceActionList(base.ObjectListBase, base.NovaObject):
 
     @base.remotable_classmethod
     def get_by_instance_uuid(cls, context, instance_uuid):
-        db_actions = compute.actions_get(context, instance_uuid)
+        db_actions = db.actions_get(context, instance_uuid)
         return base.obj_make_list(context, cls(), InstanceAction, db_actions)
 
 
@@ -159,14 +159,14 @@ class InstanceActionEvent(base.NovaPersistentObject, base.NovaObject,
 
     @base.remotable_classmethod
     def get_by_id(cls, context, action_id, event_id):
-        db_event = compute.action_event_get_by_id(context, action_id, event_id)
+        db_event = db.action_event_get_by_id(context, action_id, event_id)
         return cls._from_db_object(context, cls(), db_event)
 
     @base.remotable_classmethod
     def event_start(cls, context, instance_uuid, event_name, want_result=True):
         values = cls.pack_action_event_start(context, instance_uuid,
                                              event_name)
-        db_event = compute.action_event_start(context, values)
+        db_event = db.action_event_start(context, values)
         if want_result:
             return cls._from_db_object(context, cls(), db_event)
 
@@ -177,7 +177,7 @@ class InstanceActionEvent(base.NovaPersistentObject, base.NovaObject,
         values = cls.pack_action_event_finish(context, instance_uuid,
                                               event_name, exc_val=exc_val,
                                               exc_tb=exc_tb)
-        db_event = compute.action_event_finish(context, values)
+        db_event = db.action_event_finish(context, values)
         if want_result:
             return cls._from_db_object(context, cls(), db_event)
 
@@ -195,7 +195,7 @@ class InstanceActionEvent(base.NovaPersistentObject, base.NovaObject,
                                                self.instance_uuid,
                                                self.event, exc_val=exc_val,
                                                exc_tb=exc_tb)
-        db_event = compute.action_event_finish(self._context, values)
+        db_event = db.action_event_finish(self._context, values)
         self._from_db_object(self._context, self, db_event)
 
     @base.remotable
@@ -212,6 +212,6 @@ class InstanceActionEventList(base.ObjectListBase, base.NovaObject):
 
     @base.remotable_classmethod
     def get_by_action(cls, context, action_id):
-        db_events = compute.action_events_get(context, action_id)
+        db_events = db.action_events_get(context, action_id)
         return base.obj_make_list(context, cls(context),
                                   compute.InstanceActionEvent, db_events)

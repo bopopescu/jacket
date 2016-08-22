@@ -92,53 +92,53 @@ def dispose_engine():
 ###################
 
 
-def service_destroy(context, service_id):
-    """Destroy the service or raise if it does not exist."""
-    return IMPL.service_destroy(context, service_id)
+#def service_destroy(context, service_id):
+#    """Destroy the service or raise if it does not exist."""
+#    return IMPL.service_destroy(context, service_id)
 
 
-def service_get(context, service_id):
-    """Get a service or raise if it does not exist."""
-    return IMPL.service_get(context, service_id)
+#def service_get(context, service_id):
+#    """Get a service or raise if it does not exist."""
+#    return IMPL.service_get(context, service_id)
 
 
-def service_get_by_host_and_topic(context, host, topic):
-    """Get a service by host it's on and topic it listens to."""
-    return IMPL.service_get_by_host_and_topic(context, host, topic)
+#def service_get_by_host_and_topic(context, host, topic):
+#    """Get a service by host it's on and topic it listens to."""
+#    return IMPL.service_get_by_host_and_topic(context, host, topic)
+#
+#
+#def service_get_all(context, filters=None):
+#    """Get all services."""
+#    return IMPL.service_get_all(context, filters)
 
 
-def service_get_all(context, filters=None):
-    """Get all services."""
-    return IMPL.service_get_all(context, filters)
+#def service_get_all_by_topic(context, topic, disabled=None):
+#    """Get all services for a given topic."""
+#    return IMPL.service_get_all_by_topic(context, topic, disabled=disabled)
 
 
-def service_get_all_by_topic(context, topic, disabled=None):
-    """Get all services for a given topic."""
-    return IMPL.service_get_all_by_topic(context, topic, disabled=disabled)
+#def service_get_all_by_binary(context, binary, disabled=None):
+#    """Get all services for a given binary."""
+#    return IMPL.service_get_all_by_binary(context, binary, disabled)
 
 
-def service_get_all_by_binary(context, binary, disabled=None):
-    """Get all services for a given binary."""
-    return IMPL.service_get_all_by_binary(context, binary, disabled)
+#def service_get_by_args(context, host, binary):
+#    """Get the state of a service by node name and binary."""
+#    return IMPL.service_get_by_args(context, host, binary)
 
 
-def service_get_by_args(context, host, binary):
-    """Get the state of a service by node name and binary."""
-    return IMPL.service_get_by_args(context, host, binary)
+#def service_create(context, values):
+#    """Create a service from the values dictionary."""
+#    return IMPL.service_create(context, values)
 
 
-def service_create(context, values):
-    """Create a service from the values dictionary."""
-    return IMPL.service_create(context, values)
+#def service_update(context, service_id, values):
+#    """Set the given properties on an service and update it.
 
+#    Raises NotFound if service does not exist.
 
-def service_update(context, service_id, values):
-    """Set the given properties on an service and update it.
-
-    Raises NotFound if service does not exist.
-
-    """
-    return IMPL.service_update(context, service_id, values)
+ #   """
+ #   return IMPL.service_update(context, service_id, values)
 
 
 ###############

@@ -68,7 +68,7 @@ class InstanceInfoCache(base.NovaPersistentObject, base.NovaObject,
 
     @base.remotable_classmethod
     def get_by_instance_uuid(cls, context, instance_uuid):
-        db_obj = compute.instance_info_cache_get(context, instance_uuid)
+        db_obj = db.instance_info_cache_get(context, instance_uuid)
         if not db_obj:
             raise exception.InstanceInfoCacheNotFound(
                     instance_uuid=instance_uuid)
@@ -93,7 +93,7 @@ class InstanceInfoCache(base.NovaPersistentObject, base.NovaObject,
                 stale_instance = self.obj_clone()
             nw_info_json = self.fields['network_info'].to_primitive(
                 self, 'network_info', self.network_info)
-            rv = compute.instance_info_cache_update(self._context,
+            rv = db.instance_info_cache_update(self._context,
                                                self.instance_uuid,
                                                {'network_info': nw_info_json})
             self._from_db_object(self._context, self, rv)
@@ -105,7 +105,7 @@ class InstanceInfoCache(base.NovaPersistentObject, base.NovaObject,
 
     @base.remotable
     def delete(self):
-        compute.instance_info_cache_delete(self._context, self.instance_uuid)
+        db.instance_info_cache_delete(self._context, self.instance_uuid)
 
     @base.remotable
     def refresh(self):

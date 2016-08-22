@@ -27,6 +27,7 @@ from oslo_versionedobjects import exception as ovoo_exc
 import six
 
 from jacket.compute import exception
+from jacket import objects
 from jacket.objects import compute
 from jacket.objects.compute import fields as obj_fields
 from jacket.compute import utils
@@ -47,11 +48,13 @@ class NovaObjectRegistry(ovoo_base.VersionedObjectRegistry):
         version = versionutils.convert_version_to_tuple(cls.VERSION)
         if not hasattr(compute, cls.obj_name()):
             setattr(compute, cls.obj_name(), cls)
+            setattr(objects, cls.obj_name(), cls)
         else:
             cur_version = versionutils.convert_version_to_tuple(
                 getattr(compute, cls.obj_name()).VERSION)
             if version >= cur_version:
                 setattr(compute, cls.obj_name(), cls)
+                setattr(objects, cls.obj_name(), cls)
 
 
 remotable_classmethod = ovoo_base.remotable_classmethod

@@ -82,7 +82,7 @@ class Aggregate(base.NovaPersistentObject, base.NovaObject):
 
     @base.remotable_classmethod
     def get_by_id(cls, context, aggregate_id):
-        db_aggregate = compute.aggregate_get(context, aggregate_id)
+        db_aggregate = db.aggregate_get(context, aggregate_id)
         return cls._from_db_object(context, cls(), db_aggregate)
 
     @base.remotable
@@ -104,7 +104,7 @@ class Aggregate(base.NovaPersistentObject, base.NovaObject):
                                                     "create.start",
                                                     payload)
         metadata = updates.pop('metadata', None)
-        db_aggregate = compute.aggregate_create(self._context, updates,
+        db_aggregate = db.aggregate_create(self._context, updates,
                                            metadata=metadata)
         self._from_db_object(self._context, self, db_aggregate)
         payload['aggregate_id'] = self.id
@@ -124,7 +124,7 @@ class Aggregate(base.NovaPersistentObject, base.NovaObject):
                                                     "updateprop.start",
                                                     payload)
         updates.pop('id', None)
-        db_aggregate = compute.aggregate_update(self._context, self.id, updates)
+        db_aggregate = db.aggregate_update(self._context, self.id, updates)
         compute_utils.notify_about_aggregate_update(self._context,
                                                     "updateprop.end",
                                                     payload)
@@ -141,7 +141,7 @@ class Aggregate(base.NovaPersistentObject, base.NovaObject):
         for key, value in updates.items():
             if value is None:
                 try:
-                    compute.aggregate_metadata_delete(self._context, self.id, key)
+                    db.aggregate_metadata_delete(self._context, self.id, key)
                 except exception.AggregateMetadataNotFound:
                     pass
                 try:
@@ -151,7 +151,7 @@ class Aggregate(base.NovaPersistentObject, base.NovaObject):
             else:
                 to_add[key] = value
                 self.metadata[key] = value
-        compute.aggregate_metadata_add(self._context, self.id, to_add)
+        db.aggregate_metadata_add(self._context, self.id, to_add)
         compute_utils.notify_about_aggregate_update(self._context,
                                                     "updatemetadata.end",
                                                     payload)
@@ -159,11 +159,11 @@ class Aggregate(base.NovaPersistentObject, base.NovaObject):
 
     @base.remotable
     def destroy(self):
-        compute.aggregate_delete(self._context, self.id)
+        db.aggregate_delete(self._context, self.id)
 
     @base.remotable
     def add_host(self, host):
-        compute.aggregate_host_add(self._context, self.id, host)
+        db.aggregate_host_add(self._context, self.id, host)
         if self.hosts is None:
             self.hosts = []
         self.hosts.append(host)
@@ -171,7 +171,7 @@ class Aggregate(base.NovaPersistentObject, base.NovaObject):
 
     @base.remotable
     def delete_host(self, host):
-        compute.aggregate_host_delete(self._context, self.id, host)
+        db.aggregate_host_delete(self._context, self.id, host)
         self.hosts.remove(host)
         self.obj_reset_changes(fields=['hosts'])
 
@@ -206,19 +206,19 @@ class AggregateList(base.ObjectListBase, base.NovaObject):
 
     @base.remotable_classmethod
     def get_all(cls, context):
-        db_aggregates = compute.aggregate_get_all(context)
+        db_aggregates = db.aggregate_get_all(context)
         return base.obj_make_list(context, cls(context), compute.Aggregate,
                                   db_aggregates)
 
     @base.remotable_classmethod
     def get_by_host(cls, context, host, key=None):
-        db_aggregates = compute.aggregate_get_by_host(context, host, key=key)
+        db_aggregates = db.aggregate_get_by_host(context, host, key=key)
         return base.obj_make_list(context, cls(context), compute.Aggregate,
                                   db_aggregates)
 
     @base.remotable_classmethod
     def get_by_metadata_key(cls, context, key, hosts=None):
-        db_aggregates = compute.aggregate_get_by_metadata_key(context, key=key)
+        db_aggregates = db.aggregate_get_by_metadata_key(context, key=key)
         if hosts is not None:
             db_aggregates = cls._filter_db_aggregates(db_aggregates, hosts)
         return base.obj_make_list(context, cls(context), compute.Aggregate,

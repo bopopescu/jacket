@@ -43,7 +43,7 @@ class Agent(base.NovaPersistentObject, base.NovaObject):
 
     @base.remotable_classmethod
     def get_by_triple(cls, context, hypervisor, os, architecture):
-        db_agent = compute.agent_build_get_by_triple(context, hypervisor,
+        db_agent = db.agent_build_get_by_triple(context, hypervisor,
                                                 os, architecture)
         if not db_agent:
             return None
@@ -55,17 +55,17 @@ class Agent(base.NovaPersistentObject, base.NovaObject):
         if 'id' in updates:
             raise exception.ObjectActionError(action='create',
                                               reason='Already Created')
-        db_agent = compute.agent_build_create(self._context, updates)
+        db_agent = db.agent_build_create(self._context, updates)
         self._from_db_object(self._context, self, db_agent)
 
     @base.remotable
     def destroy(self):
-        compute.agent_build_destroy(self._context, self.id)
+        db.agent_build_destroy(self._context, self.id)
 
     @base.remotable
     def save(self):
         updates = self.obj_get_changes()
-        compute.agent_build_update(self._context, self.id, updates)
+        db.agent_build_update(self._context, self.id, updates)
         self.obj_reset_changes()
 
 
@@ -79,5 +79,5 @@ class AgentList(base.ObjectListBase, base.NovaObject):
 
     @base.remotable_classmethod
     def get_all(cls, context, hypervisor=None):
-        db_agents = compute.agent_build_get_all(context, hypervisor=hypervisor)
+        db_agents = db.agent_build_get_all(context, hypervisor=hypervisor)
         return base.obj_make_list(context, cls(), compute.Agent, db_agents)

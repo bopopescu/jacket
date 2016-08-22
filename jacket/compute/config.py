@@ -54,13 +54,13 @@ def parse_args(argv, default_config_files=None, configure_db=True,
     log.register_options(CONF)
     options.set_defaults(CONF, connection=_DEFAULT_SQL_CONNECTION,
                          sqlite_db='jacket.compute.sqlite')
-    rpc.set_defaults(control_exchange='compute')
+    rpc.set_defaults(control_exchange='jacket')
     cache.configure(CONF)
     debugger.register_cli_opts()
     config.set_middleware_defaults()
 
     CONF(argv[1:],
-         project='compute',
+         project='jacket',
          version=version.version_string(),
          default_config_files=default_config_files)
 

@@ -102,18 +102,18 @@ class Migration(base.NovaPersistentObject, base.NovaObject,
 
     @base.remotable_classmethod
     def get_by_id(cls, context, migration_id):
-        db_migration = compute.migration_get(context, migration_id)
+        db_migration = db.migration_get(context, migration_id)
         return cls._from_db_object(context, cls(), db_migration)
 
     @base.remotable_classmethod
     def get_by_id_and_instance(cls, context, migration_id, instance_uuid):
-        db_migration = compute.migration_get_by_id_and_instance(
+        db_migration = db.migration_get_by_id_and_instance(
             context, migration_id, instance_uuid)
         return cls._from_db_object(context, cls(), db_migration)
 
     @base.remotable_classmethod
     def get_by_instance_and_status(cls, context, instance_uuid, status):
-        db_migration = compute.migration_get_by_instance_and_status(
+        db_migration = db.migration_get_by_instance_and_status(
             context, instance_uuid, status)
         return cls._from_db_object(context, cls(), db_migration)
 
@@ -128,14 +128,14 @@ class Migration(base.NovaPersistentObject, base.NovaObject,
                 action="create",
                 reason="cannot create a Migration object without a "
                        "migration_type set")
-        db_migration = compute.migration_create(self._context, updates)
+        db_migration = db.migration_create(self._context, updates)
         self._from_db_object(self._context, self, db_migration)
 
     @base.remotable
     def save(self):
         updates = self.obj_get_changes()
         updates.pop('id', None)
-        db_migration = compute.migration_update(self._context, self.id, updates)
+        db_migration = db.migration_update(self._context, self.id, updates)
         self._from_db_object(self._context, self, db_migration)
         self.obj_reset_changes()
 
@@ -169,7 +169,7 @@ class MigrationList(base.ObjectListBase, base.NovaObject):
     @db.select_db_reader_mode
     def _db_migration_get_unconfirmed_by_dest_compute(
             context, confirm_window, dest_compute, use_slave=False):
-        return compute.migration_get_unconfirmed_by_dest_compute(
+        return db.migration_get_unconfirmed_by_dest_compute(
             context, confirm_window, dest_compute)
 
     @base.remotable_classmethod
@@ -182,21 +182,21 @@ class MigrationList(base.ObjectListBase, base.NovaObject):
 
     @base.remotable_classmethod
     def get_in_progress_by_host_and_node(cls, context, host, node):
-        db_migrations = compute.migration_get_in_progress_by_host_and_node(
+        db_migrations = db.migration_get_in_progress_by_host_and_node(
             context, host, node)
         return base.obj_make_list(context, cls(context), compute.Migration,
                                   db_migrations)
 
     @base.remotable_classmethod
     def get_by_filters(cls, context, filters):
-        db_migrations = compute.migration_get_all_by_filters(context, filters)
+        db_migrations = db.migration_get_all_by_filters(context, filters)
         return base.obj_make_list(context, cls(context), compute.Migration,
                                   db_migrations)
 
     @base.remotable_classmethod
     def get_in_progress_by_instance(cls, context, instance_uuid,
                                     migration_type=None):
-        db_migrations = compute.migration_get_in_progress_by_instance(
+        db_migrations = db.migration_get_in_progress_by_instance(
             context, instance_uuid, migration_type)
         return base.obj_make_list(context, cls(context), compute.Migration,
                                   db_migrations)

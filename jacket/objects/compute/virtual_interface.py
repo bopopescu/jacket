@@ -42,25 +42,25 @@ class VirtualInterface(base.NovaPersistentObject, base.NovaObject):
 
     @base.remotable_classmethod
     def get_by_id(cls, context, vif_id):
-        db_vif = compute.virtual_interface_get(context, vif_id)
+        db_vif = db.virtual_interface_get(context, vif_id)
         if db_vif:
             return cls._from_db_object(context, cls(), db_vif)
 
     @base.remotable_classmethod
     def get_by_uuid(cls, context, vif_uuid):
-        db_vif = compute.virtual_interface_get_by_uuid(context, vif_uuid)
+        db_vif = db.virtual_interface_get_by_uuid(context, vif_uuid)
         if db_vif:
             return cls._from_db_object(context, cls(), db_vif)
 
     @base.remotable_classmethod
     def get_by_address(cls, context, address):
-        db_vif = compute.virtual_interface_get_by_address(context, address)
+        db_vif = db.virtual_interface_get_by_address(context, address)
         if db_vif:
             return cls._from_db_object(context, cls(), db_vif)
 
     @base.remotable_classmethod
     def get_by_instance_and_network(cls, context, instance_uuid, network_id):
-        db_vif = compute.virtual_interface_get_by_instance_and_network(context,
+        db_vif = db.virtual_interface_get_by_instance_and_network(context,
                 instance_uuid, network_id)
         if db_vif:
             return cls._from_db_object(context, cls(), db_vif)
@@ -71,12 +71,12 @@ class VirtualInterface(base.NovaPersistentObject, base.NovaObject):
             raise exception.ObjectActionError(action='create',
                                               reason='already created')
         updates = self.obj_get_changes()
-        db_vif = compute.virtual_interface_create(self._context, updates)
+        db_vif = db.virtual_interface_create(self._context, updates)
         self._from_db_object(self._context, self, db_vif)
 
     @base.remotable_classmethod
     def delete_by_instance_uuid(cls, context, instance_uuid):
-        compute.virtual_interface_delete_by_instance(context, instance_uuid)
+        db.virtual_interface_delete_by_instance(context, instance_uuid)
 
 
 @base.NovaObjectRegistry.register
@@ -89,7 +89,7 @@ class VirtualInterfaceList(base.ObjectListBase, base.NovaObject):
 
     @base.remotable_classmethod
     def get_all(cls, context):
-        db_vifs = compute.virtual_interface_get_all(context)
+        db_vifs = db.virtual_interface_get_all(context)
         return base.obj_make_list(context, cls(context),
                                   compute.VirtualInterface, db_vifs)
 
@@ -97,7 +97,7 @@ class VirtualInterfaceList(base.ObjectListBase, base.NovaObject):
     @db.select_db_reader_mode
     def _db_virtual_interface_get_by_instance(context, instance_uuid,
                                               use_slave=False):
-        return compute.virtual_interface_get_by_instance(context, instance_uuid)
+        return db.virtual_interface_get_by_instance(context, instance_uuid)
 
     @base.remotable_classmethod
     def get_by_instance_uuid(cls, context, instance_uuid, use_slave=False):

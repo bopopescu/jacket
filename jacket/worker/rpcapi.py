@@ -72,7 +72,7 @@ class JacketAPI(ComputeAPI, VolumeAPI):
     }
 
     def __init__(self):
-        super(JacketAPI, self).__init__()
+        # super(JacketAPI, self).__init__()
         target = messaging.Target(topic=CONF.jacket_topic, version='1.0')
         serializer = objects_base.NovaObjectSerializer()
         self.client = self.get_client(target, '1.0', serializer)

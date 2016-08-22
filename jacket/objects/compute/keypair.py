@@ -59,12 +59,12 @@ class KeyPair(base.NovaPersistentObject, base.NovaObject,
 
     @base.remotable_classmethod
     def get_by_name(cls, context, user_id, name):
-        db_keypair = compute.key_pair_get(context, user_id, name)
+        db_keypair = db.key_pair_get(context, user_id, name)
         return cls._from_db_object(context, cls(), db_keypair)
 
     @base.remotable_classmethod
     def destroy_by_name(cls, context, user_id, name):
-        compute.key_pair_destroy(context, user_id, name)
+        db.key_pair_destroy(context, user_id, name)
 
     @base.remotable
     def create(self):
@@ -72,12 +72,12 @@ class KeyPair(base.NovaPersistentObject, base.NovaObject,
             raise exception.ObjectActionError(action='create',
                                               reason='already created')
         updates = self.obj_get_changes()
-        db_keypair = compute.key_pair_create(self._context, updates)
+        db_keypair = db.key_pair_create(self._context, updates)
         self._from_db_object(self._context, self, db_keypair)
 
     @base.remotable
     def destroy(self):
-        compute.key_pair_destroy(self._context, self.user_id, self.name)
+        db.key_pair_destroy(self._context, self.user_id, self.name)
 
 
 @base.NovaObjectRegistry.register
@@ -94,10 +94,10 @@ class KeyPairList(base.ObjectListBase, base.NovaObject):
 
     @base.remotable_classmethod
     def get_by_user(cls, context, user_id):
-        db_keypairs = compute.key_pair_get_all_by_user(context, user_id)
+        db_keypairs = db.key_pair_get_all_by_user(context, user_id)
         return base.obj_make_list(context, cls(context), compute.KeyPair,
                                   db_keypairs)
 
     @base.remotable_classmethod
     def get_count_by_user(cls, context, user_id):
-        return compute.key_pair_count_by_user(context, user_id)
+        return db.key_pair_count_by_user(context, user_id)
