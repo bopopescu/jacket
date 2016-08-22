@@ -25,7 +25,7 @@ from jacket.compute.virt.libvirt.volume import volume as libvirt_volume
 LOG = logging.getLogger(__name__)
 
 CONF = cfg.CONF
-CONF.import_opt('num_iscsi_scan_tries', 'compute.virt.libvirt.volume.iscsi',
+CONF.import_opt('num_iscsi_scan_tries', 'jacket.compute.virt.libvirt.volume.iscsi',
                 group='libvirt')
 
 

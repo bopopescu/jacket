@@ -20,7 +20,7 @@ from jacket.api.compute.openstack.compute.schemas import quota_classes
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
-from jacket.db import compute
+from jacket import db
 from jacket.compute import exception
 from jacket.compute import quota
 from jacket.compute import utils
@@ -85,9 +85,9 @@ class QuotaClassSetsController(wsgi.Controller):
 
         for key, value in six.iteritems(body['quota_class_set']):
             try:
-                compute.quota_class_update(context, quota_class, key, value)
+                db.quota_class_update(context, quota_class, key, value)
             except exception.QuotaClassNotFound:
-                compute.quota_class_create(context, quota_class, key, value)
+                db.quota_class_create(context, quota_class, key, value)
 
         values = QUOTAS.get_class_quotas(context, quota_class)
         return self._format_quota_set(None, values)

@@ -22,8 +22,8 @@ from jacket.i18n import _LW
 
 LOG = logging.getLogger(__name__)
 
-NOVA_NET_API = 'compute.network.api.API'
-NEUTRON_NET_API = 'compute.network.neutronv2.api.API'
+NOVA_NET_API = 'jacket.compute.network.api.API'
+NEUTRON_NET_API = 'jacket.compute.network.neutronv2.api.API'
 
 _network_opts = [
     oslo_config.cfg.StrOpt('network_api_class',

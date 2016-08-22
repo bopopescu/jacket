@@ -16,7 +16,7 @@ import netaddr
 from oslo_config import cfg
 from oslo_utils import versionutils
 
-from jacket.db import compute
+from jacket import db
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.objects import compute

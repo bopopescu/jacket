@@ -264,17 +264,17 @@ CONF.register_opts(interval_opts)
 CONF.register_opts(timeout_opts)
 CONF.register_opts(running_deleted_opts)
 CONF.register_opts(instance_cleaning_opts)
-CONF.import_opt('console_topic', 'cloud.console.rpcapi')
-CONF.import_opt('host', 'cloud.netconf')
-CONF.import_opt('enabled', 'cloud.spice', group='spice')
-CONF.import_opt('image_cache_manager_interval', 'cloud.virt.imagecache')
-CONF.import_opt('enabled', 'cloud.rdp', group='rdp')
-CONF.import_opt('html5_proxy_base_url', 'cloud.rdp', group='rdp')
-CONF.import_opt('enabled', 'cloud.mks', group='mks')
-CONF.import_opt('mksproxy_base_url', 'cloud.mks', group='mks')
-CONF.import_opt('destroy_after_evacuate', 'cloud.utils', group='workarounds')
+CONF.import_opt('console_topic', 'jacket.compute.console.rpcapi')
+CONF.import_opt('host', 'jacket.compute.netconf')
+CONF.import_opt('enabled', 'jacket.compute.spice', group='spice')
+CONF.import_opt('image_cache_manager_interval', 'jacket.compute.virt.imagecache')
+CONF.import_opt('enabled', 'jacket.compute.rdp', group='rdp')
+CONF.import_opt('html5_proxy_base_url', 'jacket.compute.rdp', group='rdp')
+CONF.import_opt('enabled', 'jacket.compute.mks', group='mks')
+CONF.import_opt('mksproxy_base_url', 'jacket.compute.mks', group='mks')
+CONF.import_opt('destroy_after_evacuate', 'jacket.compute.utils', group='workarounds')
 CONF.import_opt('scheduler_tracks_instance_changes',
-                'cloud.scheduler.host_manager')
+                'jacket.compute.scheduler.host_manager')
 
 LOG = logging.getLogger(__name__)
 
@@ -523,7 +523,7 @@ class InstanceEvents(object):
         can be used to signal the waiters to wake up.
 
         :param instance: the instance for which the event was generated
-        :param event: the cloud.cloud.external_event.InstanceExternalEvent
+        :param event: the jacket.compute.cloud.external_event.InstanceExternalEvent
                       that describes the event
         :returns: the eventlet.event.Event object on which the waiters
                   are blocked
@@ -2300,7 +2300,7 @@ class ComputeManager(manager.Manager):
         """Shutdown an instance on this host.
 
         :param:context: security context
-        :param:instance: a cloud.cloud.Instance object
+        :param:instance: a jacket.compute.cloud.Instance object
         :param:bdms: the block devices for the instance to be torn
                      down
         :param:requested_networks: the networks on which the instance
@@ -2416,9 +2416,9 @@ class ComputeManager(manager.Manager):
         as necessary.
 
         :param context: cloud request context
-        :param instance: cloud.cloud.instance.Instance object
-        :param bdms: cloud.cloud.block_device.BlockDeviceMappingList object
-        :param quotas: cloud.cloud.quotas.Quotas object
+        :param instance: jacket.compute.cloud.instance.Instance object
+        :param bdms: jacket.compute.cloud.block_device.BlockDeviceMappingList object
+        :param quotas: jacket.compute.cloud.quotas.Quotas object
         """
         was_soft_deleted = instance.vm_state == vm_states.SOFT_DELETED
         if was_soft_deleted:
@@ -3134,7 +3134,7 @@ class ComputeManager(manager.Manager):
         """Snapshot an instance on this host.
 
         :param context: security context
-        :param instance: a cloud.cloud.instance.Instance object
+        :param instance: a jacket.compute.cloud.instance.Instance object
         :param image_id: glance.db.sqlalchemy.models.Image.Id
         """
         # NOTE(dave-mcnally) the task state will already be set by the api
@@ -4306,7 +4306,7 @@ class ComputeManager(manager.Manager):
         potentially large download of an image.
 
         :param context: request context
-        :param instance: cloud.cloud.instance.Instance
+        :param instance: jacket.compute.cloud.instance.Instance
         :param clean_shutdown: give the GuestOS a chance to stop
         """
         self._notify_about_instance_usage(context, instance,
@@ -4346,7 +4346,7 @@ class ComputeManager(manager.Manager):
         """Unshelve the instance.
 
         :param context: request context
-        :param instance: a cloud.cloud.instance.Instance object
+        :param instance: a jacket.compute.cloud.instance.Instance object
         :param image: an image to build from.  If None we assume a
             volume backed instance.
         :param filter_properties: dict containing limits, retry info etc.
@@ -5316,9 +5316,9 @@ class ComputeManager(manager.Manager):
 
         :param context: security context
         :param dest: destination host
-        :param instance: a cloud.cloud.instance.Instance object
+        :param instance: a jacket.compute.cloud.instance.Instance object
         :param block_migration: if true, prepare for block migration
-        :param migration: an cloud.cloud.Migration object
+        :param migration: an jacket.compute.cloud.Migration object
         :param migrate_data: implementation specific params
 
         """
@@ -5625,7 +5625,7 @@ class ComputeManager(manager.Manager):
         """Recovers Instance/volume state from migrating -> running.
 
         :param context: security context
-        :param instance: cloud.cloud.instance.Instance object
+        :param instance: jacket.compute.cloud.instance.Instance object
         :param dest:
             This method is called from live migration src host.
             This param specifies destination host.
@@ -5686,7 +5686,7 @@ class ComputeManager(manager.Manager):
         """Cleaning up image directory that is created pre_live_migration.
 
         :param context: security context
-        :param instance: a cloud.cloud.instance.Instance object sent over rpc
+        :param instance: a jacket.compute.cloud.instance.Instance object sent over rpc
         """
         network_info = self.network_api.get_instance_nw_info(context, instance)
         self._notify_about_instance_usage(

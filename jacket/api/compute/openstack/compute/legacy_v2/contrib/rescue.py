@@ -48,7 +48,7 @@ class RescueController(wsgi.Controller):
     @wsgi.action('rescue')
     def _rescue(self, req, id, body):
         """Rescue an instance."""
-        context = req.environ["cloud.context"]
+        context = req.environ["compute.context"]
         authorize(context)
 
         if body['rescue'] and 'adminPass' in body['rescue']:
@@ -81,7 +81,7 @@ class RescueController(wsgi.Controller):
     @wsgi.action('unrescue')
     def _unrescue(self, req, id, body):
         """Unrescue an instance."""
-        context = req.environ["cloud.context"]
+        context = req.environ["compute.context"]
         authorize(context)
         instance = common.get_instance(self.compute_api, context, id)
         try:

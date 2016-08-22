@@ -139,7 +139,7 @@ class IronicDriver(virt_driver.ComputeDriver):
                                                     'ironicclient.client')
 
         self.firewall_driver = firewall.load_driver(
-            default='compute.virt.firewall.NoopFirewallDriver')
+            default='jacket.compute.virt.firewall.NoopFirewallDriver')
         self.node_cache = {}
         self.node_cache_time = 0
 

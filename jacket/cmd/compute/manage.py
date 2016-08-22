@@ -73,7 +73,7 @@ from jacket.api.compute.ec2 import ec2utils
 from jacket.compute import availability_zones
 from jacket.compute import config
 from jacket.compute import context
-from jacket.db import compute
+from jacket import db
 from jacket.db.compute import migration
 from jacket.compute import exception
 from jacket.i18n import _
@@ -86,16 +86,16 @@ from jacket.compute import utils
 from jacket import version
 
 CONF = cfg.CONF
-CONF.import_opt('network_manager', 'compute.service')
-CONF.import_opt('service_down_time', 'compute.service')
-CONF.import_opt('flat_network_bridge', 'compute.network.manager')
-CONF.import_opt('num_networks', 'compute.network.manager')
-CONF.import_opt('multi_host', 'compute.network.manager')
-CONF.import_opt('network_size', 'compute.network.manager')
-CONF.import_opt('vlan_start', 'compute.network.manager')
-CONF.import_opt('vpn_start', 'compute.network.manager')
-CONF.import_opt('default_floating_pool', 'compute.network.floating_ips')
-CONF.import_opt('public_interface', 'compute.network.linux_net')
+CONF.import_opt('network_manager', 'jacket.compute.service')
+CONF.import_opt('service_down_time', 'jacket.compute.service')
+CONF.import_opt('flat_network_bridge', 'jacket.compute.network.manager')
+CONF.import_opt('num_networks', 'jacket.compute.network.manager')
+CONF.import_opt('multi_host', 'jacket.compute.network.manager')
+CONF.import_opt('network_size', 'jacket.compute.network.manager')
+CONF.import_opt('vlan_start', 'jacket.compute.network.manager')
+CONF.import_opt('vpn_start', 'jacket.compute.network.manager')
+CONF.import_opt('default_floating_pool', 'jacket.compute.network.floating_ips')
+CONF.import_opt('public_interface', 'jacket.compute.network.linux_net')
 CONF.import_opt('connection', 'oslo_db.options', group='database')
 
 QUOTAS = quota.QUOTAS

@@ -59,17 +59,18 @@ from jacket.i18n import _, _LE, _LI, _LW
 import jacket.compute.network
 from jacket.compute import safe_utils
 
-notify_decorator = 'compute.notifications.notify_decorator'
+notify_decorator = 'jacket.compute.notifications.notify_decorator'
 
 monkey_patch_opts = [
-    cfg.BoolOpt('monkey_patch',
-                default=False,
-                help='Whether to apply monkey patching'),
-    cfg.ListOpt('monkey_patch_modules',
-                default=[
-                  'compute.compute.api:%s' % (notify_decorator)
-                  ],
-                help='List of modules/decorators to monkey patch'),
+    # NOTE(hw, laoyi, move monkey_patch, monkey_patch_modules)
+    # cfg.BoolOpt('monkey_patch',
+    #            default=False,
+    #            help='Whether to apply monkey patching'),
+    # cfg.ListOpt('monkey_patch_modules',
+    #            default=[
+    #              'compute.compute.api:%s' % (notify_decorator)
+    #              ],
+    #            help='List of modules/decorators to monkey patch'),
 ]
 utils_opts = [
     cfg.IntOpt('password_length',
@@ -84,10 +85,6 @@ utils_opts = [
                      "need to be run with root privileges. This option is "
                      "usually enabled on nodes that run compute compute "
                      "processes"),
-    cfg.StrOpt('rootwrap_config',
-               default="/etc/compute/rootwrap.conf",
-               help='Path to the rootwrap configuration file to use for '
-                    'running commands as root'),
     cfg.StrOpt('tempdir',
                help='Explicitly specify the temporary working directory'),
 ]

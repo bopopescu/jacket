@@ -29,10 +29,10 @@ from oslo_utils import timeutils
 from oslo_utils import uuidutils
 import six
 
-from jacket.api.storage.storage import common
+from jacket.api.storage import common
 from jacket.storage import context
 from jacket.db import storage
-from jacket.db.storage import base
+from jacket.db import base
 from jacket.storage import exception
 from jacket.storage import flow_utils
 from jacket.storage.i18n import _, _LE, _LI, _LW
@@ -82,7 +82,7 @@ CONF.register_opt(volume_host_opt)
 CONF.register_opt(volume_same_az_opt)
 CONF.register_opt(az_cache_time_opt)
 
-CONF.import_opt('glance_core_properties', 'storage.image.glance')
+CONF.import_opt('glance_core_properties', 'jacket.storage.image.glance')
 
 LOG = logging.getLogger(__name__)
 QUOTAS = quota.QUOTAS

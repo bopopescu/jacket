@@ -31,7 +31,7 @@ from oslo_utils import fileutils
 from jacket.compute import cloud
 from jacket.compute.cloud import flavors
 from jacket.compute import crypto
-from jacket.db import compute
+from jacket import db
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.compute import paths
@@ -61,7 +61,7 @@ cloudpipe_opts = [
 
 CONF = cfg.CONF
 CONF.register_opts(cloudpipe_opts)
-CONF.import_opt('keys_path', 'cloud.crypto')
+CONF.import_opt('keys_path', 'jacket.compute.crypto')
 
 LOG = logging.getLogger(__name__)
 

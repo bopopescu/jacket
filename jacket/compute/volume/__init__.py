@@ -19,8 +19,8 @@ from oslo_utils import importutils
 
 _volume_opts = [
     oslo_config.cfg.StrOpt(
-        'volume_api_class',
-        default='compute.volume.cinder.API',
+        'compute_volume_api_class',
+        default='jacket.compute.volume.cinder.API',
         help='DEPRECATED: The full class name of the volume API class to use',
         deprecated_for_removal=True)
 ]
@@ -29,6 +29,6 @@ oslo_config.cfg.CONF.register_opts(_volume_opts)
 
 
 def API():
-    volume_api_class = oslo_config.cfg.CONF.volume_api_class
+    volume_api_class = oslo_config.cfg.CONF.compute_volume_api_class
     cls = importutils.import_class(volume_api_class)
     return cls()

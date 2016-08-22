@@ -46,7 +46,7 @@ from jacket.db.storage.sqlalchemy import api as sqla_api
 from jacket.storage import i18n
 from jacket.objects.storage import base as objects_base
 from jacket.storage import rpc
-from jacket.storage import service
+from jacket import service
 from jacket.tests.storage import fixtures as cinder_fixtures
 from jacket.tests.storage.unit import conf_fixture
 from jacket.tests.storage.unit import fake_notifier
@@ -120,7 +120,7 @@ class TestCase(testtools.TestCase):
 
         # Mock rpc get notifier with fake notifier method that joins all
         # notifications with the default notifier
-        p = mock.patch('storage.rpc.get_notifier',
+        p = mock.patch('jacket.storage.rpc.get_notifier',
                        side_effect=self._get_joined_notifier)
         p.start()
 
@@ -150,7 +150,7 @@ class TestCase(testtools.TestCase):
         self.useFixture(log_fixture.get_logging_handle_error_fixture())
         self.useFixture(cinder_fixtures.StandardLogging())
 
-        rpc.add_extra_exmods("storage.tests.unit")
+        rpc.add_extra_exmods("jacket.storage.tests.unit")
         self.addCleanup(rpc.clear_extra_exmods)
         self.addCleanup(rpc.cleanup)
 

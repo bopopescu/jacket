@@ -78,7 +78,7 @@ xenapi_vmops_opts = [
 
 CONF = jacket.compute.conf.CONF
 CONF.register_opts(xenapi_vmops_opts, 'xenserver')
-CONF.import_opt('host', 'cloud.netconf')
+CONF.import_opt('host', 'jacket.compute.netconf')
 
 DEFAULT_FIREWALL_DRIVER = "%s.%s" % (
     firewall.__name__,

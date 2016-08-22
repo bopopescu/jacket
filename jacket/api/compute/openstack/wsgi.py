@@ -33,7 +33,7 @@ from jacket.i18n import _
 from jacket.i18n import _LE
 from jacket.i18n import _LI
 from jacket.compute import utils
-from jacket.wsgi import compute
+from jacket.wsgi import base_wsgi as wsgi
 
 
 LOG = logging.getLogger(__name__)
@@ -97,7 +97,7 @@ def item_get(item, item_key):
         return getattr(item, item_key)
 
 
-class Request(compute.Request):
+class Request(wsgi.Request):
     """Add some OpenStack API-specific logic to the base webob.Request."""
 
     def __init__(self, *args, **kwargs):
@@ -443,13 +443,13 @@ class ResourceExceptionHandler(object):
         return False
 
 
-class Resource(compute.Application):
+class Resource(wsgi.Application):
     """WSGI app that handles (de)serialization and controller dispatch.
 
     WSGI app that reads routing information supplied by RoutesMiddleware
     and calls the requested action method upon its controller.  All
     controller action methods must accept a 'req' argument, which is the
-    incoming compute.Request. If the operation is a PUT or POST, the controller
+    incoming wsgi.Request. If the operation is a PUT or POST, the controller
     method must also accept a 'body' argument (the deserialized request body).
     They may raise a webob.exc exception or return a dict, which will be
     serialized by requested content type.

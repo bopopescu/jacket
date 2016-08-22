@@ -7,9 +7,6 @@ CONF = cfg.CONF
 
 
 netconf_opts = [
-    cfg.StrOpt('my_ip',
-               default=netutils.get_my_ipv4(),
-               help='IP address of this host'),
     cfg.StrOpt('my_block_storage_ip',
                default='$my_ip',
                help='Block storage IP address of this host'),

@@ -28,7 +28,7 @@ def register_all():
     __import__('jacket.objects.storage.cgsnapshot')
     __import__('jacket.objects.storage.consistencygroup')
     # NOTE(nkapotoxin): Use compute service instead
-    #__import__('jacket.objects.storage.service')
+    __import__('jacket.objects.storage.service')
     __import__('jacket.objects.storage.snapshot')
     __import__('jacket.objects.storage.volume')
     __import__('jacket.objects.storage.volume_attachment')

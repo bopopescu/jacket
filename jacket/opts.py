@@ -16,12 +16,10 @@ import itertools
 
 from jacket.api.jacket_api import common as jacket_api_common
 from jacket.api.jacket_api.views import versions as jacket_api_views_versions
-from jacket.api.middleware import auth as jacket_api_auth
 from jacket.api.middleware import sizelimit as jacket_api_sizelimit
 from jacket.common import config as jacket_config
-from jacket.db.jacket import base as jacket_db_base
+from jacket.db import base as jacket_db_base
 from jacket.wsgi import common as wsgi_common
-from jacket import jacket_service as jacket_base_service
 
 
 def list_opts():
@@ -30,13 +28,11 @@ def list_opts():
             itertools.chain(
                 jacket_api_common.api_common_opts,
                 jacket_api_views_versions.versions_opts,
-                [jacket_api_auth.use_forwarded_for_opt],
                 [jacket_api_sizelimit.max_request_body_size_opt],
                 jacket_config.core_opts,
                 jacket_config.debug_opts,
                 [jacket_db_base.db_driver_opt],
                 wsgi_common.wsgi_opts,
-                jacket_base_service.service_opts,
             )),
         ('wsgi',
          itertools.chain(

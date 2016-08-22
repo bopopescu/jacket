@@ -12,7 +12,7 @@
 
 import itertools
 
-import jacket.api.compute.auth
+#import jacket.api.compute.auth
 import jacket.api.compute.metadata.base
 import jacket.api.compute.metadata.handler
 import jacket.api.compute.metadata.vendordata_json
@@ -61,7 +61,7 @@ import jacket.compute.consoleauth.manager
 import jacket.compute.consoleauth.rpcapi
 import jacket.compute.crypto
 import jacket.db.compute.api
-import jacket.db.compute.base
+import jacket.db.base
 import jacket.db.compute.sqlalchemy.api
 import jacket.compute.exception
 import jacket.compute.image.download.file
@@ -106,7 +106,7 @@ import jacket.compute.scheduler.utils
 import jacket.compute.scheduler.weights.io_ops
 import jacket.compute.scheduler.weights.metrics
 import jacket.compute.scheduler.weights.ram
-import jacket.compute.service
+# import jacket.compute.service
 import jacket.compute.servicegroup.api
 import jacket.compute.spice
 import jacket.compute.utils
@@ -123,7 +123,7 @@ def list_opts():
          itertools.chain(
              [jacket.api.compute.metadata.vendordata_json.file_opt],
              [jacket.api.compute.openstack.compute.allow_instance_snapshots_opt],
-             jacket.api.compute.auth.auth_opts,
+             # jacket.api.compute.auth.auth_opts,
              jacket.api.compute.metadata.base.metadata_opts,
              jacket.api.compute.metadata.handler.metadata_opts,
              jacket.api.compute.openstack.common.osapi_opts,

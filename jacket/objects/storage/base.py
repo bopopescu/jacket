@@ -22,10 +22,10 @@ from oslo_utils import versionutils
 from oslo_versionedobjects import base
 from oslo_versionedobjects import fields
 
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
-from jacket.storage.i18n import _
-from jacket.objects import storage
+from jacket.i18n import _
+from jacket.objects import storage as objects
 
 
 LOG = logging.getLogger('object')
@@ -35,11 +35,11 @@ obj_make_list = base.obj_make_list
 
 
 class CinderObjectVersionsHistory(dict):
-    """Helper class that maintains storage version history.
+    """Helper class that maintains objects version history.
 
     Current state of object versions is aggregated in a single version number
     that explicitily identifies a set of object versions. That way a service
-    is able to report what storage it supports using a single string and all
+    is able to report what objects it supports using a single string and all
     the newer services will know exactly what that mean for a single object.
     """
 
@@ -47,8 +47,8 @@ class CinderObjectVersionsHistory(dict):
         super(CinderObjectVersionsHistory, self).__init__()
         # NOTE(dulek): This is our pre-history and a starting point - Liberty.
         # We want Mitaka to be able to talk to Liberty services, so we need to
-        # handle backporting to these storage versions (although I don't expect
-        # we've made a lot of incompatible changes inside the storage).
+        # handle backporting to these objects versions (although I don't expect
+        # we've made a lot of incompatible changes inside the objects).
         #
         # If an object doesn't exist in Liberty, RPC API compatibility layer
         # shouldn't send it or convert it to a dictionary.
@@ -104,28 +104,28 @@ OBJ_VERSIONS.add('1.3', {'Service': '1.3'})
 
 class CinderObjectRegistry(base.VersionedObjectRegistry):
     def registration_hook(self, cls, index):
-        setattr(storage, cls.obj_name(), cls)
+        setattr(objects, cls.obj_name(), cls)
         # For Versioned Object Classes that have a model store the model in
         # a Class attribute named model
         try:
-            cls.model = storage.get_model_for_versioned_object(cls)
+            cls.model = db.get_model_for_versioned_object(cls)
         except (ImportError, AttributeError):
             pass
 
 
 class CinderObject(base.VersionedObject):
     # NOTE(thangp): OBJ_PROJECT_NAMESPACE needs to be set so that nova,
-    # storage, and other storage can exist on the same bus and be distinguished
+    # cinder, and other objects can exist on the same bus and be distinguished
     # from one another.
-    OBJ_PROJECT_NAMESPACE = 'storage'
+    OBJ_PROJECT_NAMESPACE = 'cinder'
 
-    # NOTE(thangp): As more storage are added to storage, each object should
+    # NOTE(thangp): As more objects are added to cinder, each object should
     # have a custom map of version compatibility.  This just anchors the base
     # version compatibility.
     VERSION_COMPATIBILITY = {'7.0.0': '1.0'}
 
-    Not = storage.Not
-    Case = storage.Case
+    Not = db.Not
+    Case = db.Case
 
     def cinder_obj_get_changes(self):
         """Returns a dict of changed fields with tz unaware datetimes.
@@ -133,13 +133,13 @@ class CinderObject(base.VersionedObject):
         Any timezone aware datetime field will be converted to UTC timezone
         and returned as timezone unaware datetime.
 
-        This will allow us to pass these fields directly to a storage update
+        This will allow us to pass these fields directly to a db update
         method as they can't have timezone information.
         """
         # Get dirtied/changed fields
         changes = self.obj_get_changes()
 
-        # Look for datetime storage that contain timezone information
+        # Look for datetime objects that contain timezone information
         for k, v in changes.items():
             if isinstance(v, datetime.datetime) and v.tzinfo:
                 # Remove timezone information and adjust the time according to
@@ -162,8 +162,8 @@ class CinderObject(base.VersionedObject):
                    (cls.obj_name()))
             raise NotImplementedError(msg)
 
-        model = storage.get_model_for_versioned_object(cls)
-        orm_obj = storage.get_by_id(context, model, id, *args, **kwargs)
+        model = db.get_model_for_versioned_object(cls)
+        orm_obj = db.get_by_id(context, model, id, *args, **kwargs)
         expected_attrs = cls._get_expected_attrs(context)
         kargs = {}
         if expected_attrs:
@@ -195,7 +195,7 @@ class CinderObject(base.VersionedObject):
            can be passed to a sqlalchemy query's filter method, for example:
            [~sql.exists().where(models.Volume.id == models.Snapshot.volume_id)]
 
-           We can select values based on conditions using Case storage in the
+           We can select values based on conditions using Case objects in the
            'values' argument. For example:
            has_snapshot_filter = sql.exists().where(
                models.Snapshot.volume_id == models.Volume.id)
@@ -206,7 +206,7 @@ class CinderObject(base.VersionedObject):
 
             And we can use DB fields using model class attribute for example to
             store previous status in the corresponding field even though we
-            don't know which value is in the storage from those we allowed:
+            don't know which value is in the db from those we allowed:
             volume.conditional_update({'status': 'deleting',
                                        'previous_status': volume.model.status},
                                       {'status': ('available', 'error')})
@@ -223,7 +223,7 @@ class CinderObject(base.VersionedObject):
                                    be reflected in the versioned object.  This
                                    may mean in some cases that we have to
                                    reload the object from the database.
-           :returns number of storage rows that were updated, which can be used as a
+           :returns number of db rows that were updated, which can be used as a
                     boolean, since it will be 0 if we couldn't update the DB
                     and 1 if we could, because we are using unique index id.
         """
@@ -253,17 +253,17 @@ class CinderObject(base.VersionedObject):
             changes.update(values)
             values = changes
 
-        result = storage.conditional_update(self._context, self.model, values,
+        result = db.conditional_update(self._context, self.model, values,
                                        expected, filters)
 
         # If we were able to update the DB then we need to update this object
         # as well to reflect new DB contents and clear the object's dirty flags
         # for those fields.
         if result and reflect_changes:
-            # If we have used a Case, a storage field or an expression in values we
+            # If we have used a Case, a db field or an expression in values we
             # don't know which value was used, so we need to read the object
             # back from the DB
-            if any(isinstance(v, self.Case) or storage.is_orm_value(v)
+            if any(isinstance(v, self.Case) or db.is_orm_value(v)
                    for v in values.values()):
                 # Read back object from DB
                 obj = type(self).get_by_id(self._context, self.id)
@@ -272,7 +272,7 @@ class CinderObject(base.VersionedObject):
                 values = {field: db_values[field]
                           for field, value in values.items()}
 
-            # NOTE(geguileo): We don't use update method because our storage
+            # NOTE(geguileo): We don't use update method because our objects
             # will eventually move away from VersionedObjectDictCompat
             for key, value in values.items():
                 setattr(self, key, value)
@@ -318,7 +318,7 @@ class CinderObjectDictCompat(base.VersionedObjectDictCompat):
     """
 
     def get(self, key, value=base._NotSpecifiedSentinel):
-        """For backwards-compatibility with dict-based storage.
+        """For backwards-compatibility with dict-based objects.
 
         NOTE(danms): May be removed in the future.
         """
@@ -348,9 +348,9 @@ class CinderObjectDictCompat(base.VersionedObjectDictCompat):
 
 
 class CinderPersistentObject(object):
-    """Mixin class for Persistent storage.
+    """Mixin class for Persistent objects.
 
-    This adds the fields that we use in common for all persistent storage.
+    This adds the fields that we use in common for all persistent objects.
     """
     fields = {
         'created_at': fields.DateTimeField(nullable=True),
@@ -402,8 +402,8 @@ class CinderObjectSerializer(base.VersionedObjectSerializer):
         self.version_cap = version_cap
 
         # NOTE(geguileo): During upgrades we will use a manifest to ensure that
-        # all storage are properly backported.  This allows us to properly
-        # backport child storage to the right version even if parent version
+        # all objects are properly backported.  This allows us to properly
+        # backport child objects to the right version even if parent version
         # has not been bumped.
         if not version_cap or version_cap == OBJ_VERSIONS.get_current():
             self.manifest = None
@@ -423,7 +423,7 @@ class CinderObjectSerializer(base.VersionedObjectSerializer):
             if cap_tuple > obj_tuple:
                 # NOTE(dulek): Do not set version cap to be higher than actual
                 # object version as we don't support "forwardporting" of
-                # storage. If service will receive an object that's too old it
+                # objects. If service will receive an object that's too old it
                 # should handle it explicitly.
                 version_cap = None
 

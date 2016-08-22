@@ -61,7 +61,7 @@ def _list_module_names():
 def _import_modules(module_names):
     imported_modules = []
     for modname in module_names:
-        mod = importlib.import_module("compute.conf." + modname)
+        mod = importlib.import_module("jacket.compute.conf." + modname)
         if not hasattr(mod, LIST_OPTS_FUNC_NAME):
             msg = "The module 'compute.conf.%s' should have a '%s' "\
                   "function which returns the config options." % \

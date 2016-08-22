@@ -35,8 +35,8 @@ from jacket.storage.keymgr import key as keymgr_key
 from jacket.storage.keymgr import key_mgr
 
 CONF = cfg.CONF
-CONF.import_opt('encryption_auth_url', 'storage.keymgr.key_mgr', group='keymgr')
-CONF.import_opt('encryption_api_url', 'storage.keymgr.key_mgr', group='keymgr')
+CONF.import_opt('encryption_auth_url', jacket.storage.keymgr.key_mgr', group='storage_keymgr')
+CONF.import_opt('encryption_api_url', 'jacket.storage.keymgr.key_mgr', group='storage_keymgr')
 LOG = logging.getLogger(__name__)
 URL_PATTERN = re.compile(
     "(?P<url_base>http[s]?://[^/]*)[/]?(?P<url_version>(v[0-9.]+)?).*")
@@ -46,7 +46,7 @@ class BarbicanKeyManager(key_mgr.KeyManager):
     """Key Manager Interface that wraps the Barbican client API."""
 
     def __init__(self):
-        self._base_url = CONF.keymgr.encryption_api_url
+        self._base_url = CONF.storage_keymgr.encryption_api_url
         self._parse_barbican_api_url()
         self._barbican_client = None
         self._current_context = None
@@ -102,7 +102,7 @@ class BarbicanKeyManager(key_mgr.KeyManager):
 
         try:
             auth = identity.v3.Token(
-                auth_url=CONF.keymgr.encryption_auth_url,
+                auth_url=CONF.storage_keymgr.encryption_auth_url,
                 token=ctxt.auth_token,
                 project_id=ctxt.project_id)
             sess = session.Session(auth=auth)

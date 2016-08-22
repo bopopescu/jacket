@@ -32,15 +32,13 @@ from oslo_log import log as logging
 from oslo_middleware import cors
 from oslo_utils import netutils
 
+from jacket.i18n import _
+
 
 CONF = cfg.CONF
 logging.register_options(CONF)
 
-core_opts = [
-    cfg.StrOpt('state_path',
-               default='/var/lib/jacket',
-               deprecated_name='pybasedir',
-               help="Top-level directory for maintaining jacket's state"), ]
+core_opts = []
 
 debug_opts = [
 ]
@@ -49,15 +47,6 @@ CONF.register_cli_opts(core_opts)
 CONF.register_cli_opts(debug_opts)
 
 global_opts = [
-    cfg.StrOpt('my_ip',
-               default=netutils.get_my_ipv4(),
-               help='IP address of this host'),
-    cfg.StrOpt('jacket_topic',
-               default='jacket-worker',
-               help='The topic that worker nodes listen on'),
-    cfg.BoolOpt('api_rate_limit',
-                default=True,
-                help='Enables or disables rate limit of the API.'),
     cfg.ListOpt('osapi_jacket_ext_list',
                 default=[],
                 help='Specify list of extensions to load when using osapi_'
@@ -66,14 +55,6 @@ global_opts = [
     cfg.MultiStrOpt('osapi_jacket_extension',
                     default=['jacket.api.jacket_api.contrib.standard_extensions'],
                     help='osapi jacket extension to load'),
-    cfg.StrOpt('host',
-               default=socket.gethostname(),
-               help='Name of this node.  This can be an opaque identifier. '
-                    'It is not necessarily a host name, FQDN, or IP address.'),
-    cfg.StrOpt('default_availability_zone',
-               help='Default availability zone for new volumes. If not set, '
-                    'the storage_availability_zone option value is used as '
-                    'the default for new volumes.'),
     cfg.BoolOpt('allow_availability_zone_fallback',
                 default=False,
                 help='If the requested Cinder availability zone is '
@@ -90,18 +71,98 @@ global_opts = [
     cfg.ListOpt('monkey_patch_modules',
                 default=[],
                 help='List of modules/decorators to monkey patch'),
-    cfg.IntOpt('service_down_time',
-               default=60,
-               help='Maximum time since last check-in for a service to be '
-                    'considered up'),
     cfg.StrOpt('worker_api_class',
                default='jacket.worker.api.API',
                help='The full class name of the volume API class to use'),
-    cfg.StrOpt('auth_strategy',
-               default='keystone',
-               choices=['noauth', 'keystone'],
-               help='The strategy to use for auth. Supports noauth or '
-                    'keystone.'),
+
+    cfg.StrOpt('glance_host',
+               default='$my_ip',
+               help='Default glance host name or IP'),
+    cfg.IntOpt('glance_port',
+               default=9292,
+               min=1, max=65535,
+               help='Default glance port'),
+    cfg.ListOpt('glance_api_servers',
+                default=['$glance_host:$glance_port'],
+                help='A list of the URLs of glance API servers available to '
+                     'storage ([http[s]://][hostname|ip]:port). If protocol '
+                     'is not specified it defaults to http.'),
+    cfg.IntOpt('glance_api_version',
+               default=1,
+               help='Version of the glance API to use'),
+    cfg.IntOpt('glance_num_retries',
+               default=0,
+               help='Number retries when downloading an image from glance'),
+    cfg.BoolOpt('glance_api_insecure',
+                default=False,
+                help='Allow to perform insecure SSL (https) requests to '
+                     'glance'),
+    cfg.BoolOpt('glance_api_ssl_compression',
+                default=False,
+                help='Enables or disables negotiation of SSL layer '
+                     'compression. In some cases disabling compression '
+                     'can improve data throughput, such as when high '
+                     'network bandwidth is available and you use '
+                     'compressed image formats like qcow2.'),
+    cfg.StrOpt('glance_ca_certificates_file',
+               help='Location of ca certificates file to use for glance '
+                    'client requests.'),
+    cfg.IntOpt('glance_request_timeout',
+               help='http/https timeout value for glance operations. If no '
+                    'value (None) is supplied here, the glanceclient default '
+                    'value is used.'),
+    cfg.StrOpt('storage_scheduler_topic',
+               default='storage-scheduler',
+               help='The topic that scheduler nodes listen on'),
+    cfg.StrOpt('volume_topic',
+               default='storage-volume',
+               help='The topic that volume nodes listen on'),
+    cfg.StrOpt('backup_topic',
+               default='storage-backup',
+               help='The topic that volume backup nodes listen on'),
+    cfg.BoolOpt('enable_v1_api',
+                default=True,
+                help=_("DEPRECATED: Deploy v1 of the Cinder API.")),
+    cfg.BoolOpt('enable_v2_api',
+                default=True,
+                help=_("DEPRECATED: Deploy v2 of the Cinder API.")),
+    cfg.BoolOpt('enable_v3_api',
+                default=True,
+                help=_("Deploy v3 of the Cinder API.")),
+    cfg.ListOpt('osapi_volume_ext_list',
+                default=[],
+                help='Specify list of extensions to load when using osapi_'
+                     'volume_extension option with storage.api.storage.contrib.'
+                     'select_extensions'),
+    cfg.MultiStrOpt('osapi_volume_extension',
+                    default=['jacket.storage.api.storage.contrib.standard_extensions'],
+                    help='osapi volume extension to load'),
+    cfg.StrOpt('volume_manager',
+               default='jacket.storage.volume.manager.VolumeManager',
+               help='Full class name for the Manager for volume'),
+    cfg.StrOpt('backup_manager',
+               default='jacket.storage.backup.manager.BackupManager',
+               help='Full class name for the Manager for volume backup'),
+    cfg.StrOpt('scheduler_manager',
+               default='jacket.storage.scheduler.manager.SchedulerManager',
+               help='Full class name for the Manager for scheduler'),
+    # NOTE(vish): default to nova for compatibility with nova installs
+    cfg.StrOpt('storage_availability_zone',
+               default='nova',
+               help='Availability zone of this node'),
+    cfg.StrOpt('default_volume_type',
+               help='Default volume type to use'),
+    cfg.StrOpt('volume_usage_audit_period',
+               default='month',
+               help='Time period for which to generate volume usages. '
+                    'The options are hour, day, month, or year.'),
+
+    cfg.StrOpt('volume_api_class',
+               default='jacket.storage.volume.api.API',
+               help='The full class name of the volume API class to use'),
+    cfg.StrOpt('backup_api_class',
+               default='jacket.storage.backup.api.API',
+               help='The full class name of the volume backup API class'),
     cfg.ListOpt('enabled_backends',
                 help='A list of backend names to use. These backend names '
                      'should be backed by a unique [CONFIG] group '
@@ -109,6 +170,15 @@ global_opts = [
     cfg.BoolOpt('no_snapshot_gb_quota',
                 default=False,
                 help='Whether snapshots count against gigabyte quota'),
+    cfg.StrOpt('transfer_api_class',
+               default='jacket.storage.transfer.api.API',
+               help='The full class name of the volume transfer API class'),
+    cfg.StrOpt('replication_api_class',
+               default='jacket.storage.replication.api.API',
+               help='The full class name of the volume replication API class'),
+    cfg.StrOpt('consistencygroup_api_class',
+               default='jacket.storage.consistencygroup.api.API',
+               help='The full class name of the consistencygroup API class'),
     cfg.StrOpt('os_privileged_user_password',
                help='Password associated with the OpenStack privileged '
                     'account.',

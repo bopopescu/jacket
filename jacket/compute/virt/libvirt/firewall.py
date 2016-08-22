@@ -31,8 +31,8 @@ from jacket.compute.virt import netutils
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
-CONF.import_opt('use_ipv6', 'compute.netconf')
-CONF.import_opt('live_migration_retry_count', 'compute.compute.manager')
+CONF.import_opt('use_ipv6', 'jacket.compute.netconf')
+CONF.import_opt('live_migration_retry_count', 'jacket.compute.cloud.manager')
 
 libvirt = None
 

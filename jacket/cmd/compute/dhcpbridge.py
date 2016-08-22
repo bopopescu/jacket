@@ -42,8 +42,8 @@ from jacket.objects.compute import base as objects_base
 from jacket import rpc
 
 CONF = jacket.compute.conf.CONF
-CONF.import_opt('host', 'compute.netconf')
-CONF.import_opt('network_manager', 'compute.service')
+CONF.import_opt('host', 'jacket.compute.netconf')
+CONF.import_opt('network_manager', 'jacket.compute.service')
 LOG = logging.getLogger(__name__)
 
 

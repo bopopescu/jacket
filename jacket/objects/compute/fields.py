@@ -75,7 +75,7 @@ Object = fields.Object
 
 
 class Architecture(Enum):
-    # TODO(berrange): move all constants out of 'compute.compute.arch'
+    # TODO(berrange): move all constants out of 'jacket.compute.cloud.arch'
     # into fields on this class
     def __init__(self, **kwargs):
         super(Architecture, self).__init__(
@@ -182,7 +182,7 @@ class CPUThreadAllocationPolicy(Enum):
 
 
 class CPUMode(Enum):
-    # TODO(berrange): move all constants out of 'compute.compute.cpumodel'
+    # TODO(berrange): move all constants out of 'jacket.compute.cloud.cpumodel'
     # into fields on this class
     def __init__(self, **kwargs):
         super(CPUMode, self).__init__(
@@ -190,7 +190,7 @@ class CPUMode(Enum):
 
 
 class CPUMatch(Enum):
-    # TODO(berrange): move all constants out of 'compute.compute.cpumodel'
+    # TODO(berrange): move all constants out of 'jacket.compute.cloud.cpumodel'
     # into fields on this class
     def __init__(self, **kwargs):
         super(CPUMatch, self).__init__(
@@ -198,7 +198,7 @@ class CPUMatch(Enum):
 
 
 class CPUFeaturePolicy(Enum):
-    # TODO(berrange): move all constants out of 'compute.compute.cpumodel'
+    # TODO(berrange): move all constants out of 'jacket.compute.cloud.cpumodel'
     # into fields on this class
     def __init__(self, **kwargs):
         super(CPUFeaturePolicy, self).__init__(
@@ -237,7 +237,7 @@ class FirmwareType(Enum):
 
 
 class HVType(Enum):
-    # TODO(berrange): move all constants out of 'compute.compute.hv_type'
+    # TODO(berrange): move all constants out of 'jacket.compute.cloud.hv_type'
     # into fields on this class
     def __init__(self):
         super(HVType, self).__init__(
@@ -412,7 +412,7 @@ class VIFModel(Enum):
 
 
 class VMMode(Enum):
-    # TODO(berrange): move all constants out of 'compute.compute.vm_mode'
+    # TODO(berrange): move all constants out of 'jacket.compute.cloud.vm_mode'
     # into fields on this class
     def __init__(self):
         super(VMMode, self).__init__(

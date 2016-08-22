@@ -17,4 +17,4 @@
 DB abstraction for Cinder
 """
 
-from jacket.storage.db.api import *  # noqa
+from jacket.db.storage.api import *  # noqa

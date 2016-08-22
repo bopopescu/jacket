@@ -45,7 +45,7 @@ from jacket.compute.virt import hardware
 from jacket.compute.virt import virtapi
 
 CONF = cfg.CONF
-CONF.import_opt('host', 'compute.netconf')
+CONF.import_opt('host', 'jacket.compute.netconf')
 
 LOG = logging.getLogger(__name__)
 

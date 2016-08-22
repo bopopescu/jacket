@@ -276,7 +276,7 @@ iser_opts = [
 CONF = cfg.CONF
 CONF.register_opts(volume_opts)
 CONF.register_opts(iser_opts)
-CONF.import_opt('backup_use_same_host', 'storage.backup.api')
+CONF.import_opt('backup_use_same_host', 'jacket.storage.backup.api')
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -328,13 +328,13 @@ class BaseVD(object):
         # can be used by children
         # (intended for LVM and BlockDevice, but others could use as well)
         self.target_mapping = {
-            'fake': 'storage.volume.targets.fake.FakeTarget',
-            'ietadm': 'storage.volume.targets.iet.IetAdm',
-            'iseradm': 'storage.volume.targets.iser.ISERTgtAdm',
-            'lioadm': 'storage.volume.targets.lio.LioAdm',
-            'tgtadm': 'storage.volume.targets.tgt.TgtAdm',
-            'scstadmin': 'storage.volume.targets.scst.SCSTAdm',
-            'iscsictl': 'storage.volume.targets.cxt.CxtAdm'}
+            'fake': 'jacket.storage.volume.targets.fake.FakeTarget',
+            'ietadm': 'jacket.storage.volume.targets.iet.IetAdm',
+            'iseradm': 'jacket.storage.volume.targets.iser.ISERTgtAdm',
+            'lioadm': 'jacket.storage.volume.targets.lio.LioAdm',
+            'tgtadm': 'jacket.storage.volume.targets.tgt.TgtAdm',
+            'scstadmin': 'jacket.storage.volume.targets.scst.SCSTAdm',
+            'iscsictl': 'jacket.storage.volume.targets.cxt.CxtAdm'}
 
         # set True by manager after successful check_for_setup
         self._initialized = False
@@ -2425,7 +2425,7 @@ class ISCSIDriver(VolumeDriver):
             lun = int(results[2])
         except (IndexError, ValueError):
             if (self.configuration.volume_driver ==
-                    'storage.volume.drivers.lvm.ThinLVMVolumeDriver' and
+                    'jacket.storage.volume.drivers.lvm.ThinLVMVolumeDriver' and
                     self.configuration.iscsi_helper in ('tgtadm', 'iseradm')):
                 lun = 1
             else:

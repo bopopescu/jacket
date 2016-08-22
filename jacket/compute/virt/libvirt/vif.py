@@ -45,7 +45,7 @@ libvirt_vif_opts = [
 
 CONF = cfg.CONF
 CONF.register_opts(libvirt_vif_opts, 'libvirt')
-CONF.import_opt('use_ipv6', 'compute.netconf')
+CONF.import_opt('use_ipv6', 'jacket.compute.netconf')
 
 # vhostuser queues support
 MIN_LIBVIRT_VHOSTUSER_MQ = (1, 2, 17)
@@ -170,7 +170,7 @@ class LibvirtGenericVIFDriver(object):
     def get_firewall_required(self, vif):
         if vif.is_neutron_filtering_enabled():
             return False
-        if CONF.firewall_driver != "compute.virt.firewall.NoopFirewallDriver":
+        if CONF.firewall_driver != "jacket.compute.virt.firewall.NoopFirewallDriver":
             return True
         return False
 

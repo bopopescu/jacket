@@ -23,7 +23,7 @@ from jacket.compute import context
 from jacket.wsgi import compute as base_wsgi
 
 CONF = cfg.CONF
-CONF.import_opt('use_forwarded_for', 'compute.api.auth')
+CONF.import_opt('use_forwarded_for', 'jacket.api.compute.auth')
 
 
 class NoAuthMiddlewareBase(base_wsgi.Middleware):

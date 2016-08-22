@@ -51,7 +51,7 @@ LOG = logging.getLogger(__name__)
 class MonitorHandler(object):
 
     NAMESPACES = [
-        'compute.compute.monitors.cpu',
+        'jacket.compute.cloud.monitors.cpu',
     ]
 
     def __init__(self, resource_tracker):
@@ -74,7 +74,7 @@ class MonitorHandler(object):
         # The extension does not have a namespace attribute, unfortunately,
         # but we can get the namespace by examining the first part of the
         # entry_point_target attribute, which looks like this:
-        # 'compute.compute.monitors.cpu.virt_driver:Monitor'
+        # 'jacket.compute.cloud.monitors.cpu.virt_driver:Monitor'
         ept = ext.entry_point_target
         ept_parts = ept.split(':')
         namespace_parts = ept_parts[0].split('.')
@@ -97,11 +97,11 @@ class MonitorHandler(object):
         # 'cpu' namespace.
         cfg_monitors = ['cpu.' + cfg if '.' not in cfg else cfg
                         for cfg in CONF.compute_monitors]
-        # NOTE(jaypipes): Append 'compute.compute.monitors.' to any monitor value
+        # NOTE(jaypipes): Append 'jacket.compute.cloud.monitors.' to any monitor value
         # that doesn't have it to allow CONF.compute_monitors to use shortened
-        # namespaces (like 'cpu.' instead of 'compute.compute.monitors.cpu.')
-        cfg_monitors = ['compute.compute.monitors.' + cfg
-                        if 'compute.compute.monitors.' not in cfg else cfg
+        # namespaces (like 'cpu.' instead of 'jacket.compute.cloud.monitors.cpu.')
+        cfg_monitors = ['jacket.compute.cloud.monitors.' + cfg
+                        if 'jacket.compute.cloud.monitors.' not in cfg else cfg
                         for cfg in cfg_monitors]
         if namespace + '.' + ext.name in cfg_monitors:
             self.type_monitor_loaded[namespace] = ext.name

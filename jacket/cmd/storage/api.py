@@ -36,7 +36,7 @@ i18n.enable_lazy()
 # Need to register global_opts
 from jacket.common.storage import config
 from jacket.storage import rpc
-from jacket.storage import service
+from jacket import service
 from jacket.storage import utils
 from jacket.storage import version
 

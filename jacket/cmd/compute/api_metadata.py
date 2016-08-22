@@ -32,7 +32,7 @@ from jacket import version
 
 
 CONF = jacket.compute.conf.CONF
-CONF.import_opt('enabled_ssl_apis', 'compute.service')
+CONF.import_opt('enabled_ssl_apis', 'jacket.compute.service')
 
 
 def main():

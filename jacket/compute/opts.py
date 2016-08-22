@@ -29,7 +29,7 @@ import jacket.compute.consoleauth.manager
 import jacket.compute.consoleauth.rpcapi
 import jacket.compute.crypto
 import jacket.db.compute.api
-import jacket.db.compute.base
+import jacket.db.base
 import jacket.db.compute.sqlalchemy.api
 import jacket.compute.exception
 import jacket.compute.image.download.file
@@ -44,7 +44,7 @@ import jacket.objects.compute.network
 import jacket.compute.paths
 import jacket.compute.quota
 import jacket.compute.rdp
-import jacket.compute.service
+# import jacket.compute.service
 import jacket.compute.servicegroup.api
 import jacket.compute.spice
 import jacket.compute.utils
@@ -58,7 +58,7 @@ def list_opts():
          itertools.chain(
              [jacket.compute.conductor.tasks.live_migrate.migrate_opt],
              [jacket.compute.consoleauth.consoleauth_topic_opt],
-             [jacket.db.compute.base.db_driver_opt],
+             [jacket.db.base.db_driver_opt],
              [jacket.compute.ipv6.api.ipv6_backend_opt],
              [jacket.compute.servicegroup.api.servicegroup_driver_opt],
              jacket.compute.cloudpipe.pipelib.cloudpipe_opts,
@@ -76,7 +76,7 @@ def list_opts():
              jacket.objects.compute.network.network_opts,
              jacket.compute.paths.path_opts,
              jacket.compute.quota.quota_opts,
-             jacket.compute.service.service_opts,
+             # jacket.compute.service.service_opts,
              jacket.compute.utils.monkey_patch_opts,
              jacket.compute.utils.utils_opts,
              jacket.compute.volume._volume_opts,
@@ -87,7 +87,7 @@ def list_opts():
         ('database', jacket.db.compute.sqlalchemy.api.oslo_db_options.database_opts),
         ('glance', jacket.compute.image.glance.glance_opts),
         ('image_file_url', [jacket.compute.image.download.file.opt_group]),
-        ('keymgr',
+        ('compute_keymgr',
          itertools.chain(
              jacket.compute.keymgr.conf_key_mgr.key_mgr_opts,
              jacket.compute.keymgr.keymgr_opts,

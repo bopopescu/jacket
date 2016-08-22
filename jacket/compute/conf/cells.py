@@ -73,7 +73,7 @@ Related options:
 * None
 """),
     cfg.StrOpt('manager',
-               default='compute.cells.manager.CellsManager',
+               default='jacket.compute.cells.manager.CellsManager',
                help="""
 DEPRECATED: Manager for cells
 
@@ -92,7 +92,7 @@ Scheduling requests get passed to the scheduler class.
 
 Possible values:
 
-* 'compute.cells.manager.CellsManager' is the only possible value for
+* 'jacket.compute.cells.manager.CellsManager' is the only possible value for
   this option as of the Mitaka release
 
 Services which consume this:
@@ -362,18 +362,18 @@ Related options:
 
 cell_manager_opts = [
         cfg.StrOpt('driver',
-                default='compute.cells.rpc_driver.CellsRPCDriver',
+                default='jacket.compute.cells.rpc_driver.CellsRPCDriver',
                 help="""
 Cells communication driver
 
 Driver for cell<->cell communication via RPC. This is used to
 setup the RPC consumers as well as to send a message to another cell.
-'compute.cells.rpc_driver.CellsRPCDriver' starts up 2 separate servers
+'jacket.compute.cells.rpc_driver.CellsRPCDriver' starts up 2 separate servers
 for handling inter-cell communication via RPC.
 
 Possible values:
 
-* 'compute.cells.rpc_driver.CellsRPCDriver' is the default driver
+* 'jacket.compute.cells.rpc_driver.CellsRPCDriver' is the default driver
 * Otherwise it should be the full Python path to the class to be used
 
 Services which consume this:
@@ -458,7 +458,7 @@ Related options:
 * None
 """),
     cfg.StrOpt('scheduler',
-            default='compute.cells.scheduler.CellsScheduler',
+            default='jacket.compute.cells.scheduler.CellsScheduler',
             help="""
 Cells scheduler
 
@@ -469,7 +469,7 @@ in this option, the CellsScheduler is used.
 
 Possible values:
 
-* 'compute.cells.scheduler.CellsScheduler' is the default option
+* 'jacket.compute.cells.scheduler.CellsScheduler' is the default option
 * Otherwise it should be the full Python path to the class to be used
 
 Services which consume this:
@@ -509,7 +509,7 @@ Related options:
 
 cell_scheduler_opts = [
         cfg.ListOpt('scheduler_filter_classes',
-                default=['compute.cells.filters.all_filters'],
+                default=['jacket.compute.cells.filters.all_filters'],
                 help="""
 Scheduler filter classes
 
@@ -541,7 +541,7 @@ to a particular cell.
 
 Possible values:
 
-* 'compute.cells.filters.all_filters' is the default option
+* 'jacket.compute.cells.filters.all_filters' is the default option
 * Otherwise it should be the full Python path to the class to be used
 
 Services which consume this:
@@ -553,7 +553,7 @@ Related options:
 * None
 """),
         cfg.ListOpt('scheduler_weight_classes',
-                default=['compute.cells.weights.all_weighers'],
+                default=['jacket.compute.cells.weights.all_weighers'],
                 help="""
 Scheduler weight classes
 
@@ -586,7 +586,7 @@ likely to be picked if another cell do not have a higher weight.
 
 Possible values:
 
-* 'compute.cells.weights.all_weighers' is the default option
+* 'jacket.compute.cells.weights.all_weighers' is the default option
 * Otherwise it should be the full Python path to the class to be used
 
 Services which consume this:

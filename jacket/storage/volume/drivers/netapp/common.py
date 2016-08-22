@@ -31,8 +31,8 @@ from jacket.storage.volume.drivers.netapp import utils as na_utils
 
 LOG = logging.getLogger(__name__)
 
-DATAONTAP_PATH = 'storage.volume.drivers.netapp.dataontap'
-ESERIES_PATH = 'storage.volume.drivers.netapp.eseries'
+DATAONTAP_PATH = 'jacket.storage.volume.drivers.netapp.dataontap'
+ESERIES_PATH = 'jacket.storage.volume.drivers.netapp.eseries'
 
 # Add new drivers here, no other code changes required.
 NETAPP_UNIFIED_DRIVER_REGISTRY = {

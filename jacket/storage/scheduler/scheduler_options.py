@@ -32,7 +32,7 @@ from jacket.storage.i18n import _LE
 
 
 scheduler_json_config_location_opt = cfg.StrOpt(
-    'scheduler_json_config_location',
+    'storage_scheduler_json_config_location',
     default='',
     help='Absolute path to scheduler configuration JSON file.')
 
@@ -86,7 +86,7 @@ class SchedulerOptions(object):
     def get_configuration(self, filename=None):
         """Check the json file for changes and load it if needed."""
         if not filename:
-            filename = CONF.scheduler_json_config_location
+            filename = CONF.storage_scheduler_json_config_location
         if not filename:
             return self.data
         if self.last_checked:

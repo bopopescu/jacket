@@ -42,7 +42,7 @@ key_mgr_opts = [
 ]
 
 CONF = cfg.CONF
-CONF.register_opts(key_mgr_opts, group='keymgr')
+CONF.register_opts(key_mgr_opts, group='compute_keymgr')
 
 
 class ConfKeyManager(single_key_mgr.SingleKeyManager):
@@ -54,9 +54,9 @@ class ConfKeyManager(single_key_mgr.SingleKeyManager):
     """
 
     def __init__(self):
-        if CONF.keymgr.fixed_key is None:
-            raise ValueError(_('keymgr.fixed_key not defined'))
-        self._hex_key = CONF.keymgr.fixed_key
+        if CONF.compute_keymgr.fixed_key is None:
+            raise ValueError(_('compute_keymgr.fixed_key not defined'))
+        self._hex_key = CONF.compute_keymgr.fixed_key
         super(ConfKeyManager, self).__init__()
 
     def _generate_hex_key(self, **kwargs):

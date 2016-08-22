@@ -45,7 +45,7 @@ i18n.enable_lazy()
 from jacket.common.storage import config  # noqa
 from jacket.db.storage import api as session
 from jacket.storage.i18n import _
-from jacket.storage import service
+from jacket import service
 from jacket.storage import utils
 from jacket.storage import version
 

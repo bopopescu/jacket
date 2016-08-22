@@ -75,9 +75,9 @@ vmops_opts = [
 CONF = jacket.compute.conf.CONF
 CONF.register_opts(vmops_opts, 'vmware')
 
-CONF.import_opt('image_cache_subdirectory_name', 'cloud.virt.imagecache')
-CONF.import_opt('remove_unused_base_images', 'cloud.virt.imagecache')
-CONF.import_opt('my_ip', 'cloud.netconf')
+CONF.import_opt('image_cache_subdirectory_name', 'jacket.compute.virt.imagecache')
+CONF.import_opt('remove_unused_base_images', 'jacket.compute.virt.imagecache')
+CONF.import_opt('my_ip', 'jacket.compute.netconf')
 
 LOG = logging.getLogger(__name__)
 
@@ -1235,7 +1235,7 @@ class VMwareVMOps(object):
     def power_off(self, instance):
         """Power off the specified instance.
 
-        :param instance: cloud.cloud.instance.Instance
+        :param instance: jacket.compute.cloud.instance.Instance
         """
         vm_util.power_off_instance(self._session, instance)
 

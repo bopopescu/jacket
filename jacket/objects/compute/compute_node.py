@@ -18,7 +18,7 @@ from oslo_serialization import jsonutils
 from oslo_utils import uuidutils
 from oslo_utils import versionutils
 
-from jacket.db import compute
+from jacket import db
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.objects.compute import base
@@ -26,9 +26,9 @@ from jacket.objects.compute import fields
 from jacket.objects.compute import pci_device_pool
 
 CONF = cfg.CONF
-CONF.import_opt('cpu_allocation_ratio', 'compute.compute.resource_tracker')
-CONF.import_opt('ram_allocation_ratio', 'compute.compute.resource_tracker')
-CONF.import_opt('disk_allocation_ratio', 'compute.compute.resource_tracker')
+CONF.import_opt('cpu_allocation_ratio', 'jacket.compute.cloud.resource_tracker')
+CONF.import_opt('ram_allocation_ratio', 'jacket.compute.cloud.resource_tracker')
+CONF.import_opt('disk_allocation_ratio', 'jacket.compute.cloud.resource_tracker')
 LOG = logging.getLogger(__name__)
 
 

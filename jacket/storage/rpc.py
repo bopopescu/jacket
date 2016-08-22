@@ -36,7 +36,7 @@ profiler = importutils.try_import('osprofiler.profiler')
 import jacket.storage.context
 import jacket.storage.exception
 from jacket.storage.i18n import _LI
-from jacket.objects import storage
+from jacket.objects import storage as objects
 from jacket.objects.storage import base
 
 CONF = cfg.CONF
@@ -53,12 +53,12 @@ EXTRA_EXMODS = []
 # for backwards compat with Havana rpc_backend configuration
 # values. The storage.rpc entries are for compat with Folsom values.
 TRANSPORT_ALIASES = {
-    'storage.openstack.common.rpc.impl_kombu': 'rabbit',
-    'storage.openstack.common.rpc.impl_qpid': 'qpid',
-    'storage.openstack.common.rpc.impl_zmq': 'zmq',
-    'storage.rpc.impl_kombu': 'rabbit',
-    'storage.rpc.impl_qpid': 'qpid',
-    'storage.rpc.impl_zmq': 'zmq',
+    'jacket.storage.openstack.common.rpc.impl_kombu': 'rabbit',
+    'jacket.storage.openstack.common.rpc.impl_qpid': 'qpid',
+    'jacket.storage.openstack.common.rpc.impl_zmq': 'zmq',
+    'jacket.storage.rpc.impl_kombu': 'rabbit',
+    'jacket.storage.rpc.impl_qpid': 'qpid',
+    'jacket.storage.rpc.impl_zmq': 'zmq',
 }
 
 
@@ -196,7 +196,7 @@ class RPCAPI(object):
         if self.BINARY in LAST_RPC_VERSIONS:
             return LAST_RPC_VERSIONS[self.BINARY]
 
-        version_cap = storage.Service.get_minimum_rpc_version(
+        version_cap = objects.Service.get_minimum_rpc_version(
             jacket.storage.context.get_admin_context(), self.BINARY)
         if version_cap == 'liberty':
             # NOTE(dulek): This means that one of the services is Liberty,
@@ -216,8 +216,8 @@ class RPCAPI(object):
         global LAST_OBJ_VERSIONS
         if self.BINARY in LAST_OBJ_VERSIONS:
             return LAST_OBJ_VERSIONS[self.BINARY]
-
-        version_cap = storage.Service.get_minimum_obj_version(
+        LOG.debug("+++hw, dir = %s", dir(objects))
+        version_cap = objects.Service.get_minimum_obj_version(
             jacket.storage.context.get_admin_context(), self.BINARY)
         # If there is no service we assume they will come up later and will
         # have the same version as we do.

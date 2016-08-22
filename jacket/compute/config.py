@@ -29,7 +29,7 @@ from jacket import version
 
 CONF = cfg.CONF
 
-_DEFAULT_SQL_CONNECTION = 'sqlite:///' + paths.state_path_def('compute.sqlite')
+_DEFAULT_SQL_CONNECTION = 'sqlite:///' + paths.state_path_def('jacket.compute.sqlite')
 
 # NOTE(mikal): suds is used by the vmware driver, removing this will
 # cause many extraneous log lines for their tempest runs. Refer to
@@ -53,7 +53,7 @@ def parse_args(argv, default_config_files=None, configure_db=True,
     log.set_defaults(_DEFAULT_LOGGING_CONTEXT_FORMAT, _DEFAULT_LOG_LEVELS)
     log.register_options(CONF)
     options.set_defaults(CONF, connection=_DEFAULT_SQL_CONNECTION,
-                         sqlite_db='compute.sqlite')
+                         sqlite_db='jacket.compute.sqlite')
     rpc.set_defaults(control_exchange='compute')
     cache.configure(CONF)
     debugger.register_cli_opts()

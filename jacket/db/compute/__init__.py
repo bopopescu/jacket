@@ -17,4 +17,4 @@
 DB abstraction for Nova
 """
 
-from jacket.compute.db.api import *  # noqa
+from jacket.db.compute.api import *  # noqa

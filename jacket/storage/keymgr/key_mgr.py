@@ -32,7 +32,7 @@ encryption_opts = [
 ]
 
 CONF = cfg.CONF
-CONF.register_opts(encryption_opts, group='keymgr')
+CONF.register_opts(encryption_opts, group='storage_keymgr')
 
 
 @six.add_metaclass(abc.ABCMeta)

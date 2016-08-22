@@ -55,17 +55,17 @@ class Mount(object):
             if image.format == imgmodel.FORMAT_RAW:
                 LOG.debug("Using LoopMount")
                 return importutils.import_object(
-                    "compute.virt.disk.mount.loop.LoopMount",
+                    "jacket.compute.virt.disk.mount.loop.LoopMount",
                     image, mountdir, partition)
             else:
                 LOG.debug("Using NbdMount")
                 return importutils.import_object(
-                    "compute.virt.disk.mount.nbd.NbdMount",
+                    "jacket.compute.virt.disk.mount.nbd.NbdMount",
                     image, mountdir, partition)
         elif isinstance(image, imgmodel.LocalBlockImage):
             LOG.debug("Using BlockMount")
             return importutils.import_object(
-                    "compute.virt.disk.mount.block.BlockMount",
+                    "jacket.compute.virt.disk.mount.block.BlockMount",
                     image, mountdir, partition)
         else:
             # TODO(berrange) We could mount RBDImage directly
@@ -97,17 +97,17 @@ class Mount(object):
         if "loop" in device:
             LOG.debug("Using LoopMount")
             return importutils.import_object(
-                "compute.virt.disk.mount.loop.LoopMount",
+                "jacket.compute.virt.disk.mount.loop.LoopMount",
                 image, mountdir, partition, device)
         elif "nbd" in device:
             LOG.debug("Using NbdMount")
             return importutils.import_object(
-                "compute.virt.disk.mount.nbd.NbdMount",
+                "jacket.compute.virt.disk.mount.nbd.NbdMount",
                 image, mountdir, partition, device)
         else:
             LOG.debug("Using BlockMount")
             return importutils.import_object(
-                "compute.virt.disk.mount.block.BlockMount",
+                "jacket.compute.virt.disk.mount.block.BlockMount",
                 image, mountdir, partition, device)
 
     def __init__(self, image, mount_dir, partition=None, device=None):

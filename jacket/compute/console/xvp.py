@@ -25,7 +25,7 @@ from oslo_log import log as logging
 from oslo_utils import excutils
 
 from jacket.compute import context
-from jacket.db import compute
+from jacket import db
 from jacket.i18n import _, _LE
 from jacket.compute import paths
 from jacket.compute import utils
@@ -53,7 +53,7 @@ xvp_opts = [
 
 CONF = cfg.CONF
 CONF.register_opts(xvp_opts)
-CONF.import_opt('host', 'compute.netconf')
+CONF.import_opt('host', 'jacket.compute.netconf')
 LOG = logging.getLogger(__name__)
 
 

@@ -24,8 +24,8 @@ from jacket.i18n import _
 from jacket.objects import compute
 
 CONF = cfg.CONF
-CONF.import_opt('default_floating_pool', 'compute.network.floating_ips')
-CONF.import_opt('public_interface', 'compute.network.linux_net')
+CONF.import_opt('default_floating_pool', 'jacket.compute.network.floating_ips')
+CONF.import_opt('public_interface', 'jacket.compute.network.linux_net')
 
 
 authorize = extensions.extension_authorizer('compute', 'floating_ips_bulk')

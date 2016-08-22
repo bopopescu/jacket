@@ -31,7 +31,7 @@ from jacket.compute import utils
 
 console_manager_opts = [
     cfg.StrOpt('console_driver',
-               default='compute.console.xvp.XVPConsoleProxy',
+               default='jacket.compute.console.xvp.XVPConsoleProxy',
                help='Driver to use for the console proxy'),
     cfg.BoolOpt('stub_compute',
                 default=False,

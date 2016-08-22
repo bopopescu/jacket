@@ -20,7 +20,7 @@ from oslo_serialization import jsonutils
 from oslo_utils import versionutils
 
 from jacket.compute import context
-from jacket.db import compute
+from jacket import db
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.objects.compute import base

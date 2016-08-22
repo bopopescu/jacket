@@ -30,7 +30,7 @@ from jacket.i18n import _LW
 from jacket.compute.volume import encryptors
 
 CONF = cfg.CONF
-CONF.import_opt('cross_az_attach', 'compute.volume.cinder', group='cinder')
+CONF.import_opt('cross_az_attach', 'jacket.compute.volume.cinder', group='cinder')
 
 LOG = logging.getLogger(__name__)
 

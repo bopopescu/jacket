@@ -39,10 +39,6 @@ from jacket.compute import quota
 from jacket.compute import utils
 
 osapi_opts = [
-    cfg.IntOpt('osapi_max_limit',
-               default=1000,
-               help='The maximum number of items returned in a single '
-                    'response from a collection resource'),
     cfg.StrOpt('osapi_compute_link_prefix',
                help='Base URL that will be presented to users in links '
                     'to the OpenStack Compute API'),

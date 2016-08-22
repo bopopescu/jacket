@@ -29,10 +29,10 @@ from jacket.storage.volume import rpcapi as volume_rpcapi
 
 
 scheduler_driver_opts = [
-    cfg.StrOpt('scheduler_host_manager',
+    cfg.StrOpt('storage_scheduler_host_manager',
                default='storage.scheduler.host_manager.HostManager',
                help='The scheduler host manager class to use'),
-    cfg.IntOpt('scheduler_max_attempts',
+    cfg.IntOpt('storage_scheduler_max_attempts',
                default=3,
                help='Maximum number of attempts to schedule a volume'),
 ]
@@ -71,7 +71,7 @@ class Scheduler(object):
 
     def __init__(self):
         self.host_manager = importutils.import_object(
-            CONF.scheduler_host_manager)
+            CONF.storage_scheduler_host_manager)
         self.volume_rpcapi = volume_rpcapi.VolumeAPI()
 
     def reset(self):

@@ -50,7 +50,7 @@ from jacket.compute.cloud import vm_states
 import jacket.compute.conf
 from jacket.compute.consoleauth import rpcapi as consoleauth_rpcapi
 from jacket.compute import context
-from jacket.db.compute import base
+from jacket.db import base
 from jacket.compute import exception
 from jacket.i18n import _, _LE, _LI, _LW
 from jacket.objects import compute

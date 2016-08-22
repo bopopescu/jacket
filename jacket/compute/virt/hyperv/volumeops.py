@@ -56,8 +56,8 @@ hyper_volumeops_opts = [
 
 CONF = cfg.CONF
 CONF.register_opts(hyper_volumeops_opts, 'hyperv')
-CONF.import_opt('host', 'compute.netconf')
-CONF.import_opt('my_ip', 'compute.netconf')
+CONF.import_opt('host', 'jacket.compute.netconf')
+CONF.import_opt('my_ip', 'jacket.compute.netconf')
 
 
 class VolumeOps(object):

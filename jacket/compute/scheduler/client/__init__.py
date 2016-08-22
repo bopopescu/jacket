@@ -42,9 +42,9 @@ class SchedulerClient(object):
 
     def __init__(self):
         self.queryclient = LazyLoader(importutils.import_class(
-            'compute.scheduler.client.query.SchedulerQueryClient'))
+            'jacket.compute.scheduler.client.query.SchedulerQueryClient'))
         self.reportclient = LazyLoader(importutils.import_class(
-            'compute.scheduler.client.report.SchedulerReportClient'))
+            'jacket.compute.scheduler.client.report.SchedulerReportClient'))
 
     @utils.retry_select_destinations
     def select_destinations(self, context, spec_obj):

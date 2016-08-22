@@ -20,7 +20,7 @@ from oslo_concurrency import lockutils
 from oslo_log import log as logging
 from oslo_utils import excutils
 
-from jacket.db.compute import base
+from jacket.db import base
 from jacket.compute import hooks
 from jacket.i18n import _, _LE
 from jacket.compute.network import model as network_model

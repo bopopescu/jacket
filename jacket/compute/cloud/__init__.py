@@ -22,9 +22,9 @@ import jacket.compute.cells.opts
 import jacket.compute.exception
 
 
-CELL_TYPE_TO_CLS_NAME = {'api': 'compute.compute.cells_api.ComputeCellsAPI',
-                         'compute': 'compute.compute.api.API',
-                         None: 'compute.compute.api.API',
+CELL_TYPE_TO_CLS_NAME = {'api': 'jacket.compute.cloud.cells_api.ComputeCellsAPI',
+                         'compute': 'jacket.compute.cloud.api.API',
+                         None: 'jacket.compute.cloud.api.API',
                         }
 
 

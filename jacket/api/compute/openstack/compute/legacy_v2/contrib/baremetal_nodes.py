@@ -37,19 +37,19 @@ interface_fields = ['id', 'address', 'datapath_id', 'port_no']
 
 CONF = jacket.compute.conf.CONF
 CONF.import_opt('api_version',
-                'compute.virt.ironic.driver',
+                'jacket.compute.virt.ironic.driver',
                 group='ironic')
 CONF.import_opt('api_endpoint',
-                'compute.virt.ironic.driver',
+                'jacket.compute.virt.ironic.driver',
                 group='ironic')
 CONF.import_opt('admin_username',
-                'compute.virt.ironic.driver',
+                'jacket.compute.virt.ironic.driver',
                 group='ironic')
 CONF.import_opt('admin_password',
-                'compute.virt.ironic.driver',
+                'jacket.compute.virt.ironic.driver',
                 group='ironic')
 CONF.import_opt('admin_tenant_name',
-                'compute.virt.ironic.driver',
+                'jacket.compute.virt.ironic.driver',
                 group='ironic')
 
 

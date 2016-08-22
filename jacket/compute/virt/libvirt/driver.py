@@ -312,21 +312,21 @@ libvirt_opts = [
 
 CONF = jacket.compute.conf.CONF
 CONF.register_opts(libvirt_opts, 'libvirt')
-CONF.import_opt('host', 'compute.netconf')
-CONF.import_opt('my_ip', 'compute.netconf')
-CONF.import_opt('enabled', 'compute.compute.api',
+CONF.import_opt('host', 'jacket.compute.netconf')
+CONF.import_opt('my_ip', 'jacket.compute.netconf')
+CONF.import_opt('enabled', 'jacket.compute.cloud.api',
                 group='ephemeral_storage_encryption')
-CONF.import_opt('cipher', 'compute.compute.api',
+CONF.import_opt('cipher', 'jacket.compute.cloud.api',
                 group='ephemeral_storage_encryption')
-CONF.import_opt('key_size', 'compute.compute.api',
+CONF.import_opt('key_size', 'jacket.compute.cloud.api',
                 group='ephemeral_storage_encryption')
-CONF.import_opt('live_migration_retry_count', 'compute.compute.manager')
-CONF.import_opt('server_proxyclient_address', 'compute.spice', group='spice')
+CONF.import_opt('live_migration_retry_count', 'jacket.compute.cloud.manager')
+CONF.import_opt('server_proxyclient_address', 'jacket.compute.spice', group='spice')
 CONF.import_opt('vcpu_pin_set', 'jacket.compute.virt')
-CONF.import_opt('hw_disk_discard', 'compute.virt.libvirt.imagebackend',
+CONF.import_opt('hw_disk_discard', 'jacket.compute.virt.libvirt.imagebackend',
                 group='libvirt')
-CONF.import_group('workarounds', 'compute.utils')
-CONF.import_opt('iscsi_use_multipath', 'compute.virt.libvirt.volume.iscsi',
+CONF.import_group('workarounds', 'jacket.compute.utils')
+CONF.import_opt('iscsi_use_multipath', 'jacket.compute.virt.libvirt.volume.iscsi',
                 group='libvirt')
 
 DEFAULT_FIREWALL_DRIVER = "%s.%s" % (
@@ -362,9 +362,9 @@ libvirt_volume_drivers = [
     'smbfs=compute.virt.libvirt.volume.smbfs.LibvirtSMBFSVolumeDriver',
     'aoe=compute.virt.libvirt.volume.aoe.LibvirtAOEVolumeDriver',
     'glusterfs='
-        'compute.virt.libvirt.volume.glusterfs.LibvirtGlusterfsVolumeDriver',
+        'jacket.compute.virt.libvirt.volume.glusterfs.LibvirtGlusterfsVolumeDriver',
     'fibre_channel='
-        'compute.virt.libvirt.volume.fibrechannel.'
+        'jacket.compute.virt.libvirt.volume.fibrechannel.'
         'LibvirtFibreChannelVolumeDriver',
     'scality=compute.virt.libvirt.volume.scality.LibvirtScalityVolumeDriver',
     'gpfs=compute.virt.libvirt.volume.gpfs.LibvirtGPFSVolumeDriver',

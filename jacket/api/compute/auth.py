@@ -25,31 +25,10 @@ import webob.exc
 
 from jacket.compute import context
 from jacket.i18n import _
-from jacket.wsgi import compute
+from jacket.wsgi import base_wsgi as compute
+import jacket.conf
 
-
-auth_opts = [
-    cfg.BoolOpt('api_rate_limit',
-                default=False,
-                help='Whether to use per-user rate limiting for the api. '
-                     'This option is only used by v2 api. Rate limiting '
-                     'is removed from v2.1 api.'),
-    cfg.StrOpt('auth_strategy',
-               default='keystone',
-               choices=('keystone', 'noauth2'),
-               help='''
-The strategy to use for auth: keystone or noauth2. noauth2 is designed for
-testing only, as it does no actual credential checking. noauth2 provides
-administrative credentials only if 'admin' is specified as the username.
-'''),
-    cfg.BoolOpt('use_forwarded_for',
-                default=False,
-                help='Treat X-Forwarded-For as the canonical remote address. '
-                     'Only enable this if you have a sanitizing proxy.'),
-]
-
-CONF = cfg.CONF
-CONF.register_opts(auth_opts)
+CONF = jacket.conf.CONF
 
 LOG = logging.getLogger(__name__)
 

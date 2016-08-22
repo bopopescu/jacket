@@ -23,7 +23,7 @@ LOG = logging.getLogger(__name__)
 
 CONF = cfg.CONF
 CONF.import_opt('weight_setting',
-                'compute.scheduler.weights.metrics',
+                'jacket.compute.scheduler.weights.metrics',
                 group='metrics')
 
 

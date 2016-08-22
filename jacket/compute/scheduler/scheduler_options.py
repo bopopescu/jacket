@@ -79,7 +79,7 @@ class SchedulerOptions(object):
     def get_configuration(self, filename=None):
         """Check the json file for changes and load it if needed."""
         if not filename:
-            filename = CONF.scheduler_json_config_location
+            filename = CONF.compute_scheduler_json_config_location
         if not filename:
             return self.data
         if self.last_checked:

@@ -20,10 +20,10 @@ from oslo_config import cfg
 from oslo_log import log as logging
 from paste import deploy
 
-from nova import config
-from nova import objects
-from nova import service  # noqa
-from nova import utils
+from jacket.compute import config
+from jacket.objects import compute as objects
+from jacket import service  # noqa
+from jacket.compute import utils
 
 CONF = cfg.CONF
 

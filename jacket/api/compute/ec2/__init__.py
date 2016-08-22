@@ -20,7 +20,7 @@ import webob.exc
 from oslo_log import log as logging
 
 from jacket.i18n import _LW
-from jacket.wsgi import compute
+from jacket.wsgi import base_wsgi as compute
 
 LOG = logging.getLogger(__name__)
 

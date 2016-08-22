@@ -28,7 +28,7 @@ from jacket import version
 
 CONF = cfg.CONF
 
-CONF.import_opt('consoleauth_topic', 'compute.consoleauth')
+CONF.import_opt('consoleauth_topic', 'jacket.compute.consoleauth')
 
 
 def main():

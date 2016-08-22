@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from jacket.db import compute
+from jacket import db
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.objects.compute import base as obj_base

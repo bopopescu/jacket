@@ -56,16 +56,13 @@ quota_opts = [
                default=1000,
                help='Total amount of storage, in gigabytes, allowed '
                     'for backups per project'),
-    cfg.IntOpt('reservation_expire',
-               default=86400,
-               help='Number of seconds until a reservation expires'),
-    cfg.IntOpt('until_refresh',
-               default=0,
-               help='Count of reservations until usage is refreshed'),
-    cfg.IntOpt('max_age',
-               default=0,
-               help='Number of seconds between subsequent usage refreshes'),
-    cfg.StrOpt('quota_driver',
+    # cfg.IntOpt('reservation_expire',
+    #           default=86400,
+    #           help='Number of seconds until a reservation expires'),
+    # cfg.IntOpt('max_age',
+    #           default=0,
+    #           help='Number of seconds between subsequent usage refreshes'),
+    cfg.StrOpt('storage_quota_driver',
                default="storage.quota.DbQuotaDriver",
                help='Default driver to use for quota checks'),
     cfg.BoolOpt('use_default_quota_class',
@@ -78,6 +75,7 @@ quota_opts = [
 
 CONF = cfg.CONF
 CONF.register_opts(quota_opts)
+CONF.import_opt('until_refresh', 'jacket.conf.quota')
 
 
 class DbQuotaDriver(object):
@@ -828,7 +826,7 @@ class QuotaEngine(object):
 
         if not self._quota_driver_class:
             # Grab the current driver class from CONF
-            self._quota_driver_class = CONF.quota_driver
+            self._quota_driver_class = CONF.storage_quota_driver
 
         if isinstance(self._quota_driver_class, six.string_types):
             self._quota_driver_class = importutils.import_object(

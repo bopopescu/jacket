@@ -24,7 +24,7 @@ from jacket.compute.cloud import vm_states
 
 CONF = cfg.CONF
 CONF.import_opt('osapi_hide_server_address_states',
-                'compute.api.openstack.compute.hide_server_addresses')
+                'jacket.api.compute.openstack.compute.hide_server_addresses')
 
 authorize = extensions.soft_extension_authorizer('compute',
                                                  'hide_server_addresses')

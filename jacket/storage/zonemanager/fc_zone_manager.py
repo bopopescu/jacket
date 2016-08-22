@@ -47,7 +47,7 @@ LOG = logging.getLogger(__name__)
 
 zone_manager_opts = [
     cfg.StrOpt('zone_driver',
-               default='storage.zonemanager.drivers.brocade.brcd_fc_zone_driver'
+               default='jacket.storage.zonemanager.drivers.brocade.brcd_fc_zone_driver'
                '.BrcdFCZoneDriver',
                help='FC Zone Driver responsible for zone management'),
     cfg.StrOpt('zoning_policy',
@@ -59,7 +59,7 @@ zone_manager_opts = [
                ' This list of names is used to retrieve other SAN credentials'
                ' for connecting to each SAN fabric'),
     cfg.StrOpt('fc_san_lookup_service',
-               default='storage.zonemanager.drivers.brocade'
+               default='jacket.storage.zonemanager.drivers.brocade'
                '.brcd_fc_san_lookup_service.BrcdFCSanLookupService',
                help='FC SAN Lookup Service')
 ]

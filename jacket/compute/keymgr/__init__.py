@@ -20,14 +20,14 @@ from oslo_utils import importutils
 
 keymgr_opts = [
     cfg.StrOpt('api_class',
-               default='compute.keymgr.conf_key_mgr.ConfKeyManager',
+               default='jacket.compute.keymgr.conf_key_mgr.ConfKeyManager',
                help='The full class name of the key manager API class'),
 ]
 
 CONF = cfg.CONF
-CONF.register_opts(keymgr_opts, group='keymgr')
+CONF.register_opts(keymgr_opts, group='compute_keymgr')
 
 
 def API():
-    cls = importutils.import_class(CONF.keymgr.api_class)
+    cls = importutils.import_class(CONF.compute_keymgr.api_class)
     return cls()

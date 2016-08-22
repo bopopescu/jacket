@@ -37,7 +37,7 @@ from jacket.i18n import _LW
 from jacket.i18n import translate
 from jacket.compute import notifications
 from jacket.compute import utils
-from jacket.wsgi import compute as base_wsgi
+from jacket.wsgi import base_wsgi
 
 
 api_opts = [
@@ -343,7 +343,7 @@ class APIRouterV21(base_wsgi.Router):
 
     @staticmethod
     def api_extension_namespace():
-        return 'compute.api.v21.extensions'
+        return 'jacket.api.v21.extensions'
 
     def __init__(self, init_only=None, v3mode=False):
         # TODO(cyeoh): bp v3-api-extension-framework. Currently load

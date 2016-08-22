@@ -27,7 +27,7 @@ from jacket.compute import service
 from jacket import version
 
 CONF = cfg.CONF
-CONF.import_opt('console_topic', 'compute.console.rpcapi')
+CONF.import_opt('console_topic', 'jacket.compute.console.rpcapi')
 
 
 def main():

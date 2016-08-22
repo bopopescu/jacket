@@ -38,8 +38,8 @@ from jacket.compute.vnc import xvp_proxy
 
 
 CONF = jacket.compute.conf.CONF
-CONF.import_opt('enabled_apis', 'compute.service')
-CONF.import_opt('enabled_ssl_apis', 'compute.service')
+CONF.import_opt('enabled_apis', 'jacket.compute.service')
+CONF.import_opt('enabled_ssl_apis', 'jacket.compute.service')
 
 
 def main():

@@ -35,7 +35,7 @@ from jacket.compute import utils
 from jacket import version
 
 CONF = jacket.compute.conf.CONF
-CONF.import_opt('compute_topic', 'compute.compute.rpcapi')
+CONF.import_opt('compute_topic', 'jacket.compute.cloud.rpcapi')
 LOG = logging.getLogger('compute.compute')
 
 

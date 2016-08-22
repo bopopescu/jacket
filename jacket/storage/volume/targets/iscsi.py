@@ -110,7 +110,7 @@ class ISCSITarget(driver.Target):
             # default lun numbers, the base driver with tgtadm uses 1
             # others like LIO use 0.
             if (self.configuration.volume_driver ==
-                    'storage.volume.drivers.lvm.ThinLVMVolumeDriver' and
+                    'jacket.storage.volume.drivers.lvm.ThinLVMVolumeDriver' and
                     self.configuration.iscsi_helper == 'tgtadm'):
                 lun = 1
             else:

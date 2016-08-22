@@ -13,7 +13,7 @@
 #    under the License.
 
 
-from jacket.db import compute
+from jacket import db
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 from jacket.compute import quota

@@ -19,7 +19,7 @@ from oslo_log import log as logging
 from jacket.api.compute.openstack import extensions as base_extensions
 from jacket.i18n import _LW
 
-STANDARD_EXTENSIONS = ('compute.api.openstack.compute.legacy_v2.contrib.' +
+STANDARD_EXTENSIONS = ('jacket.api.compute.openstack.compute.legacy_v2.contrib.' +
                        'standard_extensions')
 
 ext_opts = [

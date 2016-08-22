@@ -28,7 +28,7 @@ from jacket.compute.cloud import utils as compute_utils
 from jacket.compute.cloud import vm_states
 from jacket.compute.conductor.tasks import live_migrate
 from jacket.compute.conductor.tasks import migrate
-from jacket.db.compute import base
+from jacket.db import base
 from jacket.compute import exception
 from jacket.i18n import _, _LE, _LI, _LW
 from jacket.compute import image

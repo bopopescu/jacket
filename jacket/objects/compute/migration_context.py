@@ -14,7 +14,7 @@
 
 from oslo_serialization import jsonutils
 
-from jacket.db import compute
+from jacket import db
 from jacket.compute import exception
 from jacket.objects.compute import base
 from jacket.objects.compute import fields

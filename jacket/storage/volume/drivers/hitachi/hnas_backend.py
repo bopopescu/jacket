@@ -30,7 +30,7 @@ from jacket.storage import exception
 from jacket.storage import ssh_utils
 from jacket.storage import utils
 
-LOG = logging.getLogger("storage.volume.driver")
+LOG = logging.getLogger("jacket.storage.volume.driver")
 HNAS_SSC_RETRIES = 5
 
 

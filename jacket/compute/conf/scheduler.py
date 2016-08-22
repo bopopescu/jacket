@@ -100,7 +100,7 @@ a different scheduler, this option has no effect.
 """)
 
 host_mgr_avail_filt_opt = cfg.MultiStrOpt("scheduler_available_filters",
-        default=["compute.scheduler.filters.all_filters"],
+        default=["jacket.compute.scheduler.filters.all_filters"],
         help="""
 This is an unordered list of the filter classes the Nova scheduler may apply.
 Only the filters specified in the 'scheduler_default_filters' option will be
@@ -123,7 +123,7 @@ a different scheduler, this option has no effect.
     scheduler_default_filters
 """)
 
-host_mgr_default_filt_opt = cfg.ListOpt("scheduler_default_filters",
+host_mgr_default_filt_opt = cfg.ListOpt("compute_scheduler_default_filters",
         default=[
           "RetryFilter",
           "AvailabilityZoneFilter",
@@ -157,7 +157,7 @@ a different scheduler, this option has no effect.
 """)
 
 host_mgr_sched_wgt_cls_opt = cfg.ListOpt("scheduler_weight_classes",
-        default=["compute.scheduler.weights.all_weighers"],
+        default=["jacket.compute.scheduler.weights.all_weighers"],
         help="""
 This is a list of weigher class names. Only hosts which pass the filters are
 weighed. The weight for any host starts at 0, and the weighers order these
@@ -208,7 +208,7 @@ a different scheduler, this option has no effect.
     None
 """)
 
-rpc_sched_topic_opt = cfg.StrOpt("scheduler_topic",
+rpc_sched_topic_opt = cfg.StrOpt("compute_scheduler_topic",
         default="scheduler",
         help="""
 This is the message queue topic that the scheduler 'listens' on. It is used
@@ -226,7 +226,7 @@ change this value.
 """)
 
 scheduler_json_config_location_opt = cfg.StrOpt(
-        "scheduler_json_config_location",
+        "compute_scheduler_json_config_location",
         default="",
         help="""
 The absolute path to the scheduler configuration JSON file, if any. This file
@@ -244,7 +244,7 @@ configuration.
     None
 """)
 
-sched_driver_host_mgr_opt = cfg.StrOpt("scheduler_host_manager",
+sched_driver_host_mgr_opt = cfg.StrOpt("compute_scheduler_host_manager",
         default="host_manager",
         help="""
 The scheduler host manager to use, which manages the in-memory picture of the
@@ -257,7 +257,7 @@ option as of the Mitaka release is 'ironic_host_manager', which should be used
 if you're using Ironic to provision bare-metal instances.
 
 This option also supports a full class path style, for example
-"compute.scheduler.host_manager.HostManager", but note this support is deprecated
+"jacket.compute.scheduler.host_manager.HostManager", but note this support is deprecated
 and will be dropped in the N release.
 
 * Services that use this:
@@ -269,7 +269,7 @@ and will be dropped in the N release.
     None
 """)
 
-driver_opt = cfg.StrOpt("scheduler_driver",
+driver_opt = cfg.StrOpt("compute_scheduler_driver",
         default="filter_scheduler",
         help="""
 The class of the driver used by the scheduler. This should be chosen from one
@@ -278,7 +278,7 @@ of the entrypoints under the namespace 'compute.scheduler.driver' of file
 used.
 
 This option also supports deprecated full Python path to the class to be used.
-For example, "compute.scheduler.filter_scheduler.FilterScheduler". But note: this
+For example, "jacket.compute.scheduler.filter_scheduler.FilterScheduler". But note: this
 support will be dropped in the N Release.
 
 Other options are:
@@ -875,7 +875,7 @@ a different scheduler, this option has no effect.
 """),
 ]
 
-scheduler_max_att_opt = cfg.IntOpt("scheduler_max_attempts",
+scheduler_max_att_opt = cfg.IntOpt("compute_scheduler_max_attempts",
         default=3,
         help="""
 This is the maximum number of attempts that will be made to schedule an

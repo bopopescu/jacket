@@ -30,7 +30,7 @@ from jacket.compute.virt import netutils
 LOG = logging.getLogger(__name__)
 
 CONF = jacket.compute.conf.CONF
-CONF.import_opt('use_ipv6', 'compute.netconf')
+CONF.import_opt('use_ipv6', 'jacket.compute.netconf')
 
 
 def load_driver(default, *args, **kwargs):

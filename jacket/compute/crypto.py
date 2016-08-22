@@ -41,12 +41,12 @@ from oslo_utils import fileutils
 import paramiko
 import six
 
-from nova import context
-from nova import db
-from nova import exception
-from nova.i18n import _, _LE
-from nova import paths
-from nova import utils
+from jacket.compute import context
+from jacket import db
+from jacket.compute import exception
+from jacket.i18n import _, _LE
+from jacket.compute import paths
+from jacket.compute import utils
 
 
 LOG = logging.getLogger(__name__)

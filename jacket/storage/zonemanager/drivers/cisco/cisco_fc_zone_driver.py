@@ -47,7 +47,7 @@ LOG = logging.getLogger(__name__)
 SUPPORTED_CHARS = string.ascii_letters + string.digits + '$' + '-' + '^' + '_'
 cisco_opts = [
     cfg.StrOpt('cisco_sb_connector',
-               default='storage.zonemanager.drivers.cisco'
+               default='jacket.storage.zonemanager.drivers.cisco'
                '.cisco_fc_zone_client_cli.CiscoFCZoneClientCLI',
                help='Southbound connector for zoning operation'),
 ]

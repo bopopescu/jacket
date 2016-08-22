@@ -18,14 +18,14 @@ from oslo_utils import importutils
 
 keymgr_opts = [
     cfg.StrOpt('api_class',
-               default='storage.keymgr.conf_key_mgr.ConfKeyManager',
+               default='jacket.storage.keymgr.conf_key_mgr.ConfKeyManager',
                help='The full class name of the key manager API class'),
 ]
 
 CONF = cfg.CONF
-CONF.register_opts(keymgr_opts, group='keymgr')
+CONF.register_opts(keymgr_opts, group='storage_keymgr')
 
 
 def API():
-    cls = importutils.import_class(CONF.keymgr.api_class)
+    cls = importutils.import_class(CONF.storage_keymgr.api_class)
     return cls()

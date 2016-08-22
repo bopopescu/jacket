@@ -38,10 +38,8 @@ from jacket.compute import safe_utils
 
 LOG = logging.getLogger(__name__)
 
+# NOTE(hw by laoyi, remove fatal_exception_format_errors)
 exc_log_opts = [
-    cfg.BoolOpt('fatal_exception_format_errors',
-                default=False,
-                help='Make exception message format errors fatal'),
 ]
 
 CONF = cfg.CONF

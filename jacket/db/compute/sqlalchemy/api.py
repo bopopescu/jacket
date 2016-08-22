@@ -129,7 +129,7 @@ CONF = cfg.CONF
 CONF.register_opts(db_opts)
 CONF.register_opts(oslo_db_options.database_opts, 'database')
 CONF.register_opts(api_db_opts, group='api_database')
-CONF.import_opt('until_refresh', 'compute.quota')
+CONF.import_opt('until_refresh', 'jacket.conf.quota')
 
 LOG = logging.getLogger(__name__)
 
