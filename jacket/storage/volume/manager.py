@@ -2043,7 +2043,7 @@ class VolumeManager(manager.SchedulerDependentManager):
     def publish_service_capabilities(self, context):
         """Collect driver status and then publish."""
         self._report_driver_status(context)
-        self._publish_service_capabilities(context)
+        #self._publish_service_capabilities(context)
 
     def _notify_about_volume_usage(self,
                                    context,
