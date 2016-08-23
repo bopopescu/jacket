@@ -87,23 +87,23 @@ crudini --set /etc/jacket/jacket.conf DEFAULT osapi_volume_listen "${jacket_host
 crudini --set /etc/jacket/jacket.conf DEFAULT debug "true"
 crudini --set /etc/jacket/jacket.conf DEFAULT log_dir "/var/log/jacket"
 crudini --set /etc/jacket/jacket.conf wsgi api_paste_config "/etc/jacket/jacket-api-paste.ini"
-crudini --set /etc/nova/nova.conf DEFAULT image_service nova.image.glance.GlanceImageService
+crudini --set /etc/jacket/jacket.conf DEFAULT image_service jacket.compute.image.glance.GlanceImageService
 
 
-crudini --set /etc/nova/nova.conf DEFAULT rpc_backend rabbit
-crudini --set /etc/nova/nova.conf oslo_messaging_rabbit rabbit_host $messagebrokerhost
-crudini --set /etc/nova/nova.conf oslo_messaging_rabbit rabbit_password $brokerpass
-crudini --set /etc/nova/nova.conf oslo_messaging_rabbit rabbit_userid $brokeruser
-crudini --set /etc/nova/nova.conf oslo_messaging_rabbit rabbit_port 5672
-crudini --set /etc/nova/nova.conf oslo_messaging_rabbit rabbit_use_ssl false
-crudini --set /etc/nova/nova.conf oslo_messaging_rabbit rabbit_virtual_host $brokervhost
-crudini --set /etc/nova/nova.conf oslo_messaging_rabbit rabbit_max_retries 0
-crudini --set /etc/nova/nova.conf oslo_messaging_rabbit rabbit_retry_interval 1
-crudini --set /etc/nova/nova.conf oslo_messaging_rabbit rabbit_ha_queues false
+crudini --set /etc/jacket/jacket.conf DEFAULT rpc_backend rabbit
+crudini --set /etc/jacket/jacket.conf oslo_messaging_rabbit rabbit_host $messagebrokerhost
+crudini --set /etc/jacket/jacket.conf oslo_messaging_rabbit rabbit_password $brokerpass
+crudini --set /etc/jacket/jacket.conf oslo_messaging_rabbit rabbit_userid $brokeruser
+crudini --set /etc/jacket/jacket.conf oslo_messaging_rabbit rabbit_port 5672
+crudini --set /etc/jacket/jacket.conf oslo_messaging_rabbit rabbit_use_ssl false
+crudini --set /etc/jacket/jacket.conf oslo_messaging_rabbit rabbit_virtual_host $brokervhost
+crudini --set /etc/jacket/jacket.conf oslo_messaging_rabbit rabbit_max_retries 0
+crudini --set /etc/jacket/jacket.conf oslo_messaging_rabbit rabbit_retry_interval 1
+crudini --set /etc/jacket/jacket.conf oslo_messaging_rabbit rabbit_ha_queues false
 
 #compute
-crudini --set /etc/nova/nova.conf DEFAULT compute_driver libvirt.LibvirtDriver
-crudini --set /etc/nova/nova.conf DEFAULT firewall_driver nova.virt.firewall.NoopFirewallDriver
-crudini --set /etc/nova/nova.conf DEFAULT rootwrap_config /etc/nova/rootwrap.conf
+crudini --set /etc/jacket/jacket.conf DEFAULT compute_driver libvirt.LibvirtDriver
+crudini --set /etc/jacket/jacket.conf DEFAULT firewall_driver jacket.compute.virt.firewall.NoopFirewallDriver
+crudini --set /etc/jacket/jacket.conf DEFAULT rootwrap_config /etc/jacket/rootwrap.conf
 
 
