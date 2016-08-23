@@ -74,7 +74,7 @@ class FpingController(object):
         return ret
 
     def index(self, req):
-        context = req.environ["cloud.context"]
+        context = req.environ["compute.context"]
         search_opts = dict(deleted=False)
         if "all_tenants" in req.GET:
             authorize_all_tenants(context)
@@ -123,7 +123,7 @@ class FpingController(object):
         return {"servers": res}
 
     def show(self, req, id):
-        context = req.environ["cloud.context"]
+        context = req.environ["compute.context"]
         authorize(context)
         self.check_fping()
         instance = common.get_instance(self.compute_api, context, id)

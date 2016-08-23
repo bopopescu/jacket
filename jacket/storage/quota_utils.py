@@ -22,7 +22,7 @@ from keystoneclient import client
 from keystoneclient import exceptions
 from keystoneclient import session
 
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.storage.i18n import _, _LW
 
@@ -196,7 +196,7 @@ def update_alloc_to_next_hard_limit(context, resources, deltas, res,
         cur_quota = {res: cur_quota_lim}
         cur_delta = {res: deltas[res]}
         try:
-            reservations += storage.quota_reserve(
+            reservations += db.quota_reserve(
                 context, resources, cur_quota, cur_delta, expire,
                 CONF.until_refresh, CONF.max_age, cur_proj_id,
                 is_allocated_reserve=True)

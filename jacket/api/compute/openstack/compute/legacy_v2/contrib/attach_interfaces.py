@@ -60,7 +60,7 @@ class InterfaceAttachmentController(object):
 
     def show(self, req, server_id, id):
         """Return data about the given interface attachment."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         port_id = id
@@ -86,7 +86,7 @@ class InterfaceAttachmentController(object):
 
     def create(self, req, server_id, body):
         """Attach an interface to an instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         network_id = None
@@ -147,7 +147,7 @@ class InterfaceAttachmentController(object):
 
     def delete(self, req, server_id, id):
         """Detach an interface from an instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         port_id = id
         instance = common.get_instance(self.compute_api,
@@ -171,7 +171,7 @@ class InterfaceAttachmentController(object):
 
     def _items(self, req, server_id, entity_maker):
         """Returns a list of attachments, transformed through entity_maker."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         instance = common.get_instance(self.compute_api, context, server_id)
         search_opts = {'device_id': instance.uuid}

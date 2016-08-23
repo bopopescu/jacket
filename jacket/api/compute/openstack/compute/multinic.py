@@ -41,7 +41,7 @@ class MultinicController(wsgi.Controller):
     @validation.schema(multinic.add_fixed_ip)
     def _add_fixed_ip(self, req, id, body):
         """Adds an IP on a given network to an instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         instance = common.get_instance(self.compute_api, context, id)
@@ -59,7 +59,7 @@ class MultinicController(wsgi.Controller):
     @validation.schema(multinic.remove_fixed_ip)
     def _remove_fixed_ip(self, req, id, body):
         """Removes an IP from an instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         instance = common.get_instance(self.compute_api, context, id)

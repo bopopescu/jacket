@@ -36,7 +36,7 @@ class ServiceController(object):
     def _get_services(self, req):
         api_services = ('cloud-osapi_compute', 'cloud-ec2', 'cloud-metadata')
 
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         # NOTE(alex_xu): back-compatible with db layer hard-code admin
@@ -102,7 +102,7 @@ class ServiceController(object):
         if not self.ext_mgr.is_loaded('os-extended-services-delete'):
             raise webob.exc.HTTPMethodNotAllowed()
 
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         # NOTE(alex_xu): back-compatible with db layer hard-code admin
         # permission checks
@@ -128,7 +128,7 @@ class ServiceController(object):
 
     def update(self, req, id, body):
         """Enable/Disable scheduling for a service."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         # NOTE(alex_xu): back-compatible with db layer hard-code admin
         # permission checks

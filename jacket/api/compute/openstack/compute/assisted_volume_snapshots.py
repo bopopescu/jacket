@@ -46,7 +46,7 @@ class AssistedVolumeSnapshotsController(wsgi.Controller):
     @validation.schema(assisted_volume_snapshots.snapshots_create)
     def create(self, req, body):
         """Creates a new snapshot."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action='create')
 
         snapshot = body['snapshot']
@@ -66,7 +66,7 @@ class AssistedVolumeSnapshotsController(wsgi.Controller):
     @extensions.expected_errors((400, 404))
     def delete(self, req, id):
         """Delete a snapshot."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action='delete')
 
         LOG.info(_LI("Delete snapshot with id: %s"), id, context=context)

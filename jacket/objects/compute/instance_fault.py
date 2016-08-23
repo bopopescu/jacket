@@ -99,7 +99,7 @@ class InstanceFaultList(base.ObjectListBase, base.NovaObject):
     VERSION = '1.1'
 
     fields = {
-        'compute': fields.ListOfObjectsField('InstanceFault'),
+        'objects': fields.ListOfObjectsField('InstanceFault'),
         }
 
     @base.remotable_classmethod

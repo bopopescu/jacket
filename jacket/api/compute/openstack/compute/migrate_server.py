@@ -41,12 +41,12 @@ class MigrateServerController(wsgi.Controller):
     @wsgi.action('migrate')
     def _migrate(self, req, id, body):
         """Permit admins to migrate a server to a new host."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action='migrate')
 
         instance = common.get_instance(self.compute_api, context, id)
         try:
-            self.compute_api.resize(req.environ['cloud.context'], instance)
+            self.compute_api.resize(req.environ['compute.context'], instance)
         except (exception.TooManyInstances, exception.QuotaError) as e:
             raise exc.HTTPForbidden(explanation=e.format_message())
         except exception.InstanceIsLocked as e:
@@ -66,7 +66,7 @@ class MigrateServerController(wsgi.Controller):
     @validation.schema(migrate_server.migrate_live_v2_25, "2.25")
     def _migrate_live(self, req, id, body):
         """Permit admins to (live) migrate a server to a new host."""
-        context = req.environ["cloud.context"]
+        context = req.environ["compute.context"]
         authorize(context, action='migrate_live')
 
         host = body["os-migrateLive"]["host"]

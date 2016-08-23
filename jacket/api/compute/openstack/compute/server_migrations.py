@@ -68,7 +68,7 @@ class ServerMigrationsController(wsgi.Controller):
     @wsgi.action('force_complete')
     @validation.schema(server_migrations.force_complete)
     def _force_complete(self, req, id, server_id, body):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action='force_complete')
 
         instance = common.get_instance(self.compute_api, context, server_id)
@@ -90,7 +90,7 @@ class ServerMigrationsController(wsgi.Controller):
     @extensions.expected_errors(404)
     def index(self, req, server_id):
         """Return all migrations of an instance in progress."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action="index")
 
         # NOTE(Shaohe Feng) just check the instance is available. To keep
@@ -106,7 +106,7 @@ class ServerMigrationsController(wsgi.Controller):
     @extensions.expected_errors(404)
     def show(self, req, server_id, id):
         """Return the migration of an instance in progress by id."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action="show")
 
         # NOTE(Shaohe Feng) just check the instance is available. To keep
@@ -140,7 +140,7 @@ class ServerMigrationsController(wsgi.Controller):
     @extensions.expected_errors((400, 404, 409))
     def delete(self, req, server_id, id):
         """Abort an in progress migration of an instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action="delete")
 
         instance = common.get_instance(self.compute_api, context, server_id)

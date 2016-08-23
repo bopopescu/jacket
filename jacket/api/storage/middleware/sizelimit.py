@@ -34,5 +34,5 @@ CONF.register_opt(max_request_body_size_opt)
 @versionutils.deprecated(as_of=versionutils.deprecated.KILO,
                          in_favor_of='oslo_middleware.RequestBodySizeLimiter')
 class RequestBodySizeLimiter(sizelimit.RequestBodySizeLimiter):
-    """Add a 'cinder.context' to WSGI environ."""
+    """Add a 'storage.context' to WSGI environ."""
     pass

@@ -111,7 +111,7 @@ class InstanceMappingList(base.ObjectListBase, base.NovaObject):
     VERSION = '1.0'
 
     fields = {
-        'compute': fields.ListOfObjectsField('InstanceMapping'),
+        'objects': fields.ListOfObjectsField('InstanceMapping'),
         }
 
     @staticmethod

@@ -20,7 +20,7 @@
 import time
 
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.storage import test
 from jacket.storage.volume import volume_types

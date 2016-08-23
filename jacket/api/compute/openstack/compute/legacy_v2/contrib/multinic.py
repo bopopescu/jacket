@@ -40,7 +40,7 @@ class MultinicController(wsgi.Controller):
     @wsgi.action('addFixedIp')
     def _add_fixed_ip(self, req, id, body):
         """Adds an IP on a given network to an instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         # Validate the input entity
@@ -60,7 +60,7 @@ class MultinicController(wsgi.Controller):
     @wsgi.action('removeFixedIp')
     def _remove_fixed_ip(self, req, id, body):
         """Removes an IP from an instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         # Validate the input entity

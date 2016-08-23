@@ -22,7 +22,7 @@ import time
 from oslo_db import exception as db_exc
 
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.storage import test
 from jacket.storage.volume import qos_specs

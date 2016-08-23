@@ -36,7 +36,7 @@ class PauseServerController(wsgi.Controller):
     @wsgi.action('pause')
     def _pause(self, req, id, body):
         """Permit Admins to pause the server."""
-        ctxt = req.environ['cloud.context']
+        ctxt = req.environ['compute.context']
         authorize(ctxt, action='pause')
         server = common.get_instance(self.compute_api, ctxt, id)
         try:
@@ -57,7 +57,7 @@ class PauseServerController(wsgi.Controller):
     @wsgi.action('unpause')
     def _unpause(self, req, id, body):
         """Permit Admins to unpause the server."""
-        ctxt = req.environ['cloud.context']
+        ctxt = req.environ['compute.context']
         authorize(ctxt, action='unpause')
         server = common.get_instance(self.compute_api, ctxt, id)
         try:

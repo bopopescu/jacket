@@ -75,7 +75,7 @@ class MigrationsController(wsgi.Controller):
     @extensions.expected_errors(())
     def index(self, req):
         """Return all migrations in progress."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, "index")
         migrations = self.compute_api.get_migrations(context, req.GET)
 

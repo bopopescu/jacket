@@ -56,7 +56,7 @@ class MigrationsController(object):
 
     def index(self, req):
         """Return all migrations in progress."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, "index")
         # NOTE(alex_xu): back-compatible with db layer hard-code admin
         # permission checks.

@@ -11450,7 +11450,7 @@ class EvacuateHostTestCase(BaseTestCase):
 
         @mock.patch.object(network_api, 'setup_networks_on_host')
         @mock.patch.object(network_api, 'setup_instance_network_on_host')
-        @mock.patch('cloud.context.RequestContext.elevated', return_value=ctxt)
+        @mock.patch('compute.context.RequestContext.elevated', return_value=ctxt)
         def _test_rebuild(mock_context, mock_setup_instance_network_on_host,
                           mock_setup_networks_on_host):
             orig_image_ref = None

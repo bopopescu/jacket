@@ -61,7 +61,7 @@ class InterfaceAttachmentController(wsgi.Controller):
     @extensions.expected_errors((403, 404))
     def show(self, req, server_id, id):
         """Return data about the given interface attachment."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         port_id = id
@@ -89,7 +89,7 @@ class InterfaceAttachmentController(wsgi.Controller):
     @validation.schema(attach_interfaces.create)
     def create(self, req, server_id, body):
         """Attach an interface to an instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         network_id = None
@@ -143,7 +143,7 @@ class InterfaceAttachmentController(wsgi.Controller):
     @extensions.expected_errors((404, 409, 501))
     def delete(self, req, server_id, id):
         """Detach an interface from an instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         port_id = id
 
@@ -163,7 +163,7 @@ class InterfaceAttachmentController(wsgi.Controller):
 
     def _items(self, req, server_id, entity_maker):
         """Returns a list of attachments, transformed through entity_maker."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         instance = common.get_instance(self.compute_api, context, server_id)

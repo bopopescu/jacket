@@ -1,6 +1,8 @@
 #!/bin/bash
 
-HOST_IP=`ifconfig -a|grep inet|grep -v 127.0.0.1|grep -v inet6|awk '{print $2}'|tr -d "addr:"`
+source /root/keystonerc_admin
+
+HOST_IP=`ip addr |grep inet|grep -v 127.0.0.1|grep -v inet6|grep ens|awk '{print $2}'|tr -d "addr:" | awk -F '/' '{print $1}'`
 
 mysqldbadm="root"
 mysqldbpassword="P@ssw0rd"
@@ -10,12 +12,15 @@ dbbackendhost="${HOST_IP}"
 jacketdbname="jacketdb"
 jacketdbuser="jacketdbuser"
 jacketdbpass="P@ssw0rd"
+jacketsvce="jacket"
 
 jacket_host="${HOST_IP}"
 
 keystonehost="${HOST_IP}"
 keystonedomain="default"
 keystoneservicestenant="services"
+keystoneadminuser="admin"
+endpointsregion="RegionOne"
 
 jacketuser="jacket"
 jacketpass="P@ssw0rd"
@@ -26,6 +31,24 @@ brokeruser="openstack"
 brokerpass="P@ssw0rd"
 brokervhost="/openstack"
 
+#keystone中设置jacket
+openstack user show $jacketuser | openstack user create --domain $keystonedomain --password $jacketpass --email "root@email" $jacketuser
+openstack role add --project $keystoneservicestenant --user $jacketuser $keystoneadminuser
+
+openstack service show $jacketsvce | openstack service create --name $jacketsvce --description "OpenStack jacket service" jacket
+
+openstack endpoint create --region $endpointsregion \
+        jacket public http://$jacket_host:9774/v1/%\(tenant_id\)s
+
+openstack endpoint create --region $endpointsregion \
+        jacket internal http://$jacket_host:9774/v1/%\(tenant_id\)s
+
+openstack endpoint create --region $endpointsregion \
+        jacket admin http://$jacket_host:9774/v1/%\(tenant_id\)s
+
+
+
+#  数据库部署
 mysqlcommand="mysql --port=$mysqldbport --password=$mysqldbpassword --user=$mysqldbadm --host=$dbbackendhost"
 
 echo "CREATE DATABASE IF NOT EXISTS $jacketdbname default character set utf8;"|$mysqlcommand
@@ -33,9 +56,11 @@ echo "GRANT ALL ON $jacketdbname.* TO '$jacketdbuser'@'%' IDENTIFIED BY '$jacket
 echo "GRANT ALL ON $jacketdbname.* TO '$jacketdbuser'@'localhost' IDENTIFIED BY '$jacketdbpass';"|$mysqlcommand
 echo "GRANT ALL ON $jacketdbname.* TO '$jacketdbuser'@'$jackethost' IDENTIFIED BY '$jacketdbpass';"|$mysqlcommand
 
+#jacket-manage db sync
+
 mkdir -p /var/log/jacket
 
-
+#配置文件的设置
 crudini --set /etc/jacket/jacket.conf database connection "mysql+pymysql://${jacketdbuser}:${jacketdbpass}@${dbbackendhost}:${mysqldbport}/${jacketdbname}"
 crudini --set /etc/jacket/jacket.conf database retry_interval 10
 crudini --set /etc/jacket/jacket.conf database idle_timeout 3600

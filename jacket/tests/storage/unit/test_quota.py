@@ -25,7 +25,7 @@ import six
 
 from jacket.storage import backup
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.db.storage.sqlalchemy import api as sqa_api
 from jacket.db.storage.sqlalchemy import models as sqa_models
 from jacket.storage import exception

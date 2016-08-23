@@ -73,7 +73,7 @@ class FpingController(wsgi.Controller):
 
     @extensions.expected_errors(503)
     def index(self, req):
-        context = req.environ["cloud.context"]
+        context = req.environ["compute.context"]
         search_opts = dict(deleted=False)
         if "all_tenants" in req.GET:
             authorize(context, action='all_tenants')
@@ -123,7 +123,7 @@ class FpingController(wsgi.Controller):
 
     @extensions.expected_errors((404, 503))
     def show(self, req, id):
-        context = req.environ["cloud.context"]
+        context = req.environ["compute.context"]
         authorize(context)
         self.check_fping()
         instance = common.get_instance(self.compute_api, context, id)

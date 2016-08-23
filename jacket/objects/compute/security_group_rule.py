@@ -82,7 +82,7 @@ class SecurityGroupRule(base.NovaPersistentObject, base.NovaObject):
 @base.NovaObjectRegistry.register
 class SecurityGroupRuleList(base.ObjectListBase, base.NovaObject):
     fields = {
-        'compute': fields.ListOfObjectsField('SecurityGroupRule'),
+        'objects': fields.ListOfObjectsField('SecurityGroupRule'),
         }
     VERSION = '1.2'
 

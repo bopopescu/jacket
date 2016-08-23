@@ -33,7 +33,7 @@ class ConsolesController(wsgi.Controller):
     @wsgi.action('os-getVNCConsole')
     def get_vnc_console(self, req, id, body):
         """Get vnc connection information to access a server."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         # If type is not supplied or unknown, get_vnc_console below will cope
@@ -61,7 +61,7 @@ class ConsolesController(wsgi.Controller):
     @wsgi.action('os-getSPICEConsole')
     def get_spice_console(self, req, id, body):
         """Get spice connection information to access a server."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         # If type is not supplied or unknown, get_spice_console below will cope
@@ -89,7 +89,7 @@ class ConsolesController(wsgi.Controller):
     @wsgi.action('os-getRDPConsole')
     def get_rdp_console(self, req, id, body):
         """Get text console output."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         # If type is not supplied or unknown, get_rdp_console below will cope
@@ -116,7 +116,7 @@ class ConsolesController(wsgi.Controller):
     @wsgi.action('os-getSerialConsole')
     def get_serial_console(self, req, id, body):
         """Get connection to a serial console."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         # If type is not supplied or unknown get_serial_console below will cope

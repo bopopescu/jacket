@@ -43,7 +43,7 @@ class ExtendedIpsController(wsgi.Controller):
 
     @wsgi.extends
     def show(self, req, resp_obj, id):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         if authorize(context):
             server = resp_obj.obj['server']
             db_instance = req.get_db_instance(server['id'])
@@ -53,7 +53,7 @@ class ExtendedIpsController(wsgi.Controller):
 
     @wsgi.extends
     def detail(self, req, resp_obj):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         if authorize(context):
             servers = list(resp_obj.obj['servers'])
             for server in servers:

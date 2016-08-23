@@ -174,7 +174,7 @@ class FloatingIPList(obj_base.ObjectListBase, obj_base.NovaObject):
     # Version 1.10: FloatingIP 1.9
     # Version 1.11: FloatingIP 1.10
     fields = {
-        'compute': fields.ListOfObjectsField('FloatingIP'),
+        'objects': fields.ListOfObjectsField('FloatingIP'),
         }
     VERSION = '1.11'
 

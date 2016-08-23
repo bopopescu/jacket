@@ -458,7 +458,7 @@ class Loader(object):
         CONF_FILES = {"osapi_jacket": "jacket-api",
                       "metadata": "compute-api",
                       "osapi_compute": "compute-api",
-                      "osapi_storage": "storage-api"}
+                      "osapi_volume": "volume-api"}
         self.config_path = None
         paste_suffix = '-paste.ini'
 

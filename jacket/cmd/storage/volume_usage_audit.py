@@ -43,10 +43,10 @@ from oslo_log import log as logging
 from jacket.storage import i18n
 i18n.enable_lazy()
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.storage.i18n import _, _LE
 from jacket.objects import storage
-from jacket.storage import rpc
+from jacket import rpc
 from jacket.storage import utils
 from jacket.storage import version
 import jacket.storage.volume.utils

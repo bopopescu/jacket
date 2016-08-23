@@ -59,7 +59,7 @@ class ExtendedServerAttributesController(wsgi.Controller):
 
     @wsgi.extends
     def show(self, req, resp_obj, id):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize_extend = False
         authorize_host_status = False
         if authorize(context):
@@ -79,7 +79,7 @@ class ExtendedServerAttributesController(wsgi.Controller):
 
     @wsgi.extends
     def detail(self, req, resp_obj):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize_extend = False
         authorize_host_status = False
         if authorize(context):

@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.storage.i18n import _
 from jacket.objects import storage
@@ -91,7 +91,7 @@ class ConsistencyGroup(base.CinderPersistentObject, base.CinderObject,
             raise exception.ObjectActionError(action='create',
                                               reason=_('volumes assigned'))
 
-        db_consistencygroups = storage.consistencygroup_create(self._context,
+        db_consistencygroups = db.consistencygroup_create(self._context,
                                                           updates)
         self._from_db_object(self._context, self, db_consistencygroups)
 
@@ -125,13 +125,13 @@ class ConsistencyGroup(base.CinderPersistentObject, base.CinderObject,
                 raise exception.ObjectActionError(
                     action='save', reason=_('volumes changed'))
 
-            storage.consistencygroup_update(self._context, self.id, updates)
+            db.consistencygroup_update(self._context, self.id, updates)
             self.obj_reset_changes()
 
     @base.remotable
     def destroy(self):
         with self.obj_as_admin():
-            storage.consistencygroup_destroy(self._context, self.id)
+            db.consistencygroup_destroy(self._context, self.id)
 
 
 @base.CinderObjectRegistry.register
@@ -147,7 +147,7 @@ class ConsistencyGroupList(base.ObjectListBase, base.CinderObject):
     @base.remotable_classmethod
     def get_all(cls, context, filters=None, marker=None, limit=None,
                 offset=None, sort_keys=None, sort_dirs=None):
-        consistencygroups = storage.consistencygroup_get_all(
+        consistencygroups = db.consistencygroup_get_all(
             context, filters=filters, marker=marker, limit=limit,
             offset=offset, sort_keys=sort_keys, sort_dirs=sort_dirs)
         return base.obj_make_list(context, cls(context),
@@ -158,7 +158,7 @@ class ConsistencyGroupList(base.ObjectListBase, base.CinderObject):
     def get_all_by_project(cls, context, project_id, filters=None, marker=None,
                            limit=None, offset=None, sort_keys=None,
                            sort_dirs=None):
-        consistencygroups = storage.consistencygroup_get_all_by_project(
+        consistencygroups = db.consistencygroup_get_all_by_project(
             context, project_id, filters=filters, marker=marker, limit=limit,
             offset=offset, sort_keys=sort_keys, sort_dirs=sort_dirs)
         return base.obj_make_list(context, cls(context),

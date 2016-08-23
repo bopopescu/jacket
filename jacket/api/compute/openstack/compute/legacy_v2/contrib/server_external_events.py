@@ -38,7 +38,7 @@ class ServerExternalEventsController(wsgi.Controller):
 
     def create(self, req, body):
         """Creates a new instance event."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action='create')
 
         response_events = []

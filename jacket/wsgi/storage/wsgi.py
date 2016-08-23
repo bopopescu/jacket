@@ -29,7 +29,7 @@ i18n.enable_lazy()
 
 # Need to register global_opts
 from jacket.common.storage import config
-from jacket.storage import rpc
+from jacket import rpc
 from jacket.storage import version
 
 CONF = cfg.CONF

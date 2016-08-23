@@ -21,10 +21,10 @@ from jacket.api.storage import common
 from jacket.api.storage import extensions
 from jacket.api.storage.openstack import wsgi
 from jacket.api.storage import xmlutil
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.storage.i18n import _
-from jacket.storage import rpc
+from jacket import rpc
 from jacket.storage.volume import volume_types
 
 authorize = extensions.extension_authorizer('volume', 'types_extra_specs')

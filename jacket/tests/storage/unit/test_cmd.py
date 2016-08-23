@@ -14,7 +14,7 @@ import datetime
 import six
 import sys
 
-from jacket.storage import rpc
+from jacket import rpc
 try:
     from unittest import mock
 except ImportError:

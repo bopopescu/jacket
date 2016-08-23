@@ -18,7 +18,7 @@ from taskflow.patterns import linear_flow
 from jacket.storage import exception
 from jacket.storage import flow_utils
 from jacket.storage.i18n import _LE
-from jacket.storage import rpc
+from jacket import rpc
 from jacket.storage import utils
 from jacket.storage.volume.flows import common
 

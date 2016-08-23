@@ -82,7 +82,7 @@ class HypervisorsController(object):
         return hyp_dict
 
     def index(self, req):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         # NOTE(eliqiao): back-compatible with db layer hard-code admin
@@ -101,7 +101,7 @@ class HypervisorsController(object):
                                  for hyp in compute_nodes])
 
     def detail(self, req):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         # NOTE(eliqiao): back-compatible with db layer hard-code admin
@@ -120,7 +120,7 @@ class HypervisorsController(object):
                                  for hyp in compute_nodes])
 
     def show(self, req, id):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         try:
             hyp = self.host_api.compute_node_get(context, id)
@@ -133,7 +133,7 @@ class HypervisorsController(object):
         return dict(hypervisor=self._view_hypervisor(hyp, service, True))
 
     def uptime(self, req, id):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         try:
             hyp = self.host_api.compute_node_get(context, id)
@@ -155,7 +155,7 @@ class HypervisorsController(object):
                                                      uptime=uptime))
 
     def search(self, req, id):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         # NOTE(eliqiao): back-compatible with db layer hard-code admin
@@ -178,7 +178,7 @@ class HypervisorsController(object):
             raise webob.exc.HTTPNotFound(explanation=msg)
 
     def servers(self, req, id):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         # NOTE(eliqiao): back-compatible with db layer hard-code admin
@@ -204,7 +204,7 @@ class HypervisorsController(object):
         return dict(hypervisors=hypervisors)
 
     def statistics(self, req):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         stats = self.host_api.compute_node_statistics(context)
         return dict(hypervisor_statistics=stats)

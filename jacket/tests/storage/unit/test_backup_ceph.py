@@ -28,7 +28,7 @@ from six.moves import range
 from jacket.storage.backup import driver
 from jacket.storage.backup.drivers import ceph
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.storage.i18n import _
 from jacket.objects import storage

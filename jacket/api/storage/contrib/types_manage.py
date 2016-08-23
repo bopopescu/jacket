@@ -24,7 +24,7 @@ from jacket.api.storage.v1 import types
 from jacket.api.storage.views import types as views_types
 from jacket.storage import exception
 from jacket.storage.i18n import _
-from jacket.storage import rpc
+from jacket import rpc
 from jacket.storage import utils
 from jacket.storage.volume import volume_types
 

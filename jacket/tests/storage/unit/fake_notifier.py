@@ -18,7 +18,7 @@ import functools
 import anyjson
 import oslo_messaging as messaging
 
-from jacket.storage import rpc
+from jacket import rpc
 
 
 FakeMessage = collections.namedtuple('Message',

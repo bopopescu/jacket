@@ -40,7 +40,7 @@ class ServerStartStopActionController(wsgi.Controller):
     @wsgi.action('os-start')
     def _start_server(self, req, id, body):
         """Start an instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         instance = self._get_instance(context, id)
         extensions.check_compute_policy(context, 'start', instance)
 
@@ -56,7 +56,7 @@ class ServerStartStopActionController(wsgi.Controller):
     @wsgi.action('os-stop')
     def _stop_server(self, req, id, body):
         """Stop an instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         instance = self._get_instance(context, id)
         extensions.check_compute_policy(context, 'stop', instance)
 

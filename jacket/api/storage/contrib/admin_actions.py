@@ -20,11 +20,11 @@ from webob import exc
 from jacket.api.storage import extensions
 from jacket.api.storage.openstack import wsgi
 from jacket.storage import backup
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.storage.i18n import _
 from jacket.objects import storage
-from jacket.storage import rpc
+from jacket import rpc
 from jacket.storage import utils
 from jacket.storage import volume
 

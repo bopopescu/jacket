@@ -241,7 +241,7 @@ class InstanceGroupList(base.ObjectListBase, base.NovaObject):
     VERSION = '1.7'
 
     fields = {
-        'compute': fields.ListOfObjectsField('InstanceGroup'),
+        'objects': fields.ListOfObjectsField('InstanceGroup'),
         }
 
     @base.remotable_classmethod

@@ -15,7 +15,7 @@
 import mock
 
 from jacket.objects.storage import base
-from jacket.storage import rpc
+from jacket import rpc
 from jacket.storage import test
 
 

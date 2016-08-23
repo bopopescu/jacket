@@ -25,7 +25,7 @@ from oslo_db import exception as db_exc
 from oslo_log import log as logging
 
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.storage.i18n import _, _LE
 from jacket.storage import quota
@@ -46,7 +46,7 @@ def create(context,
     projects = projects or []
     elevated = context if context.is_admin else context.elevated()
     try:
-        type_ref = storage.volume_type_create(elevated,
+        type_ref = db.volume_type_create(elevated,
                                          dict(name=name,
                                               extra_specs=extra_specs,
                                               is_public=is_public,
@@ -67,7 +67,7 @@ def update(context, id, name, description, is_public=None):
     elevated = context if context.is_admin else context.elevated()
     old_volume_type = get_volume_type(elevated, id)
     try:
-        type_updated = storage.volume_type_update(elevated,
+        type_updated = db.volume_type_update(elevated,
                                              id,
                                              dict(name=name,
                                                   description=description,
@@ -103,7 +103,7 @@ def get_all_types(context, inactive=0, filters=None, marker=None,
     Pass true as argument if you want deleted volume types returned also.
 
     """
-    vol_types = storage.volume_type_get_all(context, inactive, filters=filters,
+    vol_types = db.volume_type_get_all(context, inactive, filters=filters,
                                        marker=marker, limit=limit,
                                        sort_keys=sort_keys,
                                        sort_dirs=sort_dirs, offset=offset,
@@ -166,7 +166,7 @@ def get_volume_type_extra_specs(volume_type_id, key=False):
 
 def is_public_volume_type(context, volume_type_id):
     """Return is_public boolean value of volume type"""
-    volume_type = storage.volume_type_get(context, volume_type_id)
+    volume_type = db.volume_type_get(context, volume_type_id)
     return volume_type['is_public']
 
 
@@ -180,7 +180,7 @@ def add_volume_type_access(context, volume_type_id, project_id):
         msg = _("Type access modification is not applicable to public volume "
                 "type.")
         raise exception.InvalidVolumeType(reason=msg)
-    return storage.volume_type_access_add(elevated, volume_type_id, project_id)
+    return db.volume_type_access_add(elevated, volume_type_id, project_id)
 
 
 def remove_volume_type_access(context, volume_type_id, project_id):
@@ -193,7 +193,7 @@ def remove_volume_type_access(context, volume_type_id, project_id):
         msg = _("Type access modification is not applicable to public volume "
                 "type.")
         raise exception.InvalidVolumeType(reason=msg)
-    return storage.volume_type_access_remove(elevated, volume_type_id, project_id)
+    return db.volume_type_access_remove(elevated, volume_type_id, project_id)
 
 
 def is_encrypted(context, volume_type_id):
@@ -204,13 +204,13 @@ def get_volume_type_encryption(context, volume_type_id):
     if volume_type_id is None:
         return None
 
-    encryption = storage.volume_type_encryption_get(context, volume_type_id)
+    encryption = db.volume_type_encryption_get(context, volume_type_id)
     return encryption
 
 
 def get_volume_type_qos_specs(volume_type_id):
     ctxt = context.get_admin_context()
-    res = storage.volume_type_qos_specs_get(ctxt,
+    res = db.volume_type_qos_specs_get(ctxt,
                                        volume_type_id)
     return res
 

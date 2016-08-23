@@ -21,7 +21,7 @@ Client side of the volume backup RPC API.
 from oslo_config import cfg
 from oslo_log import log as logging
 
-from jacket.storage import rpc
+from jacket import rpc
 
 
 CONF = cfg.CONF

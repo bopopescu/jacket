@@ -29,7 +29,7 @@ import webob
 # needed for stubs to work
 import jacket.storage.backup
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.storage.i18n import _
 from jacket.objects import storage

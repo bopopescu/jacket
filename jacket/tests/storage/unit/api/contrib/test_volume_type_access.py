@@ -18,7 +18,7 @@ import webob
 from jacket.api.storage.storage.contrib import volume_type_access as type_access
 from jacket.api.storage.storage.v2 import types as types_api_v2
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.storage import test
 from jacket.tests.storage.unit.api import fakes

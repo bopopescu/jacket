@@ -27,7 +27,7 @@ from jacket.api.storage.views import qos_specs as view_qos_specs
 from jacket.api.storage import xmlutil
 from jacket.storage import exception
 from jacket.storage.i18n import _, _LI
-from jacket.storage import rpc
+from jacket import rpc
 from jacket.storage import utils
 from jacket.storage.volume import qos_specs
 

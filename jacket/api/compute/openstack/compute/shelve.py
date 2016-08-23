@@ -37,7 +37,7 @@ class ShelveController(wsgi.Controller):
     @wsgi.action('shelve')
     def _shelve(self, req, id, body):
         """Move an instance into shelved mode."""
-        context = req.environ["cloud.context"]
+        context = req.environ["compute.context"]
         authorize(context, action='shelve')
 
         instance = common.get_instance(self.compute_api, context, id)
@@ -56,7 +56,7 @@ class ShelveController(wsgi.Controller):
     @wsgi.action('shelveOffload')
     def _shelve_offload(self, req, id, body):
         """Force removal of a shelved instance from the cloud node."""
-        context = req.environ["cloud.context"]
+        context = req.environ["compute.context"]
         authorize(context, action='shelve_offload')
 
         instance = common.get_instance(self.compute_api, context, id)
@@ -76,7 +76,7 @@ class ShelveController(wsgi.Controller):
     @wsgi.action('unshelve')
     def _unshelve(self, req, id, body):
         """Restore an instance from shelved mode."""
-        context = req.environ["cloud.context"]
+        context = req.environ["compute.context"]
         authorize(context, action='unshelve')
         instance = common.get_instance(self.compute_api, context, id)
         try:

@@ -13,81 +13,130 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""Policy Engine For Jacket"""
+"""Policy Engine For Nova."""
 
+import logging
 
 from oslo_config import cfg
-from oslo_policy import opts as policy_opts
 from oslo_policy import policy
+from oslo_utils import excutils
 
 from jacket import exception
 
-CONF = cfg.CONF
-policy_opts.set_defaults(cfg.CONF, 'policy.json')
 
+CONF = cfg.CONF
+LOG = logging.getLogger(__name__)
 _ENFORCER = None
 
 
-def init():
+def reset():
     global _ENFORCER
-    if not _ENFORCER:
-        _ENFORCER = policy.Enforcer(CONF)
+    if _ENFORCER:
+        _ENFORCER.clear()
+        _ENFORCER = None
 
 
-def enforce_action(context, action):
-    """Checks that the action can be done by the given context.
+def init(policy_file=None, rules=None, default_rule=None, use_conf=True):
+    """Init an Enforcer class.
 
-    Applies a check to ensure the context's project_id and user_id can be
-    applied to the given action using the policy enforcement api.
+       :param policy_file: Custom policy file to use, if none is specified,
+                           `CONF.policy_file` will be used.
+       :param rules: Default dictionary / Rules to use. It will be
+                     considered just in the first instantiation.
+       :param default_rule: Default rule to use, CONF.default_rule will
+                            be used if none is specified.
+       :param use_conf: Whether to load rules from config file.
     """
 
-    return enforce(context, action, {'project_id': context.project_id,
-                                     'user_id': context.user_id})
+    global _ENFORCER
+    if not _ENFORCER:
+        _ENFORCER = policy.Enforcer(CONF,
+                                    policy_file=policy_file,
+                                    rules=rules,
+                                    default_rule=default_rule,
+                                    use_conf=use_conf)
 
 
-def enforce(context, action, target):
+def set_rules(rules, overwrite=True, use_conf=False):
+    """Set rules based on the provided dict of rules.
+
+       :param rules: New rules to use. It should be an instance of dict.
+       :param overwrite: Whether to overwrite current rules or update them
+                         with the new rules.
+       :param use_conf: Whether to reload rules from config file.
+    """
+
+    init(use_conf=False)
+    _ENFORCER.set_rules(rules, overwrite, use_conf)
+
+
+def enforce(context, action, target, do_raise=True, exc=None):
     """Verifies that the action is valid on the target in this context.
 
-       :param context: jacket context
+       :param context: nova context
        :param action: string representing the action to be checked
            this should be colon separated for clarity.
            i.e. ``compute:create_instance``,
            ``compute:attach_volume``,
            ``volume:attach_volume``
-
-       :param object: dictionary representing the object of the action
+       :param target: dictionary representing the object of the action
            for object creation this should be a dictionary representing the
            location of the object e.g. ``{'project_id': context.project_id}``
+       :param do_raise: if True (the default), raises PolicyNotAuthorized;
+           if False, returns False
 
-       :raises PolicyNotAuthorized: if verification fails.
+       :raises nova.exception.PolicyNotAuthorized: if verification fails
+           and do_raise is True.
 
+       :return: returns a non-False value (not necessarily "True") if
+           authorized, and the exact value False if not authorized and
+           do_raise is False.
     """
     init()
+    credentials = context.to_dict()
+    if not exc:
+        exc = exception.PolicyNotAuthorized
+    try:
+        result = _ENFORCER.enforce(action, target, credentials,
+                                   do_raise=do_raise, exc=exc, action=action)
+    except Exception:
+        credentials.pop('auth_token', None)
+        with excutils.save_and_reraise_exception():
+            LOG.debug('Policy check for %(action)s failed with credentials '
+                      '%(credentials)s',
+                      {'action': action, 'credentials': credentials})
+    return result
 
-    return _ENFORCER.enforce(action, target, context.to_dict(),
-                             do_raise=True,
-                             exc=exception.PolicyNotAuthorized,
-                             action=action)
 
+def check_is_admin(context):
+    """Whether or not roles contains 'admin' role according to policy setting.
 
-def check_is_admin(roles, context=None):
-    """Whether or not user is admin according to policy setting.
-
-       Can use roles or user_id from context to determine if user is admin.
-       In a multi-domain configuration, roles alone may not be sufficient.
     """
+
     init()
-
-    # include project_id on target to avoid KeyError if context_is_admin
-    # policy definition is missing, and default admin_or_owner rule
-    # attempts to apply.  Since our credentials dict does not include a
-    # project_id, this target can never match as a generic rule.
-    target = {'project_id': ''}
-    if context is None:
-        credentials = {'roles': roles}
-    else:
-        credentials = {'roles': context.roles,
-                       'user_id': context.user_id
-                       }
-
+    # the target is user-self
+    credentials = context.to_dict()
+    target = credentials
     return _ENFORCER.enforce('context_is_admin', target, credentials)
+
+
+@policy.register('is_admin')
+class IsAdminCheck(policy.Check):
+    """An explicit check for is_admin."""
+
+    def __init__(self, kind, match):
+        """Initialize the check."""
+
+        self.expected = (match.lower() == 'true')
+
+        super(IsAdminCheck, self).__init__(kind, str(self.expected))
+
+    def __call__(self, target, creds, enforcer):
+        """Determine whether is_admin matches the requested value."""
+
+        return creds['is_admin'] == self.expected
+
+
+def get_rules():
+    if _ENFORCER:
+        return _ENFORCER.rules

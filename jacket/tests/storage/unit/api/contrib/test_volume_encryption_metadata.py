@@ -18,7 +18,7 @@ import webob
 
 from jacket.api.storage.storage.contrib import volume_encryption_metadata
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.storage import test
 from jacket.tests.storage.unit.api import fakes
 

@@ -37,7 +37,7 @@ class ConsoleOutputController(wsgi.Controller):
     @wsgi.action('os-getConsoleOutput')
     def get_console_output(self, req, id, body):
         """Get text console output."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         instance = common.get_instance(self.compute_api, context, id)

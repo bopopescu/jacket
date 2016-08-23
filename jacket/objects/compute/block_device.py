@@ -278,7 +278,7 @@ class BlockDeviceMapping(base.NovaPersistentObject, base.NovaObject,
                    'name': self.obj_name(),
                    'uuid': self.uuid,
                    })
-        self.instance = db.Instance.get_by_uuid(self._context,
+        self.instance = compute.Instance.get_by_uuid(self._context,
                                                      self.instance_uuid)
         self.obj_reset_changes(fields=['instance'])
 
@@ -306,7 +306,7 @@ class BlockDeviceMappingList(base.ObjectListBase, base.NovaObject):
     VERSION = '1.17'
 
     fields = {
-        'compute': fields.ListOfObjectsField('BlockDeviceMapping'),
+        'objects': fields.ListOfObjectsField('BlockDeviceMapping'),
     }
 
     @property
@@ -334,7 +334,7 @@ class BlockDeviceMappingList(base.ObjectListBase, base.NovaObject):
         db_bdms = cls._db_block_device_mapping_get_all_by_instance_uuids(
             context, instance_uuids, use_slave=use_slave)
         return base.obj_make_list(
-                context, cls(), db.BlockDeviceMapping, db_bdms or [])
+                context, cls(), compute.BlockDeviceMapping, db_bdms or [])
 
     @staticmethod
     @db.select_db_reader_mode
@@ -348,7 +348,7 @@ class BlockDeviceMappingList(base.ObjectListBase, base.NovaObject):
         db_bdms = cls._db_block_device_mapping_get_all_by_instance(
             context, instance_uuid, use_slave=use_slave)
         return base.obj_make_list(
-                context, cls(), db.BlockDeviceMapping, db_bdms or [])
+                context, cls(), compute.BlockDeviceMapping, db_bdms or [])
 
     def root_bdm(self):
         """It only makes sense to call this method when the

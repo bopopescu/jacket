@@ -81,7 +81,7 @@ class SecurityGroupList(base.ObjectListBase, base.NovaObject):
     VERSION = '1.0'
 
     fields = {
-        'compute': fields.ListOfObjectsField('SecurityGroup'),
+        'objects': fields.ListOfObjectsField('SecurityGroup'),
         }
 
     def __init__(self, *args, **kwargs):

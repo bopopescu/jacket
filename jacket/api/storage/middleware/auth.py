@@ -61,7 +61,7 @@ def pipeline_factory(loader, global_conf, **local_conf):
 
 
 class InjectContext(base_wsgi.Middleware):
-    """Add a 'cinder.context' to WSGI environ."""
+    """Add a 'storage.context' to WSGI environ."""
 
     def __init__(self, context, *args, **kwargs):
         self.context = context
@@ -69,7 +69,7 @@ class InjectContext(base_wsgi.Middleware):
 
     @webob.dec.wsgify(RequestClass=base_wsgi.Request)
     def __call__(self, req):
-        req.environ['cinder.context'] = self.context
+        req.environ['storage.context'] = self.context
         return self.application
 
 
@@ -123,7 +123,7 @@ class CinderKeystoneContext(base_wsgi.Middleware):
                                      service_catalog=service_catalog,
                                      request_id=req_id)
 
-        req.environ['cinder.context'] = ctx
+        req.environ['storage.context'] = ctx
         return self.application
 
 
@@ -157,5 +157,5 @@ class NoAuthMiddleware(base_wsgi.Middleware):
                                      is_admin=True,
                                      remote_address=remote_address)
 
-        req.environ['cinder.context'] = ctx
+        req.environ['storage.context'] = ctx
         return self.application

@@ -56,7 +56,7 @@ class TagList(base.ObjectListBase, base.NovaObject):
     VERSION = '1.1'
 
     fields = {
-        'compute': fields.ListOfObjectsField('Tag'),
+        'objects': fields.ListOfObjectsField('Tag'),
         }
 
     @base.remotable_classmethod

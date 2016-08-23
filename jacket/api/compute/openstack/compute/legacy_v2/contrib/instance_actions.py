@@ -51,7 +51,7 @@ class InstanceActionsController(wsgi.Controller):
 
     def index(self, req, server_id):
         """Returns the list of actions recorded for a given instance."""
-        context = req.environ["cloud.context"]
+        context = req.environ["compute.context"]
         instance = common.get_instance(self.compute_api, context, server_id)
         authorize_actions(context, target=instance)
         actions_raw = self.action_api.actions_get(context, instance)
@@ -60,7 +60,7 @@ class InstanceActionsController(wsgi.Controller):
 
     def show(self, req, server_id, id):
         """Return data about the given instance action."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         instance = common.get_instance(self.compute_api, context, server_id)
         authorize_actions(context, target=instance)
         action = self.action_api.action_get_by_request_id(context, instance,

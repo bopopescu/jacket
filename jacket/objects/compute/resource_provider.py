@@ -179,7 +179,7 @@ class InventoryList(base.ObjectListBase, base.NovaObject):
     VERSION = '1.0'
 
     fields = {
-        'compute': fields.ListOfObjectsField('Inventory'),
+        'objects': fields.ListOfObjectsField('Inventory'),
     }
 
     @staticmethod

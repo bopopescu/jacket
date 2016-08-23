@@ -100,7 +100,7 @@ class InstanceActionList(base.ObjectListBase, base.NovaObject):
     #              InstanceAction <= version 1.1
     VERSION = '1.0'
     fields = {
-        'compute': fields.ListOfObjectsField('InstanceAction'),
+        'objects': fields.ListOfObjectsField('InstanceAction'),
         }
 
     @base.remotable_classmethod
@@ -207,7 +207,7 @@ class InstanceActionEvent(base.NovaPersistentObject, base.NovaObject,
 class InstanceActionEventList(base.ObjectListBase, base.NovaObject):
     VERSION = '1.1'
     fields = {
-        'compute': fields.ListOfObjectsField('InstanceActionEvent'),
+        'objects': fields.ListOfObjectsField('InstanceActionEvent'),
         }
 
     @base.remotable_classmethod

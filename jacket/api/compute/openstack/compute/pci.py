@@ -41,7 +41,7 @@ class PciServerController(wsgi.Controller):
 
     @wsgi.extends
     def show(self, req, resp_obj, id):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         if soft_authorize(context):
             server = resp_obj.obj['server']
             instance = req.get_db_instance(server['id'])
@@ -49,7 +49,7 @@ class PciServerController(wsgi.Controller):
 
     @wsgi.extends
     def detail(self, req, resp_obj):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         if soft_authorize(context):
             servers = list(resp_obj.obj['servers'])
             for server in servers:
@@ -98,7 +98,7 @@ class PciController(wsgi.Controller):
         return dev_dict
 
     def _get_all_nodes_pci_devices(self, req, detail, action):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action=action)
         compute_nodes = self.host_api.compute_node_get_all(context)
         results = []
@@ -116,7 +116,7 @@ class PciController(wsgi.Controller):
 
     @extensions.expected_errors(404)
     def show(self, req, id):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action='show')
         try:
             pci_dev = cloud.PciDevice.get_by_dev_id(context, id)

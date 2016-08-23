@@ -208,3 +208,13 @@ class ServiceBinaryExists(JacketException):
 
 class ServiceTopicExists(JacketException):
     msg_fmt = _("Service with host %(host)s topic %(topic)s exists.")
+
+
+class QuotaError(JacketException):
+    ec2_code = 'ResourceLimitExceeded'
+    msg_fmt = _("Quota exceeded: code=%(code)s")
+    # NOTE(cyeoh): 413 should only be used for the ec2 API
+    # The error status code for out of quota for the compute api should be
+    # 403 Forbidden.
+    code = 413
+    safe = True

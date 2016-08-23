@@ -49,7 +49,7 @@ service_opts = [
                     ' periodic task scheduler to reduce stampeding.'
                     ' (Disable by setting to 0)'),
     cfg.ListOpt('enabled_apis',
-                default=['osapi_compute', 'metadata', 'osapi_jacket'],
+                default=['osapi_compute', 'metadata', 'osapi_jacket', 'osapi_volume'],
                 help='A list of APIs to enable by default'),
     cfg.ListOpt('enabled_ssl_apis',
                 default=[],
@@ -130,7 +130,7 @@ service_opts = [
                default="0.0.0.0",
                help='IP address on which OpenStack jacket API listens'),
     cfg.PortOpt('osapi_jacket_listen_port',
-                default=9776,
+                default=9774,
                 help='Port on which OpenStack jacket API listens'),
     cfg.IntOpt('osapi_jacket_workers',
                help='Number of workers for OpenStack Jacket API service. '

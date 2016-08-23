@@ -25,7 +25,7 @@ import webob
 
 from jacket.storage.consistencygroup import api as consistencygroupAPI
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.objects import storage
 from jacket.storage import test

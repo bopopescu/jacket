@@ -21,7 +21,7 @@ from oslo_versionedobjects import fields
 from sqlalchemy import sql
 
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.db.storage.sqlalchemy import models
 from jacket.storage import exception
 from jacket.objects import storage

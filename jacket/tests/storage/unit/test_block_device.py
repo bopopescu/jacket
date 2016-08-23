@@ -17,7 +17,7 @@ import mock
 from oslo_config import cfg
 
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 import jacket.storage.exception
 from jacket.objects.storage import snapshot as obj_snap
 from jacket.objects.storage import volume as obj_volume

@@ -43,7 +43,7 @@ class RemoteConsolesController(wsgi.Controller):
     @validation.schema(remote_consoles.get_vnc_console)
     def get_vnc_console(self, req, id, body):
         """Get text console output."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         # If type is not supplied or unknown, get_vnc_console below will cope
@@ -72,7 +72,7 @@ class RemoteConsolesController(wsgi.Controller):
     @validation.schema(remote_consoles.get_spice_console)
     def get_spice_console(self, req, id, body):
         """Get text console output."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         # If type is not supplied or unknown, get_spice_console below will cope
@@ -101,7 +101,7 @@ class RemoteConsolesController(wsgi.Controller):
     @validation.schema(remote_consoles.get_rdp_console)
     def get_rdp_console(self, req, id, body):
         """Get text console output."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         # If type is not supplied or unknown, get_rdp_console below will cope
@@ -132,7 +132,7 @@ class RemoteConsolesController(wsgi.Controller):
     @validation.schema(remote_consoles.get_serial_console)
     def get_serial_console(self, req, id, body):
         """Get connection to a serial console."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         # If type is not supplied or unknown get_serial_console below will cope
@@ -162,7 +162,7 @@ class RemoteConsolesController(wsgi.Controller):
     @validation.schema(remote_consoles.create_v26, "2.6", "2.7")
     @validation.schema(remote_consoles.create_v28, "2.8")
     def create(self, req, server_id, body):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         instance = common.get_instance(self.compute_api, context, server_id)
         protocol = body['remote_console']['protocol']

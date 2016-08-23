@@ -31,7 +31,7 @@ class ServerPasswordController(object):
         self.compute_api = cloud.API()
 
     def index(self, req, server_id):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         instance = common.get_instance(self.compute_api, context, server_id)
 
@@ -40,7 +40,7 @@ class ServerPasswordController(object):
 
     @wsgi.response(204)
     def delete(self, req, server_id):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         instance = common.get_instance(self.compute_api, context, server_id)
         meta = password.convert_password(context, None)

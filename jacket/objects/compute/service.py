@@ -356,6 +356,38 @@ class Service(base.NovaPersistentObject, base.NovaObject,
 
         return version
 
+    @classmethod
+    def _get_minimum_version(cls, attribute, context, binary):
+        services = ServiceList.get_by_binary(context, binary)
+        min_ver = None
+        min_ver_str = None
+        for s in services:
+            ver_str = getattr(s, attribute)
+            if ver_str is None:
+                # FIXME(dulek) None in *_current_version means that this
+                # service is in Liberty version, so we must assume this is the
+                # lowest one. We use handy and easy to remember token to
+                # indicate that. This may go away as soon as we drop
+                # compatibility with Liberty, possibly in early N.
+                return 'liberty'
+            ver = versionutils.convert_version_to_int(ver_str)
+            if min_ver is None or ver < min_ver:
+                min_ver = ver
+                min_ver_str = ver_str
+
+        return min_ver_str
+
+
+    @base.remotable_classmethod
+    def get_minimum_rpc_version(cls, context, binary):
+        return cls._get_minimum_version('rpc_current_version', context, binary)
+
+
+    @base.remotable_classmethod
+    def get_minimum_obj_version(cls, context, binary):
+        return cls._get_minimum_version('object_current_version', context,
+                                        binary)
+
 
 @base.NovaObjectRegistry.register
 class ServiceList(base.ObjectListBase, base.NovaObject):
@@ -382,7 +414,7 @@ class ServiceList(base.ObjectListBase, base.NovaObject):
     VERSION = '1.18'
 
     fields = {
-        'compute': fields.ListOfObjectsField('Service'),
+        'objects': fields.ListOfObjectsField('Service'),
         }
 
     @base.remotable_classmethod
@@ -412,6 +444,9 @@ class ServiceList(base.ObjectListBase, base.NovaObject):
         if set_zones:
             db_services = availability_zones.set_availability_zones(
                 context, db_services)
+        LOG.debug("+++hw, db_services = %s", db_services)
+        LOG.debug("+++hw, dir(compute) = %s", dir(compute))
+        LOG.debug("+++hw, dir(compute.Service) = %s", dir(compute.Service))
         return base.obj_make_list(context, cls(context), compute.Service,
                                   db_services)
 

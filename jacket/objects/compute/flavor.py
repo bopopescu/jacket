@@ -257,7 +257,7 @@ class FlavorList(base.ObjectListBase, base.NovaObject):
     VERSION = '1.1'
 
     fields = {
-        'compute': fields.ListOfObjectsField('Flavor'),
+        'objects': fields.ListOfObjectsField('Flavor'),
         }
 
     @base.remotable_classmethod

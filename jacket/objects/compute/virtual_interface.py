@@ -84,7 +84,7 @@ class VirtualInterfaceList(base.ObjectListBase, base.NovaObject):
     # Version 1.0: Initial version
     VERSION = '1.0'
     fields = {
-        'compute': fields.ListOfObjectsField('VirtualInterface'),
+        'objects': fields.ListOfObjectsField('VirtualInterface'),
     }
 
     @base.remotable_classmethod

@@ -36,7 +36,7 @@ class SuspendServerController(wsgi.Controller):
     @wsgi.action('suspend')
     def _suspend(self, req, id, body):
         """Permit admins to suspend the server."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action='suspend')
         try:
             server = common.get_instance(self.compute_api, context, id)
@@ -54,7 +54,7 @@ class SuspendServerController(wsgi.Controller):
     @wsgi.action('resume')
     def _resume(self, req, id, body):
         """Permit admins to resume the server from suspend."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action='resume')
         try:
             server = common.get_instance(self.compute_api, context, id)

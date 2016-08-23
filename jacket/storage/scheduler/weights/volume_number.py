@@ -25,7 +25,7 @@ number and the weighing has the opposite effect of the default.
 from oslo_config import cfg
 from oslo_log import log as logging
 
-from jacket.db import storage
+from jacket import db
 from jacket.storage.scheduler import weights
 
 
@@ -54,7 +54,7 @@ class VolumeNumberWeigher(weights.BaseHostWeigher):
         We want spreading to be the default.
         """
         context = weight_properties['context']
-        volume_number = storage.volume_data_get_for_host(context=context,
+        volume_number = db.volume_data_get_for_host(context=context,
                                                     host=host_state.host,
                                                     count_only=True)
         return volume_number

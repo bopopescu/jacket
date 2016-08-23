@@ -47,7 +47,7 @@ class CreateBackupController(wsgi.Controller):
         rotation factor to be deleted.
 
         """
-        context = req.environ["cloud.context"]
+        context = req.environ["compute.context"]
         authorize(context)
         entity = body["createBackup"]
 

@@ -462,7 +462,7 @@ class PciDeviceList(base.ObjectListBase, base.NovaObject):
     VERSION = '1.3'
 
     fields = {
-        'compute': fields.ListOfObjectsField('PciDevice'),
+        'objects': fields.ListOfObjectsField('PciDevice'),
         }
 
     def __init__(self, *args, **kwargs):

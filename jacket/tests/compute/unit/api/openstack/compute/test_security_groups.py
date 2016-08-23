@@ -180,7 +180,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           {'security_group': sg})
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['cloud.context'])
+            self.req.environ['compute.context'])
 
     def test_create_security_group_with_no_description(self):
         sg = security_group_request_template()
@@ -190,7 +190,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.req, {'security_group': sg})
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['cloud.context'])
+            self.req.environ['compute.context'])
 
     def test_create_security_group_with_empty_description(self):
         sg = security_group_request_template()
@@ -205,7 +205,7 @@ class TestSecurityGroupsV21(test.TestCase):
         except exception.InvalidInput:
             self.fail('Should have raised BadRequest exception instead of')
         self._assert_no_security_groups_reserved(
-            self.req.environ['cloud.context'])
+            self.req.environ['compute.context'])
 
     def test_create_security_group_with_blank_name(self):
         sg = security_group_request_template(name='')
@@ -214,7 +214,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.req, {'security_group': sg})
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['cloud.context'])
+            self.req.environ['compute.context'])
 
     def test_create_security_group_with_whitespace_name(self):
         sg = security_group_request_template(name=' ')
@@ -223,7 +223,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.req, {'security_group': sg})
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['cloud.context'])
+            self.req.environ['compute.context'])
 
     def test_create_security_group_with_blank_description(self):
         sg = security_group_request_template(description='')
@@ -232,7 +232,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.req, {'security_group': sg})
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['cloud.context'])
+            self.req.environ['compute.context'])
 
     def test_create_security_group_with_whitespace_description(self):
         sg = security_group_request_template(description=' ')
@@ -241,7 +241,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.req, {'security_group': sg})
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['cloud.context'])
+            self.req.environ['compute.context'])
 
     def test_create_security_group_with_duplicate_name(self):
         sg = security_group_request_template()
@@ -253,14 +253,14 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.req, {'security_group': sg})
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['cloud.context'])
+            self.req.environ['compute.context'])
 
     def test_create_security_group_with_no_body(self):
         self.assertRaises(webob.exc.HTTPBadRequest,
                           self.controller.create, self.req, None)
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['cloud.context'])
+            self.req.environ['compute.context'])
 
     def test_create_security_group_with_no_security_group(self):
         body = {'no-securityGroup': None}
@@ -269,7 +269,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.controller.create, self.req, body)
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['cloud.context'])
+            self.req.environ['compute.context'])
 
     def test_create_security_group_above_255_characters_name(self):
         sg = security_group_request_template(name='1234567890' * 26)
@@ -278,7 +278,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.req, {'security_group': sg})
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['cloud.context'])
+            self.req.environ['compute.context'])
 
     def test_create_security_group_above_255_characters_description(self):
         sg = security_group_request_template(description='1234567890' * 26)
@@ -287,7 +287,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.req, {'security_group': sg})
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['cloud.context'])
+            self.req.environ['compute.context'])
 
     def test_create_security_group_non_string_name(self):
         sg = security_group_request_template(name=12)
@@ -296,7 +296,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.req, {'security_group': sg})
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['cloud.context'])
+            self.req.environ['compute.context'])
 
     def test_create_security_group_non_string_description(self):
         sg = security_group_request_template(description=12)
@@ -305,7 +305,7 @@ class TestSecurityGroupsV21(test.TestCase):
                           self.req, {'security_group': sg})
 
         self._assert_no_security_groups_reserved(
-            self.req.environ['cloud.context'])
+            self.req.environ['compute.context'])
 
     def test_create_security_group_quota_limit(self):
         for num in range(1, CONF.quota_security_groups):
@@ -460,7 +460,7 @@ class TestSecurityGroupsV21(test.TestCase):
         res_dict = self.server_controller.index(self.req, FAKE_UUID1)
         self.assertEqual(expected, res_dict)
         mock_sec_group.assert_called_once_with(
-            self.req.environ['cloud.context'], FAKE_UUID1)
+            self.req.environ['compute.context'], FAKE_UUID1)
 
     def test_get_security_group_by_instance_non_existing(self):
         self.stub_out('jacket.cloud.instance_get', return_server_nonexistent)
@@ -568,7 +568,7 @@ class TestSecurityGroupsV21(test.TestCase):
         sg = security_group_request_template()
 
         self.controller.create(self.req, {'security_group': sg})
-        context = self.req.environ['cloud.context']
+        context = self.req.environ['compute.context']
 
         # Ensure quota usage for security group is correct.
         self._assert_security_groups_in_use(context.project_id,

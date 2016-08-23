@@ -21,7 +21,7 @@ import mock
 from oslo_config import cfg
 import oslo_messaging as messaging
 
-from jacket.storage import rpc
+from jacket import rpc
 from jacket.storage import test
 
 

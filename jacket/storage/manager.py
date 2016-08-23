@@ -59,7 +59,7 @@ from oslo_service import periodic_task
 
 from jacket.db import base
 from jacket.storage.i18n import _LI
-from jacket.storage import rpc
+from jacket import rpc
 from jacket.storage.scheduler import rpcapi as scheduler_rpcapi
 from jacket.storage import version
 

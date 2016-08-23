@@ -17,7 +17,7 @@ from oslo_log import log as logging
 from oslo_utils import versionutils
 from oslo_versionedobjects import fields
 
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.storage.i18n import _
 from jacket.objects import storage
@@ -297,7 +297,7 @@ class Volume(base.CinderPersistentObject, base.CinderObject,
             raise exception.ObjectActionError(
                 action='create', reason=_('snapshots assigned'))
 
-        db_volume = storage.volume_create(self._context, updates)
+        db_volume = db.volume_create(self._context, updates)
         self._from_db_object(self._context, self, db_volume)
 
     @base.remotable
@@ -317,21 +317,21 @@ class Volume(base.CinderPersistentObject, base.CinderObject,
                 # Metadata items that are not specified in the
                 # self.metadata will be deleted
                 metadata = updates.pop('metadata', None)
-                self.metadata = storage.volume_metadata_update(self._context,
+                self.metadata = db.volume_metadata_update(self._context,
                                                           self.id, metadata,
                                                           True)
             if self._context.is_admin and 'admin_metadata' in updates:
                 metadata = updates.pop('admin_metadata', None)
-                self.admin_metadata = storage.volume_admin_metadata_update(
+                self.admin_metadata = db.volume_admin_metadata_update(
                     self._context, self.id, metadata, True)
 
-            storage.volume_update(self._context, self.id, updates)
+            db.volume_update(self._context, self.id, updates)
             self.obj_reset_changes()
 
     @base.remotable
     def destroy(self):
         with self.obj_as_admin():
-            storage.volume_destroy(self._context, self.id)
+            db.volume_destroy(self._context, self.id)
 
     def obj_load_attr(self, attrname):
         if attrname not in self.OPTIONAL_FIELDS:
@@ -343,17 +343,17 @@ class Volume(base.CinderPersistentObject, base.CinderObject,
                                                 objtype=self.obj_name())
 
         if attrname == 'metadata':
-            self.metadata = storage.volume_metadata_get(self._context, self.id)
+            self.metadata = db.volume_metadata_get(self._context, self.id)
         elif attrname == 'admin_metadata':
             self.admin_metadata = {}
             if self._context.is_admin:
-                self.admin_metadata = storage.volume_admin_metadata_get(
+                self.admin_metadata = db.volume_admin_metadata_get(
                     self._context, self.id)
         elif attrname == 'glance_metadata':
             try:
                 # NOTE(dulek): We're using alias here to have conversion from
                 # list to dict done there.
-                self.volume_glance_metadata = storage.volume_glance_metadata_get(
+                self.volume_glance_metadata = db.volume_glance_metadata_get(
                     self._context, self.id)
             except exception.GlanceMetadataNotFound:
                 # NOTE(dulek): DB API raises when volume has no
@@ -381,7 +381,7 @@ class Volume(base.CinderPersistentObject, base.CinderObject,
         self.obj_reset_changes(fields=[attrname])
 
     def delete_metadata_key(self, key):
-        storage.volume_metadata_delete(self._context, self.id, key)
+        db.volume_metadata_delete(self._context, self.id, key)
         md_was_changed = 'metadata' in self.obj_what_changed()
 
         del self.metadata[key]
@@ -453,7 +453,7 @@ class VolumeList(base.ObjectListBase, base.CinderObject):
     @base.remotable_classmethod
     def get_all(cls, context, marker, limit, sort_keys=None, sort_dirs=None,
                 filters=None, offset=None):
-        volumes = storage.volume_get_all(context, marker, limit,
+        volumes = db.volume_get_all(context, marker, limit,
                                     sort_keys=sort_keys, sort_dirs=sort_dirs,
                                     filters=filters, offset=offset)
         expected_attrs = cls._get_expected_attrs(context)
@@ -462,14 +462,14 @@ class VolumeList(base.ObjectListBase, base.CinderObject):
 
     @base.remotable_classmethod
     def get_all_by_host(cls, context, host, filters=None):
-        volumes = storage.volume_get_all_by_host(context, host, filters)
+        volumes = db.volume_get_all_by_host(context, host, filters)
         expected_attrs = cls._get_expected_attrs(context)
         return base.obj_make_list(context, cls(context), storage.Volume,
                                   volumes, expected_attrs=expected_attrs)
 
     @base.remotable_classmethod
     def get_all_by_group(cls, context, group_id, filters=None):
-        volumes = storage.volume_get_all_by_group(context, group_id, filters)
+        volumes = db.volume_get_all_by_group(context, group_id, filters)
         expected_attrs = cls._get_expected_attrs(context)
         return base.obj_make_list(context, cls(context), storage.Volume,
                                   volumes, expected_attrs=expected_attrs)
@@ -478,7 +478,8 @@ class VolumeList(base.ObjectListBase, base.CinderObject):
     def get_all_by_project(cls, context, project_id, marker, limit,
                            sort_keys=None, sort_dirs=None, filters=None,
                            offset=None):
-        volumes = storage.volume_get_all_by_project(context, project_id, marker,
+        LOG.debug("+++hw, dir(storage) = %s", dir(storage))
+        volumes = db.volume_get_all_by_project(context, project_id, marker,
                                                limit, sort_keys=sort_keys,
                                                sort_dirs=sort_dirs,
                                                filters=filters, offset=offset)

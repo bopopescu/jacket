@@ -19,7 +19,7 @@ import copy
 import mock
 import time
 
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.tests.storage.unit import fake_snapshot
 from jacket.tests.storage.unit import utils as utils

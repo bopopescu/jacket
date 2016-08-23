@@ -277,7 +277,7 @@ class ServersController(wsgi.Controller):
     @extensions.expected_errors((400, 403))
     def index(self, req):
         """Returns a list of server names and ids for a given user."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action="index")
         try:
             servers = self._get_servers(req, is_detail=False)
@@ -288,7 +288,7 @@ class ServersController(wsgi.Controller):
     @extensions.expected_errors((400, 403))
     def detail(self, req):
         """Returns a list of server details for a given user."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action="detail")
         try:
             servers = self._get_servers(req, is_detail=True)
@@ -302,7 +302,7 @@ class ServersController(wsgi.Controller):
         search_opts = {}
         search_opts.update(req.GET)
 
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         remove_invalid_options(context, search_opts,
                 self._get_server_search_options(req))
 
@@ -518,7 +518,7 @@ class ServersController(wsgi.Controller):
     @extensions.expected_errors(404)
     def show(self, req, id):
         """Returns server details by server id."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action="show")
         instance = self._get_server(context, req, id, is_detail=True)
         return self._view_builder.show(req, instance)
@@ -531,7 +531,7 @@ class ServersController(wsgi.Controller):
     def create(self, req, body):
         """Creates a new server for a given user."""
 
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         server_dict = body['server']
         password = self._get_server_admin_password(server_dict)
         name = common.normalize_name(server_dict['name'])
@@ -797,7 +797,7 @@ class ServersController(wsgi.Controller):
     def update(self, req, id, body):
         """Update server then pass on to version-specific controller."""
 
-        ctxt = req.environ['cloud.context']
+        ctxt = req.environ['compute.context']
         update_dict = {}
         authorize(ctxt, action='update')
 
@@ -832,7 +832,7 @@ class ServersController(wsgi.Controller):
     @extensions.expected_errors((400, 404, 409))
     @wsgi.action('confirmResize')
     def _action_confirm_resize(self, req, id, body):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action='confirm_resize')
         instance = self._get_server(context, req, id)
         try:
@@ -852,7 +852,7 @@ class ServersController(wsgi.Controller):
     @extensions.expected_errors((400, 404, 409))
     @wsgi.action('revertResize')
     def _action_revert_resize(self, req, id, body):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action='revert_resize')
         instance = self._get_server(context, req, id)
         try:
@@ -878,7 +878,7 @@ class ServersController(wsgi.Controller):
     def _action_reboot(self, req, id, body):
 
         reboot_type = body['reboot']['type'].upper()
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action='reboot')
         instance = self._get_server(context, req, id)
 
@@ -892,7 +892,7 @@ class ServersController(wsgi.Controller):
 
     def _resize(self, req, instance_id, flavor_id, **kwargs):
         """Begin the resize process with given instance/flavor."""
-        context = req.environ["cloud.context"]
+        context = req.environ["compute.context"]
         authorize(context, action='resize')
         instance = self._get_server(context, req, instance_id)
 
@@ -931,7 +931,7 @@ class ServersController(wsgi.Controller):
     def delete(self, req, id):
         """Destroys a server."""
         try:
-            self._delete(req.environ['cloud.context'], req, id)
+            self._delete(req.environ['compute.context'], req, id)
         except exception.InstanceNotFound:
             msg = _("Instance could not be found")
             raise exc.HTTPNotFound(explanation=msg)
@@ -1007,7 +1007,7 @@ class ServersController(wsgi.Controller):
 
         password = self._get_server_admin_password(rebuild_dict)
 
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action='rebuild')
         instance = self._get_server(context, req, id)
 
@@ -1082,7 +1082,7 @@ class ServersController(wsgi.Controller):
     @validation.schema(schema_servers.create_image, '2.1')
     def _action_create_image(self, req, id, body):
         """Snapshot a server instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action='create_image')
 
         entity = body["createImage"]
@@ -1156,7 +1156,7 @@ class ServersController(wsgi.Controller):
     @wsgi.action('os-start')
     def _start_server(self, req, id, body):
         """Start an instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         instance = self._get_instance(context, id)
         authorize(context, instance, 'start')
         LOG.debug('start instance', instance=instance)
@@ -1175,7 +1175,7 @@ class ServersController(wsgi.Controller):
     @wsgi.action('os-stop')
     def _stop_server(self, req, id, body):
         """Stop an instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         instance = self._get_instance(context, id)
         authorize(context, instance, 'stop')
         LOG.debug('stop instance', instance=instance)
@@ -1196,7 +1196,7 @@ class ServersController(wsgi.Controller):
     @validation.schema(schema_servers.trigger_crash_dump)
     def _action_trigger_crash_dump(self, req, id, body):
         """Trigger crash dump in an instance"""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         instance = self._get_instance(context, id)
         authorize(context, instance, 'trigger_crash_dump')
         try:

@@ -28,14 +28,14 @@ from oslo_utils import importutils
 import six
 
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.storage import flow_utils
 from jacket.storage.i18n import _, _LE
 from jacket.storage import manager
 from jacket.objects import storage
 from jacket.storage import quota
-from jacket.storage import rpc
+from jacket import rpc
 from jacket.storage.scheduler.flows import create_volume
 from jacket.storage.volume import rpcapi as volume_rpcapi
 

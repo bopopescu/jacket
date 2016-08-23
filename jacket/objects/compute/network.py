@@ -217,7 +217,7 @@ class NetworkList(obj_base.ObjectListBase, obj_base.NovaObject):
     VERSION = '1.2'
 
     fields = {
-        'compute': fields.ListOfObjectsField('Network'),
+        'objects': fields.ListOfObjectsField('Network'),
         }
 
     @obj_base.remotable_classmethod

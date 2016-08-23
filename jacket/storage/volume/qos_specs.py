@@ -20,7 +20,7 @@ from oslo_db import exception as db_exc
 from oslo_log import log as logging
 
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.storage.i18n import _, _LE, _LW
 from jacket.storage.volume import volume_types
@@ -78,7 +78,7 @@ def create(context, name, specs=None):
     LOG.debug("Dict for qos_specs: %s", values)
 
     try:
-        qos_specs_ref = storage.qos_specs_create(context, values)
+        qos_specs_ref = db.qos_specs_create(context, values)
     except db_exc.DBDataError:
         msg = _('Error writing field to database')
         LOG.exception(msg)
@@ -103,7 +103,7 @@ def update(context, qos_specs_id, specs):
     _verify_prepare_qos_specs(specs, create=False)
     LOG.debug('qos_specs.update(): specs %s' % specs)
     try:
-        res = storage.qos_specs_update(context, qos_specs_id, specs)
+        res = db.qos_specs_update(context, qos_specs_id, specs)
     except db_exc.DBError:
         LOG.exception(_LE('DB error:'))
         raise exception.QoSSpecsUpdateFailed(specs_id=qos_specs_id,
@@ -127,7 +127,7 @@ def delete(context, qos_specs_id, force=False):
         raise exception.InvalidQoSSpecs(reason=msg)
 
     # check if there is any entity associated with this qos specs
-    res = storage.qos_specs_associations_get(context, qos_specs_id)
+    res = db.qos_specs_associations_get(context, qos_specs_id)
     if res and not force:
         raise exception.QoSSpecsInUse(specs_id=qos_specs_id)
     elif res and force:
@@ -153,7 +153,7 @@ def get_associations(context, specs_id):
     """Get all associations of given qos specs."""
     try:
         # query returns a list of volume types associated with qos specs
-        associates = storage.qos_specs_associations_get(context, specs_id)
+        associates = db.qos_specs_associations_get(context, specs_id)
     except db_exc.DBError:
         LOG.exception(_LE('DB error:'))
         msg = _('Failed to get all associations of '
@@ -234,7 +234,7 @@ def disassociate_all(context, specs_id):
 def get_all_specs(context, filters=None, marker=None, limit=None, offset=None,
                   sort_keys=None, sort_dirs=None):
     """Get all non-deleted qos specs."""
-    qos_specs = storage.qos_specs_get_all(context, filters=filters, marker=marker,
+    qos_specs = db.qos_specs_get_all(context, filters=filters, marker=marker,
                                      limit=limit, offset=offset,
                                      sort_keys=sort_keys, sort_dirs=sort_dirs)
     return qos_specs

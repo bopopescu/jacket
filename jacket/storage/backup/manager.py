@@ -49,7 +49,7 @@ from jacket.storage import manager
 from jacket.objects import storage
 from jacket.objects.storage import fields
 from jacket.storage import quota
-from jacket.storage import rpc
+from jacket import rpc
 from jacket.storage import utils
 from jacket.worker import rpcapi as jacket_rpcapi
 from jacket.storage.volume import utils as volume_utils

@@ -82,7 +82,7 @@ class EvacuateController(wsgi.Controller):
         """Permit admins to evacuate a server from a failed host
         to a new one.
         """
-        context = req.environ["cloud.context"]
+        context = req.environ["compute.context"]
         authorize(context)
 
         evacuate_body = body["evacuate"]

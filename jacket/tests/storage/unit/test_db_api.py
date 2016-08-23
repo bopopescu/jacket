@@ -23,7 +23,7 @@ import six
 
 from jacket.api.storage.storage import common
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.db.storage.sqlalchemy import api as sqlalchemy_api
 from jacket.storage import exception
 from jacket.objects import storage

@@ -75,7 +75,7 @@ class HostController(object):
         |     'zone': 'internal'}]}
 
         """
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         # NOTE(alex_xu): back-compatible with db layer hard-code admin
@@ -120,7 +120,7 @@ class HostController(object):
                 return False
             else:
                 raise webob.exc.HTTPBadRequest(explanation=msg % orig_val)
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         # NOTE(alex_xu): back-compatible with db layer hard-code admin
@@ -202,7 +202,7 @@ class HostController(object):
 
     def _host_power_action(self, req, host_name, action):
         """Reboots, shuts down or powers up the host."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         # NOTE(alex_xu): back-compatible with db layer hard-code admin
         # permission checks. This has to be left only for API v2.0 because
@@ -290,7 +290,7 @@ class HostController(object):
                 D: {'host': 'hostname','project': 'admin',
                     'cpu': 1, 'memory_mb': 2048, 'disk_gb': 30}
         """
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
 
         # NOTE(eliqiao): back-compatible with db layer hard-code admin
         # permission checks. This has to be left only for API v2.0 because

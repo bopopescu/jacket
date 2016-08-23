@@ -139,7 +139,7 @@ class Controller(wsgi.Controller):
         search_opts = {}
         search_opts.update(req.GET)
 
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         remove_invalid_options(context, search_opts,
                 self._get_server_search_options())
 
@@ -390,7 +390,7 @@ class Controller(wsgi.Controller):
 
     def show(self, req, id):
         """Returns server details by server id."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         instance = self._get_server(context, req, id, is_detail=True)
         return self._view_builder.show(req, instance)
 
@@ -512,7 +512,7 @@ class Controller(wsgi.Controller):
         if not self.is_valid_body(body, 'server'):
             raise exc.HTTPUnprocessableEntity()
 
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         server_dict = body['server']
         password = self._get_server_admin_password(server_dict)
 
@@ -690,7 +690,7 @@ class Controller(wsgi.Controller):
         if not self.is_valid_body(body, 'server'):
             raise exc.HTTPUnprocessableEntity()
 
-        ctxt = req.environ['cloud.context']
+        ctxt = req.environ['compute.context']
         update_dict = {}
 
         if 'name' in body['server']:
@@ -740,7 +740,7 @@ class Controller(wsgi.Controller):
     @wsgi.response(204)
     @wsgi.action('confirmResize')
     def _action_confirm_resize(self, req, id, body):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         instance = self._get_server(context, req, id)
         try:
             self.compute_api.confirm_resize(context, instance)
@@ -756,7 +756,7 @@ class Controller(wsgi.Controller):
     @wsgi.response(202)
     @wsgi.action('revertResize')
     def _action_revert_resize(self, req, id, body):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         instance = self._get_server(context, req, id)
         try:
             self.compute_api.revert_resize(context, instance)
@@ -792,7 +792,7 @@ class Controller(wsgi.Controller):
             LOG.error(msg)
             raise exc.HTTPBadRequest(explanation=msg)
 
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         instance = self._get_server(context, req, id)
 
         try:
@@ -806,7 +806,7 @@ class Controller(wsgi.Controller):
 
     def _resize(self, req, instance_id, flavor_id, **kwargs):
         """Begin the resize process with given instance/flavor."""
-        context = req.environ["cloud.context"]
+        context = req.environ["compute.context"]
         instance = self._get_server(context, req, instance_id)
         try:
             self.compute_api.resize(context, instance, flavor_id, **kwargs)
@@ -847,7 +847,7 @@ class Controller(wsgi.Controller):
     def delete(self, req, id):
         """Destroys a server."""
         try:
-            self._delete(req.environ['cloud.context'], req, id)
+            self._delete(req.environ['compute.context'], req, id)
         except exception.NotFound:
             msg = _("Instance could not be found")
             raise exc.HTTPNotFound(explanation=msg)
@@ -915,7 +915,7 @@ class Controller(wsgi.Controller):
     @wsgi.response(202)
     @wsgi.action('changePassword')
     def _action_change_password(self, req, id, body):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         if (not body.get('changePassword')
                 or 'adminPass' not in body['changePassword']):
             msg = _("No adminPass was specified")
@@ -979,7 +979,7 @@ class Controller(wsgi.Controller):
 
         password = self._get_server_admin_password(body)
 
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         instance = self._get_server(context, req, id)
 
         attr_map = {
@@ -1070,7 +1070,7 @@ class Controller(wsgi.Controller):
     @common.check_snapshots_enabled
     def _action_create_image(self, req, id, body):
         """Snapshot a server instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         entity = body.get("createImage", {})
 
         image_name = entity.get("name")

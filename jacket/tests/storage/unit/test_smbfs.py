@@ -21,7 +21,7 @@ import mock
 from oslo_utils import fileutils
 
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.storage.image import image_utils
 from jacket.objects import storage

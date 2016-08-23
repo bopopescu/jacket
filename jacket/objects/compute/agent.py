@@ -74,7 +74,7 @@ class AgentList(base.ObjectListBase, base.NovaObject):
     VERSION = '1.0'
 
     fields = {
-        'compute': fields.ListOfObjectsField('Agent'),
+        'objects': fields.ListOfObjectsField('Agent'),
         }
 
     @base.remotable_classmethod

@@ -28,7 +28,7 @@ CONF.import_opt('password_length', 'cloud.utils')
 
 class FakeRequest(object):
     def __init__(self, context):
-        self.environ = {"cloud.context": context}
+        self.environ = {"compute.context": context}
 
 
 class ExtendedRescueWithImageTest(test.NoDBTestCase):

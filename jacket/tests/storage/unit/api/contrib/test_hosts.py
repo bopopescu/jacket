@@ -22,7 +22,7 @@ import webob.exc
 
 from jacket.api.storage.storage.contrib import hosts as os_hosts
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.storage import test
 
 

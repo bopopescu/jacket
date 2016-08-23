@@ -41,7 +41,7 @@ softauth = extensions.soft_extension_authorizer('cloud', 'security_groups')
 
 
 def _authorize_context(req):
-    context = req.environ['cloud.context']
+    context = req.environ['compute.context']
     authorize(context)
     return context
 
@@ -371,7 +371,7 @@ class SecurityGroupActionController(wsgi.Controller):
 
     @wsgi.action('addSecurityGroup')
     def _addSecurityGroup(self, req, id, body):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         group_name = self._parse(body, 'addSecurityGroup')
@@ -381,7 +381,7 @@ class SecurityGroupActionController(wsgi.Controller):
 
     @wsgi.action('removeSecurityGroup')
     def _removeSecurityGroup(self, req, id, body):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         group_name = self._parse(body, 'removeSecurityGroup')
@@ -451,7 +451,7 @@ class SecurityGroupsOutputController(wsgi.Controller):
                     servers[0][key] = groups
 
     def _show(self, req, resp_obj):
-        if not softauth(req.environ['cloud.context']):
+        if not softauth(req.environ['compute.context']):
             return
         if 'server' in resp_obj.obj:
             self._extend_servers(req, [resp_obj.obj['server']])
@@ -466,7 +466,7 @@ class SecurityGroupsOutputController(wsgi.Controller):
 
     @wsgi.extends
     def detail(self, req, resp_obj):
-        if not softauth(req.environ['cloud.context']):
+        if not softauth(req.environ['compute.context']):
             return
         self._extend_servers(req, list(resp_obj.obj['servers']))
 

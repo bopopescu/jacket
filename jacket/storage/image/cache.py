@@ -21,7 +21,7 @@ from oslo_utils import timeutils
 
 from jacket.storage.i18n import _LW
 from jacket.objects import storage
-from jacket.storage import rpc
+from jacket import rpc
 
 CONF = cfg.CONF
 

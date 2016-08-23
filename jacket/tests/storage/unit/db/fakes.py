@@ -16,7 +16,7 @@
 
 """Stubouts, mocks and fixtures for the test suite."""
 
-from jacket.db import storage
+from jacket import db
 
 
 class FakeModel(object):

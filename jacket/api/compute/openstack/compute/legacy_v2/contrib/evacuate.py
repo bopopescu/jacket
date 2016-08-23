@@ -41,7 +41,7 @@ class Controller(wsgi.Controller):
         to a new one.
         If host is empty, the scheduler will select one.
         """
-        context = req.environ["cloud.context"]
+        context = req.environ["compute.context"]
         authorize(context)
 
         # NOTE(alex_xu): back-compatible with db layer hard-code admin

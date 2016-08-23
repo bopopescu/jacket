@@ -21,7 +21,7 @@ from requests import exceptions as request_exceptions
 
 from jacket.storage.compute import nova
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.storage.scheduler import filters
 from jacket.storage import test

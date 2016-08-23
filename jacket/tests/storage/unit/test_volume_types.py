@@ -21,7 +21,7 @@ import time
 from oslo_config import cfg
 
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.db.storage.sqlalchemy import api as db_api
 from jacket.db.storage.sqlalchemy import models
 from jacket.storage import exception

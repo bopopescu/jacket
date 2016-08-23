@@ -84,7 +84,7 @@ class FloatingIPController(object):
 
     def show(self, req, id):
         """Return data about the given floating IP."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         try:
@@ -97,7 +97,7 @@ class FloatingIPController(object):
 
     def index(self, req):
         """Return a list of floating IPs allocated to a project."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         floating_ips = self.network_api.get_floating_ips_by_project(context)
@@ -105,7 +105,7 @@ class FloatingIPController(object):
         return _translate_floating_ips_view(floating_ips)
 
     def create(self, req, body=None):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         pool = None
@@ -134,7 +134,7 @@ class FloatingIPController(object):
         return _translate_floating_ip_view(ip)
 
     def delete(self, req, id):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         # get the floating ip object
@@ -168,7 +168,7 @@ class FloatingIPActionController(wsgi.Controller):
     @wsgi.action('addFloatingIp')
     def _add_floating_ip(self, req, id, body):
         """Associate floating_ip to an instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         try:
@@ -249,7 +249,7 @@ class FloatingIPActionController(wsgi.Controller):
     @wsgi.action('removeFloatingIp')
     def _remove_floating_ip(self, req, id, body):
         """Dissociate floating_ip from an instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         try:

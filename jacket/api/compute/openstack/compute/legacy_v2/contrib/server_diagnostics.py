@@ -30,7 +30,7 @@ class ServerDiagnosticsController(object):
         self.compute_api = cloud.API()
 
     def index(self, req, server_id):
-        context = req.environ["cloud.context"]
+        context = req.environ["compute.context"]
         authorize(context)
 
         instance = common.get_instance(self.compute_api, context, server_id)

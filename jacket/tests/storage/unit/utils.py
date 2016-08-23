@@ -22,7 +22,7 @@ from oslo_utils import timeutils
 import oslo_versionedobjects
 
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.objects import storage
 from jacket.objects.storage import fields
 from jacket.tests.storage.unit import fake_constants as fake

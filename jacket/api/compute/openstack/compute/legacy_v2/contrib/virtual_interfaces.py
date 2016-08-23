@@ -46,7 +46,7 @@ class ServerVirtualInterfaceController(object):
 
     def _items(self, req, server_id, entity_maker):
         """Returns a list of VIFs, transformed through entity_maker."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         instance = common.get_instance(self.compute_api, context, server_id)
 
         try:
@@ -61,7 +61,7 @@ class ServerVirtualInterfaceController(object):
 
     def index(self, req, server_id):
         """Returns the list of VIFs for a given instance."""
-        authorize(req.environ['cloud.context'])
+        authorize(req.environ['compute.context'])
         return self._items(req, server_id,
                            entity_maker=_translate_vif_summary_view)
 

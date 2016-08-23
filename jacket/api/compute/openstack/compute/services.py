@@ -41,7 +41,7 @@ class ServiceController(wsgi.Controller):
     def _get_services(self, req):
         api_services = ('cloud-osapi_compute', 'cloud-ec2', 'cloud-metadata')
 
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         _services = [
@@ -154,7 +154,7 @@ class ServiceController(wsgi.Controller):
 
     def _perform_action(self, req, id, body, actions):
         """Calculate action dictionary dependent on provided fields"""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         try:
@@ -169,7 +169,7 @@ class ServiceController(wsgi.Controller):
     @extensions.expected_errors((400, 404))
     def delete(self, req, id):
         """Deletes the specified service."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         try:

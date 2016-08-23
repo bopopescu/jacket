@@ -43,7 +43,7 @@ class AdminActionsController(wsgi.Controller):
     @wsgi.action('resetNetwork')
     def _reset_network(self, req, id, body):
         """Permit admins to reset networking on a server."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action='reset_network')
         try:
             instance = common.get_instance(self.compute_api, context, id)
@@ -58,7 +58,7 @@ class AdminActionsController(wsgi.Controller):
     @wsgi.action('injectNetworkInfo')
     def _inject_network_info(self, req, id, body):
         """Permit admins to inject network info into a server."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action='inject_network_info')
         try:
             instance = common.get_instance(self.compute_api, context, id)
@@ -74,7 +74,7 @@ class AdminActionsController(wsgi.Controller):
     @validation.schema(reset_server_state.reset_state)
     def _reset_state(self, req, id, body):
         """Permit admins to reset the state of a server."""
-        context = req.environ["cloud.context"]
+        context = req.environ["compute.context"]
         authorize(context, action='reset_state')
 
         # Identify the desired state from the body

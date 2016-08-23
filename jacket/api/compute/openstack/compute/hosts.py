@@ -79,7 +79,7 @@ class HostController(wsgi.Controller):
         |     'zone': 'internal'}]}
 
         """
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         filters = {'disabled': False}
         zone = req.GET.get('zone', None)
@@ -115,7 +115,7 @@ class HostController(wsgi.Controller):
             val = orig_val.strip().lower()
             return val == "enable"
 
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         # See what the user wants to 'update'
         status = body.get('status')
@@ -177,7 +177,7 @@ class HostController(wsgi.Controller):
 
     def _host_power_action(self, req, host_name, action):
         """Reboots, shuts down or powers up the host."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         try:
             result = self.api.host_power_action(context, host_name=host_name,
@@ -263,7 +263,7 @@ class HostController(wsgi.Controller):
                 D: {'host': 'hostname','project': 'admin',
                     'cpu': 1, 'memory_mb': 2048, 'disk_gb': 30}
         """
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         host_name = id
         try:

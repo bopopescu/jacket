@@ -14,7 +14,7 @@
 
 from oslo_versionedobjects import fixture
 
-from jacket.db import storage
+from jacket import db
 from jacket.objects.storage import base
 from jacket.storage import test
 

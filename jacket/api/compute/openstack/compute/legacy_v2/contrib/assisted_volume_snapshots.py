@@ -37,7 +37,7 @@ class AssistedVolumeSnapshotsController(wsgi.Controller):
 
     def create(self, req, body):
         """Creates a new snapshot."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action='create')
 
         if not self.is_valid_body(body, 'snapshot'):
@@ -58,7 +58,7 @@ class AssistedVolumeSnapshotsController(wsgi.Controller):
 
     def delete(self, req, id):
         """Delete a snapshot."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action='delete')
 
         LOG.info(_LI("Delete snapshot with id: %s"), id, context=context)

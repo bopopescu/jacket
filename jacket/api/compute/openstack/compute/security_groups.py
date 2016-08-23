@@ -39,7 +39,7 @@ softauth = extensions.os_compute_soft_authorizer(ALIAS)
 
 
 def _authorize_context(req):
-    context = req.environ['cloud.context']
+    context = req.environ['compute.context']
     authorize(context)
     return context
 
@@ -387,7 +387,7 @@ class SecurityGroupActionController(wsgi.Controller):
     @wsgi.response(202)
     @wsgi.action('addSecurityGroup')
     def _addSecurityGroup(self, req, id, body):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         group_name = self._parse(body, 'addSecurityGroup')
@@ -407,7 +407,7 @@ class SecurityGroupActionController(wsgi.Controller):
     @wsgi.response(202)
     @wsgi.action('removeSecurityGroup')
     def _removeSecurityGroup(self, req, id, body):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         group_name = self._parse(body, 'removeSecurityGroup')
@@ -438,7 +438,7 @@ class SecurityGroupsOutputController(wsgi.Controller):
         if not len(servers):
             return
         key = "security_groups"
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         if not softauth(context):
             return
 

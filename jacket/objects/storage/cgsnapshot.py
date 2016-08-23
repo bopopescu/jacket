@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.storage.i18n import _
 from jacket.objects import storage
@@ -79,7 +79,7 @@ class CGSnapshot(base.CinderPersistentObject, base.CinderObject,
             raise exception.ObjectActionError(
                 action='create', reason=_('consistencygroup assigned'))
 
-        db_cgsnapshots = storage.cgsnapshot_create(self._context, updates)
+        db_cgsnapshots = db.cgsnapshot_create(self._context, updates)
         self._from_db_object(self._context, self, db_cgsnapshots)
 
     def obj_load_attr(self, attrname):
@@ -111,13 +111,13 @@ class CGSnapshot(base.CinderPersistentObject, base.CinderObject,
             if 'snapshots' in updates:
                 raise exception.ObjectActionError(
                     action='save', reason=_('snapshots changed'))
-            storage.cgsnapshot_update(self._context, self.id, updates)
+            db.cgsnapshot_update(self._context, self.id, updates)
             self.obj_reset_changes()
 
     @base.remotable
     def destroy(self):
         with self.obj_as_admin():
-            storage.cgsnapshot_destroy(self._context, self.id)
+            db.cgsnapshot_destroy(self._context, self.id)
 
 
 @base.CinderObjectRegistry.register
@@ -130,20 +130,20 @@ class CGSnapshotList(base.ObjectListBase, base.CinderObject):
 
     @base.remotable_classmethod
     def get_all(cls, context, filters=None):
-        cgsnapshots = storage.cgsnapshot_get_all(context, filters)
+        cgsnapshots = db.cgsnapshot_get_all(context, filters)
         return base.obj_make_list(context, cls(context), storage.CGSnapshot,
                                   cgsnapshots)
 
     @base.remotable_classmethod
     def get_all_by_project(cls, context, project_id, filters=None):
-        cgsnapshots = storage.cgsnapshot_get_all_by_project(context, project_id,
+        cgsnapshots = db.cgsnapshot_get_all_by_project(context, project_id,
                                                        filters)
         return base.obj_make_list(context, cls(context), storage.CGSnapshot,
                                   cgsnapshots)
 
     @base.remotable_classmethod
     def get_all_by_group(cls, context, group_id, filters=None):
-        cgsnapshots = storage.cgsnapshot_get_all_by_group(context, group_id,
+        cgsnapshots = db.cgsnapshot_get_all_by_group(context, group_id,
                                                      filters)
         return base.obj_make_list(context, cls(context),
                                   storage.CGSnapshot,

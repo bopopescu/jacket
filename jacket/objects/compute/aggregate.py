@@ -189,7 +189,7 @@ class AggregateList(base.ObjectListBase, base.NovaObject):
     VERSION = '1.2'
 
     fields = {
-        'compute': fields.ListOfObjectsField('Aggregate'),
+        'objects': fields.ListOfObjectsField('Aggregate'),
         }
 
     @classmethod

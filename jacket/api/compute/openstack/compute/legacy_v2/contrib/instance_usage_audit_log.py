@@ -38,13 +38,13 @@ class InstanceUsageAuditLogController(object):
         self.host_api = cloud.HostAPI()
 
     def index(self, req):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         task_log = self._get_audit_task_logs(context)
         return {'instance_usage_audit_logs': task_log}
 
     def show(self, req, id):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         try:
             if '.' in id:

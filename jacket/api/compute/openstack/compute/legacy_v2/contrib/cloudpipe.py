@@ -107,7 +107,7 @@ class CloudpipeController(object):
         Parameters: {cloudpipe: {'project_id': ''}}
         """
 
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         params = body.get('cloudpipe', {})
         project_id = params.get('project_id', context.project_id)
@@ -130,7 +130,7 @@ class CloudpipeController(object):
 
     def index(self, req):
         """List running cloudpipe instances."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         vpns = [self._vpn_dict(context, x['project_id'], x)
                 for x in self._get_all_cloudpipes(context)]

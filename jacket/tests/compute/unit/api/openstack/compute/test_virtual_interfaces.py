@@ -59,7 +59,7 @@ def get_vifs_by_instance(self, context, instance_id):
 
 class FakeRequest(object):
     def __init__(self, context):
-        self.environ = {'cloud.context': context}
+        self.environ = {'compute.context': context}
 
 
 class ServerVirtualInterfaceTestV21(test.NoDBTestCase):

@@ -19,7 +19,7 @@ from oslo_serialization import jsonutils
 from oslo_utils import versionutils
 from oslo_versionedobjects import fields
 
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.storage.i18n import _
 from jacket.objects import storage
@@ -112,21 +112,21 @@ class Backup(base.CinderPersistentObject, base.CinderObject,
                                               reason='already created')
         updates = self.cinder_obj_get_changes()
 
-        db_backup = storage.backup_create(self._context, updates)
+        db_backup = db.backup_create(self._context, updates)
         self._from_db_object(self._context, self, db_backup)
 
     @base.remotable
     def save(self):
         updates = self.cinder_obj_get_changes()
         if updates:
-            storage.backup_update(self._context, self.id, updates)
+            db.backup_update(self._context, self.id, updates)
 
         self.obj_reset_changes()
 
     @base.remotable
     def destroy(self):
         with self.obj_as_admin():
-            storage.backup_destroy(self._context, self.id)
+            db.backup_destroy(self._context, self.id)
 
     @staticmethod
     def decode_record(backup_url):
@@ -167,14 +167,14 @@ class BackupList(base.ObjectListBase, base.CinderObject):
     @base.remotable_classmethod
     def get_all(cls, context, filters=None, marker=None, limit=None,
                 offset=None, sort_keys=None, sort_dirs=None):
-        backups = storage.backup_get_all(context, filters, marker, limit, offset,
+        backups = db.backup_get_all(context, filters, marker, limit, offset,
                                     sort_keys, sort_dirs)
         return base.obj_make_list(context, cls(context), storage.Backup,
                                   backups)
 
     @base.remotable_classmethod
     def get_all_by_host(cls, context, host):
-        backups = storage.backup_get_all_by_host(context, host)
+        backups = db.backup_get_all_by_host(context, host)
         return base.obj_make_list(context, cls(context), storage.Backup,
                                   backups)
 
@@ -182,7 +182,7 @@ class BackupList(base.ObjectListBase, base.CinderObject):
     def get_all_by_project(cls, context, project_id, filters=None,
                            marker=None, limit=None, offset=None,
                            sort_keys=None, sort_dirs=None):
-        backups = storage.backup_get_all_by_project(context, project_id, filters,
+        backups = db.backup_get_all_by_project(context, project_id, filters,
                                                marker, limit, offset,
                                                sort_keys, sort_dirs)
         return base.obj_make_list(context, cls(context), storage.Backup,
@@ -190,7 +190,7 @@ class BackupList(base.ObjectListBase, base.CinderObject):
 
     @base.remotable_classmethod
     def get_all_by_volume(cls, context, volume_id, filters=None):
-        backups = storage.backup_get_all_by_volume(context, volume_id, filters)
+        backups = db.backup_get_all_by_volume(context, volume_id, filters)
         return base.obj_make_list(context, cls(context), storage.Backup,
                                   backups)
 
@@ -213,5 +213,5 @@ class BackupImport(Backup):
     def create(self):
         updates = self.cinder_obj_get_changes()
 
-        db_backup = storage.backup_create(self._context, updates)
+        db_backup = db.backup_create(self._context, updates)
         self._from_db_object(self._context, self, db_backup)

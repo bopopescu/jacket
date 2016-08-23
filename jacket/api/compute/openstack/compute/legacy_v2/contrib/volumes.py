@@ -105,7 +105,7 @@ class VolumeController(wsgi.Controller):
 
     def show(self, req, id):
         """Return data about the given volume."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         try:
@@ -117,7 +117,7 @@ class VolumeController(wsgi.Controller):
 
     def delete(self, req, id):
         """Delete a volume."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         LOG.info(_LI("Delete volume with id: %s"), id, context=context)
@@ -138,7 +138,7 @@ class VolumeController(wsgi.Controller):
 
     def _items(self, req, entity_maker):
         """Returns a list of volumes, transformed through entity_maker."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         volumes = self.volume_api.get_all(context)
@@ -148,7 +148,7 @@ class VolumeController(wsgi.Controller):
 
     def create(self, req, body):
         """Creates a new volume."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         if not self.is_valid_body(body, 'volume'):
@@ -248,14 +248,14 @@ class VolumeAttachmentController(wsgi.Controller):
 
     def index(self, req, server_id):
         """Returns the list of volume attachments for a given instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize_attach(context, action='index')
         return self._items(req, server_id,
                            entity_maker=_translate_attachment_summary_view)
 
     def show(self, req, server_id, id):
         """Return data about the given volume attachment."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         authorize_attach(context, action='show')
 
@@ -292,7 +292,7 @@ class VolumeAttachmentController(wsgi.Controller):
 
     def create(self, req, server_id, body):
         """Attach a volume to an instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         authorize_attach(context, action='create')
 
@@ -349,7 +349,7 @@ class VolumeAttachmentController(wsgi.Controller):
         if (not self.ext_mgr or
                 not self.ext_mgr.is_loaded('os-volume-attachment-update')):
             raise exc.HTTPBadRequest()
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         authorize_attach(context, action='update')
 
@@ -400,7 +400,7 @@ class VolumeAttachmentController(wsgi.Controller):
 
     def delete(self, req, server_id, id):
         """Detach a volume from an instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         authorize_attach(context, action='delete')
 
@@ -447,7 +447,7 @@ class VolumeAttachmentController(wsgi.Controller):
 
     def _items(self, req, server_id, entity_maker):
         """Returns a list of attachments, transformed through entity_maker."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         instance = common.get_instance(self.compute_api, context, server_id)
@@ -499,7 +499,7 @@ class SnapshotController(wsgi.Controller):
 
     def show(self, req, id):
         """Return data about the given snapshot."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         try:
@@ -511,7 +511,7 @@ class SnapshotController(wsgi.Controller):
 
     def delete(self, req, id):
         """Delete a snapshot."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         LOG.info(_LI("Delete snapshot with id: %s"), id, context=context)
@@ -532,7 +532,7 @@ class SnapshotController(wsgi.Controller):
 
     def _items(self, req, entity_maker):
         """Returns a list of snapshots, transformed through entity_maker."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         snapshots = self.volume_api.get_all_snapshots(context)
@@ -542,7 +542,7 @@ class SnapshotController(wsgi.Controller):
 
     def create(self, req, body):
         """Creates a new snapshot."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
 
         if not self.is_valid_body(body, 'snapshot'):

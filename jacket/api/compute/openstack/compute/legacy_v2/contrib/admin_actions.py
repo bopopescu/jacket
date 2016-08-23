@@ -49,7 +49,7 @@ class AdminActionsController(wsgi.Controller):
     @wsgi.action('pause')
     def _pause(self, req, id, body):
         """Permit Admins to pause the server."""
-        ctxt = req.environ['cloud.context']
+        ctxt = req.environ['compute.context']
         authorize(ctxt, 'pause')
         server = common.get_instance(self.compute_api, ctxt, id)
         try:
@@ -71,7 +71,7 @@ class AdminActionsController(wsgi.Controller):
     @wsgi.action('unpause')
     def _unpause(self, req, id, body):
         """Permit Admins to unpause the server."""
-        ctxt = req.environ['cloud.context']
+        ctxt = req.environ['compute.context']
         authorize(ctxt, 'unpause')
         server = common.get_instance(self.compute_api, ctxt, id)
         try:
@@ -93,7 +93,7 @@ class AdminActionsController(wsgi.Controller):
     @wsgi.action('suspend')
     def _suspend(self, req, id, body):
         """Permit admins to suspend the server."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, 'suspend')
         server = common.get_instance(self.compute_api, context, id)
         try:
@@ -115,7 +115,7 @@ class AdminActionsController(wsgi.Controller):
     @wsgi.action('resume')
     def _resume(self, req, id, body):
         """Permit admins to resume the server from suspend."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, 'resume')
         server = common.get_instance(self.compute_api, context, id)
         try:
@@ -137,11 +137,11 @@ class AdminActionsController(wsgi.Controller):
     @wsgi.action('migrate')
     def _migrate(self, req, id, body):
         """Permit admins to migrate a server to a new host."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, 'migrate')
         instance = common.get_instance(self.compute_api, context, id)
         try:
-            self.compute_api.resize(req.environ['cloud.context'], instance)
+            self.compute_api.resize(req.environ['compute.context'], instance)
         except exception.QuotaError as error:
             raise exc.HTTPForbidden(explanation=error.format_message())
         except exception.InstanceIsLocked as e:
@@ -161,7 +161,7 @@ class AdminActionsController(wsgi.Controller):
     @wsgi.action('resetNetwork')
     def _reset_network(self, req, id, body):
         """Permit admins to reset networking on a server."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, 'resetNetwork')
         instance = common.get_instance(self.compute_api, context, id)
         try:
@@ -180,7 +180,7 @@ class AdminActionsController(wsgi.Controller):
     @wsgi.action('injectNetworkInfo')
     def _inject_network_info(self, req, id, body):
         """Permit admins to inject network info into a server."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, 'injectNetworkInfo')
         instance = common.get_instance(self.compute_api, context, id)
         try:
@@ -199,7 +199,7 @@ class AdminActionsController(wsgi.Controller):
     @wsgi.action('lock')
     def _lock(self, req, id, body):
         """Lock a server instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, 'lock')
         instance = common.get_instance(self.compute_api, context, id)
         try:
@@ -216,7 +216,7 @@ class AdminActionsController(wsgi.Controller):
     @wsgi.action('unlock')
     def _unlock(self, req, id, body):
         """Unlock a server instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, 'unlock')
         instance = common.get_instance(self.compute_api, context, id)
         try:
@@ -244,7 +244,7 @@ class AdminActionsController(wsgi.Controller):
         rotation factor to be deleted.
 
         """
-        context = req.environ["cloud.context"]
+        context = req.environ["compute.context"]
         authorize(context, 'createBackup')
         entity = body["createBackup"]
 
@@ -300,7 +300,7 @@ class AdminActionsController(wsgi.Controller):
     @wsgi.action('os-migrateLive')
     def _migrate_live(self, req, id, body):
         """Permit admins to (live) migrate a server to a new host."""
-        context = req.environ["cloud.context"]
+        context = req.environ["compute.context"]
         authorize(context, 'migrateLive')
 
         try:
@@ -359,7 +359,7 @@ class AdminActionsController(wsgi.Controller):
     @wsgi.action('os-resetState')
     def _reset_state(self, req, id, body):
         """Permit admins to reset the state of a server."""
-        context = req.environ["cloud.context"]
+        context = req.environ["compute.context"]
         authorize(context, 'resetState')
 
         # Identify the desired state from the body

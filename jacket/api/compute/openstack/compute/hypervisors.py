@@ -76,7 +76,7 @@ class HypervisorsController(wsgi.Controller):
 
     @extensions.expected_errors(())
     def index(self, req):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         compute_nodes = self.host_api.compute_node_get_all(context)
         req.cache_db_compute_nodes(compute_nodes)
@@ -89,7 +89,7 @@ class HypervisorsController(wsgi.Controller):
 
     @extensions.expected_errors(())
     def detail(self, req):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         compute_nodes = self.host_api.compute_node_get_all(context)
         req.cache_db_compute_nodes(compute_nodes)
@@ -102,7 +102,7 @@ class HypervisorsController(wsgi.Controller):
 
     @extensions.expected_errors(404)
     def show(self, req, id):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         try:
             hyp = self.host_api.compute_node_get(context, id)
@@ -116,7 +116,7 @@ class HypervisorsController(wsgi.Controller):
 
     @extensions.expected_errors((404, 501))
     def uptime(self, req, id):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         try:
             hyp = self.host_api.compute_node_get(context, id)
@@ -138,7 +138,7 @@ class HypervisorsController(wsgi.Controller):
 
     @extensions.expected_errors(404)
     def search(self, req, id):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         hypervisors = self.host_api.compute_node_search_by_hypervisor(
                 context, id)
@@ -155,7 +155,7 @@ class HypervisorsController(wsgi.Controller):
 
     @extensions.expected_errors(404)
     def servers(self, req, id):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         compute_nodes = self.host_api.compute_node_search_by_hypervisor(
                 context, id)
@@ -175,7 +175,7 @@ class HypervisorsController(wsgi.Controller):
 
     @extensions.expected_errors(())
     def statistics(self, req):
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         stats = self.host_api.compute_node_statistics(context)
         return dict(hypervisor_statistics=stats)

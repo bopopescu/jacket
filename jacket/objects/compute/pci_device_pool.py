@@ -75,7 +75,7 @@ class PciDevicePoolList(base.ObjectListBase, base.NovaObject):
     # Version 1.1: PciDevicePool version 1.1
     VERSION = '1.1'
     fields = {
-             'compute': fields.ListOfObjectsField('PciDevicePool'),
+             'objects': fields.ListOfObjectsField('PciDevicePool'),
              }
 
 

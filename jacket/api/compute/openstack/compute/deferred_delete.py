@@ -37,7 +37,7 @@ class DeferredDeleteController(wsgi.Controller):
     @wsgi.action('restore')
     def _restore(self, req, id, body):
         """Restore a previously deleted instance."""
-        context = req.environ["cloud.context"]
+        context = req.environ["compute.context"]
         authorize(context)
         instance = common.get_instance(self.compute_api, context, id)
         try:
@@ -55,7 +55,7 @@ class DeferredDeleteController(wsgi.Controller):
     @wsgi.action('forceDelete')
     def _force_delete(self, req, id, body):
         """Force delete of instance before deferred cleanup."""
-        context = req.environ["cloud.context"]
+        context = req.environ["compute.context"]
         authorize(context)
         instance = common.get_instance(self.compute_api, context, id)
         try:

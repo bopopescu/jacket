@@ -19,7 +19,7 @@ Client side of the scheduler manager RPC API.
 from oslo_config import cfg
 from oslo_serialization import jsonutils
 
-from jacket.storage import rpc
+from jacket import rpc
 
 
 CONF = cfg.CONF

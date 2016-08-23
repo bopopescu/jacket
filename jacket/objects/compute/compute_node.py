@@ -382,7 +382,7 @@ class ComputeNodeList(base.ObjectListBase, base.NovaObject):
     # Version 1.14 ComputeNode version 1.14
     VERSION = '1.14'
     fields = {
-        'compute': fields.ListOfObjectsField('ComputeNode'),
+        'objects': fields.ListOfObjectsField('ComputeNode'),
         }
 
     @base.remotable_classmethod

@@ -62,7 +62,7 @@ class DNSDomainList(base.ObjectListBase, base.NovaObject):
     # Version 1.0: Initial version
     VERSION = '1.0'
     fields = {
-        'compute': fields.ListOfObjectsField('DNSDomain'),
+        'objects': fields.ListOfObjectsField('DNSDomain'),
     }
 
     @base.remotable_classmethod

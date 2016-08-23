@@ -27,7 +27,7 @@ from oslo_utils import timeutils
 import six
 
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.storage.i18n import _, _LE
 from jacket.storage import quota_utils
@@ -115,7 +115,7 @@ class DbQuotaDriver(object):
         quotas = {}
         default_quotas = {}
         if CONF.use_default_quota_class:
-            default_quotas = storage.quota_class_get_default(context)
+            default_quotas = db.quota_class_get_default(context)
 
         for resource in resources.values():
             if default_quotas:
@@ -145,9 +145,9 @@ class DbQuotaDriver(object):
 
         quotas = {}
         default_quotas = {}
-        class_quotas = storage.quota_class_get_all_by_name(context, quota_class)
+        class_quotas = db.quota_class_get_all_by_name(context, quota_class)
         if defaults:
-            default_quotas = storage.quota_class_get_default(context)
+            default_quotas = db.quota_class_get_default(context)
         for resource in resources.values():
             if resource.name in class_quotas:
                 quotas[resource.name] = class_quotas[resource.name]
@@ -184,12 +184,12 @@ class DbQuotaDriver(object):
         """
 
         quotas = {}
-        project_quotas = storage.quota_get_all_by_project(context, project_id)
+        project_quotas = db.quota_get_all_by_project(context, project_id)
         allocated_quotas = None
         if usages:
-            project_usages = storage.quota_usage_get_all_by_project(context,
+            project_usages = db.quota_usage_get_all_by_project(context,
                                                                project_id)
-            allocated_quotas = storage.quota_allocated_get_all_by_project(
+            allocated_quotas = db.quota_allocated_get_all_by_project(
                 context, project_id)
             allocated_quotas.pop('project_id')
 
@@ -200,7 +200,7 @@ class DbQuotaDriver(object):
         if project_id == context.project_id:
             quota_class = context.quota_class
         if quota_class:
-            class_quotas = storage.quota_class_get_all_by_name(context, quota_class)
+            class_quotas = db.quota_class_get_all_by_name(context, quota_class)
         else:
             class_quotas = {}
 
@@ -619,7 +619,7 @@ class NestedDbQuotaDriver(DbQuotaDriver):
         failed_usages = {}
         for res in deltas.keys():
             try:
-                reserved += storage.quota_reserve(
+                reserved += db.quota_reserve(
                     context, resources, quotas, {res: deltas[res]},
                     expire, CONF.until_refresh, CONF.max_age, project_id)
                 if quotas[res] == -1:
@@ -1098,7 +1098,7 @@ class QuotaEngine(object):
         # NOTE(jdg): set inactive to True in volume_type_get, as we
         # may be operating on a volume that was created with a type
         # that has since been deleted.
-        volume_type = storage.volume_type_get(context, volume_type_id, True)
+        volume_type = db.volume_type_get(context, volume_type_id, True)
 
         for quota in ('volumes', 'gigabytes', 'snapshots'):
             if quota in opts:
@@ -1135,7 +1135,7 @@ class VolumeTypeQuotaEngine(QuotaEngine):
             result[resource.name] = resource
 
         # Volume type quotas.
-        volume_types = storage.volume_type_get_all(context.get_admin_context(),
+        volume_types = db.volume_type_get_all(context.get_admin_context(),
                                               False)
         for volume_type in volume_types.values():
             for part_name in ('volumes', 'gigabytes', 'snapshots'):

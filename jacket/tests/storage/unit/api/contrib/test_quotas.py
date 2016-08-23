@@ -28,7 +28,7 @@ import webob.exc
 
 from jacket.api.storage.storage.contrib import quotas
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.storage import quota
 from jacket.storage import test

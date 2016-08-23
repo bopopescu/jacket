@@ -55,7 +55,7 @@ class ServerVirtualInterfaceController(wsgi.Controller):
 
     def _items(self, req, server_id, entity_maker):
         """Returns a list of VIFs, transformed through entity_maker."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context)
         instance = common.get_instance(self.compute_api, context, server_id)
 

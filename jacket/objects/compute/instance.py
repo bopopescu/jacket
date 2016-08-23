@@ -1033,7 +1033,7 @@ class InstanceList(base.ObjectListBase, base.NovaObject):
     VERSION = '2.0'
 
     fields = {
-        'compute': fields.ListOfObjectsField('Instance'),
+        'objects': fields.ListOfObjectsField('Instance'),
     }
 
     @classmethod

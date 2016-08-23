@@ -26,7 +26,7 @@ from oslo_utils import timeutils
 
 from jacket.storage.backup.drivers import tsm
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.objects import storage
 from jacket.storage import test

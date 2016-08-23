@@ -222,7 +222,7 @@ class FixedIPList(obj_base.ObjectListBase, obj_base.NovaObject):
     VERSION = '1.14'
 
     fields = {
-        'compute': fields.ListOfObjectsField('FixedIP'),
+        'objects': fields.ListOfObjectsField('FixedIP'),
         }
 
     @obj_base.remotable_classmethod

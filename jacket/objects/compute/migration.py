@@ -162,7 +162,7 @@ class MigrationList(base.ObjectListBase, base.NovaObject):
     VERSION = '1.3'
 
     fields = {
-        'compute': fields.ListOfObjectsField('Migration'),
+        'objects': fields.ListOfObjectsField('Migration'),
         }
 
     @staticmethod

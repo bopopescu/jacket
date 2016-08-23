@@ -31,7 +31,7 @@ import six
 
 from jacket.api.storage import common
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.db import base
 from jacket.storage import exception
 from jacket.storage import flow_utils

@@ -89,7 +89,7 @@ class KeyPairList(base.ObjectListBase, base.NovaObject):
     VERSION = '1.2'
 
     fields = {
-        'compute': fields.ListOfObjectsField('KeyPair'),
+        'objects': fields.ListOfObjectsField('KeyPair'),
         }
 
     @base.remotable_classmethod

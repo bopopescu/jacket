@@ -26,7 +26,7 @@ import webob
 
 from jacket.api.storage.storage.contrib import volume_transfer
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.storage import test
 from jacket.tests.storage.unit.api import fakes

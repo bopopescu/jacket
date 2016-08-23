@@ -35,10 +35,10 @@ from six.moves import range
 
 from jacket.storage.brick.local_dev import lvm as brick_lvm
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.storage.i18n import _, _LI, _LW, _LE
-from jacket.storage import rpc
+from jacket import rpc
 from jacket.storage import utils
 from jacket.storage.volume import throttling
 
@@ -76,11 +76,11 @@ def _usage_from_volume(context, volume_ref, **kw):
 
     usage_info.update(kw)
     try:
-        attachments = storage.volume_attachment_get_used_by_volume_id(
+        attachments = db.volume_attachment_get_used_by_volume_id(
             context, volume_ref['id'])
         usage_info['volume_attachment'] = attachments
 
-        glance_meta = storage.volume_glance_metadata_get(context, volume_ref['id'])
+        glance_meta = db.volume_glance_metadata_get(context, volume_ref['id'])
         if glance_meta:
             usage_info['glance_metadata'] = glance_meta
     except exception.GlanceMetadataNotFound:

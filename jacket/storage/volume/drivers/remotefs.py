@@ -28,7 +28,7 @@ from oslo_utils import units
 import six
 
 from jacket.storage import compute
-from jacket.db import storage
+from jacket import db
 from jacket.storage import exception
 from jacket.storage import utils
 from jacket.storage.i18n import _, _LE, _LI, _LW
@@ -1285,7 +1285,7 @@ class RemoteFSSnapDriver(RemoteFSDriver, driver.SnapshotVD):
         increment = 1
         timeout = 600
         while True:
-            s = storage.snapshot_get(context, snapshot['id'])
+            s = db.snapshot_get(context, snapshot['id'])
 
             LOG.debug('Status of snapshot %(id)s is now %(status)s',
                       {'id': snapshot['id'],
@@ -1377,7 +1377,7 @@ class RemoteFSSnapDriver(RemoteFSDriver, driver.SnapshotVD):
         increment = 1
         timeout = 7200
         while True:
-            s = storage.snapshot_get(context, snapshot['id'])
+            s = db.snapshot_get(context, snapshot['id'])
 
             if s['status'] == 'deleting':
                 if s['progress'] == '90%':

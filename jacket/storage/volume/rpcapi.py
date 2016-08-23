@@ -22,7 +22,7 @@ from oslo_serialization import jsonutils
 from jacket.storage import exception
 from jacket.storage.i18n import _
 from jacket.storage import quota
-from jacket.storage import rpc
+from jacket import rpc
 from jacket.storage.volume import utils
 
 

@@ -21,7 +21,7 @@ import uuid
 from oslo_utils import timeutils
 
 from jacket.storage import context
-from jacket.db import storage
+from jacket import db
 from jacket.db.storage.sqlalchemy import api as db_api
 from jacket.storage import exception
 from jacket.storage import test

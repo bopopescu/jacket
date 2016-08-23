@@ -33,7 +33,7 @@ class LockServerController(wsgi.Controller):
     @wsgi.action('lock')
     def _lock(self, req, id, body):
         """Lock a server instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action='lock')
         instance = common.get_instance(self.compute_api, context, id)
         self.compute_api.lock(context, instance)
@@ -43,7 +43,7 @@ class LockServerController(wsgi.Controller):
     @wsgi.action('unlock')
     def _unlock(self, req, id, body):
         """Unlock a server instance."""
-        context = req.environ['cloud.context']
+        context = req.environ['compute.context']
         authorize(context, action='unlock')
         instance = common.get_instance(self.compute_api, context, id)
         if not self.compute_api.is_expected_locked_by(context, instance):
