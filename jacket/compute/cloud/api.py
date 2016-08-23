@@ -2047,6 +2047,13 @@ class API(base.Base):
         parameter.
         """
 
+        # test rpc
+        try:
+            self.jacket_rpcapi.compute_test(context, host="yibo")
+        except Exception as ex:
+            LOG.exception("+++hw, ex = %s", ex)
+            raise
+
         # TODO(bcwaldon): determine the best argument for target here
         target = {
             'project_id': context.project_id,

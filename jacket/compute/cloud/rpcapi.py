@@ -1066,3 +1066,11 @@ class ComputeAPI(object):
         cctxt = self.client.prepare(server=_compute_host(None, instance),
                 version=version)
         return cctxt.cast(ctxt, "trigger_crash_dump", instance=instance)
+
+
+    def compute_test(self, ctxt, host):
+        LOG.debug("+++hw, xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+        version = '4.0'
+        cctxt = self.client.prepare(version=version)
+        cctxt.cast(ctxt, 'restore_instance', instance=host)
+        return cctxt.cast(ctxt, "compute_test", host=host)

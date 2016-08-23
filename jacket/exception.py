@@ -218,3 +218,8 @@ class QuotaError(JacketException):
     # 403 Forbidden.
     code = 413
     safe = True
+
+
+class NotFound(JacketException):
+    msg_fmt = _("Resource could not be found.")
+    code = 404

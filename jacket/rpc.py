@@ -67,12 +67,12 @@ EXTRA_EXMODS = []
 # with Havana rpc_backend configuration values. The compute.rpc entries are for
 # compat with Essex values.
 TRANSPORT_ALIASES = {
-    'jacket.compute.openstack.common.rpc.impl_kombu': 'rabbit',
-    'jacket.compute.openstack.common.rpc.impl_qpid': 'qpid',
-    'jacket.compute.openstack.common.rpc.impl_zmq': 'zmq',
-    'jacket.compute.rpc.impl_kombu': 'rabbit',
-    'jacket.compute.rpc.impl_qpid': 'qpid',
-    'jacket.compute.rpc.impl_zmq': 'zmq',
+    'jacket.openstack.common.rpc.impl_kombu': 'rabbit',
+    'jacket.openstack.common.rpc.impl_qpid': 'qpid',
+    'jacket.openstack.common.rpc.impl_zmq': 'zmq',
+    'jacket.rpc.impl_kombu': 'rabbit',
+    'jacket.rpc.impl_qpid': 'qpid',
+    'jacket.rpc.impl_zmq': 'zmq',
 }
 
 

@@ -81,3 +81,10 @@ class JacketAPI(ComputeAPI, VolumeAPI):
         return rpc.get_client(target,
                               version_cap=version_cap,
                               serializer=serializer)
+
+
+    def compute_test(self, ctxt, host):
+        LOG.debug("+++hw, xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+        version = '1.0'
+        cctxt = self.client.prepare(server="ubuntu", version=version)
+        return cctxt.cast(ctxt, "compute_test")

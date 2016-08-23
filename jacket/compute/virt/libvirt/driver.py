@@ -352,26 +352,26 @@ GuestNumaConfig = collections.namedtuple(
     'GuestNumaConfig', ['cpuset', 'cputune', 'numaconfig', 'numatune'])
 
 libvirt_volume_drivers = [
-    'iscsi=compute.virt.libvirt.volume.iscsi.LibvirtISCSIVolumeDriver',
-    'iser=compute.virt.libvirt.volume.iser.LibvirtISERVolumeDriver',
-    'local=compute.virt.libvirt.volume.volume.LibvirtVolumeDriver',
-    'fake=compute.virt.libvirt.volume.volume.LibvirtFakeVolumeDriver',
-    'rbd=compute.virt.libvirt.volume.net.LibvirtNetVolumeDriver',
-    'sheepdog=compute.virt.libvirt.volume.net.LibvirtNetVolumeDriver',
-    'nfs=compute.virt.libvirt.volume.nfs.LibvirtNFSVolumeDriver',
-    'smbfs=compute.virt.libvirt.volume.smbfs.LibvirtSMBFSVolumeDriver',
-    'aoe=compute.virt.libvirt.volume.aoe.LibvirtAOEVolumeDriver',
+    'iscsi=jacket.compute.virt.libvirt.volume.iscsi.LibvirtISCSIVolumeDriver',
+    'iser=jacket.compute.virt.libvirt.volume.iser.LibvirtISERVolumeDriver',
+    'local=jacket.compute.virt.libvirt.volume.volume.LibvirtVolumeDriver',
+    'fake=jacket.compute.virt.libvirt.volume.volume.LibvirtFakeVolumeDriver',
+    'rbd=jacket.compute.virt.libvirt.volume.net.LibvirtNetVolumeDriver',
+    'sheepdog=jacket.compute.virt.libvirt.volume.net.LibvirtNetVolumeDriver',
+    'nfs=jacket.compute.virt.libvirt.volume.nfs.LibvirtNFSVolumeDriver',
+    'smbfs=jacket.compute.virt.libvirt.volume.smbfs.LibvirtSMBFSVolumeDriver',
+    'aoe=jacket.compute.virt.libvirt.volume.aoe.LibvirtAOEVolumeDriver',
     'glusterfs='
         'jacket.compute.virt.libvirt.volume.glusterfs.LibvirtGlusterfsVolumeDriver',
     'fibre_channel='
         'jacket.compute.virt.libvirt.volume.fibrechannel.'
         'LibvirtFibreChannelVolumeDriver',
-    'scality=compute.virt.libvirt.volume.scality.LibvirtScalityVolumeDriver',
-    'gpfs=compute.virt.libvirt.volume.gpfs.LibvirtGPFSVolumeDriver',
-    'quobyte=compute.virt.libvirt.volume.quobyte.LibvirtQuobyteVolumeDriver',
-    'hgst=compute.virt.libvirt.volume.hgst.LibvirtHGSTVolumeDriver',
-    'scaleio=compute.virt.libvirt.volume.scaleio.LibvirtScaleIOVolumeDriver',
-    'disco=compute.virt.libvirt.volume.disco.LibvirtDISCOVolumeDriver',
+    'scality=jacket.compute.virt.libvirt.volume.scality.LibvirtScalityVolumeDriver',
+    'gpfs=jacket.compute.virt.libvirt.volume.gpfs.LibvirtGPFSVolumeDriver',
+    'quobyte=jacket.compute.virt.libvirt.volume.quobyte.LibvirtQuobyteVolumeDriver',
+    'hgst=jacket.compute.virt.libvirt.volume.hgst.LibvirtHGSTVolumeDriver',
+    'scaleio=jacket.compute.virt.libvirt.volume.scaleio.LibvirtScaleIOVolumeDriver',
+    'disco=jacket.compute.virt.libvirt.volume.disco.LibvirtDISCOVolumeDriver',
 ]
 
 

@@ -54,13 +54,14 @@ import six
 from taskflow import exceptions as tfe
 
 from jacket.storage import compute
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.storage import flow_utils
 from jacket.storage.i18n import _, _LE, _LI, _LW
 from jacket.storage.image import cache as image_cache
 from jacket.storage.image import glance
-from jacket.storage import manager
+from jacket import manager
+from jacket import objects
 from jacket.objects import storage
 from jacket.objects.storage import fields
 from jacket.storage import quota
@@ -211,7 +212,7 @@ def locked_snapshot_operation(f):
     return lso_inner1
 
 
-class VolumeManager(manager.SchedulerDependentManager):
+class VolumeManager(manager.Manager):
     """Manages attachable block storage devices."""
 
     RPC_API_VERSION = '2.0'
@@ -255,11 +256,12 @@ class VolumeManager(manager.SchedulerDependentManager):
         curr_active_backend_id = None
         svc_host = vol_utils.extract_host(self.host, 'backend')
         try:
-            service = storage.Service.get_by_args(
+            service = objects.Service.get_by_args(
                 context.get_admin_context(),
                 svc_host,
                 'storage-volume')
-        except exception.ServiceNotFound:
+        # except exception.ServiceNotFound:
+        except Exception:
             # NOTE(jdg): This is to solve problems with unit tests
             LOG.info(_LI("Service not found for updating "
                          "active_backend_id, assuming default "
@@ -3473,6 +3475,8 @@ class VolumeManager(manager.SchedulerDependentManager):
         secure_enabled = self.driver.secure_file_operations_enabled()
         return secure_enabled
 
+    def storage_test(self, ctxt, host):
+        LOG.debug("+++hw, storage_test success!")
 
 # TODO(dulek): This goes away immediately in Newton and is just present in
 # Mitaka so that we can receive v1.x and v2.0 messages

@@ -49,7 +49,8 @@ service_opts = [
                     ' periodic task scheduler to reduce stampeding.'
                     ' (Disable by setting to 0)'),
     cfg.ListOpt('enabled_apis',
-                default=['osapi_compute', 'metadata', 'osapi_jacket', 'osapi_volume'],
+                #default=['osapi_compute', 'metadata', 'osapi_jacket', 'osapi_volume'],
+                default=['osapi_compute'],
                 help='A list of APIs to enable by default'),
     cfg.ListOpt('enabled_ssl_apis',
                 default=[],
@@ -82,9 +83,9 @@ service_opts = [
                     'be the number of CPUs available.'),
     # NOTE(sdague): Ironic is still using this facility for their HA
     # manager. Ensure they are sorted before removing this.
-    cfg.StrOpt('compute_manager',
-               default='jacket.compute.cloud.manager.ComputeManager',
-               help='DEPRECATED: Full class name for the Manager for compute',
+    cfg.StrOpt('jacket_manager',
+               default='jacket.worker.manager.WorkerManager',
+               help='DEPRECATED: Full class name for the Manager for jacket',
                deprecated_for_removal=True),
     cfg.StrOpt('console_manager',
                default='jacket.compute.console.manager.ConsoleProxyManager',
@@ -323,6 +324,7 @@ class Service(service.Service):
             manager_cls = ('%s_manager' %
                            binary.rpartition('jacket-')[2])
             manager = CONF.get(manager_cls, None)
+        LOG.debug("+++hw, manager_cls = %s, manager = %s, topic = %s", manager_cls,manager, topic)
         if report_interval is None:
             report_interval = CONF.report_interval
         if periodic_enable is None:

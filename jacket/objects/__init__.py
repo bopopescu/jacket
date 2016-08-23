@@ -5,7 +5,7 @@
 from jacket.objects import compute
 from jacket.objects import storage
 
+
 def register_all():
     compute.register_all()
     storage.register_all()
-    __import__('jacket.objects.compute.service')

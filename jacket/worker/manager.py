@@ -16,21 +16,25 @@ from jacket import rpc
 from jacket.compute.cloud import manager as com_manager
 from jacket.storage.volume import manager as vol_manager
 
+from jacket import manager
+
 LOG = logging.getLogger(__name__)
 
 get_notifier = functools.partial(rpc.get_notifier, service='worker')
 wrap_exception = functools.partial(exception.wrap_exception,
                                    get_notifier=get_notifier)
 
-class WorkerManager(com_manager.ComputeManager, vol_manager.VolumeManager):
+
+class WorkerManager(manager.Manager):
     """Manages the running instances from creation to destruction."""
     RPC_API_VERSION = '1.0'
 
-    target = messaging.Target(version=RPC_API_VERSION)
+    target = messaging.Target(version="1.0")
 
     def __init__(self, *args, **kwargs):
         """Load configuration options and connect to the cloud."""
         super(WorkerManager, self).__init__(service_name="worker", *args, **kwargs)
+        LOG.debug("+++hw, target = %s", self.target)
 
     def init_host(self):
         """Initialization for a standalone cloud service."""
@@ -47,3 +51,6 @@ class WorkerManager(com_manager.ComputeManager, vol_manager.VolumeManager):
 
     def reset(self):
         super(WorkerManager, self).reset()
+
+    def compute_test(self, ctxt):
+        LOG.debug("+++hw, compute_test..............................")

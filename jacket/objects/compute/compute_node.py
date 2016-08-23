@@ -20,7 +20,7 @@ from oslo_utils import versionutils
 
 from jacket import db
 from jacket.compute import exception
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 from jacket.objects.compute import pci_device_pool
@@ -214,7 +214,7 @@ class ComputeNode(base.NovaPersistentObject, base.NovaObject,
         sup_insts = db_compute.get('supported_instances')
         if sup_insts:
             hv_specs = jsonutils.loads(sup_insts)
-            hv_specs = [compute.HVSpec.from_list(hv_spec)
+            hv_specs = [objects.HVSpec.from_list(hv_spec)
                         for hv_spec in hv_specs]
             compute['supported_hv_specs'] = hv_specs
 
@@ -359,7 +359,7 @@ class ComputeNode(base.NovaPersistentObject, base.NovaObject,
         # supported_instances has a different name in compute_node
         if 'supported_instances' in resources:
             si = resources['supported_instances']
-            self.supported_hv_specs = [compute.HVSpec.from_list(s) for s in si]
+            self.supported_hv_specs = [objects.HVSpec.from_list(s) for s in si]
 
 
 @base.NovaObjectRegistry.register
@@ -388,14 +388,14 @@ class ComputeNodeList(base.ObjectListBase, base.NovaObject):
     @base.remotable_classmethod
     def get_all(cls, context):
         db_computes = db.compute_node_get_all(context)
-        return base.obj_make_list(context, cls(context), compute.ComputeNode,
+        return base.obj_make_list(context, cls(context), objects.ComputeNode,
                                   db_computes)
 
     @base.remotable_classmethod
     def get_by_hypervisor(cls, context, hypervisor_match):
         db_computes = db.compute_node_search_by_hypervisor(context,
                                                            hypervisor_match)
-        return base.obj_make_list(context, cls(context), compute.ComputeNode,
+        return base.obj_make_list(context, cls(context), objects.ComputeNode,
                                   db_computes)
 
     # NOTE(hanlind): This is deprecated and should be removed on the next
@@ -409,7 +409,7 @@ class ComputeNodeList(base.ObjectListBase, base.NovaObject):
             # NOTE(sbauza): Previous behaviour was returning an empty list
             # if the service was created with no computes, we need to keep it.
             db_computes = []
-        return base.obj_make_list(context, cls(context), compute.ComputeNode,
+        return base.obj_make_list(context, cls(context), objects.ComputeNode,
                                   db_computes)
 
     @staticmethod
@@ -421,5 +421,5 @@ class ComputeNodeList(base.ObjectListBase, base.NovaObject):
     def get_all_by_host(cls, context, host, use_slave=False):
         db_computes = cls._db_compute_node_get_all_by_host(context, host,
                                                       use_slave=use_slave)
-        return base.obj_make_list(context, cls(context), compute.ComputeNode,
+        return base.obj_make_list(context, cls(context), objects.ComputeNode,
                                   db_computes)
