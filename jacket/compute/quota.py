@@ -24,10 +24,9 @@ from oslo_utils import importutils
 from oslo_utils import timeutils
 import six
 
-from jacket import db
+from jacket.db import compute
 from jacket.compute import exception
 from jacket.i18n import _LE
-from jacket.objects import compute
 
 LOG = logging.getLogger(__name__)
 
@@ -313,7 +312,7 @@ class DbQuotaDriver(object):
         """
 
         settable_quotas = {}
-        db_proj_quotas = compute.quota_get_all_by_project(context, project_id)
+        compute_proj_quotas = db.quota_get_all_by_project(context, project_id)
         project_quotas = self.get_project_quotas(context, resources,
                                                  project_id, remains=True,
                                                  project_quotas=db_proj_quotas)
@@ -1459,7 +1458,7 @@ resources = [
     AbsoluteResource('injected_file_path_bytes',
                      'quota_injected_file_path_length'),
     CountableResource('security_group_rules',
-                      db.security_group_rule_count_by_group,
+                      compute.security_group_rule_count_by_group,
                       'quota_security_group_rules'),
     CountableResource('key_pairs', _keypair_get_count_by_user,
                       'quota_key_pairs'),

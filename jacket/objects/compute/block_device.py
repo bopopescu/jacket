@@ -380,4 +380,4 @@ def block_device_make_list(context, db_list, **extra_args):
 def block_device_make_list_from_dicts(context, bdm_dicts_list):
     bdm_objects = [compute.BlockDeviceMapping(context=context, **bdm)
                    for bdm in bdm_dicts_list]
-    return BlockDeviceMappingList(compute=bdm_objects)
+    return BlockDeviceMappingList(objects=bdm_objects)

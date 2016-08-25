@@ -23,7 +23,7 @@ from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.i18n import _LI
-from jacket.objects import compute
+from jacket.objects import compute as objects
 
 
 LOG = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ class ServerExternalEventsController(wsgi.Controller):
 
         for _event in body_events:
             client_event = dict(_event)
-            event = cloud.InstanceExternalEvent(context)
+            event = objects.InstanceExternalEvent(context)
 
             event.instance_uuid = client_event.pop('server_uuid')
             event.name = client_event.pop('name')
@@ -65,7 +65,7 @@ class ServerExternalEventsController(wsgi.Controller):
             instance = instances.get(event.instance_uuid)
             if not instance:
                 try:
-                    instance = cloud.Instance.get_by_uuid(
+                    instance = objects.Instance.get_by_uuid(
                         context, event.instance_uuid)
                     instances[event.instance_uuid] = instance
                 except exception.InstanceNotFound:

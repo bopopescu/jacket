@@ -25,7 +25,7 @@ wrap_exception = functools.partial(exception.wrap_exception,
                                    get_notifier=get_notifier)
 
 
-class WorkerManager(manager.Manager):
+class WorkerManager(com_manager.ComputeManager, vol_manager.VolumeManager):
     """Manages the running instances from creation to destruction."""
     RPC_API_VERSION = '1.0'
 
@@ -52,5 +52,5 @@ class WorkerManager(manager.Manager):
     def reset(self):
         super(WorkerManager, self).reset()
 
-    def compute_test(self, ctxt):
-        LOG.debug("+++hw, compute_test..............................")
+#    def compute_test(self, ctxt):
+#        LOG.debug("+++hw, compute_test..............................")
