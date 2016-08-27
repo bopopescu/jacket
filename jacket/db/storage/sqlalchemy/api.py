@@ -53,7 +53,7 @@ from sqlalchemy.sql import sqltypes
 
 from jacket.api.storage import common
 from jacket.common.storage import sqlalchemyutils
-from jacket import db
+from jacket.db import storage
 from jacket.db.storage.sqlalchemy import models
 from jacket.storage import exception
 from jacket.storage.i18n import _, _LW, _LE, _LI

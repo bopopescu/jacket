@@ -234,14 +234,14 @@ class VolumeManager(manager.Manager):
         # update_service_capabilities needs service_name to be volume
         super(VolumeManager, self).__init__(*args, **kwargs)
         self.additional_endpoints.append(_VolumeV1Proxy(self))
-        self.configuration = config.Configuration(volume_manager_opts,
+        self.storage_configuration = config.Configuration(volume_manager_opts,
                                                   config_group=service_name)
-        self.stats = {}
+        self.storage_stats = {}
 
         if not volume_driver:
             # Get from configuration, which will get the default
             # if its not using the multi backend
-            volume_driver = self.configuration.volume_driver
+            volume_driver = self.storage_configuration.volume_driver
         if volume_driver in MAPPING:
             LOG.warning(_LW("Driver path %s is deprecated, update your "
                             "configuration to the new path."), volume_driver)
@@ -269,39 +269,39 @@ class VolumeManager(manager.Manager):
         else:
             curr_active_backend_id = service.active_backend_id
 
-        if self.configuration.suppress_requests_ssl_warnings:
+        if self.storage_configuration.suppress_requests_ssl_warnings:
             LOG.warning(_LW("Suppressing requests library SSL Warnings"))
             requests.packages.urllib3.disable_warnings(
                 requests.packages.urllib3.exceptions.InsecureRequestWarning)
             requests.packages.urllib3.disable_warnings(
                 requests.packages.urllib3.exceptions.InsecurePlatformWarning)
 
-        self.driver = importutils.import_object(
+        self.storage_driver = importutils.import_object(
             volume_driver,
-            configuration=self.configuration,
+            configuration=self.storage_configuration,
             db=self.db,
             host=self.host,
             is_vol_db_empty=vol_db_empty,
             active_backend_id=curr_active_backend_id)
 
         if CONF.profiler.enabled and profiler is not None:
-            self.driver = profiler.trace_cls("driver")(self.driver)
+            self.storage_driver = profiler.trace_cls("driver")(self.storage_driver)
         try:
             self.extra_capabilities = jsonutils.loads(
-                self.driver.configuration.extra_capabilities)
+                self.storage_driver.configuration.extra_capabilities)
         except AttributeError:
             self.extra_capabilities = {}
         except Exception:
             with excutils.save_and_reraise_exception():
                 LOG.error(_LE("Invalid JSON: %s"),
-                          self.driver.configuration.extra_capabilities)
+                          self.storage_driver.configuration.extra_capabilities)
 
-        if self.driver.configuration.safe_get(
+        if self.storage_driver.configuration.safe_get(
                 'image_volume_cache_enabled'):
 
-            max_cache_size = self.driver.configuration.safe_get(
+            max_cache_size = self.storage_driver.configuration.safe_get(
                 'image_volume_cache_max_size_gb')
-            max_cache_entries = self.driver.configuration.safe_get(
+            max_cache_entries = self.storage_driver.configuration.safe_get(
                 'image_volume_cache_max_count')
 
             self.image_volume_cache = image_cache.ImageVolumeCache(
@@ -328,7 +328,7 @@ class VolumeManager(manager.Manager):
             # driver to provide pool info if it has such
             # knowledge and update the DB.
             try:
-                pool = self.driver.get_pool(volume)
+                pool = self.storage_driver.get_pool(volume)
             except Exception:
                 LOG.exception(_LE('Fetch volume pool name failed.'),
                               resource=volume)
@@ -344,21 +344,21 @@ class VolumeManager(manager.Manager):
                 # volume_backend_name being the pool name, if
                 # volume_backend_name is None, use default pool name.
                 # This is only for counting purpose, doesn't update DB.
-                pool = (self.driver.configuration.safe_get(
+                pool = (self.storage_driver.configuration.safe_get(
                     'volume_backend_name') or vol_utils.extract_host(
                     volume['host'], 'pool', True))
         try:
-            pool_stat = self.stats['pools'][pool]
+            pool_stat = self.storage_stats['pools'][pool]
         except KeyError:
             # First volume in the pool
-            self.stats['pools'][pool] = dict(
+            self.storage_stats['pools'][pool] = dict(
                 allocated_capacity_gb=0)
-            pool_stat = self.stats['pools'][pool]
+            pool_stat = self.storage_stats['pools'][pool]
         pool_sum = pool_stat['allocated_capacity_gb']
         pool_sum += volume['size']
 
-        self.stats['pools'][pool]['allocated_capacity_gb'] = pool_sum
-        self.stats['allocated_capacity_gb'] += volume['size']
+        self.storage_stats['pools'][pool]['allocated_capacity_gb'] = pool_sum
+        self.storage_stats['allocated_capacity_gb'] += volume['size']
 
     def _set_voldb_empty_at_startup_indicator(self, ctxt):
         """Determine if the Cinder volume DB is empty.
@@ -383,7 +383,7 @@ class VolumeManager(manager.Manager):
         # to be safe in what we allow and add a list of allowed keys
         # things that make sense are provider_*, replication_status etc
 
-        updates, snapshot_updates = self.driver.update_provider_info(
+        updates, snapshot_updates = self.storage_driver.update_provider_info(
             volumes, snapshots)
 
         if updates:
@@ -421,11 +421,11 @@ class VolumeManager(manager.Manager):
         ctxt = context.get_admin_context()
 
         LOG.info(_LI("Starting volume driver %(driver_name)s (%(version)s)"),
-                 {'driver_name': self.driver.__class__.__name__,
-                  'version': self.driver.get_version()})
+                 {'driver_name': self.storage_driver.__class__.__name__,
+                  'version': self.storage_driver.get_version()})
         try:
-            self.driver.do_setup(ctxt)
-            self.driver.check_for_setup_error()
+            self.storage_driver.do_setup(ctxt)
+            self.storage_driver.check_for_setup_error()
         except Exception:
             LOG.exception(_LE("Failed to initialize driver."),
                           resource={'type': 'driver',
@@ -435,7 +435,7 @@ class VolumeManager(manager.Manager):
             return
 
         # Initialize backend capabilities list
-        self.driver.init_capabilities()
+        self.storage_driver.init_capabilities()
 
         volumes = storage.VolumeList.get_all_by_host(ctxt, self.host)
         snapshots = self.db.snapshot_get_by_host(ctxt, self.host)
@@ -443,8 +443,8 @@ class VolumeManager(manager.Manager):
         # FIXME volume count for exporting is wrong
 
         try:
-            self.stats['pools'] = {}
-            self.stats.update({'allocated_capacity_gb': 0})
+            self.storage_stats['pools'] = {}
+            self.storage_stats.update({'allocated_capacity_gb': 0})
             for volume in volumes:
                 # available volume should also be counted into allocated
                 if volume['status'] in ['in-use', 'available']:
@@ -453,7 +453,7 @@ class VolumeManager(manager.Manager):
 
                     try:
                         if volume['status'] in ['in-use']:
-                            self.driver.ensure_export(ctxt, volume)
+                            self.storage_driver.ensure_export(ctxt, volume)
                     except Exception:
                         LOG.exception(_LE("Failed to re-export volume, "
                                           "setting to ERROR."),
@@ -468,7 +468,7 @@ class VolumeManager(manager.Manager):
                                 resource=volume)
 
                     if volume['status'] == 'downloading':
-                        self.driver.clear_download(ctxt, volume)
+                        self.storage_driver.clear_download(ctxt, volume)
                     volume.status = 'error'
                     volume.save()
                 elif volume.status == 'uploading':
@@ -489,12 +489,12 @@ class VolumeManager(manager.Manager):
                           resource=volume)
             return
 
-        self.driver.set_throttle()
+        self.storage_driver.set_throttle()
 
         # at this point the driver is considered initialized.
         # NOTE(jdg): Careful though because that doesn't mean
         # that an entry exists in the service table
-        self.driver.set_initialized()
+        self.storage_driver.set_initialized()
 
         for volume in volumes:
             if volume['status'] == 'deleting':
@@ -514,15 +514,15 @@ class VolumeManager(manager.Manager):
         self.publish_service_capabilities(ctxt)
         LOG.info(_LI("Driver initialization completed successfully."),
                  resource={'type': 'driver',
-                           'id': self.driver.__class__.__name__})
+                           'id': self.storage_driver.__class__.__name__})
 
     def init_host_with_rpc(self):
         LOG.info(_LI("Initializing RPC dependent components of volume "
                      "driver %(driver_name)s (%(version)s)"),
-                 {'driver_name': self.driver.__class__.__name__,
-                  'version': self.driver.get_version()})
+                 {'driver_name': self.storage_driver.__class__.__name__,
+                  'version': self.storage_driver.get_version()})
 
-        stats = self.driver.get_volume_stats(refresh=True)
+        stats = self.storage_driver.get_volume_stats(refresh=True)
         svc_host = vol_utils.extract_host(self.host, 'backend')
         try:
             service = storage.Service.get_by_args(
@@ -544,7 +544,7 @@ class VolumeManager(manager.Manager):
         service.save()
         LOG.info(_LI("Driver post RPC initialization completed successfully."),
                  resource={'type': 'driver',
-                           'id': self.driver.__class__.__name__})
+                           'id': self.storage_driver.__class__.__name__})
 
     def is_working(self):
         """Return if Manager is ready to accept requests.
@@ -553,7 +553,7 @@ class VolumeManager(manager.Manager):
         initialization failure the manager is actually down and not ready to
         accept any requests.
         """
-        return self.driver.initialized
+        return self.storage_driver.initialized
 
     def create_volume(self, context, volume_id, request_spec=None,
                       filter_properties=None, allow_reschedule=True,
@@ -579,8 +579,9 @@ class VolumeManager(manager.Manager):
                 context_elevated,
                 self,
                 self.db,
-                self.driver,
-                self.scheduler_rpcapi,
+                self.storage_driver,
+                #self.scheduler_rpcapi,
+                None,
                 self.host,
                 volume.id,
                 allow_reschedule,
@@ -719,11 +720,11 @@ class VolumeManager(manager.Manager):
             # NOTE(flaper87): Verify the driver is enabled
             # before going forward. The exception will be caught
             # and the volume status updated.
-            utils.require_driver_initialized(self.driver)
+            utils.require_driver_initialized(self.storage_driver)
 
-            self.driver.remove_export(context, volume)
+            self.storage_driver.remove_export(context, volume)
             if unmanage_only:
-                self.driver.unmanage(volume)
+                self.storage_driver.unmanage(volume)
             elif cascade:
                 LOG.debug('Performing cascade delete.')
                 snapshots = storage.SnapshotList.get_all_for_volume(context,
@@ -742,9 +743,9 @@ class VolumeManager(manager.Manager):
                     self.delete_snapshot(context, s)
 
                 LOG.debug('Snapshots deleted, issuing volume delete')
-                self.driver.delete_volume(volume)
+                self.storage_driver.delete_volume(volume)
             else:
-                self.driver.delete_volume(volume)
+                self.storage_driver.delete_volume(volume)
         except exception.VolumeIsBusy:
             LOG.error(_LE("Unable to delete busy volume."),
                       resource=volume)
@@ -795,15 +796,15 @@ class VolumeManager(manager.Manager):
             pool = vol_utils.extract_host(volume.host, 'pool')
             if pool is None:
                 # Legacy volume, put them into default pool
-                pool = self.driver.configuration.safe_get(
+                pool = self.storage_driver.configuration.safe_get(
                     'volume_backend_name') or vol_utils.extract_host(
                         volume.host, 'pool', True)
             size = volume.size
 
             try:
-                self.stats['pools'][pool]['allocated_capacity_gb'] -= size
+                self.storage_stats['pools'][pool]['allocated_capacity_gb'] -= size
             except KeyError:
-                self.stats['pools'][pool] = dict(
+                self.storage_stats['pools'][pool] = dict(
                     allocated_capacity_gb=-size)
 
             self.publish_service_capabilities(context)
@@ -834,13 +835,13 @@ class VolumeManager(manager.Manager):
             # NOTE(flaper87): Verify the driver is enabled
             # before going forward. The exception will be caught
             # and the snapshot status updated.
-            utils.require_driver_initialized(self.driver)
+            utils.require_driver_initialized(self.storage_driver)
 
             # Pass context so that drivers that want to use it, can,
             # but it is not a requirement for all drivers.
             snapshot.context = context
 
-            model_update = self.driver.create_snapshot(snapshot)
+            model_update = self.storage_driver.create_snapshot(snapshot)
             if model_update:
                 snapshot.update(model_update)
                 snapshot.save()
@@ -892,7 +893,7 @@ class VolumeManager(manager.Manager):
             # NOTE(flaper87): Verify the driver is enabled
             # before going forward. The exception will be caught
             # and the snapshot status updated.
-            utils.require_driver_initialized(self.driver)
+            utils.require_driver_initialized(self.storage_driver)
 
             # Pass context so that drivers that want to use it, can,
             # but it is not a requirement for all drivers.
@@ -900,9 +901,9 @@ class VolumeManager(manager.Manager):
             snapshot.save()
 
             if unmanage_only:
-                self.driver.unmanage_snapshot(snapshot)
+                self.storage_driver.unmanage_snapshot(snapshot)
             else:
-                self.driver.delete_snapshot(snapshot)
+                self.storage_driver.delete_snapshot(snapshot)
         except exception.SnapshotIsBusy:
             LOG.error(_LE("Delete snapshot failed, due to snapshot busy."),
                       resource=snapshot)
@@ -1009,7 +1010,7 @@ class VolumeManager(manager.Manager):
                 # NOTE(flaper87): Verify the driver is enabled
                 # before going forward. The exception will be caught
                 # and the volume status updated.
-                utils.require_driver_initialized(self.driver)
+                utils.require_driver_initialized(self.storage_driver)
 
                 LOG.debug('Attaching volume %(volume_id)s to instance '
                           '%(instance)s at mountpoint %(mount)s on host '
@@ -1017,7 +1018,7 @@ class VolumeManager(manager.Manager):
                           {'volume_id': volume_id, 'instance': instance_uuid,
                            'mount': mountpoint, 'host': host_name_sanitized},
                           resource=volume)
-                self.driver.attach_volume(context,
+                self.storage_driver.attach_volume(context,
                                           volume,
                                           instance_uuid,
                                           host_name_sanitized,
@@ -1088,14 +1089,14 @@ class VolumeManager(manager.Manager):
             # NOTE(flaper87): Verify the driver is enabled
             # before going forward. The exception will be caught
             # and the volume status updated.
-            utils.require_driver_initialized(self.driver)
+            utils.require_driver_initialized(self.storage_driver)
 
             LOG.debug('Detaching volume %(volume_id)s from instance '
                       '%(instance)s.',
                       {'volume_id': volume_id,
                        'instance': attachment.get('instance_uuid')},
                       resource=volume)
-            self.driver.detach_volume(context, volume, attachment)
+            self.storage_driver.detach_volume(context, volume, attachment)
         except Exception:
             with excutils.save_and_reraise_exception():
                 self.db.volume_attachment_update(
@@ -1116,8 +1117,8 @@ class VolumeManager(manager.Manager):
         # (delete the iscsi target)
         volume = self.db.volume_get(context, volume_id)
         try:
-            utils.require_driver_initialized(self.driver)
-            self.driver.remove_export(context.elevated(), volume)
+            utils.require_driver_initialized(self.storage_driver)
+            self.storage_driver.remove_export(context.elevated(), volume)
         except exception.DriverNotInitialized:
             with excutils.save_and_reraise_exception():
                 LOG.exception(_LE("Detach volume failed, due to "
@@ -1236,7 +1237,7 @@ class VolumeManager(manager.Manager):
             return False
 
         image_volume_context = ctx
-        if self.driver.configuration.image_upload_use_internal_tenant:
+        if self.storage_driver.configuration.image_upload_use_internal_tenant:
             internal_ctx = context.get_internal_tenant_context()
             if internal_ctx:
                 image_volume_context = internal_ctx
@@ -1291,11 +1292,11 @@ class VolumeManager(manager.Manager):
             # NOTE(flaper87): Verify the driver is enabled
             # before going forward. The exception will be caught
             # and the volume status updated.
-            utils.require_driver_initialized(self.driver)
+            utils.require_driver_initialized(self.storage_driver)
 
             image_service, image_id = \
                 glance.get_remote_image_service(context, image_meta['id'])
-            if (self.driver.configuration.image_upload_use_cinder_backend
+            if (self.storage_driver.configuration.image_upload_use_cinder_backend
                     and self._clone_image_volume_and_add_location(
                         context, volume, image_service, image_meta)):
                 LOG.debug("Registered image volume location to glance "
@@ -1303,7 +1304,7 @@ class VolumeManager(manager.Manager):
                           {'image_id': image_meta['id']},
                           resource=volume)
             else:
-                self.driver.copy_volume_to_image(context, volume,
+                self.storage_driver.copy_volume_to_image(context, volume,
                                                  image_service, image_meta)
                 LOG.debug("Uploaded volume to glance image-id: %(image_id)s.",
                           {'image_id': image_meta['id']},
@@ -1342,9 +1343,9 @@ class VolumeManager(manager.Manager):
                                                  'id': image_id})
 
     def _driver_data_namespace(self):
-        return self.driver.configuration.safe_get('driver_data_namespace') \
-            or self.driver.configuration.safe_get('volume_backend_name') \
-            or self.driver.__class__.__name__
+        return self.storage_driver.configuration.safe_get('driver_data_namespace') \
+            or self.storage_driver.configuration.safe_get('volume_backend_name') \
+            or self.storage_driver.__class__.__name__
 
     def _get_driver_initiator_data(self, context, connector):
         data = None
@@ -1425,11 +1426,11 @@ class VolumeManager(manager.Manager):
         # NOTE(flaper87): Verify the driver is enabled
         # before going forward. The exception will be caught
         # and the volume status updated.
-        utils.require_driver_initialized(self.driver)
+        utils.require_driver_initialized(self.storage_driver)
         volume = self.db.volume_get(context, volume_id)
         model_update = None
         try:
-            self.driver.validate_connector(connector)
+            self.storage_driver.validate_connector(connector)
         except exception.InvalidConnectorException as err:
             raise exception.InvalidInput(reason=six.text_type(err))
         except Exception as err:
@@ -1439,7 +1440,7 @@ class VolumeManager(manager.Manager):
             raise exception.VolumeBackendAPIException(data=err_msg)
 
         try:
-            model_update = self.driver.create_export(context.elevated(),
+            model_update = self.storage_driver.create_export(context.elevated(),
                                                      volume, connector)
         except exception.CinderException:
             err_msg = (_("Create export for volume failed."))
@@ -1458,18 +1459,18 @@ class VolumeManager(manager.Manager):
         initiator_data = self._get_driver_initiator_data(context, connector)
         try:
             if initiator_data:
-                conn_info = self.driver.initialize_connection(volume,
+                conn_info = self.storage_driver.initialize_connection(volume,
                                                               connector,
                                                               initiator_data)
             else:
-                conn_info = self.driver.initialize_connection(volume,
+                conn_info = self.storage_driver.initialize_connection(volume,
                                                               connector)
         except Exception as err:
             err_msg = (_("Driver initialize connection failed "
                          "(error: %(err)s).") % {'err': six.text_type(err)})
             LOG.error(err_msg, resource=volume)
 
-            self.driver.remove_export(context.elevated(), volume)
+            self.storage_driver.remove_export(context.elevated(), volume)
 
             raise exception.VolumeBackendAPIException(data=err_msg)
 
@@ -1512,7 +1513,7 @@ class VolumeManager(manager.Manager):
         # Add discard flag to connection_info if not set in the driver and
         # configured to be reported.
         if conn_info['data'].get('discard') is None:
-            discard_supported = (self.driver.configuration
+            discard_supported = (self.storage_driver.configuration
                                  .safe_get('report_discard_supported'))
             if discard_supported:
                 conn_info['data']['discard'] = True
@@ -1529,11 +1530,11 @@ class VolumeManager(manager.Manager):
         # NOTE(flaper87): Verify the driver is enabled
         # before going forward. The exception will be caught
         # and the volume status updated.
-        utils.require_driver_initialized(self.driver)
+        utils.require_driver_initialized(self.storage_driver)
 
         volume_ref = self.db.volume_get(context, volume_id)
         try:
-            self.driver.terminate_connection(volume_ref, connector,
+            self.storage_driver.terminate_connection(volume_ref, connector,
                                              force=force)
         except Exception as err:
             err_msg = (_('Terminate volume connection failed: %(err)s')
@@ -1546,10 +1547,10 @@ class VolumeManager(manager.Manager):
     def remove_export(self, context, volume_id):
         """Removes an export for a volume."""
 
-        utils.require_driver_initialized(self.driver)
+        utils.require_driver_initialized(self.storage_driver)
         volume_ref = self.db.volume_get(context, volume_id)
         try:
-            self.driver.remove_export(context, volume_ref)
+            self.storage_driver.remove_export(context, volume_ref)
         except Exception:
             msg = _("Remove volume export failed.")
             LOG.exception(msg, resource=volume_ref)
@@ -1562,7 +1563,7 @@ class VolumeManager(manager.Manager):
         # NOTE(flaper87): Verify the driver is enabled
         # before going forward. The exception will be caught
         # and the volume status updated.
-        utils.require_driver_initialized(self.driver)
+        utils.require_driver_initialized(self.storage_driver)
 
         # NOTE(jdg): need elevated context as we haven't "given" the vol
         # yet
@@ -1570,7 +1571,7 @@ class VolumeManager(manager.Manager):
 
         # NOTE(jdg): Some drivers tie provider info (CHAP) to tenant
         # for those that do allow them to return updated model info
-        model_update = self.driver.accept_transfer(context,
+        model_update = self.storage_driver.accept_transfer(context,
                                                    volume_ref,
                                                    new_user,
                                                    new_project)
@@ -1594,8 +1595,8 @@ class VolumeManager(manager.Manager):
         return model_update
 
     def _connect_device(self, conn):
-        use_multipath = self.configuration.use_multipath_for_image_xfer
-        device_scan_attempts = self.configuration.num_volume_device_scan_tries
+        use_multipath = self.storage_configuration.use_multipath_for_image_xfer
+        device_scan_attempts = self.storage_configuration.num_volume_device_scan_tries
         protocol = conn['driver_volume_type']
         connector = utils.brick_get_connector(
             protocol,
@@ -1695,7 +1696,7 @@ class VolumeManager(manager.Manager):
             vol_utils.copy_volume(src_attach_info['device']['path'],
                                   dest_attach_info['device']['path'],
                                   size_in_mb,
-                                  self.configuration.volume_dd_blocksize,
+                                  self.storage_configuration.volume_dd_blocksize,
                                   sparse=sparse_copy_volume)
             copy_error = False
         except Exception:
@@ -1764,10 +1765,10 @@ class VolumeManager(manager.Manager):
             attachments = volume.volume_attachment
             if not attachments:
                 # Pre- and post-copy driver-specific actions
-                self.driver.before_volume_copy(ctxt, volume, new_volume,
+                self.storage_driver.before_volume_copy(ctxt, volume, new_volume,
                                                remote='dest')
                 self._copy_volume_data(ctxt, volume, new_volume, remote='dest')
-                self.driver.after_volume_copy(ctxt, volume, new_volume,
+                self.storage_driver.after_volume_copy(ctxt, volume, new_volume,
                                               remote='dest')
 
                 # The above call is synchronous so we complete the migration
@@ -1843,7 +1844,7 @@ class VolumeManager(manager.Manager):
             # NOTE(flaper87): Verify the driver is enabled
             # before going forward. The exception will be caught
             # and the migration status updated.
-            utils.require_driver_initialized(self.driver)
+            utils.require_driver_initialized(self.storage_driver)
         except exception.DriverNotInitialized:
             with excutils.save_and_reraise_exception():
                 volume.migration_status = 'error'
@@ -1933,7 +1934,7 @@ class VolumeManager(manager.Manager):
             # NOTE(flaper87): Verify the driver is enabled
             # before going forward. The exception will be caught
             # and the migration status updated.
-            utils.require_driver_initialized(self.driver)
+            utils.require_driver_initialized(self.storage_driver)
         except exception.DriverNotInitialized:
             with excutils.save_and_reraise_exception():
                 volume.migration_status = 'error'
@@ -1951,7 +1952,7 @@ class VolumeManager(manager.Manager):
         if not force_host_copy and new_type_id is None:
             try:
                 LOG.debug("Issue driver.migrate_volume.", resource=volume)
-                moved, model_update = self.driver.migrate_volume(ctxt,
+                moved, model_update = self.storage_driver.migrate_volume(ctxt,
                                                                  volume,
                                                                  host)
                 if moved:
@@ -1987,20 +1988,20 @@ class VolumeManager(manager.Manager):
 
     @periodic_task.periodic_task
     def _report_driver_status(self, context):
-        if not self.driver.initialized:
-            if self.driver.configuration.config_group is None:
+        if not self.storage_driver.initialized:
+            if self.storage_driver.configuration.config_group is None:
                 config_group = ''
             else:
                 config_group = ('(config name %s)' %
-                                self.driver.configuration.config_group)
+                                self.storage_driver.configuration.config_group)
 
             LOG.warning(_LW("Update driver status failed: %(config_group)s "
                             "is uninitialized."),
                         {'config_group': config_group},
                         resource={'type': 'driver',
-                                  'id': self.driver.__class__.__name__})
+                                  'id': self.storage_driver.__class__.__name__})
         else:
-            volume_stats = self.driver.get_volume_stats(refresh=True)
+            volume_stats = self.storage_driver.get_volume_stats(refresh=True)
             if self.extra_capabilities:
                 volume_stats.update(self.extra_capabilities)
             if volume_stats:
@@ -2012,7 +2013,8 @@ class VolumeManager(manager.Manager):
                     self._append_filter_goodness_functions(volume_stats))
 
                 # queue it to be sent to the Schedulers.
-                self.update_service_capabilities(volume_stats)
+				#by luorui : no scheduler, no need
+                #self.update_service_capabilities(volume_stats)
 
     def _append_volume_stats(self, vol_stats):
         pools = vol_stats.get('pools', None)
@@ -2020,7 +2022,7 @@ class VolumeManager(manager.Manager):
             for pool in pools:
                 pool_name = pool['pool_name']
                 try:
-                    pool_stats = self.stats['pools'][pool_name]
+                    pool_stats = self.storage_stats['pools'][pool_name]
                 except KeyError:
                     # Pool not found in volume manager
                     pool_stats = dict(allocated_capacity_gb=0)
@@ -2033,12 +2035,12 @@ class VolumeManager(manager.Manager):
         # Append filter_function if needed
         if 'filter_function' not in volume_stats:
             volume_stats['filter_function'] = (
-                self.driver.get_filter_function())
+                self.storage_driver.get_filter_function())
 
         # Append goodness_function if needed
         if 'goodness_function' not in volume_stats:
             volume_stats['goodness_function'] = (
-                self.driver.get_goodness_function())
+                self.storage_driver.get_goodness_function())
 
         return volume_stats
 
@@ -2114,7 +2116,7 @@ class VolumeManager(manager.Manager):
             # NOTE(flaper87): Verify the driver is enabled
             # before going forward. The exception will be caught
             # and the volume status updated.
-            utils.require_driver_initialized(self.driver)
+            utils.require_driver_initialized(self.storage_driver)
         except exception.DriverNotInitialized:
             with excutils.save_and_reraise_exception():
                 volume.status = 'error_extending'
@@ -2124,7 +2126,7 @@ class VolumeManager(manager.Manager):
         size_increase = (int(new_size)) - volume.size
         self._notify_about_volume_usage(context, volume, "resize.start")
         try:
-            self.driver.extend_volume(volume, new_size)
+            self.storage_driver.extend_volume(volume, new_size)
         except Exception:
             LOG.exception(_LE("Extend volume failed."),
                           resource=volume)
@@ -2144,14 +2146,14 @@ class VolumeManager(manager.Manager):
         pool = vol_utils.extract_host(volume.host, 'pool')
         if pool is None:
             # Legacy volume, put them into default pool
-            pool = self.driver.configuration.safe_get(
+            pool = self.storage_driver.configuration.safe_get(
                 'volume_backend_name') or vol_utils.extract_host(
                     volume.host, 'pool', True)
 
         try:
-            self.stats['pools'][pool]['allocated_capacity_gb'] += size_increase
+            self.storage_stats['pools'][pool]['allocated_capacity_gb'] += size_increase
         except KeyError:
-            self.stats['pools'][pool] = dict(
+            self.storage_stats['pools'][pool] = dict(
                 allocated_capacity_gb=size_increase)
 
         self._notify_about_volume_usage(
@@ -2191,7 +2193,7 @@ class VolumeManager(manager.Manager):
             # NOTE(flaper87): Verify the driver is enabled
             # before going forward. The exception will be caught
             # and the volume status updated.
-            utils.require_driver_initialized(self.driver)
+            utils.require_driver_initialized(self.storage_driver)
         except exception.DriverNotInitialized:
             with excutils.save_and_reraise_exception():
                 # NOTE(flaper87): Other exceptions in this method don't
@@ -2248,11 +2250,11 @@ class VolumeManager(manager.Manager):
         # We assume that those that support pools do this internally
         # so we strip off the pools designation
         if (not retyped and
-                vol_utils.hosts_are_equivalent(self.driver.host,
+                vol_utils.hosts_are_equivalent(self.storage_driver.host,
                                                host['host'])):
             try:
                 new_type = volume_types.get_volume_type(context, new_type_id)
-                ret = self.driver.retype(context,
+                ret = self.storage_driver.retype(context,
                                          volume,
                                          new_type,
                                          diff,
@@ -2334,7 +2336,7 @@ class VolumeManager(manager.Manager):
             flow_engine = manage_existing.get_flow(
                 ctxt,
                 self.db,
-                self.driver,
+                self.storage_driver,
                 self.host,
                 volume_id,
                 ref)
@@ -2352,15 +2354,15 @@ class VolumeManager(manager.Manager):
         pool = vol_utils.extract_host(vol_ref['host'], 'pool')
         if pool is None:
             # Legacy volume, put them into default pool
-            pool = self.driver.configuration.safe_get(
+            pool = self.storage_driver.configuration.safe_get(
                 'volume_backend_name') or vol_utils.extract_host(
                     vol_ref['host'], 'pool', True)
 
         try:
-            self.stats['pools'][pool]['allocated_capacity_gb'] \
+            self.storage_stats['pools'][pool]['allocated_capacity_gb'] \
                 += vol_ref['size']
         except KeyError:
-            self.stats['pools'][pool] = dict(
+            self.storage_stats['pools'][pool] = dict(
                 allocated_capacity_gb=vol_ref['size'])
 
         LOG.info(_LI("Manage existing volume completed successfully."),
@@ -2373,14 +2375,14 @@ class VolumeManager(manager.Manager):
         model_update = None
 
         try:
-            utils.require_driver_initialized(self.driver)
+            utils.require_driver_initialized(self.storage_driver)
         except exception.DriverNotInitialized:
             with excutils.save_and_reraise_exception():
                 LOG.exception(_LE("Promote volume replica failed."),
                               resource=volume)
 
         try:
-            model_update = self.driver.promote_replica(ctxt, volume)
+            model_update = self.storage_driver.promote_replica(ctxt, volume)
         except exception.CinderException:
             err_msg = (_('Error promoting secondary volume to primary'))
             raise exception.ReplicationError(reason=err_msg,
@@ -2406,14 +2408,14 @@ class VolumeManager(manager.Manager):
         model_update = None
 
         try:
-            utils.require_driver_initialized(self.driver)
+            utils.require_driver_initialized(self.storage_driver)
         except exception.DriverNotInitialized:
             with excutils.save_and_reraise_exception():
                 LOG.exception(_LE("Sync volume replica failed."),
                               resource=volume)
 
         try:
-            model_update = self.driver.reenable_replication(ctxt, volume)
+            model_update = self.storage_driver.reenable_replication(ctxt, volume)
         except exception.CinderException:
             err_msg = (_("Synchronizing secondary volume to primary failed."))
             raise exception.ReplicationError(reason=err_msg,
@@ -2440,7 +2442,7 @@ class VolumeManager(manager.Manager):
         for vol in volumes:
             model_update = None
             try:
-                model_update = self.driver.get_replication_status(
+                model_update = self.storage_driver.get_replication_status(
                     ctxt, vol)
                 if model_update:
                     self.db.volume_update(ctxt, vol['id'], model_update)
@@ -2459,10 +2461,10 @@ class VolumeManager(manager.Manager):
             context, group, "create.start")
 
         try:
-            utils.require_driver_initialized(self.driver)
+            utils.require_driver_initialized(self.storage_driver)
 
             LOG.info(_LI("Consistency group %s: creating"), group.name)
-            model_update = self.driver.create_consistencygroup(context,
+            model_update = self.storage_driver.create_consistencygroup(context,
                                                                group)
 
             if model_update:
@@ -2583,10 +2585,10 @@ class VolumeManager(manager.Manager):
             self._notify_about_consistencygroup_usage(
                 context, group, "create.start")
 
-            utils.require_driver_initialized(self.driver)
+            utils.require_driver_initialized(self.storage_driver)
 
             model_update, volumes_model_update = (
-                self.driver.create_consistencygroup_from_src(
+                self.storage_driver.create_consistencygroup_from_src(
                     context, group, volumes, cgsnapshot,
                     sorted_snapshots, source_cg, sorted_source_vols))
 
@@ -2728,15 +2730,15 @@ class VolumeManager(manager.Manager):
         pool = vol_utils.extract_host(vol['host'], 'pool')
         if pool is None:
             # Legacy volume, put them into default pool
-            pool = self.driver.configuration.safe_get(
+            pool = self.storage_driver.configuration.safe_get(
                 'volume_backend_name') or vol_utils.extract_host(
                     vol['host'], 'pool', True)
 
         try:
-            self.stats['pools'][pool]['allocated_capacity_gb'] += (
+            self.storage_stats['pools'][pool]['allocated_capacity_gb'] += (
                 vol['size'])
         except KeyError:
-            self.stats['pools'][pool] = dict(
+            self.storage_stats['pools'][pool] = dict(
                 allocated_capacity_gb=vol['size'])
 
     def delete_consistencygroup(self, context, group):
@@ -2770,10 +2772,10 @@ class VolumeManager(manager.Manager):
         volumes_model_update = None
         model_update = None
         try:
-            utils.require_driver_initialized(self.driver)
+            utils.require_driver_initialized(self.storage_driver)
 
             model_update, volumes_model_update = (
-                self.driver.delete_consistencygroup(context, group, volumes))
+                self.storage_driver.delete_consistencygroup(context, group, volumes))
 
             if volumes_model_update:
                 for volume in volumes_model_update:
@@ -2850,7 +2852,7 @@ class VolumeManager(manager.Manager):
             if reservations:
                 QUOTAS.commit(context, reservations, project_id=project_id)
 
-            self.stats['allocated_capacity_gb'] -= volume_ref['size']
+            self.storage_stats['allocated_capacity_gb'] -= volume_ref['size']
 
         if cgreservations:
             CGQUOTAS.commit(context, cgreservations,
@@ -2936,10 +2938,10 @@ class VolumeManager(manager.Manager):
             context, group, "update.start")
 
         try:
-            utils.require_driver_initialized(self.driver)
+            utils.require_driver_initialized(self.storage_driver)
 
             model_update, add_volumes_update, remove_volumes_update = (
-                self.driver.update_consistencygroup(
+                self.storage_driver.update_consistencygroup(
                     context, group,
                     add_volumes=add_volumes_ref,
                     remove_volumes=remove_volumes_ref))
@@ -3025,7 +3027,7 @@ class VolumeManager(manager.Manager):
         snapshots_model_update = None
         model_update = None
         try:
-            utils.require_driver_initialized(self.driver)
+            utils.require_driver_initialized(self.storage_driver)
 
             LOG.debug("Cgsnapshot %(cgsnap_id)s: creating.",
                       {'cgsnap_id': cgsnapshot.id})
@@ -3037,7 +3039,7 @@ class VolumeManager(manager.Manager):
                 snapshot.context = caller_context
 
             model_update, snapshots_model_update = (
-                self.driver.create_cgsnapshot(context, cgsnapshot,
+                self.storage_driver.create_cgsnapshot(context, cgsnapshot,
                                               snapshots))
 
             if snapshots_model_update:
@@ -3127,7 +3129,7 @@ class VolumeManager(manager.Manager):
         snapshots_model_update = None
         model_update = None
         try:
-            utils.require_driver_initialized(self.driver)
+            utils.require_driver_initialized(self.storage_driver)
 
             LOG.debug("cgsnapshot %(cgsnap_id)s: deleting",
                       {'cgsnap_id': cgsnapshot.id})
@@ -3139,7 +3141,7 @@ class VolumeManager(manager.Manager):
                 snapshot.context = caller_context
 
             model_update, snapshots_model_update = (
-                self.driver.delete_cgsnapshot(context, cgsnapshot,
+                self.storage_driver.delete_cgsnapshot(context, cgsnapshot,
                                               snapshots))
 
             if snapshots_model_update:
@@ -3230,7 +3232,7 @@ class VolumeManager(manager.Manager):
                                 'provider_location':
                                 new_volume.provider_location}
         try:
-            model_update = self.driver.update_migrated_volume(ctxt,
+            model_update = self.storage_driver.update_migrated_volume(ctxt,
                                                               volume,
                                                               new_volume,
                                                               volume_status)
@@ -3296,7 +3298,7 @@ class VolumeManager(manager.Manager):
             # [{volume_id: <storage-volid>, updates: {'provider_id': xxxx....}},
             #  {volume_id: <storage-volid>, updates: {'provider_id': xxxx....}}]
             (active_backend_id, volume_update_list) = (
-                self.driver.failover_host(
+                self.storage_driver.failover_host(
                     context,
                     volumes,
                     secondary_backend_id))
@@ -3378,7 +3380,7 @@ class VolumeManager(manager.Manager):
         # TODO(jdg): Return from driver? or catch?
         # Update status column in service entry
         try:
-            self.driver.freeze_backend(context)
+            self.storage_driver.freeze_backend(context)
         except exception.VolumeDriverException:
             # NOTE(jdg): In the case of freeze, we don't really
             # need the backend's consent or anything, we'll just
@@ -3413,7 +3415,7 @@ class VolumeManager(manager.Manager):
         # TODO(jdg): Return from driver? or catch?
         # Update status column in service entry
         try:
-            self.driver.thaw_backend(context)
+            self.storage_driver.thaw_backend(context)
         except exception.VolumeDriverException:
             # NOTE(jdg): Thaw actually matters, if this call
             # to the backend fails, we're stuck and can't re-enable
@@ -3438,7 +3440,7 @@ class VolumeManager(manager.Manager):
             flow_engine = manage_existing_snapshot.get_flow(
                 ctxt,
                 self.db,
-                self.driver,
+                self.storage_driver,
                 self.host,
                 snapshot.id,
                 ref)
@@ -3457,22 +3459,22 @@ class VolumeManager(manager.Manager):
     def get_capabilities(self, context, discover):
         """Get capabilities of backend storage."""
         if discover:
-            self.driver.init_capabilities()
-        capabilities = self.driver.capabilities
+            self.storage_driver.init_capabilities()
+        capabilities = self.storage_driver.capabilities
         LOG.debug("Obtained capabilities list: %s.", capabilities)
         return capabilities
 
     def get_backup_device(self, ctxt, backup):
         (backup_device, is_snapshot) = (
-            self.driver.get_backup_device(ctxt, backup))
-        secure_enabled = self.driver.secure_file_operations_enabled()
+            self.storage_driver.get_backup_device(ctxt, backup))
+        secure_enabled = self.storage_driver.secure_file_operations_enabled()
         backup_device_dict = {'backup_device': backup_device,
                               'secure_enabled': secure_enabled,
                               'is_snapshot': is_snapshot, }
         return backup_device_dict
 
     def secure_file_operations_enabled(self, ctxt, volume):
-        secure_enabled = self.driver.secure_file_operations_enabled()
+        secure_enabled = self.storage_driver.secure_file_operations_enabled()
         return secure_enabled
 
     def storage_test(self, ctxt, host):

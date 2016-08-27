@@ -804,6 +804,8 @@ class VolumeCastTask(flow_utils.CinderTask):
         #             filter_properties,
         #             allow_reschedule=False)
 
+        #by luorui : no scheduler,need host for rpcapi and others
+        host = 'ubuntu'
         volume.host = host
         volume.scheduled_at = timeutils.utcnow()
         volume.save()

@@ -25,7 +25,7 @@ wrap_exception = functools.partial(exception.wrap_exception,
                                    get_notifier=get_notifier)
 
 
-class WorkerManager(com_manager.ComputeManager, vol_manager.VolumeManager):
+class WorkerManager(vol_manager.VolumeManager):
     """Manages the running instances from creation to destruction."""
     RPC_API_VERSION = '1.0'
 

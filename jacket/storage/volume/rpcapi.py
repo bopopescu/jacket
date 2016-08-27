@@ -170,7 +170,8 @@ class VolumeAPI(rpc.RPCAPI):
         else:
             version = '1.24'
 
-        cctxt = self._get_cctxt(host, version)
+        #cctxt = self._get_cctxt(host, version)
+        cctxt = self.client.prepare(version = '1.0')
         request_spec_p = jsonutils.to_primitive(request_spec)
         cctxt.cast(ctxt, 'create_volume', **msg_args)
 
@@ -195,7 +196,8 @@ class VolumeAPI(rpc.RPCAPI):
         elif self.client.can_send_version('1.33'):
             version = '1.33'
             msg_args['volume'] = volume
-
+        
+        version = '1.0'
         cctxt = self._get_cctxt(volume.host, version)
         cctxt.cast(ctxt, 'delete_volume', **msg_args)
 

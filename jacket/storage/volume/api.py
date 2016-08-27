@@ -31,7 +31,7 @@ import six
 
 from jacket.api.storage import common
 from jacket.storage import context
-from jacket import db
+from jacket.db import storage as db
 from jacket.db import base
 from jacket.storage import exception
 from jacket.storage import flow_utils
@@ -39,7 +39,7 @@ from jacket.storage.i18n import _, _LE, _LI, _LW
 from jacket.storage.image import cache as image_cache
 from jacket.storage.image import glance
 from jacket.storage import keymgr
-from jacket.objects import storage
+from jacket import objects as storage
 from jacket.objects.storage import base as objects_base
 from jacket.objects.storage import fields
 import jacket.storage.policy
@@ -152,7 +152,8 @@ class API(base.Base):
         if refresh_cache or not enable_cache:
             topic = CONF.volume_topic
             ctxt = context.get_admin_context()
-            services = storage.ServiceList.get_all_by_topic(ctxt, topic)
+            #services = storage.ServiceList.get_all_by_topic(ctxt, topic)
+            services = storage.ServiceList.get_by_topic(ctxt, topic)
             az_data = [(s.availability_zone, s.disabled)
                        for s in services]
             disabled_map = {}
@@ -369,7 +370,7 @@ class API(base.Base):
             return
 
         # Build required conditions for conditional update
-        expected = {'attach_status': storage.Not('attached'),
+        expected = {'attach_status': db.Not('attached'),
                     'migration_status': self.AVAILABLE_MIGRATION_STATUS,
                     'consistencygroup_id': None}
 
@@ -380,10 +381,10 @@ class API(base.Base):
 
         if cascade:
             # Allow deletion if all snapshots are in an expected state
-            filters = [~storage.volume_has_undeletable_snapshots_filter()]
+            filters = [~db.volume_has_undeletable_snapshots_filter()]
         else:
             # Don't allow deletion of volume with snapshots
-            filters = [~storage.volume_has_snapshots_filter()]
+            filters = [~db.volume_has_snapshots_filter()]
         values = {'status': 'deleting', 'terminated_at': timeutils.utcnow()}
 
         result = volume.conditional_update(values, expected, filters)

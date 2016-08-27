@@ -44,7 +44,7 @@ LOG = logging.getLogger(__name__)
 # on duplicate entries.
 volume_opts = [
     cfg.StrOpt('volume_group',
-               default='storage-volumes',
+               default='stack-volumes-default',
                help='Name for the VG that will contain exported volumes'),
     cfg.IntOpt('lvm_mirrors',
                default=0,

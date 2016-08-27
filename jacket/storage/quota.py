@@ -27,7 +27,7 @@ from oslo_utils import timeutils
 import six
 
 from jacket.storage import context
-from jacket import db
+from jacket.db import storage as db
 from jacket.storage import exception
 from jacket.storage.i18n import _, _LE
 from jacket.storage import quota_utils
@@ -63,7 +63,7 @@ quota_opts = [
     #           default=0,
     #           help='Number of seconds between subsequent usage refreshes'),
     cfg.StrOpt('storage_quota_driver',
-               default="storage.quota.DbQuotaDriver",
+               default="jacket.storage.quota.DbQuotaDriver",
                help='Default driver to use for quota checks'),
     cfg.BoolOpt('use_default_quota_class',
                 default=True,
@@ -89,16 +89,16 @@ class DbQuotaDriver(object):
     def get_by_project(self, context, project_id, resource_name):
         """Get a specific quota by project."""
 
-        return storage.quota_get(context, project_id, resource_name)
+        return db.quota_get(context, project_id, resource_name)
 
     def get_by_class(self, context, quota_class, resource_name):
         """Get a specific quota by quota class."""
 
-        return storage.quota_class_get(context, quota_class, resource_name)
+        return db.quota_class_get(context, quota_class, resource_name)
 
     def get_default(self, context, resource, project_id):
         """Get a specific default quota for a resource."""
-        default_quotas = storage.quota_class_get_default(context)
+        default_quotas = db.quota_class_get_default(context)
         return default_quotas.get(resource.name, resource.default)
 
     def get_defaults(self, context, resources, project_id=None):
@@ -381,7 +381,7 @@ class DbQuotaDriver(object):
         #            which means access to the session.  Since the
         #            session isn't available outside the DBAPI, we
         #            have to do the work there.
-        return storage.quota_reserve(context, resources, quotas, deltas, expire,
+        return db.quota_reserve(context, resources, quotas, deltas, expire,
                                 CONF.until_refresh, CONF.max_age,
                                 project_id=project_id)
 
@@ -399,7 +399,7 @@ class DbQuotaDriver(object):
         if project_id is None:
             project_id = context.project_id
 
-        storage.reservation_commit(context, reservations, project_id=project_id)
+        db.reservation_commit(context, reservations, project_id=project_id)
 
     def rollback(self, context, reservations, project_id=None):
         """Roll back reservations.
@@ -415,7 +415,7 @@ class DbQuotaDriver(object):
         if project_id is None:
             project_id = context.project_id
 
-        storage.reservation_rollback(context, reservations, project_id=project_id)
+        db.reservation_rollback(context, reservations, project_id=project_id)
 
     def destroy_by_project(self, context, project_id):
         """Destroy all limit quotas associated with a project.
@@ -425,7 +425,7 @@ class DbQuotaDriver(object):
         :param context: The request context, for access checks.
         :param project_id: The ID of the project being deleted.
         """
-        storage.quota_destroy_by_project(context, project_id)
+        db.quota_destroy_by_project(context, project_id)
 
     def expire(self, context):
         """Expire reservations.
@@ -436,7 +436,7 @@ class DbQuotaDriver(object):
         :param context: The request context, for access checks.
         """
 
-        storage.reservation_expire(context)
+        db.reservation_expire(context)
 
 
 class NestedDbQuotaDriver(DbQuotaDriver):
@@ -501,12 +501,12 @@ class NestedDbQuotaDriver(DbQuotaDriver):
                 if calc_parent_allocated != cur_parent_allocated:
                     if fix_allocated_quotas:
                         try:
-                            storage.quota_allocated_update(ctxt, cur_proj_id,
+                            db.quota_allocated_update(ctxt, cur_proj_id,
                                                       resource,
                                                       calc_parent_allocated)
                         except exception.ProjectQuotaNotFound:
                             # If it was default quota create DB entry for it
-                            storage.quota_create(
+                            db.quota_create(
                                 ctxt, cur_proj_id, resource,
                                 parent_limit, allocated=calc_parent_allocated)
                     else:
@@ -630,7 +630,7 @@ class NestedDbQuotaDriver(DbQuotaDriver):
                 failed_usages.update(e.kwargs['usages'])
 
         if resources_failed_to_update:
-            storage.reservation_rollback(context, reserved, project_id)
+            db.reservation_rollback(context, reserved, project_id)
             # We change OverQuota to OverVolumeLimit in other places and expect
             # to find all of the OverQuota kwargs
             raise exception.OverQuota(overs=sorted(resources_failed_to_update),
@@ -1163,13 +1163,13 @@ class VolumeTypeQuotaEngine(QuotaEngine):
         for quota in ('volumes', 'gigabytes', 'snapshots'):
             old_res = "%s_%s" % (quota, old_type_name)
             new_res = "%s_%s" % (quota, new_type_name)
-            storage.quota_usage_update_resource(context,
+            db.quota_usage_update_resource(context,
                                            old_res,
                                            new_res)
-            storage.quota_class_update_resource(context,
+            db.quota_class_update_resource(context,
                                            old_res,
                                            new_res)
-            storage.quota_update_resource(context,
+            db.quota_update_resource(context,
                                      old_res,
                                      new_res)
 

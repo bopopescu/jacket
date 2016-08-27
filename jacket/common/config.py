@@ -148,7 +148,7 @@ global_opts = [
                help='Full class name for the Manager for scheduler'),
     # NOTE(vish): default to nova for compatibility with nova installs
     cfg.StrOpt('storage_availability_zone',
-               default='nova',
+               default='compute',
                help='Availability zone of this node'),
     cfg.StrOpt('default_volume_type',
                help='Default volume type to use'),

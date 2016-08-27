@@ -69,6 +69,8 @@ from jacket.objects.compute import fields
 from jacket.compute import quota
 from jacket.compute import safe_utils
 
+import jacket.db.storage.sqlalchemy.api as storage_sql_api
+
 db_opts = [
     cfg.StrOpt('osapi_compute_unique_server_name_scope',
                default='',
@@ -364,8 +366,13 @@ def model_query(context, model,
         raise ValueError(_("Unrecognized read_deleted value '%s'")
                            % read_deleted)
 
+    if hasattr(context, 'session'):
+        session = context.session
+    else:
+        session = storage_sql_api.get_session()
+
     query = sqlalchemyutils.model_query(
-        model, context.session, args, **query_kwargs)
+            model, session, args, **query_kwargs)
 
     # We can't use oslo.db model_query's project_id here, as it doesn't allow
     # us to return both our projects and unowned projects.
