@@ -439,7 +439,7 @@ class VolumeList(base.ObjectListBase, base.CinderObject):
     VERSION = '1.1'
 
     fields = {
-        'storage': fields.ListOfObjectsField('Volume'),
+        'objects': fields.ListOfObjectsField('Volume'),
     }
 
     @classmethod

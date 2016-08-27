@@ -38,6 +38,7 @@ import jacket.context
 import jacket.exception
 from jacket import objects
 from jacket.objects.storage import base
+from jacket.objects.compute import base as compute_base
 
 
 CONF = cfg.CONF
@@ -370,9 +371,11 @@ class RPCAPI(object):
         target = messaging.Target(topic=self.TOPIC,
                                   version=self.RPC_API_VERSION)
         obj_version_cap = self._determine_obj_version_cap()
-        serializer = base.CinderObjectSerializer(obj_version_cap)
+        #serializer = base.CinderObjectSerializer(obj_version_cap)
+        serializer = compute_base.NovaObjectSerializer()
 
         rpc_version_cap = self._determine_rpc_version_cap()
+        LOG.debug("+++hw, -----target = %s, rpc_version_cap = %s", target, rpc_version_cap)
         self.client = get_client(target, version_cap=rpc_version_cap,
                                  serializer=serializer)
 

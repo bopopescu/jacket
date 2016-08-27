@@ -560,10 +560,15 @@ class VolumeManager(manager.Manager):
                       volume=None):
         """Creates the volume."""
         # FIXME(thangp): Remove this in v2.0 of RPC API.
+        LOG.debug("+++hw, volume = %s", volume)
         if volume is None:
             # For older clients, mimic the old behavior and look up the volume
             # by its volume_id.
             volume = storage.Volume.get_by_id(context, volume_id)
+
+        LOG.debug("+++hw, volume = %s", volume)
+        LOG.debug("+++hw, volume.volume_type_id = %s", volume.volume_type_id)
+        LOG.debug("+++hw, volume.id = %s", volume.id)
 
         context_elevated = context.elevated()
         if filter_properties is None:
@@ -657,6 +662,9 @@ class VolumeManager(manager.Manager):
 
         LOG.info(_LI("Created volume successfully."), resource=vol_ref)
         return vol_ref.id
+
+    def storage_test(self, ctxt, host):
+        LOG.debug("+++hw, storage_test--------------------")
 
     @locked_volume_operation
     def delete_volume(self, context, volume_id,
