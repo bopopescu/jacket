@@ -9,14 +9,18 @@ terminating it.
 """
 
 import functools
+
+from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging as messaging
+
 from jacket.compute import exception
 from jacket import rpc
 from jacket.compute.cloud import manager as com_manager
 from jacket.storage.volume import manager as vol_manager
-
 from jacket import manager
+
+CONF = cfg.CONF
 
 LOG = logging.getLogger(__name__)
 
@@ -35,7 +39,14 @@ class WorkerManager(manager.Manager):
         """Load configuration options and connect to the cloud."""
         super(WorkerManager, self).__init__(service_name="worker", *args, **kwargs)
         self.compute_manager = com_manager.ComputeManager()
-        self.storage_manager = vol_manager.VolumeManager()
+
+        for backend in CONF.enabled_backends:
+            break
+
+        # backend_host = getattr(CONF, backend).backend_host
+        # host = "%s@%s" % (backend_host or CONF.host, backend)
+
+        self.storage_manager = vol_manager.VolumeManager(service_name=backend)
         self.additional_endpoints.append(self.compute_manager)
         self.additional_endpoints.append(self.storage_manager)
 

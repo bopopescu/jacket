@@ -150,6 +150,7 @@ class NoAuthMiddleware(base_wsgi.Middleware):
                                      remote_address=remote_address)
 
         req.environ['jacket.context'] = ctx
+        req.environ['storage.context'] = ctx
         return self.application
 
 

@@ -37,8 +37,8 @@ from oslo_serialization import jsonutils
 import jacket.context
 import jacket.exception
 from jacket import objects
-from jacket.objects.storage import base
-from jacket.objects.compute import base as compute_base
+from jacket.objects import base
+from jacket.objects.storage import base as storage_base
 
 
 CONF = cfg.CONF
@@ -158,7 +158,7 @@ class RequestContextSerializer(messaging.Serializer):
         return context.to_dict()
 
     def deserialize_context(self, context):
-        return jacket.compute.context.RequestContext.from_dict(context)
+        return jacket.context.RequestContext.from_dict(context)
 
 
 def get_transport_url(url_str=None):
@@ -372,7 +372,7 @@ class RPCAPI(object):
                                   version=self.RPC_API_VERSION)
         obj_version_cap = self._determine_obj_version_cap()
         #serializer = base.CinderObjectSerializer(obj_version_cap)
-        serializer = compute_base.NovaObjectSerializer()
+        serializer = base.JacketObjectSerializer()
 
         rpc_version_cap = self._determine_rpc_version_cap()
         LOG.debug("+++hw, -----target = %s, rpc_version_cap = %s", target, rpc_version_cap)
@@ -410,7 +410,7 @@ class RPCAPI(object):
         # If there is no service we assume they will come up later and will
         # have the same version as we do.
         if not version_cap:
-            version_cap = base.OBJ_VERSIONS.get_current()
+            version_cap = storage_base.OBJ_VERSIONS.get_current()
         LOG.info(_LI('Automatically selected %(binary)s storage version '
                      '%(version)s as minimum service version.'),
                  {'binary': self.BINARY, 'version': version_cap})

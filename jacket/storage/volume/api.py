@@ -112,8 +112,9 @@ def check_policy(context, action, target_obj=None):
 
     if isinstance(target_obj, objects_base.CinderObject):
         # Turn object into dict so target.update can work
+
         target.update(
-            target_obj.obj_to_primitive()['versioned_object.data'] or {})
+            target_obj.obj_to_primitive()['jacket_object.data'] or {})
     else:
         target.update(target_obj or {})
 

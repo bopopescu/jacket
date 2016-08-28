@@ -105,5 +105,7 @@ crudini --set /etc/jacket/jacket.conf oslo_messaging_rabbit rabbit_ha_queues fal
 crudini --set /etc/jacket/jacket.conf DEFAULT compute_driver libvirt.LibvirtDriver
 crudini --set /etc/jacket/jacket.conf DEFAULT firewall_driver jacket.compute.virt.firewall.NoopFirewallDriver
 crudini --set /etc/jacket/jacket.conf DEFAULT rootwrap_config /etc/jacket/rootwrap.conf
+crudini --set /etc/jacket/jacket.conf DEFAULT compute_topic "jacket-worker"
+crudini --set /etc/jacket/jacket.conf DEFAULT volume_topic "jacket-worker"
 
 

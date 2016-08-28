@@ -23,7 +23,7 @@ from jacket.compute import debugger
 from jacket import exception
 from jacket.i18n import _, _LE, _LI, _LW
 from jacket import objects
-from jacket.objects.compute import base as objects_base
+from jacket.objects import base as objects_base
 from jacket.objects.storage import base as storage_objects_base
 from jacket.objects.compute import service as service_obj
 from jacket import rpc
@@ -275,7 +275,8 @@ class Service(service.Service):
         ]
         endpoints.extend(self.manager.additional_endpoints)
 
-        serializer = objects_base.NovaObjectSerializer()
+        # serializer = objects_base.NovaObjectSerializer()
+        serializer = objects_base.JacketObjectSerializer()
 
         self.rpcserver = rpc.get_server(target, endpoints, serializer)
         self.rpcserver.start()

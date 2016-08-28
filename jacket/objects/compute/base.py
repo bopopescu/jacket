@@ -71,8 +71,8 @@ class NovaObject(ovoo_base.VersionedObject):
     as appropriate.
     """
 
-    OBJ_SERIAL_NAMESPACE = 'nova_object'
-    OBJ_PROJECT_NAMESPACE = 'compute'
+    OBJ_SERIAL_NAMESPACE = 'jacket_object'
+    OBJ_PROJECT_NAMESPACE = 'jacket'
 
     # NOTE(ndipanov): This is compute-specific
     @staticmethod
