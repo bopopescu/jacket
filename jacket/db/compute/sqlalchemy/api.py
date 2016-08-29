@@ -366,13 +366,13 @@ def model_query(context, model,
         raise ValueError(_("Unrecognized read_deleted value '%s'")
                            % read_deleted)
 
-    if hasattr(context, 'session'):
-        session = context.session
-    else:
-        session = storage_sql_api.get_session()
+    #if hasattr(context, 'session'):
+    #    session = context.session
+    #else:
+    #    session = storage_sql_api.get_session()
 
     query = sqlalchemyutils.model_query(
-            model, session, args, **query_kwargs)
+            model, context.session, args, **query_kwargs)
 
     # We can't use oslo.db model_query's project_id here, as it doesn't allow
     # us to return both our projects and unowned projects.

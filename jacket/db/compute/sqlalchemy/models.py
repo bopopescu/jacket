@@ -94,6 +94,9 @@ class Service(BASE, NovaBase, models.SoftDeleteMixin):
     last_seen_up = Column(DateTime, nullable=True)
     forced_down = Column(Boolean, default=False)
     version = Column(Integer, default=0)
+    availability_zone = Column(String(255), default="jacket")
+    rpc_current_version = Column(String(36))
+    object_current_version = Column(String(36))
 
     instance = orm.relationship(
         "Instance",

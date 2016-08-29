@@ -119,7 +119,9 @@ class CinderObject(base.VersionedObject):
     # NOTE(thangp): OBJ_PROJECT_NAMESPACE needs to be set so that nova,
     # cinder, and other objects can exist on the same bus and be distinguished
     # from one another.
-    OBJ_PROJECT_NAMESPACE = 'cinder'
+    OBJ_SERIAL_NAMESPACE = 'jacket_object'
+    OBJ_PROJECT_NAMESPACE = 'jacket'
+    #OBJ_PROJECT_NAMESPACE = 'cinder'
 
     # NOTE(thangp): As more objects are added to cinder, each object should
     # have a custom map of version compatibility.  This just anchors the base

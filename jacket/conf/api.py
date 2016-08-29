@@ -23,7 +23,7 @@ auth_opts = [
                      'is removed from v2.1 api.'),
     cfg.StrOpt("auth_strategy",
             default="keystone",
-            choices=("keystone", "noauth2"),
+            choices=("keystone", "noauth", "noauth2"),
             help="""
 This determines the strategy to use for authentication: keystone or noauth2.
 'noauth2' is designed for testing only, as it does no actual credential

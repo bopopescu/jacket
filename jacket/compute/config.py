@@ -20,7 +20,7 @@ from oslo_config import cfg
 from oslo_db import options
 from oslo_log import log
 
-from jacket.common.compute import config
+from jacket.common import config
 from jacket.db.compute.sqlalchemy import api as sqlalchemy_api
 from jacket.compute import debugger
 from jacket.compute import paths
@@ -52,6 +52,7 @@ def parse_args(argv, default_config_files=None, configure_db=True,
                init_rpc=True):
     log.set_defaults(_DEFAULT_LOGGING_CONTEXT_FORMAT, _DEFAULT_LOG_LEVELS)
     log.register_options(CONF)
+
     options.set_defaults(CONF, connection=_DEFAULT_SQL_CONNECTION,
                          sqlite_db='jacket.compute.sqlite')
     rpc.set_defaults(control_exchange='jacket')

@@ -46,6 +46,7 @@ def main():
     utils.monkey_patch()
     objects.register_all()
     log = logging.getLogger(__name__)
+    log.debug("+++hw, volume_topic = %s", CONF.volume_topic)
 
     gmr.TextGuruMeditation.setup_autorun(version)
 

@@ -113,6 +113,8 @@ class Service(base.NovaPersistentObject, base.NovaObject,
         'last_seen_up': fields.DateTimeField(nullable=True),
         'forced_down': fields.BooleanField(),
         'version': fields.IntegerField(),
+        'rpc_current_version': fields.StringField(nullable=True),
+        'object_current_version': fields.StringField(nullable=True),
     }
 
     _MIN_VERSION_CACHE = {}

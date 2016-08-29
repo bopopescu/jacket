@@ -522,7 +522,7 @@ def walk_class_hierarchy(clazz, encountered=None):
 
 
 def get_root_helper():
-    return 'sudo storage-rootwrap %s' % CONF.rootwrap_config
+    return 'sudo jacket-rootwrap %s' % CONF.rootwrap_config
 
 
 def brick_get_connector_properties(multipath=False, enforce_multipath=False):

@@ -23,7 +23,8 @@ from jacket.compute import debugger
 from jacket import exception
 from jacket.i18n import _, _LE, _LI, _LW
 from jacket import objects
-from jacket.objects.compute import base as objects_base
+from jacket.objects import base as objects_base
+from jacket.objects.storage import base as storage_objects_base
 from jacket.objects.compute import service as service_obj
 from jacket import rpc
 from jacket.compute import servicegroup
@@ -50,7 +51,7 @@ service_opts = [
                     ' (Disable by setting to 0)'),
     cfg.ListOpt('enabled_apis',
                 #default=['osapi_compute', 'metadata', 'osapi_jacket', 'osapi_volume'],
-                default=['osapi_compute', 'osapi_volume'],
+                default=['osapi_volume'],
                 help='A list of APIs to enable by default'),
     cfg.ListOpt('enabled_ssl_apis',
                 default=[],
@@ -180,6 +181,10 @@ def _create_service_ref(this_service, context):
     service.binary = this_service.binary
     service.topic = this_service.topic
     service.report_count = 0
+    service.availability_zone = CONF.default_availability_zone
+    if hasattr(this_service.manager, 'RPC_API_VERSION'):
+        service.rpc_current_version = this_service.manager.RPC_API_VERSION
+    service.object_current_version = storage_objects_base.OBJ_VERSIONS.get_current()
     service.create()
     return service
 
@@ -270,7 +275,8 @@ class Service(service.Service):
         ]
         endpoints.extend(self.manager.additional_endpoints)
 
-        serializer = objects_base.NovaObjectSerializer()
+        # serializer = objects_base.NovaObjectSerializer()
+        serializer = objects_base.JacketObjectSerializer()
 
         self.rpcserver = rpc.get_server(target, endpoints, serializer)
         self.rpcserver.start()
