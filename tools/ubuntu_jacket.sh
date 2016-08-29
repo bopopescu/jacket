@@ -108,4 +108,17 @@ crudini --set /etc/jacket/jacket.conf DEFAULT rootwrap_config /etc/jacket/rootwr
 crudini --set /etc/jacket/jacket.conf DEFAULT compute_topic "jacket-worker"
 crudini --set /etc/jacket/jacket.conf DEFAULT volume_topic "jacket-worker"
 
+crudini --set /etc/jacket/jacket.conf DEFAULT use_local true
+
+
+# storage
+backend="lvm"
+crudini --set /etc/jacket/jacket.conf DEFAULT enabled_backends ${backend}
+crudini --set /etc/jacket/jacket.conf ${backend} iscsi_helper tgtadm
+crudini --set /etc/jacket/jacket.conf ${backend} iscsi_ip_address ${HOST_IP}
+crudini --set /etc/jacket/jacket.conf ${backend} volume_driver jacket.storage.volume.drivers.lvm.LVMVolumeDriver
+crudini --set /etc/jacket/jacket.conf ${backend} volumes_dir /var/lib/cinder/volumes
+crudini --set /etc/jacket/jacket.conf ${backend} volume_backend_name lvm
+crudini --set /etc/jacket/jacket.conf ${backend} volume_group cinder-volumes
+
 

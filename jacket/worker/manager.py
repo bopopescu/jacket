@@ -40,8 +40,11 @@ class WorkerManager(manager.Manager):
         super(WorkerManager, self).__init__(service_name="worker", *args, **kwargs)
         self.compute_manager = com_manager.ComputeManager()
 
-        for backend in CONF.enabled_backends:
-            break
+        backend = None
+
+        if CONF.enabled_backends:
+            for backend in CONF.enabled_backends:
+                break
 
         # backend_host = getattr(CONF, backend).backend_host
         # host = "%s@%s" % (backend_host or CONF.host, backend)
