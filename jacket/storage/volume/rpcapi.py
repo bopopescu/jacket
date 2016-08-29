@@ -201,7 +201,6 @@ class VolumeAPI(rpc.RPCAPI):
             version = '1.33'
             msg_args['volume'] = volume
         
-        version = '1.0'
         cctxt = self._get_cctxt(volume.host, version)
         cctxt.cast(ctxt, 'delete_volume', **msg_args)
 

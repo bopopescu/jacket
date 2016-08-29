@@ -22,7 +22,7 @@ import oslo_messaging as messaging
 from oslo_utils import excutils
 import six
 
-from jacket.worker import rpcapi as jacket_rpcapi
+from jacket.compute.cloud import rpcapi as compute_rpcapi
 from jacket.compute.cloud import task_states
 from jacket.compute.cloud import utils as compute_utils
 from jacket.compute.cloud import vm_states
@@ -148,7 +148,7 @@ class ComputeTaskManager(base.Base):
 
     def __init__(self):
         super(ComputeTaskManager, self).__init__()
-        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
+        self.compute_rpcapi = compute_rpcapi.ComputeAPI()
         self.image_api = image.API()
         self.network_api = network.API()
         self.servicegroup_api = servicegroup.API()
@@ -157,8 +157,8 @@ class ComputeTaskManager(base.Base):
 
     def reset(self):
         LOG.info(_LI('Reloading compute RPC API'))
-        jacket_rpcapi.LAST_VERSION = None
-        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
+        compute_rpcapi.LAST_VERSION = None
+        self.compute_rpcapi = compute_rpcapi.JacketAPI()
 
     @messaging.expected_exceptions(
         exception.NoValidHost,
@@ -345,7 +345,7 @@ class ComputeTaskManager(base.Base):
         return live_migrate.LiveMigrationTask(context, instance,
                                               destination, block_migration,
                                               disk_over_commit, migration,
-                                              self.jacket_rpcapi,
+                                              self.compute_rpcapi,
                                               self.servicegroup_api,
                                               self.scheduler_client,
                                               request_spec)
@@ -356,7 +356,7 @@ class ComputeTaskManager(base.Base):
         return migrate.MigrationTask(context, instance, flavor,
                                      filter_properties, request_spec,
                                      reservations, clean_shutdown,
-                                     self.jacket_rpcapi,
+                                     self.compute_rpcapi,
                                      self.scheduler_client)
 
     def build_instances(self, context, instances, image, filter_properties,
@@ -416,17 +416,17 @@ class ComputeTaskManager(base.Base):
             bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
                     context, instance.uuid)
 
-            self.jacket_rpcapi.build_and_run_instance(context,
-                                                      instance=instance, host=None, image=image,
-                                                      request_spec=None,
-                                                      filter_properties=None,
-                                                      admin_password=admin_password,
-                                                      injected_files=injected_files,
-                                                      requested_networks=requested_networks,
-                                                      security_groups=security_groups,
-                                                      block_device_mapping=bdms, node=None,
-                                                      limits=None)
-            # self.jacket_rpcapi.build_and_run_instance(context,
+            self.compute_rpcapi.build_and_run_instance(context,
+                                                       instance=instance, host=None, image=image,
+                                                       request_spec=None,
+                                                       filter_properties=None,
+                                                       admin_password=admin_password,
+                                                       injected_files=injected_files,
+                                                       requested_networks=requested_networks,
+                                                       security_groups=security_groups,
+                                                       block_device_mapping=bdms, node=None,
+                                                       limits=None)
+            # self.compute_rpcapi.build_and_run_instance(context,
             #                                           instance=instance, host=host['host'], image=image,
             #                                           request_spec=request_spec,
             #                                           filter_properties=local_filter_props,
@@ -459,7 +459,7 @@ class ComputeTaskManager(base.Base):
         if instance.vm_state == vm_states.SHELVED:
             instance.task_state = task_states.POWERING_ON
             instance.save(expected_task_state=task_states.UNSHELVING)
-            self.jacket_rpcapi.start_instance(context, instance)
+            self.compute_rpcapi.start_instance(context, instance)
         elif instance.vm_state == vm_states.SHELVED_OFFLOADED:
             image = None
             image_id = sys_meta.get('shelved_image_id')
@@ -513,10 +513,10 @@ class ComputeTaskManager(base.Base):
                     # scheduler_utils.populate_filter_properties(
                     #         filter_properties, host_state)
                     # (host, node) = (host_state['host'], host_state['nodename'])
-                    # self.jacket_rpcapi.unshelve_instance(
+                    # self.compute_rpcapi.unshelve_instance(
                     #         context, instance, host, image=image,
                     #         filter_properties=filter_properties, node=node)
-                    self.jacket_rpcapi.unshelve_instance(
+                    self.compute_rpcapi.unshelve_instance(
                              context, instance, host=None, image=image,
                              filter_properties=None, node=None)
             except (exception.NoValidHost,
@@ -607,16 +607,16 @@ class ComputeTaskManager(base.Base):
             compute_utils.notify_about_instance_usage(
                 self.notifier, context, instance, "rebuild.scheduled")
 
-            self.jacket_rpcapi.rebuild_instance(context,
-                                                instance=instance,
-                                                new_pass=new_pass,
-                                                injected_files=injected_files,
-                                                image_ref=image_ref,
-                                                orig_image_ref=orig_image_ref,
-                                                orig_sys_metadata=orig_sys_metadata,
-                                                bdms=bdms,
-                                                recreate=recreate,
-                                                on_shared_storage=on_shared_storage,
-                                                preserve_ephemeral=preserve_ephemeral,
-                                                migration=migration,
-                                                host=None, node=None, limits=None)
+            self.compute_rpcapi.rebuild_instance(context,
+                                                 instance=instance,
+                                                 new_pass=new_pass,
+                                                 injected_files=injected_files,
+                                                 image_ref=image_ref,
+                                                 orig_image_ref=orig_image_ref,
+                                                 orig_sys_metadata=orig_sys_metadata,
+                                                 bdms=bdms,
+                                                 recreate=recreate,
+                                                 on_shared_storage=on_shared_storage,
+                                                 preserve_ephemeral=preserve_ephemeral,
+                                                 migration=migration,
+                                                 host=None, node=None, limits=None)

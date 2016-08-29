@@ -1004,7 +1004,7 @@ class _ComputeAPIUnitTestMixIn(object):
         #     * Commit reservations
         #   * If not downed host:
         #     * Record the action start.
-        #     * Cast to jacket_rpcapi.<method> with the reservations
+        #     * Cast to compute_rpcapi.<method> with the reservations
 
         cast = True
         commit_quotas = True
@@ -2755,7 +2755,7 @@ class _ComputeAPIUnitTestMixIn(object):
         instance.vm_state = vm_states.SOFT_DELETED
         instance.task_state = None
         instance.save()
-        with mock.patch.object(self.compute_api, 'jacket_rpcapi') as rpc:
+        with mock.patch.object(self.compute_api, 'compute_rpcapi') as rpc:
             self.compute_api.restore(admin_context, instance)
             rpc.restore_instance.assert_called_once_with(admin_context,
                                                          instance)
@@ -2775,7 +2775,7 @@ class _ComputeAPIUnitTestMixIn(object):
         instance.vm_state = vm_states.SOFT_DELETED
         instance.task_state = None
         instance.save()
-        with mock.patch.object(self.compute_api, 'jacket_rpcapi') as rpc:
+        with mock.patch.object(self.compute_api, 'compute_rpcapi') as rpc:
             self.compute_api.restore(self.context, instance)
             rpc.restore_instance.assert_called_once_with(self.context,
                                                          instance)

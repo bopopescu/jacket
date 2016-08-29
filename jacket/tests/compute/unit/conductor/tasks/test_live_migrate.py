@@ -61,17 +61,17 @@ class LiveMigrationTaskTestCase(test.NoDBTestCase):
     def test_execute_with_destination(self):
         self.mox.StubOutWithMock(self.task, '_check_host_is_up')
         self.mox.StubOutWithMock(self.task, '_check_requested_destination')
-        self.mox.StubOutWithMock(self.task.jacket_rpcapi, 'live_migration')
+        self.mox.StubOutWithMock(self.task.compute_rpcapi, 'live_migration')
 
         self.task._check_host_is_up(self.instance_host)
         self.task._check_requested_destination()
-        self.task.jacket_rpcapi.live_migration(self.context,
-                                               host=self.instance_host,
-                                               instance=self.instance,
-                                               dest=self.destination,
-                                               block_migration=self.block_migration,
-                                               migration=self.migration,
-                                               migrate_data=None).AndReturn("bob")
+        self.task.compute_rpcapi.live_migration(self.context,
+                                                host=self.instance_host,
+                                                instance=self.instance,
+                                                dest=self.destination,
+                                                block_migration=self.block_migration,
+                                                migration=self.migration,
+                                                migrate_data=None).AndReturn("bob")
 
         self.mox.ReplayAll()
         self.assertEqual("bob", self.task.execute())
@@ -83,17 +83,17 @@ class LiveMigrationTaskTestCase(test.NoDBTestCase):
 
         self.mox.StubOutWithMock(self.task, '_check_host_is_up')
         self.mox.StubOutWithMock(self.task, '_find_destination')
-        self.mox.StubOutWithMock(self.task.jacket_rpcapi, 'live_migration')
+        self.mox.StubOutWithMock(self.task.compute_rpcapi, 'live_migration')
 
         self.task._check_host_is_up(self.instance_host)
         self.task._find_destination().AndReturn("found_host")
-        self.task.jacket_rpcapi.live_migration(self.context,
-                                               host=self.instance_host,
-                                               instance=self.instance,
-                                               dest="found_host",
-                                               block_migration=self.block_migration,
-                                               migration=self.migration,
-                                               migrate_data=None).AndReturn("bob")
+        self.task.compute_rpcapi.live_migration(self.context,
+                                                host=self.instance_host,
+                                                instance=self.instance,
+                                                dest="found_host",
+                                                block_migration=self.block_migration,
+                                                migration=self.migration,
+                                                migrate_data=None).AndReturn("bob")
 
         self.mox.ReplayAll()
         with mock.patch.object(self.migration, 'save') as mock_save:
@@ -147,7 +147,7 @@ class LiveMigrationTaskTestCase(test.NoDBTestCase):
         self.mox.StubOutWithMock(compute.Service, 'get_by_compute_host')
         self.mox.StubOutWithMock(self.task, '_get_compute_info')
         self.mox.StubOutWithMock(self.task.servicegroup_api, 'service_is_up')
-        self.mox.StubOutWithMock(self.task.jacket_rpcapi,
+        self.mox.StubOutWithMock(self.task.compute_rpcapi,
                                  'check_can_live_migrate_destination')
 
         compute.Service.get_by_compute_host(
@@ -167,7 +167,7 @@ class LiveMigrationTaskTestCase(test.NoDBTestCase):
         self.task._get_compute_info(self.destination)\
                 .AndReturn(hypervisor_details)
 
-        self.task.jacket_rpcapi.check_can_live_migrate_destination(
+        self.task.compute_rpcapi.check_can_live_migrate_destination(
                 self.context, self.instance, self.destination,
                 self.block_migration, self.disk_over_commit).AndReturn(
                         "migrate_data")
@@ -497,7 +497,7 @@ class LiveMigrationTaskTestCase(test.NoDBTestCase):
                               self.task._find_destination)
 
     def test_call_livem_checks_on_host(self):
-        with mock.patch.object(self.task.jacket_rpcapi,
+        with mock.patch.object(self.task.compute_rpcapi,
             'check_can_live_migrate_destination',
             side_effect=messaging.MessagingTimeout):
             self.assertRaises(exception.MigrationPreCheckError,

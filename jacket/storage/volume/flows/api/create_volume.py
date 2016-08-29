@@ -796,7 +796,7 @@ class VolumeCastTask(flow_utils.CinderTask):
         #     volume.scheduled_at = timeutils.utcnow()
         #     volume.save()
         #     if not cgsnapshot_id:
-        #         self.jacket_rpcapi.create_volume(
+        #         self.compute_rpcapi.create_volume(
         #             context,
         #             volume,
         #             volume.host,
