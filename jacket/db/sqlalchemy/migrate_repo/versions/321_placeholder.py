@@ -10,13 +10,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from sqlalchemy import MetaData
-from sqlalchemy import Table
+# This is a placeholder for Liberty backports.
+# Do not use this number for new Mitaka work.  New work starts after
+# all the placeholders.
+#
+# See this for more information:
+# http://lists.openstack.org/pipermail/openstack-dev/2013-March/006827.html
 
 
 def upgrade(migrate_engine):
-    meta = MetaData()
-    meta.bind = migrate_engine
-
-    instance_mapping = Table('instance_mappings', meta, autoload=True)
-    instance_mapping.c.cell_id.alter(nullable=True)
+    pass
