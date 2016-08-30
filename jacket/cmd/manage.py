@@ -70,8 +70,7 @@ from jacket import i18n
 i18n.enable_lazy()
 
 # Need to register global_opts
-from jacket.common import config
-import jacket.compute.conf
+from jacket.compute import config as com_config
 from jacket import context
 from jacket import db
 from jacket.db import migration as db_migration
@@ -80,6 +79,8 @@ from jacket.i18n import _
 from jacket import version
 
 CONF = cfg.CONF
+
+_EXTRA_DEFAULT_LOG_LEVELS = ['oslo_db=INFO']
 
 
 # Decorators for actions
@@ -210,6 +211,22 @@ class DbCommands(object):
             sys.exit(1)
 
 
+class ApiDbCommands(object):
+    """Class for managing the api database."""
+
+    def __init__(self):
+        pass
+
+    @args('--version', metavar='<version>', help='Database version')
+    def sync(self, version=None):
+        """Sync the database up to the most recent version."""
+        return db_migration.db_sync(version, database='api')
+
+    def version(self):
+        """Print the current database version."""
+        print(db_migration.db_version(database='api'))
+
+
 class VersionCommands(object):
     """Class for exposing the codebase version."""
 
@@ -312,6 +329,7 @@ class BaseCommand(object):
 CATEGORIES = {
     'config': ConfigCommands,
     'db': DbCommands,
+    'api_db': ApiDbCommands,
     'logs': GetLogCommands,
     'shell': ShellCommands,
     'version': VersionCommands,
@@ -389,24 +407,12 @@ def main():
     # objects.register_all()
     """Parse options and call the appropriate class/method."""
     CONF.register_cli_opt(category_opt)
-    script_name = sys.argv[0]
-    if len(sys.argv) < 2:
-        print(_("\nOpenStack Jacket version: %(version)s\n") %
-              {'version': version.version_string()})
-        print(script_name + " category action [<args>]")
-        print(_("Available categories:"))
-        for category in CATEGORIES:
-            print(_("\t%s") % category)
-        sys.exit(2)
-
     try:
-        CONF(sys.argv[1:], project='jacket',
-             version=version.version_string())
+        com_config.parse_args(sys.argv)
+        logging.set_defaults(
+            default_log_levels=logging.get_default_log_levels() +
+            _EXTRA_DEFAULT_LOG_LEVELS)
         logging.setup(CONF, "jacket")
-        python_logging.captureWarnings(True)
-    except cfg.ConfigDirNotFoundError as details:
-        print(_("Invalid directory: %s") % details)
-        sys.exit(2)
     except cfg.ConfigFilesNotFoundError:
         cfgfile = CONF.config_file[-1] if CONF.config_file else None
         if cfgfile and not os.access(cfgfile, os.R_OK):
@@ -414,11 +420,11 @@ def main():
             print(_("Could not read %s. Re-running with sudo") % cfgfile)
             try:
                 os.execvp('sudo', ['sudo', '-u', '#%s' % st.st_uid] + sys.argv)
-            except Exception:
+            except OSError:
                 print(_('sudo failed, continuing as if nothing happened'))
 
         print(_('Please re-run jacket-manage as root.'))
-        sys.exit(2)
+        return(2)
 
     fn = CONF.category.action_fn
     fn_kwargs = fetch_func_args(fn)

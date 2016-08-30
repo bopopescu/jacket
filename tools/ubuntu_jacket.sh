@@ -10,6 +10,7 @@ mysqldbport="3306"
 dbbackendhost="${HOST_IP}"
 
 jacketdbname="jacketdb"
+jacketapidbname="jacketapidb"
 jacketdbuser="jacketdbuser"
 jacketdbpass="P@ssw0rd"
 jacketsvce="jacket"
@@ -56,6 +57,13 @@ echo "GRANT ALL ON $jacketdbname.* TO '$jacketdbuser'@'%' IDENTIFIED BY '$jacket
 echo "GRANT ALL ON $jacketdbname.* TO '$jacketdbuser'@'localhost' IDENTIFIED BY '$jacketdbpass';"|$mysqlcommand
 echo "GRANT ALL ON $jacketdbname.* TO '$jacketdbuser'@'$jackethost' IDENTIFIED BY '$jacketdbpass';"|$mysqlcommand
 
+
+echo "CREATE DATABASE IF NOT EXISTS $jacketapidbname default character set utf8;"|$mysqlcommand
+echo "GRANT ALL ON $jacketapidbname.* TO '$jacketdbuser'@'%' IDENTIFIED BY '$jacketdbpass';"|$mysqlcommand
+echo "GRANT ALL ON $jacketapidbname.* TO '$jacketdbuser'@'localhost' IDENTIFIED BY '$jacketdbpass';"|$mysqlcommand
+echo "GRANT ALL ON $jacketapidbname.* TO '$jacketdbuser'@'$jackethost' IDENTIFIED BY '$jacketdbpass';"|$mysqlcommand
+
+
 #jacket-manage db sync
 
 mkdir -p /var/log/jacket
@@ -68,6 +76,15 @@ crudini --set /etc/jacket/jacket.conf database min_pool_size 1
 crudini --set /etc/jacket/jacket.conf database max_pool_size 10
 crudini --set /etc/jacket/jacket.conf database max_retries 100
 crudini --set /etc/jacket/jacket.conf database pool_timeout 10
+
+# api database
+crudini --set /etc/jacket/jacket.conf api_database connection "mysql+pymysql://${jacketdbuser}:${jacketdbpass}@${dbbackendhost}:${mysqldbport}/${jacketapidbname}"
+crudini --set /etc/jacket/jacket.conf api_database retry_interval 10
+crudini --set /etc/jacket/jacket.conf api_database idle_timeout 3600
+crudini --set /etc/jacket/jacket.conf api_database min_pool_size 1
+crudini --set /etc/jacket/jacket.conf api_database max_pool_size 10
+crudini --set /etc/jacket/jacket.conf api_database max_retries 100
+crudini --set /etc/jacket/jacket.conf api_database pool_timeout 10
 
 
 crudini --set /etc/jacket/jacket.conf keystone_authtoken auth_uri http://$keystonehost:5000
