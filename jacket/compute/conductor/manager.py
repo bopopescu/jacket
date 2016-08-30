@@ -379,26 +379,26 @@ class ComputeTaskManager(base.Base):
             flavor = compute.Flavor.get_by_id(context, flavor['id'])
             filter_properties = dict(filter_properties, instance_type=flavor)
 
-        # request_spec = {}
-        # try:
-        #     # check retry policy. Rather ugly use of instances[0]...
-        #     # but if we've exceeded max retries... then we really only
-        #     # have a single instance.
-        #     scheduler_utils.populate_retry(
-        #         filter_properties, instances[0].uuid)
-        #     request_spec = scheduler_utils.build_request_spec(
-        #             context, image, instances)
-        #     hosts = self._schedule_instances(
-        #             context, request_spec, filter_properties)
-        # except Exception as exc:
-        #     updates = {'vm_state': vm_states.ERROR, 'task_state': None}
-        #     for instance in instances:
-        #         self._set_vm_state_and_notify(
-        #             context, instance.uuid, 'build_instances', updates,
-        #             exc, request_spec)
-        #         self._cleanup_allocated_networks(
-        #             context, instance, requested_networks)
-        #     return
+        request_spec = {}
+        try:
+            # check retry policy. Rather ugly use of instances[0]...
+            # but if we've exceeded max retries... then we really only
+            # have a single instance.
+            scheduler_utils.populate_retry(
+                filter_properties, instances[0].uuid)
+            request_spec = scheduler_utils.build_request_spec(
+                    context, image, instances)
+            # hosts = self._schedule_instances(
+            #         context, request_spec, filter_properties)
+        except Exception as exc:
+            updates = {'vm_state': vm_states.ERROR, 'task_state': None}
+            for instance in instances:
+                self._set_vm_state_and_notify(
+                    context, instance.uuid, 'build_instances', updates,
+                    exc, request_spec)
+                self._cleanup_allocated_networks(
+                    context, instance, requested_networks)
+            return
 
         #for (instance, host) in six.moves.zip(instances, hosts):
         for instance in instances:
@@ -408,7 +408,7 @@ class ComputeTaskManager(base.Base):
                     exception.InstanceInfoCacheNotFound):
                 LOG.debug('Instance deleted during build', instance=instance)
                 continue
-            # local_filter_props = copy.deepcopy(filter_properties)
+            local_filter_props = copy.deepcopy(filter_properties)
             # scheduler_utils.populate_filter_properties(local_filter_props,
             #     host)
             # The block_device_mapping passed from the api doesn't contain
@@ -418,8 +418,8 @@ class ComputeTaskManager(base.Base):
 
             self.compute_rpcapi.build_and_run_instance(context,
                                                        instance=instance, host=None, image=image,
-                                                       request_spec=None,
-                                                       filter_properties=None,
+                                                       request_spec=request_spec,
+                                                       filter_properties=local_filter_props,
                                                        admin_password=admin_password,
                                                        injected_files=injected_files,
                                                        requested_networks=requested_networks,
@@ -437,15 +437,15 @@ class ComputeTaskManager(base.Base):
             #                                           block_device_mapping=bdms, node=host['nodename'],
             #                                           limits=host['limits'])
 
-    # def _schedule_instances(self, context, request_spec, filter_properties):
-    #     scheduler_utils.setup_instance_group(context, request_spec,
-    #                                          filter_properties)
-    #     # TODO(sbauza): Hydrate here the object until we modify the
-    #     # scheduler.utils methods to directly use the RequestSpec object
-    #     spec_obj = compute.RequestSpec.from_primitives(
-    #         context, request_spec, filter_properties)
-    #     hosts = self.scheduler_client.select_destinations(context, spec_obj)
-    #     return hosts
+    def _schedule_instances(self, context, request_spec, filter_properties):
+        scheduler_utils.setup_instance_group(context, request_spec,
+                                             filter_properties)
+        # TODO(sbauza): Hydrate here the object until we modify the
+        # scheduler.utils methods to directly use the RequestSpec object
+        spec_obj = compute.RequestSpec.from_primitives(
+            context, request_spec, filter_properties)
+        hosts = self.scheduler_client.select_destinations(context, spec_obj)
+        return hosts
 
     def unshelve_instance(self, context, instance, request_spec=None):
         sys_meta = instance.system_metadata

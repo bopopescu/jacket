@@ -2050,11 +2050,11 @@ class API(base.Base):
         """
 
         # test rpc
-        try:
-            self.compute_rpcapi.compute_test(context, host="yibo")
-        except Exception as ex:
-            LOG.exception("+++hw, ex = %s", ex)
-            raise
+        # try:
+        #     self.compute_rpcapi.compute_test(context, host="yibo")
+        # except Exception as ex:
+        #     LOG.exception("+++hw, ex = %s", ex)
+        #     raise
 
         # TODO(bcwaldon): determine the best argument for target here
         target = {
