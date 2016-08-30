@@ -22,7 +22,7 @@ from oslo_log import log as logging
 import oslo_messaging as messaging
 from oslo_utils import importutils
 
-from jacket.worker import rpcapi as jacket_rpcapi
+from jacket.compute.cloud import rpcapi as compute_rpcapi
 from jacket.compute import exception
 from jacket.i18n import _LI
 from jacket import manager
@@ -62,12 +62,12 @@ class ConsoleProxyManager(manager.Manager):
         super(ConsoleProxyManager, self).__init__(service_name='console',
                                                   *args, **kwargs)
         self.driver.host = self.host
-        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
+        self.compute_rpcapi = compute_rpcapi.ComputeAPI()
 
     def reset(self):
         LOG.info(_LI('Reloading compute RPC API'))
-        jacket_rpcapi.LAST_VERSION = None
-        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
+        compute_rpcapi.LAST_VERSION = None
+        self.compute_rpcapi = compute_rpcapi.ComputeAPI()
 
     def init_host(self):
         self.driver.init_host()
@@ -124,8 +124,8 @@ class ConsoleProxyManager(manager.Manager):
                              'username': 'test',
                              'password': '1234pass'}
             else:
-                pool_info = self.jacket_rpcapi.get_console_pool_info(context,
-                                                                     console_type, instance_host)
+                pool_info = self.compute_rpcapi.get_console_pool_info(context,
+                                                                      console_type, instance_host)
             pool_info['password'] = self.driver.fix_pool_password(
                                                     pool_info['password'])
             pool_info['host'] = self.host

@@ -124,18 +124,28 @@ crudini --set /etc/jacket/jacket.conf DEFAULT firewall_driver jacket.compute.vir
 crudini --set /etc/jacket/jacket.conf DEFAULT rootwrap_config /etc/jacket/rootwrap.conf
 crudini --set /etc/jacket/jacket.conf DEFAULT compute_topic "jacket-worker"
 crudini --set /etc/jacket/jacket.conf DEFAULT volume_topic "jacket-worker"
-
 crudini --set /etc/jacket/jacket.conf DEFAULT use_local true
 
-
 # storage
-backend="lvm"
+backend= "lvmdriver-1"
 crudini --set /etc/jacket/jacket.conf DEFAULT enabled_backends ${backend}
-crudini --set /etc/jacket/jacket.conf ${backend} iscsi_helper tgtadm
-crudini --set /etc/jacket/jacket.conf ${backend} iscsi_ip_address ${HOST_IP}
+crudini --set /etc/jacket/jacket.conf ${backend} lvm_type "default"
+crudini --set /etc/jacket/jacket.conf ${backend} iscsi_helper "tgtadm"
 crudini --set /etc/jacket/jacket.conf ${backend} volume_driver jacket.storage.volume.drivers.lvm.LVMVolumeDriver
-crudini --set /etc/jacket/jacket.conf ${backend} volumes_dir /var/lib/cinder/volumes
-crudini --set /etc/jacket/jacket.conf ${backend} volume_backend_name lvm
 crudini --set /etc/jacket/jacket.conf ${backend} volume_group cinder-volumes
 
 
+#neutron
+neutron = "neutron"
+crudini --set /etc/jacket/jacket.conf DEFAULT use_neutron "True"
+crudini --set /etc/jacket/jacket.conf ${neutron} service_metadata_proxy "True"
+crudini --set /etc/jacket/jacket.conf ${neutron} url "$jacket_host:9696"
+crudini --set /etc/jacket/jacket.conf ${neutron} region_name "RegionOne"
+crudini --set /etc/jacket/jacket.conf ${neutron} auth_strategy "keystone"
+crudini --set /etc/jacket/jacket.conf ${neutron} project_domain_name "Default"
+crudini --set /etc/jacket/jacket.conf ${neutron} project_name "service"
+crudini --set /etc/jacket/jacket.conf ${neutron} user_domain_name "Default"
+crudini --set /etc/jacket/jacket.conf ${neutron} password "Huawei123"
+crudini --set /etc/jacket/jacket.conf ${neutron} username "neutron"
+crudini --set /etc/jacket/jacket.conf ${neutron} auth_url "http://$jacket_host/identity_v2_admin/v3"
+crudini --set /etc/jacket/jacket.conf ${neutron} auth_type "password"

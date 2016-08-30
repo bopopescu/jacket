@@ -17,7 +17,7 @@ from jacket.compute.scheduler import utils as scheduler_utils
 
 class MigrationTask(base.TaskBase):
     def __init__(self, context, instance, flavor, filter_properties,
-                 request_spec, reservations, clean_shutdown, jacket_rpcapi,
+                 request_spec, reservations, clean_shutdown, compute_rpcapi,
                  scheduler_client):
         super(MigrationTask, self).__init__(context, instance)
         self.clean_shutdown = clean_shutdown
@@ -27,7 +27,7 @@ class MigrationTask(base.TaskBase):
         self.flavor = flavor
         self.quotas = None
 
-        self.jacket_rpcapi = jacket_rpcapi
+        self.compute_rpcapi = compute_rpcapi
         self.scheduler_client = scheduler_client
 
     def _execute(self):
@@ -53,7 +53,7 @@ class MigrationTask(base.TaskBase):
         self.filter_properties.pop('context', None)
 
         (host, node) = (host_state['host'], host_state['nodename'])
-        self.jacket_rpcapi.prep_resize(
+        self.compute_rpcapi.prep_resize(
             self.context, image, self.instance, self.flavor, host,
             self.reservations, request_spec=self.request_spec,
             filter_properties=self.filter_properties, node=node,

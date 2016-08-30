@@ -4476,7 +4476,7 @@ class ComputeManagerMigrationTestCase(test.NoDBTestCase):
     def test_live_migration_handles_dict(self):
         compute = manager.ComputeManager()
 
-        @mock.patch.object(compute, 'jacket_rpcapi')
+        @mock.patch.object(compute, 'compute_rpcapi')
         @mock.patch.object(compute, 'driver')
         def _test(mock_driver, mock_rpc):
             migrate_data = migrate_data_obj.LiveMigrateData()

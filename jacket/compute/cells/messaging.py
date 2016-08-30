@@ -44,7 +44,7 @@ from six.moves import range
 from jacket.compute.cells import state as cells_state
 from jacket.compute.cells import utils as cells_utils
 from jacket.compute import cloud
-from jacket.worker import rpcapi as jacket_rpcapi
+from jacket.compute.cloud import rpcapi as compute_rpcapi
 from jacket.compute.cloud import task_states
 from jacket.compute.cloud import vm_states
 import jacket.compute.conf
@@ -601,7 +601,7 @@ class _BaseMessageMethods(base.Base):
         self.msg_runner = msg_runner
         self.state_manager = msg_runner.state_manager
         self.compute_api = cloud.API()
-        self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
+        self.compute_rpcapi = compute_rpcapi.ComputeAPI()
         self.consoleauth_rpcapi = consoleauth_rpcapi.ConsoleAuthAPI()
         self.host_api = cloud.HostAPI()
 
@@ -781,8 +781,8 @@ class _TargetedMessageMethods(_BaseMessageMethods):
                                             uuid=instance_uuid)
                 self.msg_runner.instance_destroy_at_top(message.ctxt,
                                                         instance)
-        return self.jacket_rpcapi.validate_console_port(message.ctxt,
-                                                        instance, console_port, console_type)
+        return self.compute_rpcapi.validate_console_port(message.ctxt,
+                                                         instance, console_port, console_type)
 
     def get_migrations(self, message, filters):
         return self.compute_api.get_migrations(message.ctxt, filters)
@@ -907,9 +907,9 @@ class _TargetedMessageMethods(_BaseMessageMethods):
         instance.refresh()
         instance.task_state = task_states.IMAGE_SNAPSHOT_PENDING
         instance.save(expected_task_state=[None])
-        self.jacket_rpcapi.snapshot_instance(message.ctxt,
-                                             instance,
-                                             image_id)
+        self.compute_rpcapi.snapshot_instance(message.ctxt,
+                                              instance,
+                                              image_id)
 
     def backup_instance(self, message, instance, image_id,
                         backup_type, rotation):
@@ -917,11 +917,11 @@ class _TargetedMessageMethods(_BaseMessageMethods):
         instance.refresh()
         instance.task_state = task_states.IMAGE_BACKUP
         instance.save(expected_task_state=[None])
-        self.jacket_rpcapi.backup_instance(message.ctxt,
-                                           instance,
-                                           image_id,
-                                           backup_type,
-                                           rotation)
+        self.compute_rpcapi.backup_instance(message.ctxt,
+                                            instance,
+                                            image_id,
+                                            backup_type,
+                                            rotation)
 
     def rebuild_instance(self, message, instance, image_href, admin_password,
                          files_to_inject, preserve_ephemeral, kwargs):

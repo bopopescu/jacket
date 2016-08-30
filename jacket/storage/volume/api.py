@@ -50,7 +50,7 @@ from jacket.storage import utils
 from jacket.storage.volume.flows.api import create_volume
 from jacket.storage.volume.flows.api import manage_existing
 from jacket.storage.volume import qos_specs
-# from jacket.worker import rpcapi as jacket_rpcapi
+# from jacket.worker import rpcapi as compute_rpcapi
 from jacket.storage.volume import rpcapi as volume_rpcapi
 from jacket.storage.volume import utils as volume_utils
 from jacket.storage.volume import volume_types
@@ -132,7 +132,7 @@ class API(base.Base):
                               glance.get_default_image_service())
         self.scheduler_rpcapi = scheduler_rpcapi.SchedulerAPI()
         self.volume_rpcapi = volume_rpcapi.VolumeAPI()
-        # self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
+        # self.compute_rpcapi = compute_rpcapi.JacketAPI()
         self.availability_zones = []
         self.availability_zones_last_fetched = None
         self.key_manager = keymgr.API()

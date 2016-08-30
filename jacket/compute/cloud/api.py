@@ -43,7 +43,7 @@ from jacket.compute.cells import opts as cells_opts
 from jacket.compute.cloud import flavors
 from jacket.compute.cloud import instance_actions
 from jacket.compute.cloud import power_state
-# from jacket.worker import rpcapi as jacket_rpcapi
+# from jacket.worker import rpcapi as compute_rpcapi
 from jacket.compute.cloud import rpcapi as compute_rpcapi
 from jacket.compute.cloud import task_states
 from jacket.compute.cloud import utils as compute_utils
@@ -222,7 +222,7 @@ class API(base.Base):
                 skip_policy_check=skip_policy_check))
         self.consoleauth_rpcapi = consoleauth_rpcapi.ConsoleAuthAPI()
         self.compute_rpcapi = compute_rpcapi.ComputeAPI()
-        # self.jacket_rpcapi = jacket_rpcapi.JacketAPI()
+        # self.compute_rpcapi = compute_rpcapi.JacketAPI()
         self.compute_task_api = conductor.ComputeTaskAPI()
         self.servicegroup_api = servicegroup.API()
         self.notifier = rpc.get_notifier('compute', CONF.host)
@@ -2051,11 +2051,11 @@ class API(base.Base):
         """
 
         # test rpc
-        try:
-            self.compute_rpcapi.compute_test(context, host="yibo")
-        except Exception as ex:
-            LOG.exception("+++hw, ex = %s", ex)
-            raise
+        # try:
+        #     self.compute_rpcapi.compute_test(context, host="yibo")
+        # except Exception as ex:
+        #     LOG.exception("+++hw, ex = %s", ex)
+        #     raise
 
         # TODO(bcwaldon): determine the best argument for target here
         target = {
