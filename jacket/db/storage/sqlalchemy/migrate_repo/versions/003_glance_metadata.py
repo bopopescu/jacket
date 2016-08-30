@@ -27,7 +27,7 @@ def upgrade(migrate_engine):
           meta,
           Column('id', Integer(), primary_key=True, nullable=False),
           mysql_engine='InnoDB')
-    Table('snapshots',
+    Table('storage_snapshots',
           meta,
           Column('id', Integer(), primary_key=True, nullable=False),
           mysql_engine='InnoDB')
@@ -42,7 +42,7 @@ def upgrade(migrate_engine):
         Column('id', Integer(), primary_key=True, nullable=False),
         Column('volume_id', String(length=36), ForeignKey('volumes.id')),
         Column('snapshot_id', String(length=36),
-               ForeignKey('snapshots.id')),
+               ForeignKey('storage_snapshots.id')),
         Column('key', String(255)),
         Column('value', Text),
         mysql_engine='InnoDB'
