@@ -207,7 +207,7 @@ class ObjectListBase(ovoo_base.ObjectListBase):
     # base object and can be removed when we move to it.
     @classmethod
     def _obj_primitive_key(cls, field):
-        return 'nova_object.%s' % field
+        return 'jacket_object.%s' % field
 
     @classmethod
     def _obj_primitive_field(cls, primitive, field,
@@ -239,14 +239,14 @@ class NovaObjectSerializer(messaging.NoOpSerializer):
         try:
             objinst = NovaObject.obj_from_primitive(objprim, context=context)
         except ovoo_exc.IncompatibleObjectVersion:
-            objver = objprim['nova_object.version']
+            objver = objprim['jacket_object.version']
             if objver.count('.') == 2:
                 # NOTE(danms): For our purposes, the .z part of the version
                 # should be safe to accept without requiring a backport
-                objprim['nova_object.version'] = \
+                objprim['jacket_object.version'] = \
                     '.'.join(objver.split('.')[:2])
                 return self._process_object(context, objprim)
-            objname = objprim['nova_object.name']
+            objname = objprim['jacket_object.name']
             version_manifest = ovoo_base.obj_tree_get_versions(objname)
             if objname in version_manifest:
                 objinst = self.conductor.object_backport_versions(
@@ -287,7 +287,7 @@ class NovaObjectSerializer(messaging.NoOpSerializer):
         return entity
 
     def deserialize_entity(self, context, entity):
-        if isinstance(entity, dict) and 'nova_object.name' in entity:
+        if isinstance(entity, dict) and 'jacket_object.name' in entity:
             entity = self._process_object(context, entity)
         elif isinstance(entity, (tuple, list, set, dict)):
             entity = self._process_iterable(context, self.deserialize_entity,
@@ -413,9 +413,9 @@ def obj_equal_prims(obj_1, obj_2, ignore=None):
         return prim
 
     if ignore is not None:
-        keys = ['nova_object.changes'] + ignore
+        keys = ['jacket_object.changes'] + ignore
     else:
-        keys = ['nova_object.changes']
+        keys = ['jacket_object.changes']
     prim_1 = _strip(obj_1.obj_to_primitive(), keys)
     prim_2 = _strip(obj_2.obj_to_primitive(), keys)
     return prim_1 == prim_2

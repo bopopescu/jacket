@@ -32,6 +32,14 @@ brokeruser="openstack"
 brokerpass="P@ssw0rd"
 brokervhost="/openstack"
 
+#neutron
+neutronhost="${HOST_IP}"
+neutronuser="neutron"
+neutronpass="P@ssw0rd"
+metadata_shared_secret="P@ssw0rd"
+integration_bridge="br-int"
+
+
 #keystone中设置jacket
 openstack user show $jacketuser | openstack user create --domain $keystonedomain --password $jacketpass --email "root@email" $jacketuser
 openstack role add --project $keystoneservicestenant --user $jacketuser $keystoneadminuser
@@ -127,25 +135,29 @@ crudini --set /etc/jacket/jacket.conf DEFAULT volume_topic "jacket-worker"
 crudini --set /etc/jacket/jacket.conf DEFAULT use_local true
 
 # storage
-backend= "lvmdriver-1"
+backend="lvm"
 crudini --set /etc/jacket/jacket.conf DEFAULT enabled_backends ${backend}
 crudini --set /etc/jacket/jacket.conf ${backend} lvm_type "default"
 crudini --set /etc/jacket/jacket.conf ${backend} iscsi_helper "tgtadm"
 crudini --set /etc/jacket/jacket.conf ${backend} volume_driver jacket.storage.volume.drivers.lvm.LVMVolumeDriver
 crudini --set /etc/jacket/jacket.conf ${backend} volume_group cinder-volumes
-
+crudini --set /etc/jacket/jacket.conf ${backend} volumes_dir /var/lib/cinder/volumes
+crudini --set /etc/jacket/jacket.conf ${backend} volume_backend_name lvm
 
 #neutron
-neutron = "neutron"
-crudini --set /etc/jacket/jacket.conf DEFAULT use_neutron "True"
-crudini --set /etc/jacket/jacket.conf ${neutron} service_metadata_proxy "True"
-crudini --set /etc/jacket/jacket.conf ${neutron} url "$jacket_host:9696"
-crudini --set /etc/jacket/jacket.conf ${neutron} region_name "RegionOne"
-crudini --set /etc/jacket/jacket.conf ${neutron} auth_strategy "keystone"
-crudini --set /etc/jacket/jacket.conf ${neutron} project_domain_name "Default"
-crudini --set /etc/jacket/jacket.conf ${neutron} project_name "service"
-crudini --set /etc/jacket/jacket.conf ${neutron} user_domain_name "Default"
-crudini --set /etc/jacket/jacket.conf ${neutron} password "Huawei123"
-crudini --set /etc/jacket/jacket.conf ${neutron} username "neutron"
-crudini --set /etc/jacket/jacket.conf ${neutron} auth_url "http://$jacket_host/identity_v2_admin/v3"
-crudini --set /etc/jacket/jacket.conf ${neutron} auth_type "password"
+neutron="neutron"
+crudini --set /etc/jacket/jacket.conf neutron url "http://$neutronhost:9696"
+crudini --set /etc/jacket/jacket.conf neutron neutron_default_tenant_id default
+crudini --set /etc/jacket/jacket.conf neutron auth_type password
+crudini --set /etc/jacket/jacket.conf neutron auth_section keystone_authtoken
+crudini --set /etc/jacket/jacket.conf neutron auth_url "http://$keystonehost:35357"
+crudini --set /etc/jacket/jacket.conf neutron project_domain_name $keystonedomain
+crudini --set /etc/jacket/jacket.conf neutron user_domain_name $keystonedomain
+crudini --set /etc/jacket/jacket.conf neutron region_name $endpointsregion
+crudini --set /etc/jacket/jacket.conf neutron project_name $keystoneservicestenant
+crudini --set /etc/jacket/jacket.conf neutron username $neutronuser
+crudini --set /etc/jacket/jacket.conf neutron password $neutronpass
+crudini --set /etc/jacket/jacket.conf neutron service_metadata_proxy True
+crudini --set /etc/jacket/jacket.conf neutron metadata_proxy_shared_secret $metadata_shared_secret
+crudini --set /etc/jacket/jacket.conf DEFAULT linuxnet_ovs_integration_bridge $integration_bridge
+crudini --set /etc/jacket/jacket.conf neutron ovs_bridge $integration_bridge

@@ -92,7 +92,7 @@ def from_pci_stats(pci_stats):
             pci_stats = None
     if pci_stats:
         # Check for object-ness, or old-style storage format.
-        if 'nova_object.namespace' in pci_stats:
+        if 'jacket_object.namespace' in pci_stats:
             return compute.PciDevicePoolList.obj_from_primitive(pci_stats)
         else:
             # This can be either a dict or a list of dicts

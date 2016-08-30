@@ -70,8 +70,8 @@ class InstancePCIRequests(base.NovaObject,
         if target_version < (1, 1) and 'requests' in primitive:
             for index, request in enumerate(self.requests):
                 request.obj_make_compatible(
-                    primitive['requests'][index]['nova_object.data'], '1.0')
-                primitive['requests'][index]['nova_object.version'] = '1.0'
+                    primitive['requests'][index]['jacket_object.data'], '1.0')
+                primitive['requests'][index]['jacket_object.version'] = '1.0'
 
     @classmethod
     def obj_from_db(cls, context, instance_uuid, db_requests):
