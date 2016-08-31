@@ -20,7 +20,7 @@ from webob import exc
 from jacket.api.storage import extensions
 from jacket.api.storage.openstack import wsgi
 from jacket.storage import backup
-from jacket import db
+from jacket.db import storage as db
 from jacket.storage import exception
 from jacket.storage.i18n import _
 from jacket.objects import storage
@@ -83,10 +83,10 @@ class AdminController(wsgi.Controller):
 
         def _clean_volume_attachment(context, id):
             attachments = (
-                storage.volume_attachment_get_used_by_volume_id(context, id))
+                db.volume_attachment_get_used_by_volume_id(context, id))
             for attachment in attachments:
-                storage.volume_detached(context, id, attachment.id)
-            storage.volume_admin_metadata_delete(context, id,
+                db.volume_detached(context, id, attachment.id)
+            db.volume_admin_metadata_delete(context, id,
                                             'attached_mode')
 
         context = req.environ['storage.context']
@@ -146,7 +146,7 @@ class VolumeAdminController(AdminController):
                               'none', 'starting',)
 
     def _update(self, *args, **kwargs):
-        storage.volume_update(*args, **kwargs)
+        db.volume_update(*args, **kwargs)
 
     def _get(self, *args, **kwargs):
         return self.volume_api.get(*args, **kwargs)

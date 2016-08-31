@@ -51,7 +51,7 @@ service_opts = [
                     ' (Disable by setting to 0)'),
     cfg.ListOpt('enabled_apis',
                 #default=['osapi_compute', 'metadata', 'osapi_jacket', 'osapi_volume'],
-                default=['osapi_volume'],
+                default=['osapi_compute', 'osapi_volume'],
                 help='A list of APIs to enable by default'),
     cfg.ListOpt('enabled_ssl_apis',
                 default=[],

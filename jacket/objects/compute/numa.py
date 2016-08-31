@@ -188,7 +188,7 @@ class NUMATopology(base.NovaObject,
 
     @classmethod
     def obj_from_primitive(cls, primitive, context=None):
-        if 'nova_object.name' in primitive:
+        if 'jacket_object.name' in primitive:
             obj_topology = super(NUMATopology, cls).obj_from_primitive(
                 primitive, context=context)
         else:
@@ -245,7 +245,7 @@ class NUMATopologyLimits(base.NovaObject):
 
     @classmethod
     def obj_from_db_obj(cls, db_obj):
-        if 'nova_object.name' in db_obj:
+        if 'jacket_object.name' in db_obj:
             obj_topology = cls.obj_from_primitive(db_obj)
         else:
             # NOTE(sahid): This compatibility code needs to stay until we can

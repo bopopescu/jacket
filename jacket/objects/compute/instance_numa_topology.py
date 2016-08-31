@@ -152,7 +152,7 @@ class InstanceNUMATopology(base.NovaObject,
 
     @classmethod
     def obj_from_primitive(cls, primitive, context=None):
-        if 'nova_object.name' in primitive:
+        if 'jacket_object.name' in primitive:
             obj_topology = super(InstanceNUMATopology, cls).obj_from_primitive(
                 primitive, context=None)
         else:
@@ -168,7 +168,7 @@ class InstanceNUMATopology(base.NovaObject,
         primitive = jsonutils.loads(db_obj)
         obj_topology = cls.obj_from_primitive(primitive)
 
-        if 'nova_object.name' not in db_obj:
+        if 'jacket_object.name' not in db_obj:
             obj_topology.instance_uuid = instance_uuid
             # No benefit to store a list of changed fields
             obj_topology.obj_reset_changes()

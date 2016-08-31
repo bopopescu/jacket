@@ -181,7 +181,7 @@ class ExtensionManager(object):
     """
 
     def __init__(self):
-        LOG.info(_LI('Initializing extension manager.'))
+        LOG.info(_LI('Initializing extension manager.CONF.osapi_volume_extension = %s'), CONF.osapi_volume_extension)
 
         self.cls_list = CONF.osapi_volume_extension
         self.extensions = {}

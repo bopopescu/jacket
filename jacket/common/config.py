@@ -135,7 +135,7 @@ global_opts = [
                      'volume_extension option with storage.api.storage.contrib.'
                      'select_extensions'),
     cfg.MultiStrOpt('osapi_volume_extension',
-                    default=['jacket.storage.api.storage.contrib.standard_extensions'],
+                    default=['jacket.api.storage.contrib.standard_extensions'],
                     help='osapi volume extension to load'),
     cfg.StrOpt('volume_manager',
                default='jacket.storage.volume.manager.VolumeManager',

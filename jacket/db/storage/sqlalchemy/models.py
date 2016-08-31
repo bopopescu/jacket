@@ -358,7 +358,7 @@ class VolumeGlanceMetadata(BASE, CinderBase):
     __tablename__ = 'volume_glance_metadata'
     id = Column(Integer, primary_key=True, nullable=False)
     volume_id = Column(String(36), ForeignKey('volumes.id'))
-    snapshot_id = Column(String(36), ForeignKey('snapshots.id'))
+    snapshot_id = Column(String(36), ForeignKey('storage_snapshots.id'))
     key = Column(String(255))
     value = Column(Text)
     volume = relationship(Volume, backref="volume_glance_metadata",
