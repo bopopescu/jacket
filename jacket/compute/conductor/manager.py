@@ -34,7 +34,7 @@ from jacket.i18n import _, _LE, _LI, _LW
 from jacket.compute import image
 from jacket import manager
 from jacket.compute import network
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base as nova_object
 from jacket import rpc
 from jacket.compute.scheduler import client as scheduler_client
@@ -132,7 +132,7 @@ class ConductorManager(manager.Manager):
                                         version_manifest=object_versions)
 
     def reset(self):
-        compute.Service.clear_min_version_cache()
+        objects.Service.clear_min_version_cache()
 
 
 class ComputeTaskManager(base.Base):
@@ -158,7 +158,7 @@ class ComputeTaskManager(base.Base):
     def reset(self):
         LOG.info(_LI('Reloading compute RPC API'))
         compute_rpcapi.LAST_VERSION = None
-        self.compute_rpcapi = compute_rpcapi.JacketAPI()
+        self.compute_rpcapi = compute_rpcapi.ComputeAPI()
 
     @messaging.expected_exceptions(
         exception.NoValidHost,
@@ -180,17 +180,17 @@ class ComputeTaskManager(base.Base):
             clean_shutdown=True, request_spec=None):
         if instance and not isinstance(instance, nova_object.NovaObject):
             # NOTE(danms): Until v2 of the RPC API, we need to tolerate
-            # old-world instance compute here
+            # old-world instance objects here
             attrs = ['metadata', 'system_metadata', 'info_cache',
                      'security_groups']
-            instance = compute.Instance._from_db_object(
-                context, compute.Instance(), instance,
+            instance = objects.Instance._from_db_object(
+                context, objects.Instance(), instance,
                 expected_attrs=attrs)
         # NOTE: Remove this when we drop support for v1 of the RPC API
-        if flavor and not isinstance(flavor, compute.Flavor):
+        if flavor and not isinstance(flavor, objects.Flavor):
             # Code downstream may expect extra_specs to be populated since it
             # is receiving an object, so lookup the flavor to ensure this.
-            flavor = compute.Flavor.get_by_id(context, flavor['id'])
+            flavor = objects.Flavor.get_by_id(context, flavor['id'])
         if live and not rebuild and not flavor:
             self._live_migrate(context, instance, scheduler_hint,
                                block_migration, disk_over_commit, request_spec)
@@ -290,7 +290,7 @@ class ComputeTaskManager(base.Base):
                      expected_task_state=task_states.MIGRATING,),
                 ex, request_spec)
 
-        migration = compute.Migration(context=context.elevated())
+        migration = objects.Migration(context=context.elevated())
         migration.dest_compute = destination
         migration.status = 'accepted'
         migration.instance_uuid = instance.uuid
@@ -367,16 +367,16 @@ class ComputeTaskManager(base.Base):
         # TODO(danms): Remove this in version 2.0 of the RPC API
         if (requested_networks and
                 not isinstance(requested_networks,
-                               compute.NetworkRequestList)):
-            requested_networks = compute.NetworkRequestList(
-                compute=[compute.NetworkRequest.from_tuple(t)
+                               objects.NetworkRequestList)):
+            requested_networks = objects.NetworkRequestList(
+                objects=[objects.NetworkRequest.from_tuple(t)
                          for t in requested_networks])
         # TODO(melwitt): Remove this in version 2.0 of the RPC API
         flavor = filter_properties.get('instance_type')
-        if flavor and not isinstance(flavor, compute.Flavor):
+        if flavor and not isinstance(flavor, objects.Flavor):
             # Code downstream may expect extra_specs to be populated since it
             # is receiving an object, so lookup the flavor to ensure this.
-            flavor = compute.Flavor.get_by_id(context, flavor['id'])
+            flavor = objects.Flavor.get_by_id(context, flavor['id'])
             filter_properties = dict(filter_properties, instance_type=flavor)
 
         request_spec = {}
@@ -413,7 +413,7 @@ class ComputeTaskManager(base.Base):
             #     host)
             # The block_device_mapping passed from the api doesn't contain
             # instance specific information
-            bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+            bdms = objects.BlockDeviceMappingList.get_by_instance_uuid(
                     context, instance.uuid)
 
             self.compute_rpcapi.build_and_run_instance(context,
@@ -442,7 +442,7 @@ class ComputeTaskManager(base.Base):
                                              filter_properties)
         # TODO(sbauza): Hydrate here the object until we modify the
         # scheduler.utils methods to directly use the RequestSpec object
-        spec_obj = compute.RequestSpec.from_primitives(
+        spec_obj = objects.RequestSpec.from_primitives(
             context, request_spec, filter_properties)
         hosts = self.scheduler_client.select_destinations(context, spec_obj)
         return hosts
@@ -597,7 +597,7 @@ class ComputeTaskManager(base.Base):
             #                         instance=instance)
 
             try:
-                migration = compute.Migration.get_by_instance_and_status(
+                migration = objects.Migration.get_by_instance_and_status(
                     context, instance.uuid, 'accepted')
             except exception.MigrationNotFoundByStatus:
                 LOG.debug("No migration record for the rebuild/evacuate "

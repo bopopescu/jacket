@@ -3777,7 +3777,7 @@ class AggregateAPI(base.Base):
     """Sub-set of the Compute Manager API for managing host aggregates."""
     def __init__(self, **kwargs):
         self.compute_rpcapi = compute_rpcapi.ComputeAPI()
-        self.scheduler_client = scheduler_client.SchedulerClient()
+        #self.scheduler_client = scheduler_client.SchedulerClient()
         super(AggregateAPI, self).__init__(**kwargs)
 
     @wrap_exception()
@@ -3789,7 +3789,7 @@ class AggregateAPI(base.Base):
         if availability_zone:
             aggregate.metadata = {'availability_zone': availability_zone}
         aggregate.create()
-        self.scheduler_client.update_aggregates(context, [aggregate])
+        #self.scheduler_client.update_aggregates(context, [aggregate])
         return aggregate
 
     def get_aggregate(self, context, aggregate_id):
@@ -3812,7 +3812,7 @@ class AggregateAPI(base.Base):
         if values:
             aggregate.update_metadata(values)
             aggregate.updated_at = timeutils.utcnow()
-        self.scheduler_client.update_aggregates(context, [aggregate])
+        #self.scheduler_client.update_aggregates(context, [aggregate])
         # If updated values include availability_zones, then the cache
         # which stored availability_zones and host need to be reset
         if values.get('availability_zone'):
@@ -3826,7 +3826,7 @@ class AggregateAPI(base.Base):
         self.is_safe_to_update_az(context, metadata, aggregate=aggregate,
                                   action_name=AGGREGATE_ACTION_UPDATE_META)
         aggregate.update_metadata(metadata)
-        self.scheduler_client.update_aggregates(context, [aggregate])
+        #self.scheduler_client.update_aggregates(context, [aggregate])
         # If updated metadata include availability_zones, then the cache
         # which stored availability_zones and host need to be reset
         if metadata and metadata.get('availability_zone'):
@@ -3847,7 +3847,7 @@ class AggregateAPI(base.Base):
             raise exception.InvalidAggregateActionDelete(
                 aggregate_id=aggregate_id, reason=msg)
         aggregate.destroy()
-        self.scheduler_client.delete_aggregate(context, aggregate)
+        #self.scheduler_client.delete_aggregate(context, aggregate)
         compute_utils.notify_about_aggregate_update(context,
                                                     "delete.end",
                                                     aggregate_payload)
@@ -3925,7 +3925,7 @@ class AggregateAPI(base.Base):
                                   hosts=[host_name], aggregate=aggregate)
 
         aggregate.add_host(host_name)
-        self.scheduler_client.update_aggregates(context, [aggregate])
+        #self.scheduler_client.update_aggregates(context, [aggregate])
         self._update_az_cache_for_host(context, host_name, aggregate.metadata)
         # NOTE(jogo): Send message to host to support resource pools
         self.compute_rpcapi.add_aggregate_host(context,
@@ -3948,7 +3948,7 @@ class AggregateAPI(base.Base):
         objects.Service.get_by_compute_host(context, host_name)
         aggregate = objects.Aggregate.get_by_id(context, aggregate_id)
         aggregate.delete_host(host_name)
-        self.scheduler_client.update_aggregates(context, [aggregate])
+        #self.scheduler_client.update_aggregates(context, [aggregate])
         self._update_az_cache_for_host(context, host_name, aggregate.metadata)
         self.compute_rpcapi.remove_aggregate_host(context,
                                                  aggregate=aggregate, host_param=host_name, host=host_name)
