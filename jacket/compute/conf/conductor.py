@@ -21,7 +21,7 @@ conductor_group = cfg.OptGroup(
 
 use_local = cfg.BoolOpt(
     'use_local',
-    default=False,
+    default=True,
     help='DEPRECATED: Perform compute-conductor operations locally. '
          'This legacy mode was introduced to bridge a gap during '
          'the transition to the conductor service. It no longer '

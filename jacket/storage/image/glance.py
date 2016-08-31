@@ -35,8 +35,8 @@ import six
 from six.moves import range
 from six.moves import urllib
 
-from cinder import exception
-from cinder.i18n import _LE, _LW
+from jacket import exception
+from jacket.i18n import _LE, _LW
 
 
 glance_opts = [
