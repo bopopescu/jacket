@@ -102,7 +102,7 @@ class Service(BASE, NovaBase, models.SoftDeleteMixin):
         "Instance",
         backref='services',
         primaryjoin='and_(Service.host == Instance.host,'
-                    'Service.binary == "compute-compute",'
+                    'Service.binary == "jacket-worker",'
                     'Instance.deleted == 0)',
         foreign_keys=host,
     )

@@ -124,7 +124,7 @@ class Host(object):
         # in scheduler
         cntxt = context.get_admin_context()
         service = compute.Service.get_by_args(cntxt, CONF.host,
-                                              'compute-compute')
+                                              'jacket-worker')
         service.disabled = not enabled
         service.disabled_reason = 'set by xenapi host_state'
         service.save()

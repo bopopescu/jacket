@@ -35,7 +35,7 @@ import jacket.compute.conf
 from jacket.compute import context as context_module
 from jacket.compute import exception
 from jacket.i18n import _LI, _LW
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute.pci import stats as pci_stats
 from jacket.compute.scheduler import filters
 from jacket.compute.scheduler import weights
@@ -237,7 +237,7 @@ class HostState(object):
         self.num_io_ops = int(self.stats.get('io_workload', 0))
 
         # update metrics
-        self.metrics = compute.MonitorMetricList.from_json(compute.metrics)
+        self.metrics = objects.MonitorMetricList.from_json(compute.metrics)
 
         # update allocation ratios given by the ComputeNode object
         self.cpu_allocation_ratio = compute.cpu_allocation_ratio
@@ -299,7 +299,7 @@ class HostState(object):
         # (when updated by update_from_compute_node), we need to keep the call
         # to get_host_numa_usage_from_instance until it's fixed (and use a
         # temporary orphaned Instance object as a proxy)
-        instance = compute.Instance(numa_topology=spec_obj.numa_topology)
+        instance = objects.Instance(numa_topology=spec_obj.numa_topology)
 
         self.numa_topology = hardware.get_host_numa_usage_from_instance(
                 self, instance)
@@ -355,7 +355,7 @@ class HostManager(object):
 
     def _init_aggregates(self):
         elevated = context_module.get_admin_context()
-        aggs = compute.AggregateList.get_all(elevated)
+        aggs = objects.AggregateList.get_all(elevated)
         for agg in aggs:
             self.aggs_by_id[agg.id] = agg
             for host in agg.hosts:
@@ -363,7 +363,7 @@ class HostManager(object):
 
     def update_aggregates(self, aggregates):
         """Updates internal HostManager information about aggregates."""
-        if isinstance(aggregates, (list, compute.AggregateList)):
+        if isinstance(aggregates, (list, objects.AggregateList)):
             for agg in aggregates:
                 self._update_aggregate(agg)
         else:
@@ -402,7 +402,7 @@ class HostManager(object):
             context = context_module.get_admin_context()
             LOG.debug("START:_async_init_instance_info")
             self._instance_info = {}
-            compute_nodes = compute.ComputeNodeList.get_all(context).objects
+            compute_nodes = objects.ComputeNodeList.get_all(context).objects
             LOG.debug("Total number of compute nodes: %s", len(compute_nodes))
             # Break the queries into batches of 10 to reduce the total number
             # of calls to the DB.
@@ -416,7 +416,7 @@ class HostManager(object):
                 filters = {"host": [curr_node.host
                                     for curr_node in curr_nodes],
                            "deleted": False}
-                result = compute.InstanceList.get_by_filters(context,
+                result = objects.InstanceList.get_by_filters(context,
                                                              filters)
                 instances = result.objects
                 LOG.debug("Adding %s instances for hosts %s-%s",
@@ -550,10 +550,10 @@ class HostManager(object):
         """
 
         service_refs = {service.host: service
-                        for service in compute.ServiceList.get_by_binary(
-                            context, 'compute-compute', include_disabled=True)}
+                        for service in objects.ServiceList.get_by_binary(
+                            context, 'jacket-worker', include_disabled=True)}
         # Get resource usage across the available compute nodes:
-        compute_nodes = compute.ComputeNodeList.get_all(context)
+        compute_nodes = objects.ComputeNodeList.get_all(context)
         seen_nodes = set()
         for compute in compute_nodes:
             service = service_refs.get(compute.host)
@@ -610,7 +610,7 @@ class HostManager(object):
             inst_dict = host_info["instances"]
         else:
             # Host is running old version, or updates aren't flowing.
-            inst_list = compute.InstanceList.get_by_host(context, host_name)
+            inst_list = objects.InstanceList.get_by_host(context, host_name)
             inst_dict = {instance.uuid: instance
                          for instance in inst_list.objects}
         return inst_dict
@@ -619,7 +619,7 @@ class HostManager(object):
         """Get the InstanceList for the specified host, and store it in the
         _instance_info dict.
         """
-        instances = compute.InstanceList.get_by_host(context, host_name)
+        instances = objects.InstanceList.get_by_host(context, host_name)
         inst_dict = {instance.uuid: instance for instance in instances}
         host_info = self._instance_info[host_name] = {}
         host_info["instances"] = inst_dict

@@ -354,7 +354,7 @@ class ComputeAPI(object):
         if LAST_VERSION:
             return LAST_VERSION
         service_version = objects.Service.get_minimum_version(
-            context.get_admin_context(), 'compute-compute')
+            context.get_admin_context(), 'jacket-worker')
         history = service_obj.SERVICE_VERSION_HISTORY
         try:
             version_cap = history[service_version]['compute_rpc']

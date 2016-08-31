@@ -46,9 +46,9 @@ def block_db_access():
 
         def __call__(self, *args, **kwargs):
             stacktrace = "".join(traceback.format_stack())
-            LOG.error(_LE('No db access allowed in compute-compute: %s'),
+            LOG.error(_LE('No db access allowed in jacket-worker: %s'),
                       stacktrace)
-            raise exception.DBNotAllowed('compute-compute')
+            raise exception.DBNotAllowed('jacket-worker')
 
     jacket.db.compute.api.IMPL = NoDB()
 
@@ -69,7 +69,7 @@ def main():
         LOG.warning(_LW('Conductor local mode is deprecated and will '
                         'be removed in a subsequent release'))
 
-    server = service.Service.create(binary='compute-compute',
+    server = service.Service.create(binary='jacket-worker',
                                     topic=CONF.compute_topic,
                                     db_allowed=CONF.conductor.use_local)
     service.serve(server)

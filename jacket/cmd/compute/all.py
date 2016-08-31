@@ -65,7 +65,7 @@ def main():
         except (Exception, SystemExit):
             LOG.exception(_LE('Failed to load %s'), mod.__name__)
 
-    for binary in ['compute-compute', 'compute-network', 'compute-scheduler',
+    for binary in ['jacket-worker', 'compute-network', 'compute-scheduler',
                    'compute-cert', 'compute-conductor']:
 
         # FIXME(sirp): Most service configs are defined in compute/service.py, but

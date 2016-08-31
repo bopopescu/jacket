@@ -16,10 +16,10 @@ from oslo_log import log as logging
 from oslo_utils import versionutils
 
 from jacket.compute import availability_zones
-from jacket import db
+from jacket.db import compute as db
 from jacket.compute import exception
 from jacket.i18n import _LW
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 from jacket.objects.compute import notification
@@ -165,7 +165,7 @@ class Service(base.NovaPersistentObject, base.NovaObject,
                 context, primitive['host'])[0]
         except Exception:
             return
-        primitive['compute_node'] = compute.obj_to_primitive(
+        primitive['compute_node'] = objects.obj_to_primitive(
             target_version=target_version,
             version_manifest=version_manifest)
 
@@ -202,9 +202,9 @@ class Service(base.NovaPersistentObject, base.NovaObject,
             raise exception.ObjectActionError(
                 action='obj_load_attr',
                 reason='attribute %s not lazy-loadable' % attrname)
-        if self.binary == 'compute-compute':
+        if self.binary == 'jacket-worker':
             # Only n-cpu services have attached compute_node(s)
-            compute_nodes = compute.ComputeNodeList.get_all_by_host(
+            compute_nodes = objects.ComputeNodeList.get_all_by_host(
                 self._context, self.host)
         else:
             # NOTE(sbauza); Previous behaviour was raising a ServiceNotFound,
@@ -422,7 +422,7 @@ class ServiceList(base.ObjectListBase, base.NovaObject):
     @base.remotable_classmethod
     def get_by_topic(cls, context, topic):
         db_services = db.service_get_all_by_topic(context, topic)
-        return base.obj_make_list(context, cls(context), compute.Service,
+        return base.obj_make_list(context, cls(context), objects.Service,
                                   db_services)
 
     # NOTE(paul-carlton2): In v2.0 of the object the include_disabled flag
@@ -431,13 +431,13 @@ class ServiceList(base.ObjectListBase, base.NovaObject):
     def get_by_binary(cls, context, binary, include_disabled=False):
         db_services = db.service_get_all_by_binary(
             context, binary, include_disabled=include_disabled)
-        return base.obj_make_list(context, cls(context), compute.Service,
+        return base.obj_make_list(context, cls(context), objects.Service,
                                   db_services)
 
     @base.remotable_classmethod
     def get_by_host(cls, context, host):
         db_services = db.service_get_all_by_host(context, host)
-        return base.obj_make_list(context, cls(context), compute.Service,
+        return base.obj_make_list(context, cls(context), objects.Service,
                                   db_services)
 
     @base.remotable_classmethod
@@ -446,10 +446,7 @@ class ServiceList(base.ObjectListBase, base.NovaObject):
         if set_zones:
             db_services = availability_zones.set_availability_zones(
                 context, db_services)
-        LOG.debug("+++hw, db_services = %s", db_services)
-        LOG.debug("+++hw, dir(compute) = %s", dir(compute))
-        LOG.debug("+++hw, dir(compute.Service) = %s", dir(compute.Service))
-        return base.obj_make_list(context, cls(context), compute.Service,
+        return base.obj_make_list(context, cls(context), objects.Service,
                                   db_services)
 
 
