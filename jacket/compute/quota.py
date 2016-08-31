@@ -25,6 +25,7 @@ from oslo_utils import timeutils
 import six
 
 from jacket.db import compute
+from jacket.objects import compute as objects
 from jacket.compute import exception
 from jacket.i18n import _LE
 
@@ -1431,7 +1432,7 @@ class QuotaEngine(object):
 
 def _keypair_get_count_by_user(*args, **kwargs):
     """Helper method to avoid referencing compute.KeyPairList on import."""
-    return compute.KeyPairList.get_count_by_user(*args, **kwargs)
+    return objects.KeyPairList.get_count_by_user(*args, **kwargs)
 
 
 def _server_group_count_members_by_user(context, group, user_id):
