@@ -146,6 +146,7 @@ crudini --set /etc/jacket/jacket.conf ${backend} volume_backend_name lvm
 
 #neutron
 neutron="neutron"
+crudini --set /etc/jacket/jacket.conf DEFAULT use_neutron "True"
 crudini --set /etc/jacket/jacket.conf neutron url "http://$neutronhost:9696"
 crudini --set /etc/jacket/jacket.conf neutron neutron_default_tenant_id default
 crudini --set /etc/jacket/jacket.conf neutron auth_type password
