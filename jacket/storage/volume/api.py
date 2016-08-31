@@ -132,7 +132,6 @@ class API(base.Base):
                               glance.get_default_image_service())
         self.scheduler_rpcapi = scheduler_rpcapi.SchedulerAPI()
         self.volume_rpcapi = volume_rpcapi.VolumeAPI()
-        # self.compute_rpcapi = compute_rpcapi.JacketAPI()
         self.availability_zones = []
         self.availability_zones_last_fetched = None
         self.key_manager = keymgr.API()

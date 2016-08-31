@@ -20,7 +20,7 @@ from oslo_db import exception as db_exc
 from oslo_log import log as logging
 
 from jacket.storage import context
-from jacket import db
+from jacket.db import storage as db
 from jacket.storage import exception
 from jacket.storage.i18n import _, _LE, _LW
 from jacket.storage.volume import volume_types
@@ -132,9 +132,9 @@ def delete(context, qos_specs_id, force=False):
         raise exception.QoSSpecsInUse(specs_id=qos_specs_id)
     elif res and force:
         # remove all association
-        storage.qos_specs_disassociate_all(context, qos_specs_id)
+        db.qos_specs_disassociate_all(context, qos_specs_id)
 
-    storage.qos_specs_delete(context, qos_specs_id)
+    db.qos_specs_delete(context, qos_specs_id)
 
 
 def delete_keys(context, qos_specs_id, keys):
@@ -146,7 +146,7 @@ def delete_keys(context, qos_specs_id, keys):
     # make sure qos_specs_id is valid
     get_qos_specs(context, qos_specs_id)
     for key in keys:
-        storage.qos_specs_item_delete(context, qos_specs_id, key)
+        db.qos_specs_item_delete(context, qos_specs_id, key)
 
 
 def get_associations(context, specs_id):
@@ -195,7 +195,7 @@ def associate_qos_with_type(context, specs_id, type_id):
                         'qos_specs_id': res['qos_specs']['id']})
                 raise exception.InvalidVolumeType(reason=msg)
         else:
-            storage.qos_specs_associate(context, specs_id, type_id)
+            db.qos_specs_associate(context, specs_id, type_id)
     except db_exc.DBError:
         LOG.exception(_LE('DB error:'))
         LOG.warning(_LW('Failed to associate qos specs '
@@ -209,7 +209,7 @@ def disassociate_qos_specs(context, specs_id, type_id):
     """Disassociate qos_specs from volume type."""
     try:
         get_qos_specs(context, specs_id)
-        storage.qos_specs_disassociate(context, specs_id, type_id)
+        db.qos_specs_disassociate(context, specs_id, type_id)
     except db_exc.DBError:
         LOG.exception(_LE('DB error:'))
         LOG.warning(_LW('Failed to disassociate qos specs '
@@ -223,7 +223,7 @@ def disassociate_all(context, specs_id):
     """Disassociate qos_specs from all entities."""
     try:
         get_qos_specs(context, specs_id)
-        storage.qos_specs_disassociate_all(context, specs_id)
+        db.qos_specs_disassociate_all(context, specs_id)
     except db_exc.DBError:
         LOG.exception(_LE('DB error:'))
         LOG.warning(_LW('Failed to disassociate qos specs %s.'), specs_id)
@@ -249,7 +249,7 @@ def get_qos_specs(ctxt, id):
     if ctxt is None:
         ctxt = context.get_admin_context()
 
-    return storage.qos_specs_get(ctxt, id)
+    return db.qos_specs_get(ctxt, id)
 
 
 def get_qos_specs_by_name(context, name):
@@ -258,4 +258,4 @@ def get_qos_specs_by_name(context, name):
         msg = _("name cannot be None")
         raise exception.InvalidQoSSpecs(reason=msg)
 
-    return storage.qos_specs_get_by_name(context, name)
+    return db.qos_specs_get_by_name(context, name)

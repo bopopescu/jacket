@@ -117,7 +117,11 @@ class VolumeAPI(rpc.RPCAPI):
             return legacy
 
     def _get_cctxt(self, host, version):
-        new_host = utils.get_volume_rpc_host(host)
+        # NOTE(modify by laoyi, host can be None)
+        if host:
+            new_host = utils.get_volume_rpc_host(host)
+        else:
+            new_host = None
         return self.client.prepare(server=new_host, version=version)
 
     def create_consistencygroup(self, ctxt, group, host):
@@ -322,8 +326,13 @@ class VolumeAPI(rpc.RPCAPI):
     def retype(self, ctxt, volume, new_type_id, dest_host,
                migration_policy='never', reservations=None,
                old_reservations=None):
-        host_p = {'host': dest_host.host,
-                  'capabilities': dest_host.capabilities}
+        if dest_host:
+            host_p = {'host': dest_host.host,
+                      'capabilities': dest_host.capabilities}
+        else:
+            host_p = {'host': None,
+                      'capabilities': None}
+
         msg_args = {'volume_id': volume.id, 'new_type_id': new_type_id,
                     'host': host_p, 'migration_policy': migration_policy,
                     'reservations': reservations}

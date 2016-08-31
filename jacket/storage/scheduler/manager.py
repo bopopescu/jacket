@@ -27,7 +27,7 @@ from oslo_utils import excutils
 from oslo_utils import importutils
 import six
 
-from jacket.storage import context
+from jacket import context
 from jacket import db
 from jacket.storage import exception
 from jacket.storage import flow_utils
