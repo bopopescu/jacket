@@ -31,7 +31,7 @@ from oslo_log import log as logging
 import jacket.compute.conf
 from jacket.compute import config
 from jacket.i18n import _LE
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute import service
 from jacket.compute import utils
 from jacket.compute.vnc import xvp_proxy
@@ -47,7 +47,7 @@ def main():
     logging.setup(CONF, "compute")
     LOG = logging.getLogger('compute.all')
     utils.monkey_patch()
-    compute.register_all()
+    objects.register_all()
     launcher = service.process_launcher()
 
     # compute-api

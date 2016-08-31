@@ -37,7 +37,7 @@ import jacket.db.compute.api
 from jacket.compute import exception
 from jacket.i18n import _LE, _LW
 from jacket.compute.network import rpcapi as network_rpcapi
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base as objects_base
 from jacket import rpc
 
@@ -71,7 +71,7 @@ def del_lease(mac, ip_address):
 def init_leases(network_id):
     """Get the list of hosts for a network."""
     ctxt = context.get_admin_context()
-    network = compute.Network.get_by_id(ctxt, network_id)
+    network = objects.Network.get_by_id(ctxt, network_id)
     network_manager = importutils.import_object(CONF.network_manager)
     return network_manager.get_dhcp_leases(ctxt, network)
 
@@ -128,7 +128,7 @@ def main():
         # to dump this list, so actions queued up get lost.
         return
 
-    compute.register_all()
+    objects.register_all()
 
     if not CONF.conductor.use_local:
         block_db_access()

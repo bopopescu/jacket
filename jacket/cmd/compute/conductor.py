@@ -22,7 +22,7 @@ from oslo_reports import guru_meditation_report as gmr
 
 import jacket.compute.conf
 from jacket.compute import config
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute import service
 from jacket.compute import utils
 from jacket import version
@@ -34,8 +34,8 @@ def main():
     config.parse_args(sys.argv)
     logging.setup(CONF, "compute")
     utils.monkey_patch()
-    compute.register_all()
-    compute.Service.enable_min_version_cache()
+    objects.register_all()
+    objects.Service.enable_min_version_cache()
 
     gmr.TextGuruMeditation.setup_autorun(version)
 

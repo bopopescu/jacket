@@ -19,7 +19,7 @@ import collections
 import jacket.compute.conf
 
 from jacket.compute import cache_utils
-from jacket.objects import compute
+from jacket.objects import compute as objects
 
 # NOTE(vish): azs don't change that often, so cache them for an hour to
 #             avoid hitting the db multiple times on every request.
@@ -68,7 +68,7 @@ def set_availability_zones(context, services):
     # Makes sure services isn't a sqlalchemy object
     services = [dict(service) for service in services]
     hosts = set([service['host'] for service in services])
-    aggregates = compute.AggregateList.get_by_metadata_key(context,
+    aggregates = objects.AggregateList.get_by_metadata_key(context,
             'availability_zone', hosts=hosts)
     metadata = _build_metadata_by_host(aggregates, hosts=hosts)
     # gather all of the availability zones associated with a service host
@@ -87,7 +87,7 @@ def set_availability_zones(context, services):
 
 
 def get_host_availability_zone(context, host):
-    aggregates = compute.AggregateList.get_by_host(context, host,
+    aggregates = objects.AggregateList.get_by_host(context, host,
                                                    key='availability_zone')
     if aggregates:
         az = aggregates[0].metadata['availability_zone']
@@ -116,7 +116,7 @@ def get_availability_zones(context, get_only_available=False,
         :param with_hosts: whether to return hosts part of the AZs
         :type with_hosts: bool
     """
-    enabled_services = compute.ServiceList.get_all(context, disabled=False,
+    enabled_services = objects.ServiceList.get_all(context, disabled=False,
                                                    set_zones=True)
 
     available_zones = []
@@ -132,7 +132,7 @@ def get_availability_zones(context, get_only_available=False,
             available_zones = list(_available_zones.items())
 
     if not get_only_available:
-        disabled_services = compute.ServiceList.get_all(context, disabled=True,
+        disabled_services = objects.ServiceList.get_all(context, disabled=True,
                                                         set_zones=True)
         not_available_zones = []
         azs = available_zones if not with_hosts else dict(available_zones)

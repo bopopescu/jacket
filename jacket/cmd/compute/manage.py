@@ -73,11 +73,11 @@ from jacket.api.compute.ec2 import ec2utils
 from jacket.compute import availability_zones
 from jacket.compute import config
 from jacket.compute import context
-from jacket import db
+from jacket.db import compute as db
 from jacket.db.compute import migration
 from jacket.compute import exception
 from jacket.i18n import _
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute.openstack.common import cliutils
 from jacket.compute import quota
 from jacket import rpc
@@ -149,9 +149,9 @@ class VpnCommands(object):
         # TODO(tr3buchet): perhaps this shouldn't update all networks
         # associated with a project in the future
         admin_context = context.get_admin_context()
-        networks = compute.project_get_networks(admin_context, project_id)
+        networks = db.project_get_networks(admin_context, project_id)
         for network in networks:
-            compute.network_update(admin_context,
+            db.network_update(admin_context,
                               network['id'],
                               {'vpn_public_address': ip,
                                'vpn_public_port': int(port)})
@@ -284,10 +284,10 @@ class ProjectCommands(object):
                     print(_('Quota limit must be less than %s.') % maximum)
                     return(2)
                 try:
-                    compute.quota_create(ctxt, project_id, key, value,
+                    db.quota_create(ctxt, project_id, key, value,
                                     user_id=user_id)
                 except exception.QuotaExists:
-                    compute.quota_update(ctxt, project_id, key, value,
+                    db.quota_update(ctxt, project_id, key, value,
                                     user_id=user_id)
             else:
                 print(_('%(key)s is not a valid quota key. Valid options are: '
@@ -316,12 +316,12 @@ class ProjectCommands(object):
     def scrub(self, project_id):
         """Deletes data associated with project."""
         admin_context = context.get_admin_context()
-        networks = compute.project_get_networks(admin_context, project_id)
+        networks = db.project_get_networks(admin_context, project_id)
         for network in networks:
-            compute.network_disassociate(admin_context, network['id'])
-        groups = compute.security_group_get_by_project(admin_context, project_id)
+            db.network_disassociate(admin_context, network['id'])
+        groups = db.security_group_get_by_project(admin_context, project_id)
         for group in groups:
-            compute.security_group_destroy(admin_context, group['id'])
+            db.security_group_destroy(admin_context, group['id'])
 
 
 AccountCommands = ProjectCommands
@@ -337,15 +337,15 @@ class FixedIpCommands(object):
 
         try:
             if host is None:
-                fixed_ips = compute.fixed_ip_get_all(ctxt)
+                fixed_ips = db.fixed_ip_get_all(ctxt)
             else:
-                fixed_ips = compute.fixed_ip_get_by_host(ctxt, host)
+                fixed_ips = db.fixed_ip_get_by_host(ctxt, host)
 
         except exception.NotFound as ex:
             print(_("error: %s") % ex)
             return(2)
 
-        instances = compute.instance_get_all(context.get_admin_context())
+        instances = db.instance_get_all(context.get_admin_context())
         instances_by_uuid = {}
         for instance in instances:
             instances_by_uuid[instance['uuid']] = instance
@@ -360,7 +360,7 @@ class FixedIpCommands(object):
             # use network_get_all to retrieve all existing networks
             # this is to ensure that IPs associated with deleted networks
             # will not throw exceptions.
-            for network in compute.network_get_all(context.get_admin_context()):
+            for network in db.network_get_all(context.get_admin_context()):
                 all_networks[network.id] = network
         except exception.NoNetworksFound:
             # do not have any networks, so even if there are IPs, these
@@ -411,10 +411,10 @@ class FixedIpCommands(object):
         ctxt = context.get_admin_context()
 
         try:
-            fixed_ip = compute.fixed_ip_get_by_address(ctxt, address)
+            fixed_ip = db.fixed_ip_get_by_address(ctxt, address)
             if fixed_ip is None:
                 raise exception.NotFound('Could not find address')
-            compute.fixed_ip_update(ctxt, fixed_ip['address'],
+            db.fixed_ip_update(ctxt, fixed_ip['address'],
                                 {'reserved': reserved})
         except exception.NotFound as ex:
             print(_("error: %s") % ex)
@@ -464,7 +464,7 @@ class FloatingIpCommands(object):
         ips = [{'address': str(address), 'pool': pool, 'interface': interface}
                for address in self.address_to_hosts(ip_range)]
         try:
-            compute.floating_ip_bulk_create(admin_context, ips, want_result=False)
+            db.floating_ip_bulk_create(admin_context, ips, want_result=False)
         except exception.FloatingIpExists as exc:
             # NOTE(simplylizz): Maybe logging would be better here
             # instead of printing, but logging isn't used here and I
@@ -479,7 +479,7 @@ class FloatingIpCommands(object):
 
         ips = ({'address': str(address)}
                for address in self.address_to_hosts(ip_range))
-        compute.floating_ip_bulk_destroy(admin_context, ips)
+        db.floating_ip_bulk_destroy(admin_context, ips)
 
     @args('--host', metavar='<host>', help='Host')
     def list(self, host=None):
@@ -490,16 +490,16 @@ class FloatingIpCommands(object):
         ctxt = context.get_admin_context()
         try:
             if host is None:
-                floating_ips = compute.floating_ip_get_all(ctxt)
+                floating_ips = db.floating_ip_get_all(ctxt)
             else:
-                floating_ips = compute.floating_ip_get_all_by_host(ctxt, host)
+                floating_ips = db.floating_ip_get_all_by_host(ctxt, host)
         except exception.NoFloatingIpsDefined:
             print(_("No floating IP addresses have been defined."))
             return
         for floating_ip in floating_ips:
             instance_uuid = None
             if floating_ip['fixed_ip_id']:
-                fixed_ip = compute.fixed_ip_get(ctxt, floating_ip['fixed_ip_id'])
+                fixed_ip = db.fixed_ip_get(ctxt, floating_ip['fixed_ip_id'])
                 instance_uuid = fixed_ip['instance_uuid']
 
             print("%s\t%s\t%s\t%s\t%s" % (floating_ip['project_id'],
@@ -583,7 +583,7 @@ class NetworkCommands(object):
             # Since network_get_all can throw exception.NoNetworksFound
             # for this command to show a nice result, this exception
             # should be caught and handled as such.
-            networks = compute.network_get_all(context.get_admin_context())
+            networks = db.network_get_all(context.get_admin_context())
         except exception.NoNetworksFound:
             print(_('No networks found'))
         else:
@@ -634,7 +634,7 @@ class NetworkCommands(object):
         leave any field blank to ignore it
         """
         admin_context = context.get_admin_context()
-        network = compute.network_get_by_cidr(admin_context, fixed_range)
+        network = db.network_get_by_cidr(admin_context, fixed_range)
         net = {}
         # User can choose the following actions each for project and host.
         # 1) Associate (set not None value given by project/host parameter)
@@ -657,7 +657,7 @@ class NetworkCommands(object):
                     "use separate commands."
                 print(error_msg)
                 return(1)
-            compute.network_update(admin_context, network['id'], net)
+            db.network_update(admin_context, network['id'], net)
             return
 
         if project:
@@ -665,7 +665,7 @@ class NetworkCommands(object):
         if host:
             net['host'] = host
 
-        compute.network_update(admin_context, network['id'], net)
+        db.network_update(admin_context, network['id'], net)
 
 
 class VmCommands(object):
@@ -690,10 +690,10 @@ class VmCommands(object):
                                              _('index'))))
 
         if host is None:
-            instances = compute.InstanceList.get_by_filters(
+            instances = objects.InstanceList.get_by_filters(
                 context.get_admin_context(), {}, expected_attrs=['flavor'])
         else:
-            instances = compute.InstanceList.get_by_host(
+            instances = objects.InstanceList.get_by_host(
                 context.get_admin_context(), host, expected_attrs=['flavor'])
 
         for instance in instances:
@@ -730,7 +730,7 @@ class ServiceCommands(object):
         """
         servicegroup_api = servicegroup.API()
         ctxt = context.get_admin_context()
-        services = compute.service_get_all(ctxt)
+        services = db.service_get_all(ctxt)
         services = availability_zones.set_availability_zones(ctxt, services)
         if host:
             services = [s for s in services if s['host'] == host]
@@ -761,8 +761,8 @@ class ServiceCommands(object):
         """Enable scheduling for a service."""
         ctxt = context.get_admin_context()
         try:
-            svc = compute.service_get_by_host_and_binary(ctxt, host, service)
-            compute.service_update(ctxt, svc['id'], {'disabled': False})
+            svc = db.service_get_by_host_and_binary(ctxt, host, service)
+            db.service_update(ctxt, svc['id'], {'disabled': False})
         except exception.NotFound as ex:
             print(_("error: %s") % ex)
             return(2)
@@ -776,8 +776,8 @@ class ServiceCommands(object):
         """Disable scheduling for a service."""
         ctxt = context.get_admin_context()
         try:
-            svc = compute.service_get_by_host_and_binary(ctxt, host, service)
-            compute.service_update(ctxt, svc['id'], {'disabled': True})
+            svc = db.service_get_by_host_and_binary(ctxt, host, service)
+            db.service_update(ctxt, svc['id'], {'disabled': True})
         except exception.NotFound as ex:
             print(_("error: %s") % ex)
             return(2)
@@ -800,9 +800,9 @@ class ServiceCommands(object):
         """
         # Getting compute node info and related instances info
         compute_ref = (
-            compute.ComputeNode.get_first_node_by_host_for_old_compat(context,
+            objects.ComputeNode.get_first_node_by_host_for_old_compat(context,
                                                                       host))
-        instance_refs = compute.instance_get_all_by_host(context, host)
+        instance_refs = db.instance_get_all_by_host(context, host)
 
         # Getting total available/used resource
         resource = {'vcpus': compute_ref.vcpus,
@@ -909,7 +909,7 @@ class HostCommands(object):
         print("%-25s\t%-15s" % (_('host'),
                                 _('zone')))
         ctxt = context.get_admin_context()
-        services = compute.service_get_all(ctxt)
+        services = db.service_get_all(ctxt)
         services = availability_zones.set_availability_zones(ctxt, services)
         if zone:
             services = [s for s in services if s['availability_zone'] == zone]
@@ -926,9 +926,9 @@ class DbCommands(object):
     """Class for managing the main database."""
 
     online_migrations = (
-        compute.pcidevice_online_data_migration,
-        compute.computenode_uuids_online_data_migration,
-        compute.aggregate_uuids_online_data_migration,
+        db.pcidevice_online_data_migration,
+        db.computenode_uuids_online_data_migration,
+        db.aggregate_uuids_online_data_migration,
     )
 
     def __init__(self):
@@ -956,11 +956,11 @@ class DbCommands(object):
             if max_rows < 0:
                 print(_("Must supply a positive value for max_rows"))
                 return(1)
-            if max_rows > compute.MAX_INT:
+            if max_rows > db.MAX_INT:
                 print(_('max rows must be <= %(max_value)d') %
-                      {'max_value': compute.MAX_INT})
+                      {'max_value': db.MAX_INT})
                 return(1)
-        table_to_rows_archived = compute.archive_deleted_rows(max_rows)
+        table_to_rows_archived = db.archive_deleted_rows(max_rows)
         if verbose:
             if table_to_rows_archived:
                 cliutils.print_dict(table_to_rows_archived, _('Table'),
@@ -1020,7 +1020,7 @@ class DbCommands(object):
         return ran
 
     @args('--max-count', metavar='<number>', dest='max_count',
-          help='Maximum number of compute to consider')
+          help='Maximum number of objects to consider')
     def online_data_migrations(self, max_count=None):
         ctxt = context.get_admin_context()
         if max_count is not None:
@@ -1072,7 +1072,7 @@ class AgentBuildCommands(object):
                 hypervisor='xen'):
         """Creates a new agent build."""
         ctxt = context.get_admin_context()
-        compute.agent_build_create(ctxt, {'hypervisor': hypervisor,
+        db.agent_build_create(ctxt, {'hypervisor': hypervisor,
                                      'os': os,
                                      'architecture': architecture,
                                      'version': version,
@@ -1087,9 +1087,9 @@ class AgentBuildCommands(object):
     def delete(self, os, architecture, hypervisor='xen'):
         """Deletes an existing agent build."""
         ctxt = context.get_admin_context()
-        agent_build_ref = compute.agent_build_get_by_triple(ctxt,
+        agent_build_ref = db.agent_build_get_by_triple(ctxt,
                                   hypervisor, os, architecture)
-        compute.agent_build_destroy(ctxt, agent_build_ref['id'])
+        db.agent_build_destroy(ctxt, agent_build_ref['id'])
 
     @args('--hypervisor', metavar='<hypervisor>',
             help='hypervisor(default: None)')
@@ -1101,7 +1101,7 @@ class AgentBuildCommands(object):
         fmt = "%-10s  %-8s  %12s  %s"
         ctxt = context.get_admin_context()
         by_hypervisor = {}
-        for agent_build in compute.agent_build_get_all(ctxt):
+        for agent_build in db.agent_build_get_all(ctxt):
             buildlist = by_hypervisor.get(agent_build.hypervisor)
             if not buildlist:
                 buildlist = by_hypervisor[agent_build.hypervisor] = []
@@ -1133,9 +1133,9 @@ class AgentBuildCommands(object):
                hypervisor='xen'):
         """Update an existing agent build."""
         ctxt = context.get_admin_context()
-        agent_build_ref = compute.agent_build_get_by_triple(ctxt,
+        agent_build_ref = db.agent_build_get_by_triple(ctxt,
                                   hypervisor, os, architecture)
-        compute.agent_build_update(ctxt, agent_build_ref['id'],
+        db.agent_build_update(ctxt, agent_build_ref['id'],
                               {'version': version,
                                'url': url,
                                'md5hash': md5hash})
@@ -1199,7 +1199,7 @@ class CellCommands(object):
 
     def _create_transport_hosts(self, username, password,
                                 broker_hosts=None, hostname=None, port=None):
-        """Returns a list of oslo.messaging.TransportHost compute."""
+        """Returns a list of oslo.messaging.TransportHost objects."""
         transport_hosts = []
         # Either broker-hosts or hostname should be set
         if broker_hosts:
@@ -1284,17 +1284,17 @@ class CellCommands(object):
                   'weight_offset': float(woffset),
                   'weight_scale': float(wscale)}
         ctxt = context.get_admin_context()
-        compute.cell_create(ctxt, values)
+        db.cell_create(ctxt, values)
 
     @args('--cell_name', metavar='<cell_name>',
           help='Name of the cell to delete')
     def delete(self, cell_name):
         ctxt = context.get_admin_context()
-        compute.cell_delete(ctxt, cell_name)
+        db.cell_delete(ctxt, cell_name)
 
     def list(self):
         ctxt = context.get_admin_context()
-        cells = compute.cell_get_all(ctxt)
+        cells = db.cell_get_all(ctxt)
         fmt = "%3s  %-10s  %-6s  %-10s  %-15s  %-5s  %-10s"
         print(fmt % ('Id', 'Name', 'Type', 'Username', 'Hostname',
                 'Port', 'VHost'))
@@ -1333,9 +1333,9 @@ class CellV2Commands(object):
             raise Exception(_("cell_uuid must be set"))
         else:
             # Validate the cell exists
-            cell_mapping = compute.CellMapping.get_by_uuid(ctxt, cell_uuid)
+            cell_mapping = objects.CellMapping.get_by_uuid(ctxt, cell_uuid)
         filters = {}
-        instances = compute.InstanceList.get_by_filters(
+        instances = objects.InstanceList.get_by_filters(
                 ctxt, filters, sort_key='created_at', sort_dir='asc',
                 limit=limit, marker=marker)
         if verbose:
@@ -1345,7 +1345,7 @@ class CellV2Commands(object):
         mapped = 0
         for instance in instances:
             try:
-                mapping = compute.InstanceMapping(ctxt)
+                mapping = objects.InstanceMapping(ctxt)
                 mapping.instance_uuid = instance.uuid
                 mapping.cell_id = cell_mapping.id
                 mapping.project_id = instance.project_id
@@ -1385,14 +1385,14 @@ class CellV2Commands(object):
         ctxt = context.RequestContext()
         cell_mapping_uuid = cell_mapping = None
         # First, try to detect if a CellMapping has already been created
-        compute_nodes = compute.ComputeNodeList.get_all(ctxt)
+        compute_nodes = objects.ComputeNodeList.get_all(ctxt)
         if not compute_nodes:
             print(_('No hosts found to map to cell, exiting.'))
             return(0)
         missing_nodes = []
         for compute_node in compute_nodes:
             try:
-                host_mapping = compute.HostMapping.get_by_host(
+                host_mapping = objects.HostMapping.get_by_host(
                     ctxt, compute_node.host)
             except exception.HostMappingNotFound:
                 missing_nodes.append(compute_node)
@@ -1413,18 +1413,18 @@ class CellV2Commands(object):
             return(0)
         # Create the cell mapping in the API database
         if cell_mapping_uuid is not None:
-            cell_mapping = compute.CellMapping.get_by_uuid(
+            cell_mapping = objects.CellMapping.get_by_uuid(
                 ctxt, cell_mapping_uuid)
         if cell_mapping is None:
             cell_mapping_uuid = uuidutils.generate_uuid()
-            cell_mapping = compute.CellMapping(
+            cell_mapping = objects.CellMapping(
                 ctxt, uuid=cell_mapping_uuid, name=name,
                 transport_url=transport_url,
                 database_connection=CONF.database.connection)
             cell_mapping.create()
         # Pull the hosts from the cell database and create the host mappings
         for compute_node in missing_nodes:
-            host_mapping = compute.HostMapping(
+            host_mapping = objects.HostMapping(
                 ctxt, host=compute_node.host, cell_mapping=cell_mapping)
             host_mapping.create()
         if verbose:
@@ -1437,7 +1437,7 @@ CATEGORIES = {
     'api_db': ApiDbCommands,
     'cell': CellCommands,
     'cell_v2': CellV2Commands,
-    'compute': DbCommands,
+    'db': DbCommands,
     'fixed': FixedIpCommands,
     'floating': FloatingIpCommands,
     'host': HostCommands,
@@ -1528,7 +1528,7 @@ def main():
         print(_('Please re-run compute-manage as root.'))
         return(2)
 
-    compute.register_all()
+    objects.register_all()
 
     if CONF.category.name == "version":
         print(version.version_string_with_package())

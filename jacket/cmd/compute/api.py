@@ -30,7 +30,7 @@ import six
 from jacket.compute import config
 from jacket.compute import exception
 from jacket.i18n import _LE, _LW
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket import service
 from jacket.compute import utils
 from jacket import version
@@ -44,7 +44,7 @@ def main():
     config.parse_args(sys.argv)
     logging.setup(CONF, "compute")
     utils.monkey_patch()
-    compute.register_all()
+    objects.register_all()
     log = logging.getLogger(__name__)
 
     gmr.TextGuruMeditation.setup_autorun(version)

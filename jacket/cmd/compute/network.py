@@ -28,7 +28,7 @@ from jacket.compute import config
 import jacket.db.compute.api
 from jacket.compute import exception
 from jacket.i18n import _LE, _LW
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base as objects_base
 from jacket.compute import service
 from jacket.compute import utils
@@ -57,7 +57,7 @@ def main():
     config.parse_args(sys.argv)
     logging.setup(CONF, "compute")
     utils.monkey_patch()
-    compute.register_all()
+    objects.register_all()
 
     gmr.TextGuruMeditation.setup_autorun(version)
 
