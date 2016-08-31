@@ -82,7 +82,7 @@ from jacket.compute import network
 from jacket.compute.network import base_api as base_net_api
 from jacket.compute.network import model as network_model
 from jacket.compute.network.security_group import openstack_driver
-from jacket import objects
+from jacket.objects import compute as objects
 from jacket.objects.compute import base as obj_base
 from jacket.objects.compute import instance as obj_instance
 from jacket.objects.compute import migrate_data as migrate_data_obj

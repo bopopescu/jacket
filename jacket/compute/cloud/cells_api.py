@@ -25,7 +25,7 @@ from jacket.compute.cells import utils as cells_utils
 from jacket.compute.cloud import api as compute_api
 from jacket.compute.cloud import rpcapi as compute_rpcapi
 from jacket.compute import exception
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base as obj_base
 from jacket import rpc
 
@@ -219,7 +219,7 @@ class ComputeCellsAPI(compute_api.API):
             delete_type = method_name == 'soft_delete' and 'soft' or 'hard'
             self.cells_rpcapi.instance_delete_everywhere(context,
                     instance, delete_type)
-            bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+            bdms = objects.BlockDeviceMappingList.get_by_instance_uuid(
                     context, instance.uuid)
             # NOTE(danms): If we try to delete an instance with no cell,
             # there isn't anything to salvage, so we can hard-delete here.
@@ -534,7 +534,7 @@ class HostAPI(compute_api.HostAPI):
                             if s['availability_zone'] == zone_filter]
 
             # NOTE(sbauza): As services is a list of flat dicts, we need to
-            # rehydrate the corresponding ServiceProxy compute
+            # rehydrate the corresponding ServiceProxy objects
             cell_paths = []
             for service in services:
                 cell_path, id = cells_utils.split_cell_and_item(service['id'])
@@ -544,8 +544,8 @@ class HostAPI(compute_api.HostAPI):
                 service['host'] = host
                 cell_paths.append(cell_path)
             services = obj_base.obj_make_list(context,
-                                              compute.ServiceList(),
-                                              compute.Service,
+                                              objects.ServiceList(),
+                                              objects.Service,
                                               services)
             services = [cells_utils.ServiceProxy(s, c)
                         for s, c in zip(services, cell_paths)]

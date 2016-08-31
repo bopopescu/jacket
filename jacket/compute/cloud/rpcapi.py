@@ -23,7 +23,7 @@ from oslo_serialization import jsonutils
 from jacket.compute import context
 from jacket.compute import exception
 from jacket.i18n import _, _LI, _LE
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base as objects_base
 from jacket.objects.compute import migrate_data as migrate_data_obj
 from jacket.objects.compute import service as service_obj
@@ -353,7 +353,7 @@ class ComputeAPI(object):
         global LAST_VERSION
         if LAST_VERSION:
             return LAST_VERSION
-        service_version = compute.Service.get_minimum_version(
+        service_version = objects.Service.get_minimum_version(
             context.get_admin_context(), 'compute-compute')
         history = service_obj.SERVICE_VERSION_HISTORY
         try:
@@ -558,7 +558,7 @@ class ComputeAPI(object):
         return cctxt.call(ctxt, 'get_diagnostics', instance=instance)
 
     def get_instance_diagnostics(self, ctxt, instance):
-        # TODO(danms): This needs to be fixed for compute
+        # TODO(danms): This needs to be fixed for objects
         instance_p = jsonutils.to_primitive(instance)
         kwargs = {'instance': instance_p}
         version = '4.0'
@@ -1066,11 +1066,3 @@ class ComputeAPI(object):
         cctxt = self.client.prepare(server=_compute_host(None, instance),
                 version=version)
         return cctxt.cast(ctxt, "trigger_crash_dump", instance=instance)
-
-
-    def compute_test(self, ctxt, host):
-        LOG.debug("+++hw, xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
-        version = '4.0'
-        cctxt = self.client.prepare(version=version)
-        cctxt.cast(ctxt, 'restore_instance', instance=host)
-        return cctxt.cast(ctxt, "compute_test", host=host)

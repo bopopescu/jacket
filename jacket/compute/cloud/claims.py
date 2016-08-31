@@ -23,7 +23,7 @@ from jacket.compute import exception
 from jacket.i18n import _
 from jacket.i18n import _LI
 from jacket.i18n import _LW
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute.virt import hardware
 
 
@@ -66,7 +66,7 @@ class NopClaim(object):
 
 class Claim(NopClaim):
     """A declaration that a compute host operation will require free resources.
-    Claims serve as marker compute that resources are being held until the
+    Claims serve as marker objects that resources are being held until the
     update_available_resource audit process runs to do a full reconciliation
     of resource usage.
 
@@ -186,7 +186,7 @@ class Claim(NopClaim):
         return self._test(type_, unit, total, used, requested, limit)
 
     def _test_pci(self):
-        pci_requests = compute.InstancePCIRequests.get_by_instance_uuid(
+        pci_requests = objects.InstancePCIRequests.get_by_instance_uuid(
             self.context, self.instance.uuid)
 
         if pci_requests.requests:
@@ -202,9 +202,9 @@ class Claim(NopClaim):
         host_topology = resources.get('numa_topology')
         requested_topology = self.numa_topology
         if host_topology:
-            host_topology = compute.NUMATopology.obj_from_db_obj(
+            host_topology = objects.NUMATopology.obj_from_db_obj(
                     host_topology)
-            pci_requests = compute.InstancePCIRequests.get_by_instance_uuid(
+            pci_requests = objects.InstancePCIRequests.get_by_instance_uuid(
                                         self.context, self.instance.uuid)
 
             pci_stats = None
@@ -289,12 +289,12 @@ class MoveClaim(Claim):
 
     @property
     def numa_topology(self):
-        image_meta = compute.ImageMeta.from_dict(self.image_meta)
+        image_meta = objects.ImageMeta.from_dict(self.image_meta)
         return hardware.numa_get_constraints(
             self.instance_type, image_meta)
 
     def _test_pci(self):
-        pci_requests = compute.InstancePCIRequests.\
+        pci_requests = objects.InstancePCIRequests.\
                        get_by_instance_uuid_and_newness(
                            self.context, self.instance.uuid, True)
         if pci_requests.requests:
@@ -323,7 +323,7 @@ class MoveClaim(Claim):
                      instance=self.instance)
             return
 
-        mig_context = compute.MigrationContext(
+        mig_context = objects.MigrationContext(
             context=self.context, instance_uuid=self.instance.uuid,
             migration_id=self.migration.id,
             old_numa_topology=self.instance.numa_topology,

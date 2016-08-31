@@ -28,11 +28,11 @@ import six
 
 from jacket.api.compute.validation import parameter_types
 from jacket.compute import context
-from jacket import db
+from jacket.db import compute as db
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.i18n import _LE
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute import utils
 
 flavor_opts = [
@@ -149,7 +149,7 @@ def create(name, memory, vcpus, root_gb, ephemeral_gb=0, flavorid=None,
 
     for key, value in flavor_attributes.items():
         kwargs[key] = utils.validate_integer(kwargs[key], value[0], value[1],
-                                             compute.MAX_INT)
+                                             db.MAX_INT)
 
     # rxtx_factor should be a positive float
     try:
@@ -171,7 +171,7 @@ def create(name, memory, vcpus, root_gb, ephemeral_gb=0, flavorid=None,
     except ValueError:
         raise exception.InvalidInput(reason=_("is_public must be a boolean"))
 
-    flavor = compute.Flavor(context=context.get_admin_context(), **kwargs)
+    flavor = objects.Flavor(context=context.get_admin_context(), **kwargs)
     flavor.create()
     return flavor
 
@@ -181,7 +181,7 @@ def destroy(name):
     try:
         if not name:
             raise ValueError()
-        flavor = compute.Flavor(context=context.get_admin_context(), name=name)
+        flavor = objects.Flavor(context=context.get_admin_context(), name=name)
         flavor.destroy()
     except (ValueError, exception.NotFound):
         LOG.exception(_LE('Instance type %s not found for deletion'), name)
@@ -195,7 +195,7 @@ def get_all_flavors_sorted_list(ctxt=None, filters=None, sort_key='flavorid',
     if ctxt is None:
         ctxt = context.get_admin_context()
 
-    return compute.FlavorList.get_all(ctxt, filters=filters, sort_key=sort_key,
+    return objects.FlavorList.get_all(ctxt, filters=filters, sort_key=sort_key,
                                       sort_dir=sort_dir, limit=limit,
                                       marker=marker)
 
@@ -214,7 +214,7 @@ def get_flavor_by_name(name, ctxt=None):
     if ctxt is None:
         ctxt = context.get_admin_context()
 
-    return compute.Flavor.get_by_name(ctxt, name)
+    return objects.Flavor.get_by_name(ctxt, name)
 
 
 # TODO(termie): flavor-specific code should probably be in the API that uses
@@ -227,7 +227,7 @@ def get_flavor_by_flavor_id(flavorid, ctxt=None, read_deleted="yes"):
     if ctxt is None:
         ctxt = context.get_admin_context(read_deleted=read_deleted)
 
-    return compute.Flavor.get_by_flavor_id(ctxt, flavorid, read_deleted)
+    return objects.Flavor.get_by_flavor_id(ctxt, flavorid, read_deleted)
 
 
 def get_flavor_access_by_flavor_id(flavorid, ctxt=None):
@@ -235,7 +235,7 @@ def get_flavor_access_by_flavor_id(flavorid, ctxt=None):
     if ctxt is None:
         ctxt = context.get_admin_context()
 
-    flavor = compute.Flavor.get_by_flavor_id(ctxt, flavorid)
+    flavor = objects.Flavor.get_by_flavor_id(ctxt, flavorid)
     return flavor.projects
 
 
@@ -247,7 +247,7 @@ def extract_flavor(instance, prefix=''):
     information.
     """
 
-    flavor = compute.Flavor()
+    flavor = objects.Flavor()
     sys_meta = utils.instance_sys_meta(instance)
 
     if not sys_meta:

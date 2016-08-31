@@ -66,7 +66,7 @@ from jacket.compute.network import model as network_model
 from jacket.compute.network.security_group import openstack_driver
 from jacket.compute.network.security_group import security_group_base
 from jacket.compute import notifications
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base as obj_base
 from jacket.objects.compute import block_device as block_device_obj
 from jacket.objects.compute import fields as fields_obj
@@ -248,7 +248,7 @@ class API(base.Base):
                     instance_uuid=instance.uuid)
 
     def _record_action_start(self, context, instance, action):
-        compute.InstanceAction.action_start(context, instance.uuid,
+        objects.InstanceAction.action_start(context, instance.uuid,
                                             action, want_result=False)
 
     def _check_injected_file_quota(self, context, injected_files):
@@ -261,7 +261,7 @@ class API(base.Base):
 
         # Check number of files first
         try:
-            compute.Quotas.limit_check(context,
+            objects.Quotas.limit_check(context,
                                        injected_files=len(injected_files))
         except exception.OverQuota:
             raise exception.OnsetFileLimitExceeded()
@@ -275,7 +275,7 @@ class API(base.Base):
             max_content = max(max_content, len(content))
 
         try:
-            compute.Quotas.limit_check(context,
+            objects.Quotas.limit_check(context,
                                        injected_file_path_bytes=max_path,
                                        injected_file_content_bytes=max_content)
         except exception.OverQuota as exc:
@@ -321,7 +321,7 @@ class API(base.Base):
 
         # Check the quota
         try:
-            quotas = compute.Quotas(context=context)
+            quotas = objects.Quotas(context=context)
             quotas.reserve(instances=max_count,
                            cores=req_cores, ram=req_ram,
                            project_id=project_id, user_id=user_id)
@@ -402,7 +402,7 @@ class API(base.Base):
             raise exception.InvalidMetadata(reason=msg)
         num_metadata = len(metadata)
         try:
-            compute.Quotas.limit_check(context, metadata_items=num_metadata)
+            objects.Quotas.limit_check(context, metadata_items=num_metadata)
         except exception.OverQuota as exc:
             quota_metadata = exc.kwargs['quotas']['metadata_items']
             raise exception.MetadataLimitExceeded(allowed=quota_metadata)
@@ -842,7 +842,7 @@ class API(base.Base):
         config_drive = self._check_config_drive(config_drive)
 
         if key_data is None and key_name is not None:
-            key_pair = compute.KeyPair.get_by_name(context,
+            key_pair = objects.KeyPair.get_by_name(context,
                                                    context.user_id,
                                                    key_name)
             key_data = key_pair.public_key
@@ -852,7 +852,7 @@ class API(base.Base):
                     boot_meta.get('properties', {})))
 
         try:
-            image_meta = compute.ImageMeta.from_dict(boot_meta)
+            image_meta = objects.ImageMeta.from_dict(boot_meta)
         except ValueError as e:
             # there must be invalid values in the image meta properties so
             # consider this an invalid request
@@ -866,7 +866,7 @@ class API(base.Base):
         # PCI requests come from two sources: instance flavor and
         # requested_networks. The first call in below returns an
         # InstancePCIRequests object which is a list of InstancePCIRequest
-        # compute. The second call in below creates an InstancePCIRequest
+        # objects. The second call in below creates an InstancePCIRequest
         # object for each SR-IOV port, and append it to the list in the
         # InstancePCIRequests object
         pci_request_info = pci_request.get_pci_requests_from_flavor(
@@ -918,7 +918,7 @@ class API(base.Base):
             request_spec, security_groups, num_instances, index):
         # Store the BuildRequest that will help populate an instance
         # object for a list/show request
-        info_cache = compute.InstanceInfoCache()
+        info_cache = objects.InstanceInfoCache()
         info_cache.instance_uuid = instance_uuid
         info_cache.network_info = network_model.NetworkInfo()
         # NOTE: base_options['config_drive'] is either True or '' due
@@ -933,7 +933,7 @@ class API(base.Base):
         if num_instances > 1:
             display_name = self._new_instance_name_from_template(instance_uuid,
                     display_name, index)
-        build_request = compute.BuildRequest(context,
+        build_request = objects.BuildRequest(context,
                 request_spec=request_spec,
                 project_id=context.project_id,
                 user_id=context.user_id,
@@ -970,7 +970,7 @@ class API(base.Base):
                 # RequestSpec before the instance is created.
                 instance_uuid = str(uuid.uuid4())
                 # Store the RequestSpec that will be used for scheduling.
-                req_spec = compute.RequestSpec.from_components(context,
+                req_spec = objects.RequestSpec.from_components(context,
                         instance_uuid, boot_meta, instance_type,
                         base_options['numa_topology'],
                         base_options['pci_requests'], filter_properties,
@@ -982,7 +982,7 @@ class API(base.Base):
                 # TODO(alaski): Cast to conductor here which will call the
                 # scheduler and defer instance creation until the scheduler
                 # has picked a cell/host.
-                instance = compute.Instance(context=context)
+                instance = objects.Instance(context=context)
                 instance.uuid = instance_uuid
                 instance.update(base_options)
                 instance = self.create_db_entry_for_new_instance(
@@ -1001,19 +1001,19 @@ class API(base.Base):
 
                 if instance_group:
                     if check_server_group_quota:
-                        count = compute.Quotas.count(context,
+                        count = objects.Quotas.count(context,
                                              'server_group_members',
                                              instance_group,
                                              context.user_id)
                         try:
-                            compute.Quotas.limit_check(context,
+                            objects.Quotas.limit_check(context,
                                                server_group_members=count + 1)
                         except exception.OverQuota:
                             msg = _("Quota exceeded, too many servers in "
                                     "group")
                             raise exception.QuotaError(msg)
 
-                    compute.InstanceGroup.add_members(context,
+                    objects.InstanceGroup.add_members(context,
                                                       instance_group.uuid,
                                                       [instance.uuid])
 
@@ -1103,7 +1103,7 @@ class API(base.Base):
             msg = _('Server group scheduler hint must be a UUID.')
             raise exception.InvalidInput(reason=msg)
 
-        return compute.InstanceGroup.get_by_uuid(context, group_hint)
+        return objects.InstanceGroup.get_by_uuid(context, group_hint)
 
     def _create_instance(self, context, instance_type,
                image_href, kernel_id, ramdisk_id,
@@ -1246,7 +1246,7 @@ class API(base.Base):
 
     def _create_block_device_mapping(self, instance_type, instance_uuid,
                                      block_device_mapping):
-        """Create the BlockDeviceMapping compute in the db.
+        """Create the BlockDeviceMapping objects in the db.
 
         This method makes a copy of the list in order to avoid using the same
         id field in case this is called for multiple instances.
@@ -1392,7 +1392,7 @@ class API(base.Base):
         instance.launch_index = index
         instance.vm_state = vm_states.BUILDING
         instance.task_state = task_states.SCHEDULING
-        info_cache = compute.InstanceInfoCache()
+        info_cache = objects.InstanceInfoCache()
         info_cache.instance_uuid = instance.uuid
         info_cache.network_info = network_model.NetworkInfo()
         instance.info_cache = info_cache
@@ -1593,7 +1593,7 @@ class API(base.Base):
                      instance=instance)
             return
 
-        bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = objects.BlockDeviceMappingList.get_by_instance_uuid(
                 context, instance.uuid)
 
         project_id, user_id = quotas_obj.ids_from_instance(context, instance)
@@ -1665,7 +1665,7 @@ class API(base.Base):
             is_local_delete = True
             try:
                 if not shelved_offloaded:
-                    service = compute.Service.get_by_compute_host(
+                    service = objects.Service.get_by_compute_host(
                         context.elevated(), instance.host)
                     is_local_delete = not self.servicegroup_api.service_is_up(
                         service)
@@ -1684,7 +1684,7 @@ class API(base.Base):
                     # we should not count reservations here, because instance
                     # in soft-delete vm_state have already had quotas
                     # decremented. More details:
-                    # https://bugs.launchpad.net/compute/+bug/1333145
+                    # https://bugs.launchpad.net/nova/+bug/1333145
                     if instance.vm_state == vm_states.SOFT_DELETED:
                         quotas.rollback()
 
@@ -1715,7 +1715,7 @@ class API(base.Base):
         migration = None
         for status in ('finished', 'confirming'):
             try:
-                migration = compute.Migration.get_by_instance_and_status(
+                migration = objects.Migration.get_by_instance_and_status(
                         context.elevated(), instance.uuid, status)
                 LOG.info(_LI('Found an unconfirmed migration during delete, '
                              'id: %(id)s, status: %(status)s'),
@@ -1763,7 +1763,7 @@ class API(base.Base):
         # NOTE(wangpan): if the instance is resizing, and the resources
         #                are updated to new instance type, we should use
         #                the old instance type to create reservation.
-        # see https://bugs.launchpad.net/compute/+bug/1099729 for more details
+        # see https://bugs.launchpad.net/nova/+bug/1099729 for more details
         if original_task_state in (task_states.RESIZE_MIGRATED,
                                    task_states.RESIZE_FINISH):
             old_flavor = instance.old_flavor
@@ -1774,7 +1774,7 @@ class API(base.Base):
             instance_vcpus = instance.vcpus
             instance_memory_mb = instance.memory_mb
 
-        quotas = compute.Quotas(context=context)
+        quotas = objects.Quotas(context=context)
         quotas.reserve(project_id=project_id,
                        user_id=user_id,
                        instances=-1,
@@ -2015,7 +2015,7 @@ class API(base.Base):
             if uuidutils.is_uuid_like(instance_id):
                 LOG.debug("Fetching instance by UUID",
                            instance_uuid=instance_id)
-                instance = compute.Instance.get_by_uuid(
+                instance = objects.Instance.get_by_uuid(
                     context, instance_id, expected_attrs=expected_attrs)
             else:
                 LOG.debug("Failed to fetch instance by id %s", instance_id)
@@ -2049,13 +2049,6 @@ class API(base.Base):
         parameter.
         """
 
-        # test rpc
-        # try:
-        #     self.compute_rpcapi.compute_test(context, host="yibo")
-        # except Exception as ex:
-        #     LOG.exception("+++hw, ex = %s", ex)
-        #     raise
-
         # TODO(bcwaldon): determine the best argument for target here
         target = {
             'project_id': context.project_id,
@@ -2074,7 +2067,7 @@ class API(base.Base):
         filters = {}
 
         def _remap_flavor_filter(flavor_id):
-            flavor = compute.Flavor.get_by_flavor_id(context, flavor_id)
+            flavor = objects.Flavor.get_by_flavor_id(context, flavor_id)
             filters['instance_type_id'] = flavor.id
 
         def _remap_fixed_ip_filter(fixed_ip):
@@ -2121,7 +2114,7 @@ class API(base.Base):
                     # return an empty list
                     except ValueError:
                         if want_objects:
-                            return compute.InstanceList()
+                            return objects.InstanceList()
                         else:
                             return []
 
@@ -2174,7 +2167,7 @@ class API(base.Base):
                 result_objs.append(instance)
                 if limit and len(result_objs) == limit:
                     break
-        return compute.InstanceList(compute=result_objs)
+        return objects.InstanceList(objects=result_objs)
 
     def _get_instances_by_filters(self, context, filters,
                                   limit=None, marker=None, expected_attrs=None,
@@ -2183,7 +2176,7 @@ class API(base.Base):
                   'security_groups']
         if expected_attrs:
             fields.extend(expected_attrs)
-        return compute.InstanceList.get_by_filters(
+        return objects.InstanceList.get_by_filters(
             context, filters=filters, limit=limit, marker=marker,
             expected_attrs=fields, sort_keys=sort_keys, sort_dirs=sort_dirs)
 
@@ -2197,7 +2190,7 @@ class API(base.Base):
                extra_properties=None):
         """Backup the given instance
 
-        :param instance: compute.compute.instance.Instance object
+        :param instance: compute.objects.instance.Instance object
         :param name: name of the backup
         :param backup_type: 'daily' or 'weekly'
         :param rotation: int representing how many backups to keep around;
@@ -2238,7 +2231,7 @@ class API(base.Base):
     def snapshot(self, context, instance, name, extra_properties=None):
         """Snapshot the given instance.
 
-        :param instance: compute.compute.instance.Instance object
+        :param instance: compute.objects.instance.Instance object
         :param name: name of the snapshot
         :param extra_properties: dict of extra image properties to include
                                  when creating the image.
@@ -2265,7 +2258,7 @@ class API(base.Base):
         or backup.
 
         :param context: security context
-        :param instance: compute.compute.instance.Instance object
+        :param instance: compute.objects.instance.Instance object
         :param name: string for name of the snapshot
         :param image_type: snapshot | backup
         :param extra_properties: dict of extra image properties to include
@@ -2293,7 +2286,7 @@ class API(base.Base):
                                                extra_properties=None):
         """Initialize new metadata for a snapshot of the given instance.
 
-        :param instance: compute.compute.instance.Instance object
+        :param instance: compute.objects.instance.Instance object
         :param name: string for name of the snapshot
         :param extra_properties: dict of extra metadata properties to include
 
@@ -2321,7 +2314,7 @@ class API(base.Base):
                                extra_properties=None):
         """Snapshot the given volume-backed instance.
 
-        :param instance: compute.compute.instance.Instance object
+        :param instance: compute.objects.instance.Instance object
         :param name: name of the backup or snapshot
         :param extra_properties: dict of extra image properties to include
 
@@ -2358,7 +2351,7 @@ class API(base.Base):
                                  '%(reason)s.'), {'reason': err},
                              context=context, instance=instance)
 
-        bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = objects.BlockDeviceMappingList.get_by_instance_uuid(
                 context, instance.uuid)
 
         mapping = []
@@ -2506,7 +2499,7 @@ class API(base.Base):
         # system metadata... and copy in the properties for the new image.
         orig_sys_metadata = _reset_image_metadata()
 
-        bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = objects.BlockDeviceMappingList.get_by_instance_uuid(
                 context, instance.uuid)
 
         self._record_action_start(context, instance, instance_actions.REBUILD)
@@ -2525,7 +2518,7 @@ class API(base.Base):
     def revert_resize(self, context, instance):
         """Reverts a resize, deleting the 'new' instance in the process."""
         elevated = context.elevated()
-        migration = compute.Migration.get_by_instance_and_status(
+        migration = objects.Migration.get_by_instance_and_status(
             elevated, instance.uuid, 'finished')
 
         # reverse quota reservation for increased resource usage
@@ -2562,7 +2555,7 @@ class API(base.Base):
         """Confirms a migration/resize and deletes the 'old' instance."""
         elevated = context.elevated()
         if migration is None:
-            migration = compute.Migration.get_by_instance_and_status(
+            migration = objects.Migration.get_by_instance_and_status(
                 elevated, instance.uuid, 'finished')
 
         # reserve quota only for any decrease in resource usage
@@ -2598,7 +2591,7 @@ class API(base.Base):
         # information, just the old and new flavors. Status is set to
         # 'finished' since nothing else will update the status along
         # the way.
-        mig = compute.Migration(context=context.elevated())
+        mig = objects.Migration(context=context.elevated())
         mig.instance_uuid = instance.uuid
         mig.old_instance_type_id = current_instance_type['id']
         mig.new_instance_type_id = new_instance_type['id']
@@ -2684,7 +2677,7 @@ class API(base.Base):
                                                  used=useds,
                                                  allowed=total_alloweds)
         else:
-            quotas = compute.Quotas(context=context)
+            quotas = objects.Quotas(context=context)
 
         instance.task_state = task_states.RESIZE_PREP
         instance.progress = 0
@@ -2765,7 +2758,7 @@ class API(base.Base):
         self._record_action_start(context, instance, instance_actions.UNSHELVE)
 
         try:
-            request_spec = compute.RequestSpec.get_by_instance_uuid(
+            request_spec = objects.RequestSpec.get_by_instance_uuid(
                 context, instance.uuid)
         except exception.RequestSpecNotFound:
             # Some old instances can still have no RequestSpec object attached
@@ -2851,7 +2844,7 @@ class API(base.Base):
                rescue_image_ref=None, clean_shutdown=True):
         """Rescue the given instance."""
 
-        bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = objects.BlockDeviceMappingList.get_by_instance_uuid(
                     context, instance.uuid)
         for bdm in bdms:
             if bdm.volume_id:
@@ -3068,7 +3061,7 @@ class API(base.Base):
             # a valid one.
             # We leave the setting of that value when the actual attach
             # happens on the compute manager
-            volume_bdm = compute.BlockDeviceMapping(
+            volume_bdm = objects.BlockDeviceMapping(
                 context=context,
                 source_type='volume', destination_type='volume',
                 instance_uuid=instance.uuid, boot_index=None,
@@ -3195,7 +3188,7 @@ class API(base.Base):
         volume api delete as well.
         """
         self._check_and_begin_detach(context, volume, instance)
-        bdms = [compute.BlockDeviceMapping.get_by_volume_id(
+        bdms = [objects.BlockDeviceMapping.get_by_volume_id(
                 context, volume['id'], instance.uuid)]
         self._local_cleanup_bdm_volumes(bdms, instance, context)
 
@@ -3341,7 +3334,7 @@ class API(base.Base):
 
     def _get_root_bdm(self, context, instance, bdms=None):
         if bdms is None:
-            bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+            bdms = objects.BlockDeviceMappingList.get_by_instance_uuid(
                     context, instance.uuid)
 
         return bdms.root_bdm()
@@ -3369,7 +3362,7 @@ class API(base.Base):
         self._record_action_start(context, instance,
                                   instance_actions.LIVE_MIGRATION)
         try:
-            request_spec = compute.RequestSpec.get_by_instance_uuid(
+            request_spec = objects.RequestSpec.get_by_instance_uuid(
                 context, instance.uuid)
         except exception.RequestSpecNotFound:
             # Some old instances can still have no RequestSpec object attached
@@ -3407,7 +3400,7 @@ class API(base.Base):
         # NOTE(pkoniszewski): Get migration object to check if there is ongoing
         # live migration for particular instance. Also pass migration id to
         # compute to double check and avoid possible race condition.
-        migration = compute.Migration.get_by_id_and_instance(
+        migration = objects.Migration.get_by_id_and_instance(
             context, migration_id, instance.uuid)
         if migration.status != 'running':
             raise exception.InvalidMigrationState(migration_id=migration_id,
@@ -3432,7 +3425,7 @@ class API(base.Base):
         :param migration_id: ID of in-progress live migration
 
         """
-        migration = compute.Migration.get_by_id_and_instance(context,
+        migration = objects.Migration.get_by_id_and_instance(context,
                     migration_id, instance.uuid)
         LOG.debug("Going to cancel live migration %s",
                   migration.id, instance=instance)
@@ -3465,7 +3458,7 @@ class API(base.Base):
         """
         LOG.debug('vm evacuation scheduled', instance=instance)
         inst_host = instance.host
-        service = compute.Service.get_by_compute_host(context, inst_host)
+        service = objects.Service.get_by_compute_host(context, inst_host)
         if self.servicegroup_api.service_is_up(service):
             LOG.error(_LE('Instance compute service state on %s '
                           'expected to be down, but it was up.'), inst_host)
@@ -3477,7 +3470,7 @@ class API(base.Base):
 
         # NOTE(danms): Create this as a tombstone for the source compute
         # to find and cleanup. No need to pass it anywhere else.
-        migration = compute.Migration(context,
+        migration = objects.Migration(context,
                                       source_compute=instance.host,
                                       source_node=instance.node,
                                       instance_uuid=instance.uuid,
@@ -3491,7 +3484,7 @@ class API(base.Base):
             self.notifier, context, instance, "evacuate")
 
         try:
-            request_spec = compute.RequestSpec.get_by_instance_uuid(
+            request_spec = objects.RequestSpec.get_by_instance_uuid(
                 context, instance.uuid)
         except exception.RequestSpecNotFound:
             # Some old instances can still have no RequestSpec object attached
@@ -3513,23 +3506,23 @@ class API(base.Base):
 
     def get_migrations(self, context, filters):
         """Get all migrations for the given filters."""
-        return compute.MigrationList.get_by_filters(context, filters)
+        return objects.MigrationList.get_by_filters(context, filters)
 
     def get_migrations_in_progress_by_instance(self, context, instance_uuid,
                                                migration_type=None):
         """Get all migrations of an instance in progress."""
-        return compute.MigrationList.get_in_progress_by_instance(
+        return objects.MigrationList.get_in_progress_by_instance(
                 context, instance_uuid, migration_type)
 
     def get_migration_by_id_and_instance(self, context,
                                          migration_id, instance_uuid):
         """Get the migration of an instance by id."""
-        return compute.Migration.get_by_id_and_instance(
+        return objects.Migration.get_by_id_and_instance(
                 context, migration_id, instance_uuid)
 
     @wrap_check_policy
     def volume_snapshot_create(self, context, volume_id, create_info):
-        bdm = compute.BlockDeviceMapping.get_by_volume(
+        bdm = objects.BlockDeviceMapping.get_by_volume(
                 context, volume_id, expected_attrs=['instance'])
         self.compute_rpcapi.volume_snapshot_create(context, bdm.instance,
                                                   volume_id, create_info)
@@ -3544,7 +3537,7 @@ class API(base.Base):
     @wrap_check_policy
     def volume_snapshot_delete(self, context, volume_id, snapshot_id,
                                delete_info):
-        bdm = compute.BlockDeviceMapping.get_by_volume(
+        bdm = objects.BlockDeviceMapping.get_by_volume(
                 context, volume_id, expected_attrs=['instance'])
         self.compute_rpcapi.volume_snapshot_delete(context, bdm.instance,
                                                   volume_id, snapshot_id, delete_info)
@@ -3580,7 +3573,7 @@ class API(base.Base):
         if instance.host:
             try:
                 service = [service for service in instance.services if
-                           service.binary == 'compute-compute'][0]
+                           service.binary == 'jacket-worker'][0]
                 if service.forced_down:
                     host_status = fields_obj.HostStatus.DOWN
                 elif service.disabled:
@@ -3621,7 +3614,7 @@ class HostAPI(base.Base):
 
     def _assert_host_exists(self, context, host_name, must_be_up=False):
         """Raise HostNotFound if compute host doesn't exist."""
-        service = compute.Service.get_by_compute_host(context, host_name)
+        service = objects.Service.get_by_compute_host(context, host_name)
         if not service:
             raise exception.HostNotFound(host=host_name)
         if must_be_up and not self.servicegroup_api.service_is_up(service):
@@ -3693,7 +3686,7 @@ class HostAPI(base.Base):
         disabled = filters.pop('disabled', None)
         if 'availability_zone' in filters:
             set_zones = True
-        services = compute.ServiceList.get_all(context, disabled,
+        services = objects.ServiceList.get_all(context, disabled,
                                                set_zones=set_zones)
         ret_services = []
         for service in services:
@@ -3707,11 +3700,11 @@ class HostAPI(base.Base):
 
     def service_get_by_compute_host(self, context, host_name):
         """Get service entry for the given compute hostname."""
-        return compute.Service.get_by_compute_host(context, host_name)
+        return objects.Service.get_by_compute_host(context, host_name)
 
     def _service_update(self, context, host_name, binary, params_to_update):
         """Performs the actual service update operation."""
-        service = compute.Service.get_by_args(context, host_name, binary)
+        service = objects.Service.get_by_args(context, host_name, binary)
         service.update(params_to_update)
         service.save()
         return service
@@ -3727,7 +3720,7 @@ class HostAPI(base.Base):
 
     def _service_delete(self, context, service_id):
         """Performs the actual Service deletion operation."""
-        compute.Service.get_by_id(context, service_id).destroy()
+        objects.Service.get_by_id(context, service_id).destroy()
 
     def service_delete(self, context, service_id):
         """Deletes the specified service."""
@@ -3735,7 +3728,7 @@ class HostAPI(base.Base):
 
     def instance_get_all_by_host(self, context, host_name):
         """Return all instances on the given host."""
-        return compute.InstanceList.get_by_host(context, host_name)
+        return objects.InstanceList.get_by_host(context, host_name)
 
     def task_log_get_all(self, context, task_name, period_beginning,
                          period_ending, host=None, state=None):
@@ -3750,13 +3743,13 @@ class HostAPI(base.Base):
 
     def compute_node_get(self, context, compute_id):
         """Return compute node entry for particular integer ID."""
-        return compute.ComputeNode.get_by_id(context, int(compute_id))
+        return objects.ComputeNode.get_by_id(context, int(compute_id))
 
     def compute_node_get_all(self, context):
-        return compute.ComputeNodeList.get_all(context)
+        return objects.ComputeNodeList.get_all(context)
 
     def compute_node_search_by_hypervisor(self, context, hypervisor_match):
-        return compute.ComputeNodeList.get_by_hypervisor(context,
+        return objects.ComputeNodeList.get_by_hypervisor(context,
                                                          hypervisor_match)
 
     def compute_node_statistics(self, context):
@@ -3767,15 +3760,15 @@ class InstanceActionAPI(base.Base):
     """Sub-set of the Compute Manager API for managing instance actions."""
 
     def actions_get(self, context, instance):
-        return compute.InstanceActionList.get_by_instance_uuid(
+        return objects.InstanceActionList.get_by_instance_uuid(
             context, instance.uuid)
 
     def action_get_by_request_id(self, context, instance, request_id):
-        return compute.InstanceAction.get_by_request_id(
+        return objects.InstanceAction.get_by_request_id(
             context, instance.uuid, request_id)
 
     def action_events_get(self, context, instance, action_id):
-        return compute.InstanceActionEventList.get_by_action(
+        return objects.InstanceActionEventList.get_by_action(
             context, action_id)
 
 
@@ -3790,7 +3783,7 @@ class AggregateAPI(base.Base):
     def create_aggregate(self, context, aggregate_name, availability_zone):
         """Creates the model for the aggregate."""
 
-        aggregate = compute.Aggregate(context=context)
+        aggregate = objects.Aggregate(context=context)
         aggregate.name = aggregate_name
         if availability_zone:
             aggregate.metadata = {'availability_zone': availability_zone}
@@ -3800,16 +3793,16 @@ class AggregateAPI(base.Base):
 
     def get_aggregate(self, context, aggregate_id):
         """Get an aggregate by id."""
-        return compute.Aggregate.get_by_id(context, aggregate_id)
+        return objects.Aggregate.get_by_id(context, aggregate_id)
 
     def get_aggregate_list(self, context):
         """Get all the aggregates."""
-        return compute.AggregateList.get_all(context)
+        return objects.AggregateList.get_all(context)
 
     @wrap_exception()
     def update_aggregate(self, context, aggregate_id, values):
         """Update the properties of an aggregate."""
-        aggregate = compute.Aggregate.get_by_id(context, aggregate_id)
+        aggregate = objects.Aggregate.get_by_id(context, aggregate_id)
         if 'name' in values:
             aggregate.name = values.pop('name')
             aggregate.save()
@@ -3828,7 +3821,7 @@ class AggregateAPI(base.Base):
     @wrap_exception()
     def update_aggregate_metadata(self, context, aggregate_id, metadata):
         """Updates the aggregate metadata."""
-        aggregate = compute.Aggregate.get_by_id(context, aggregate_id)
+        aggregate = objects.Aggregate.get_by_id(context, aggregate_id)
         self.is_safe_to_update_az(context, metadata, aggregate=aggregate,
                                   action_name=AGGREGATE_ACTION_UPDATE_META)
         aggregate.update_metadata(metadata)
@@ -3847,7 +3840,7 @@ class AggregateAPI(base.Base):
         compute_utils.notify_about_aggregate_update(context,
                                                     "delete.start",
                                                     aggregate_payload)
-        aggregate = compute.Aggregate.get_by_id(context, aggregate_id)
+        aggregate = objects.Aggregate.get_by_id(context, aggregate_id)
         if len(aggregate.hosts) > 0:
             msg = _("Host aggregate is not empty")
             raise exception.InvalidAggregateActionDelete(
@@ -3878,7 +3871,7 @@ class AggregateAPI(base.Base):
                 self._raise_invalid_aggregate_exc(action_name, aggregate.id,
                                                   msg)
             _hosts = hosts or aggregate.hosts
-            host_aggregates = compute.AggregateList.get_by_metadata_key(
+            host_aggregates = objects.AggregateList.get_by_metadata_key(
                 context, 'availability_zone', hosts=_hosts)
             conflicting_azs = [
                 agg.availability_zone for agg in host_aggregates
@@ -3924,9 +3917,9 @@ class AggregateAPI(base.Base):
                                                     "addhost.start",
                                                     aggregate_payload)
         # validates the host; ComputeHostNotFound is raised if invalid
-        compute.Service.get_by_compute_host(context, host_name)
+        objects.Service.get_by_compute_host(context, host_name)
 
-        aggregate = compute.Aggregate.get_by_id(context, aggregate_id)
+        aggregate = objects.Aggregate.get_by_id(context, aggregate_id)
         self.is_safe_to_update_az(context, aggregate.metadata,
                                   hosts=[host_name], aggregate=aggregate)
 
@@ -3951,8 +3944,8 @@ class AggregateAPI(base.Base):
                                                     "removehost.start",
                                                     aggregate_payload)
         # validates the host; ComputeHostNotFound is raised if invalid
-        compute.Service.get_by_compute_host(context, host_name)
-        aggregate = compute.Aggregate.get_by_id(context, aggregate_id)
+        objects.Service.get_by_compute_host(context, host_name)
+        aggregate = objects.Aggregate.get_by_id(context, aggregate_id)
         aggregate.delete_host(host_name)
         self.scheduler_client.update_aggregates(context, [aggregate])
         self._update_az_cache_for_host(context, host_name, aggregate.metadata)
@@ -3994,10 +3987,10 @@ class KeypairAPI(base.Base):
                 reason=_('Keypair name must be string and between '
                          '1 and 255 characters long'))
 
-        count = compute.Quotas.count(context, 'key_pairs', user_id)
+        count = objects.Quotas.count(context, 'key_pairs', user_id)
 
         try:
-            compute.Quotas.limit_check(context, key_pairs=count + 1)
+            objects.Quotas.limit_check(context, key_pairs=count + 1)
         except exception.OverQuota:
             raise exception.KeypairLimitExceeded()
 
@@ -4011,7 +4004,7 @@ class KeypairAPI(base.Base):
 
         fingerprint = self._generate_fingerprint(public_key, key_type)
 
-        keypair = compute.KeyPair(context)
+        keypair = objects.KeyPair(context)
         keypair.user_id = user_id
         keypair.name = key_name
         keypair.type = key_type
@@ -4034,7 +4027,7 @@ class KeypairAPI(base.Base):
         private_key, public_key, fingerprint = self._generate_key_pair(
             user_id, key_type)
 
-        keypair = compute.KeyPair(context)
+        keypair = objects.KeyPair(context)
         keypair.user_id = user_id
         keypair.name = key_name
         keypair.type = key_type
@@ -4062,16 +4055,16 @@ class KeypairAPI(base.Base):
     def delete_key_pair(self, context, user_id, key_name):
         """Delete a keypair by name."""
         self._notify(context, 'delete.start', key_name)
-        compute.KeyPair.destroy_by_name(context, user_id, key_name)
+        objects.KeyPair.destroy_by_name(context, user_id, key_name)
         self._notify(context, 'delete.end', key_name)
 
     def get_key_pairs(self, context, user_id):
         """List key pairs."""
-        return compute.KeyPairList.get_by_user(context, user_id)
+        return objects.KeyPairList.get_by_user(context, user_id)
 
     def get_key_pair(self, context, user_id, key_name):
         """Get a keypair by name."""
-        return compute.KeyPair.get_by_name(context, user_id, key_name)
+        return objects.KeyPair.get_by_name(context, user_id, key_name)
 
 
 class SecurityGroupAPI(base.Base, security_group_base.SecurityGroupBase):
@@ -4125,7 +4118,7 @@ class SecurityGroupAPI(base.Base, security_group_base.SecurityGroupBase):
         self.db.security_group_ensure_default(context)
 
     def create_security_group(self, context, name, description):
-        quotas = compute.Quotas(context=context)
+        quotas = objects.Quotas(context=context)
         try:
             quotas.reserve(security_groups=1)
         except exception.OverQuota:
@@ -4227,7 +4220,7 @@ class SecurityGroupAPI(base.Base, security_group_base.SecurityGroupBase):
             msg = _("Security group is still in use")
             self.raise_invalid_group(msg)
 
-        quotas = compute.Quotas(context=context)
+        quotas = objects.Quotas(context=context)
         quota_project, quota_user = quotas_obj.ids_from_security_group(
                                 context, security_group)
         try:
@@ -4322,10 +4315,10 @@ class SecurityGroupAPI(base.Base, security_group_base.SecurityGroupBase):
         this function is written to support both.
         """
 
-        count = compute.Quotas.count(context, 'security_group_rules', id)
+        count = objects.Quotas.count(context, 'security_group_rules', id)
         try:
             projected = count + len(vals)
-            compute.Quotas.limit_check(context, security_group_rules=projected)
+            objects.Quotas.limit_check(context, security_group_rules=projected)
         except exception.OverQuota:
             msg = _("Quota exceeded, too many security group rules.")
             self.raise_over_quota(msg)
@@ -4408,7 +4401,7 @@ class SecurityGroupAPI(base.Base, security_group_base.SecurityGroupBase):
 
     def trigger_rules_refresh(self, context, id):
         """Called when a rule is added to or removed from a security_group."""
-        instances = compute.InstanceList.get_by_security_group_id(context, id)
+        instances = objects.InstanceList.get_by_security_group_id(context, id)
         self._refresh_instance_security_rules(context, instances)
 
     def trigger_members_refresh(self, context, group_ids):
@@ -4417,7 +4410,7 @@ class SecurityGroupAPI(base.Base, security_group_base.SecurityGroupBase):
         Sends an update request to each compute node for each instance for
         which this is relevant.
         """
-        instances = compute.InstanceList.get_by_grantee_security_group_ids(
+        instances = objects.InstanceList.get_by_grantee_security_group_ids(
             context, group_ids)
         self._refresh_instance_security_rules(context, instances)
 
@@ -4430,5 +4423,5 @@ class SecurityGroupAPI(base.Base, security_group_base.SecurityGroupBase):
     def populate_security_groups(self, security_groups):
         if not security_groups:
             # Make sure it's an empty SecurityGroupList and not None
-            return compute.SecurityGroupList()
+            return objects.SecurityGroupList()
         return security_group_obj.make_secgroup_list(security_groups)

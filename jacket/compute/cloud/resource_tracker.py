@@ -32,7 +32,7 @@ from jacket.compute.cloud import task_states
 from jacket.compute.cloud import vm_states
 from jacket.compute import exception
 from jacket.i18n import _, _LE, _LI, _LW
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base as obj_base
 from jacket.objects.compute import migration as migration_obj
 from jacket.compute.pci import manager as pci_manager
@@ -114,7 +114,7 @@ CONF.import_opt('my_ip', 'jacket.compute.netconf')
 def _instance_in_resize_state(instance):
     """Returns True if the instance is in one of the resizing states.
 
-    :param instance: `compute.compute.Instance` object
+    :param instance: `compute.objects.Instance` object
     """
     vm = instance.vm_state
     task = instance.task_state
@@ -149,7 +149,7 @@ class ResourceTracker(object):
         self.monitors = monitor_handler.monitors
         self.ext_resources_handler = \
             ext_resources.ResourceHandler(CONF.compute_resources)
-        self.old_resources = compute.ComputeNode()
+        self.old_resources = objects.ComputeNode()
         # self.scheduler_client = scheduler_client.SchedulerClient()
         self.ram_allocation_ratio = CONF.ram_allocation_ratio
         self.cpu_allocation_ratio = CONF.cpu_allocation_ratio
@@ -165,7 +165,7 @@ class ResourceTracker(object):
 
         :param context: security context
         :param instance_ref: instance to reserve resources for.
-        :type instance_ref: compute.compute.instance.Instance object
+        :type instance_ref: compute.objects.instance.Instance object
         :param limits: Dict of oversubscription limits for memory, disk,
                        and CPUs.
         :returns: A Claim ticket representing the reserved resources.  It can
@@ -296,7 +296,7 @@ class ResourceTracker(object):
         be done while the COMPUTE_RESOURCES_SEMAPHORE is held so the resource
         claim will not be lost if the audit process starts.
         """
-        migration = compute.Migration(context=context.elevated())
+        migration = objects.Migration(context=context.elevated())
         migration.dest_compute = self.host
         migration.dest_node = self.nodename
         migration.dest_host = self.driver.get_host_ip_addr()
@@ -437,7 +437,7 @@ class ResourceTracker(object):
         # there was no local copy and none in the database
         # so we need to create a new compute node. This needs
         # to be initialised with resource values.
-        self.compute_node = compute.ComputeNode(context)
+        self.compute_node = objects.ComputeNode(context)
         self.compute_node.host = self.host
         self._copy_resources(resources)
         self.compute_node.create()
@@ -465,7 +465,7 @@ class ResourceTracker(object):
         """Get the metrics from monitors and
         notify information to message bus.
         """
-        metrics = compute.MonitorMetricList()
+        metrics = objects.MonitorMetricList()
         metrics_info = {}
         for monitor in self.monitors:
             try:
@@ -555,7 +555,7 @@ class ResourceTracker(object):
             self.pci_tracker.update_devices_from_hypervisor_resources(dev_json)
 
         # Grab all instances assigned to this node:
-        instances = compute.InstanceList.get_by_host_and_node(
+        instances = objects.InstanceList.get_by_host_and_node(
             context, self.host, self.nodename,
             expected_attrs=['system_metadata',
                             'numa_topology',
@@ -565,7 +565,7 @@ class ResourceTracker(object):
         self._update_usage_from_instances(context, instances)
 
         # Grab all in-progress migrations:
-        migrations = compute.MigrationList.get_in_progress_by_host_and_node(
+        migrations = objects.MigrationList.get_in_progress_by_host_and_node(
                 context, self.host, self.nodename)
 
         self._pair_instances_to_migrations(migrations, instances)
@@ -585,7 +585,7 @@ class ResourceTracker(object):
             dev_pools_obj = self.pci_tracker.stats.to_device_pools_obj()
             self.compute_node.pci_device_pools = dev_pools_obj
         else:
-            self.compute_node.pci_device_pools = compute.PciDevicePoolList()
+            self.compute_node.pci_device_pools = objects.PciDevicePoolList()
 
         self._report_final_resource_view()
 
@@ -602,7 +602,7 @@ class ResourceTracker(object):
     def _get_compute_node(self, context):
         """Returns compute node for the host and nodename."""
         try:
-            return compute.ComputeNode.get_by_host_and_nodename(
+            return objects.ComputeNode.get_by_host_and_nodename(
                 context, self.host, self.nodename)
         except exception.NotFound:
             LOG.warning(_LW("No compute node record for %(host)s:%(node)s"),
@@ -802,11 +802,11 @@ class ResourceTracker(object):
                 'numa_topology', instance, prefix='old_')
 
         if image_meta is None:
-            image_meta = compute.ImageMeta.from_instance(instance)
+            image_meta = objects.ImageMeta.from_instance(instance)
         # TODO(jaypipes): Remove when image_meta is always passed
-        # as an compute.ImageMeta
-        elif not isinstance(image_meta, compute.ImageMeta):
-            image_meta = compute.ImageMeta.from_dict(image_meta)
+        # as an objects.ImageMeta
+        elif not isinstance(image_meta, objects.ImageMeta):
+            image_meta = objects.ImageMeta.from_dict(image_meta)
 
         if itype:
             usage = self._get_usage_dict(
@@ -818,7 +818,7 @@ class ResourceTracker(object):
                 obj = self.pci_tracker.stats.to_device_pools_obj()
                 self.compute_node.pci_device_pools = obj
             else:
-                obj = compute.PciDevicePoolList()
+                obj = objects.PciDevicePoolList()
                 self.compute_node.pci_device_pools = obj
             self.tracked_migrations[uuid] = (migration, itype)
 
@@ -897,7 +897,7 @@ class ResourceTracker(object):
             obj = self.pci_tracker.stats.to_device_pools_obj()
             self.compute_node.pci_device_pools = obj
         else:
-            self.compute_node.pci_device_pools = compute.PciDevicePoolList()
+            self.compute_node.pci_device_pools = objects.PciDevicePoolList()
 
     def _update_usage_from_instances(self, context, instances):
         """Calculate resource usage based on instance utilization.  This is
@@ -998,9 +998,9 @@ class ResourceTracker(object):
                   with updates
         """
         usage = {}
-        if isinstance(object_or_dict, compute.Instance):
+        if isinstance(object_or_dict, objects.Instance):
             usage = obj_base.obj_to_primitive(object_or_dict)
-        elif isinstance(object_or_dict, compute.Flavor):
+        elif isinstance(object_or_dict, objects.Flavor):
             usage = obj_base.obj_to_primitive(object_or_dict)
         else:
             usage.update(object_or_dict)

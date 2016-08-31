@@ -30,7 +30,7 @@ from jacket.compute import exception
 from jacket.i18n import _LW
 from jacket.compute.network import model as network_model
 from jacket.compute import notifications
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket import rpc
 from jacket.compute import utils
 from jacket.compute.virt import driver
@@ -85,7 +85,7 @@ def add_instance_fault_from_exc(context, instance, fault, exc_info=None,
                                 fault_message=None):
     """Adds the specified fault to the database."""
 
-    fault_obj = compute.InstanceFault(context=context)
+    fault_obj = objects.InstanceFault(context=context)
     fault_obj.host = CONF.host
     fault_obj.instance_uuid = instance.uuid
     fault_obj.update(exception_to_dict(fault, message=fault_message))
@@ -481,9 +481,9 @@ def reserve_quota_delta(context, deltas, instance):
                        quotas can use the correct project_id/user_id.
     :return: compute.compute.quotas.Quotas
     """
-    quotas = compute.Quotas(context=context)
+    quotas = objects.Quotas(context=context)
     if deltas:
-        project_id, user_id = compute.quotas.ids_from_instance(context,
+        project_id, user_id = objects.quotas.ids_from_instance(context,
                                                                instance)
         quotas.reserve(project_id=project_id, user_id=user_id,
                        **deltas)
@@ -507,14 +507,14 @@ class EventReporter(object):
 
     def __enter__(self):
         for uuid in self.instance_uuids:
-            compute.InstanceActionEvent.event_start(
+            objects.InstanceActionEvent.event_start(
                 self.context, uuid, self.event_name, want_result=False)
 
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         for uuid in self.instance_uuids:
-            compute.InstanceActionEvent.event_finish_with_failure(
+            objects.InstanceActionEvent.event_finish_with_failure(
                 self.context, uuid, self.event_name, exc_val=exc_val,
                 exc_tb=exc_tb, want_result=False)
         return False
