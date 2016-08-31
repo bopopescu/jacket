@@ -24,8 +24,8 @@ from oslo_config import cfg
 from oslo_db import exception as db_exc
 from oslo_log import log as logging
 
-from jacket.storage import context
-from jacket import db
+from jacket import context
+from jacket.db import storage as db
 from jacket.storage import exception
 from jacket.storage.i18n import _, _LE
 from jacket.storage import quota
@@ -92,7 +92,7 @@ def destroy(context, id):
         raise exception.InvalidVolumeType(reason=msg)
     else:
         elevated = context if context.is_admin else context.elevated()
-        storage.volume_type_destroy(elevated, id)
+        db.volume_type_destroy(elevated, id)
 
 
 def get_all_types(context, inactive=0, filters=None, marker=None,
@@ -120,7 +120,7 @@ def get_volume_type(ctxt, id, expected_fields=None):
     if ctxt is None:
         ctxt = context.get_admin_context()
 
-    return storage.volume_type_get(ctxt, id, expected_fields=expected_fields)
+    return db.volume_type_get(ctxt, id, expected_fields=expected_fields)
 
 
 def get_volume_type_by_name(context, name):
@@ -129,7 +129,7 @@ def get_volume_type_by_name(context, name):
         msg = _("name cannot be None")
         raise exception.InvalidVolumeType(reason=msg)
 
-    return storage.volume_type_get_by_name(context, name)
+    return db.volume_type_get_by_name(context, name)
 
 
 def get_default_volume_type():

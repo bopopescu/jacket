@@ -607,6 +607,9 @@ def extract_host(host, level='backend', default_pool_name=False):
         ret = extract_host(host, 'pool', True)
         # ret is '_pool0'
     """
+    if host is None:
+        return None
+
     if level == 'host':
         # make sure pool is not included
         hst = host.split('#')[0]

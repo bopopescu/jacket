@@ -40,7 +40,7 @@ from oslo_config import cfg
 from oslo_db import concurrency as db_concurrency
 from oslo_db import options as db_options
 
-#from jacket.api.storage import common
+from jacket.api.storage import common
 from jacket.common.storage import constants
 from jacket.storage.i18n import _
 
@@ -368,18 +368,18 @@ def volume_metadata_get(context, volume_id):
     return IMPL.volume_metadata_get(context, volume_id)
 
 
-#def volume_metadata_delete(context, volume_id, key,
-#                           meta_type=common.METADATA_TYPES.user):
-#    """Delete the given metadata item."""
-#    return IMPL.volume_metadata_delete(context, volume_id,
-#                                       key, meta_type)
+def volume_metadata_delete(context, volume_id, key,
+                           meta_type=common.METADATA_TYPES.user):
+    """Delete the given metadata item."""
+    return IMPL.volume_metadata_delete(context, volume_id,
+                                       key, meta_type)
 
 
-#def volume_metadata_update(context, volume_id, metadata,
-#                           delete, meta_type=common.METADATA_TYPES.user):
-#    """Update metadata if it exists, otherwise create it."""
-#    return IMPL.volume_metadata_update(context, volume_id, metadata,
-#                                     delete, meta_type)
+def volume_metadata_update(context, volume_id, metadata,
+                           delete, meta_type=common.METADATA_TYPES.user):
+    """Update metadata if it exists, otherwise create it."""
+    return IMPL.volume_metadata_update(context, volume_id, metadata,
+                                     delete, meta_type)
 
 
 ##################

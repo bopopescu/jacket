@@ -25,10 +25,11 @@ import webob.exc
 from jacket.api.storage import extensions
 from jacket.api.storage.openstack import wsgi
 from jacket.api.storage import xmlutil
-from jacket import db
+from jacket.db import storage as db
 from jacket.storage import exception
 from jacket.storage.i18n import _, _LI
 from jacket.objects import storage
+from jacket import objects
 from jacket.storage import utils
 from jacket.storage.volume import api as volume_api
 
@@ -100,7 +101,7 @@ def _list_hosts(req, service=None):
     curr_time = timeutils.utcnow(with_timezone=True)
     context = req.environ['storage.context']
     filters = {'disabled': False}
-    services = storage.ServiceList.get_all(context, filters)
+    services = objects.ServiceList.get_all(context, False)
     zone = ''
     if 'zone' in req.GET:
         zone = req.GET['zone']
@@ -221,8 +222,8 @@ class HostController(wsgi.Controller):
 
         # Getting total available/used resource
         # TODO(jdg): Add summary info for Snapshots
-        volume_refs = storage.volume_get_all_by_host(context, host_ref.host)
-        (count, sum) = storage.volume_data_get_for_host(context,
+        volume_refs = db.volume_get_all_by_host(context, host_ref.host)
+        (count, sum) = db.volume_data_get_for_host(context,
                                                    host_ref.host)
 
         snap_count_total = 0
@@ -236,7 +237,7 @@ class HostController(wsgi.Controller):
         project_ids = [v['project_id'] for v in volume_refs]
         project_ids = list(set(project_ids))
         for project_id in project_ids:
-            (count, sum) = storage.volume_data_get_for_project(context, project_id)
+            (count, sum) = db.volume_data_get_for_project(context, project_id)
             (snap_count, snap_sum) = (
                 storage.Snapshot.snapshot_data_get_for_project(context,
                                                                project_id))

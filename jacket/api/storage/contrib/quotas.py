@@ -18,7 +18,7 @@ import webob
 from jacket.api.storage import extensions
 from jacket.api.storage.openstack import wsgi
 from jacket.api.storage import xmlutil
-from jacket import db
+from jacket.db import storage as db
 from jacket.db.storage.sqlalchemy import api as sqlalchemy_api
 from jacket.storage import exception
 from jacket.storage.i18n import _
@@ -284,7 +284,7 @@ class QuotaSetsController(wsgi.Controller):
 
             value = utils.validate_integer(
                 body['quota_set'][key], key, min_value=-1,
-                max_value=storage.MAX_INT)
+                max_value=db.MAX_INT)
 
             # Can't skip the validation of nested quotas since it could mess up
             # hierarchy if parent limit is less than childrens' current usage
@@ -297,7 +297,7 @@ class QuotaSetsController(wsgi.Controller):
                         context, target_project, quota_values, key, value)
                 except exception.OverQuota as e:
                     if reservations:
-                        storage.reservation_rollback(context, reservations)
+                        db.reservation_rollback(context, reservations)
                     raise webob.exc.HTTPBadRequest(explanation=e.message)
 
             valid_quotas[key] = value
@@ -308,14 +308,14 @@ class QuotaSetsController(wsgi.Controller):
         # the validation up front in the 2 loops above.
         for key, value in valid_quotas.items():
             try:
-                storage.quota_update(context, target_project_id, key, value)
+                db.quota_update(context, target_project_id, key, value)
             except exception.ProjectQuotaNotFound:
-                storage.quota_create(context, target_project_id, key, value)
+                db.quota_create(context, target_project_id, key, value)
             except exception.AdminRequired:
                 raise webob.exc.HTTPForbidden()
 
         if reservations:
-            storage.reservation_commit(context, reservations)
+            db.reservation_commit(context, reservations)
         return {'quota_set': self._get_quotas(context, target_project_id)}
 
     def _get_quota_usage(self, quota_obj):
@@ -374,7 +374,7 @@ class QuotaSetsController(wsgi.Controller):
             self._delete_nested_quota(context, id)
         else:
             try:
-                storage.quota_destroy_by_project(context, id)
+                db.quota_destroy_by_project(context, id)
             except exception.AdminRequired:
                 raise webob.exc.HTTPForbidden()
 
@@ -415,7 +415,7 @@ class QuotaSetsController(wsgi.Controller):
                 res, defaults[res], project_quotas)
 
         try:
-            storage.quota_destroy_by_project(ctxt, target_project.id)
+            db.quota_destroy_by_project(ctxt, target_project.id)
         except exception.AdminRequired:
             raise webob.exc.HTTPForbidden()
 
