@@ -36,7 +36,7 @@ from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
 from jacket.compute import cloud
-from jacket.objects import compute as objects
+
 from jacket.compute.cloud import flavors
 from jacket.compute import exception
 from jacket.i18n import _
