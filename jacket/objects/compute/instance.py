@@ -28,7 +28,7 @@ from jacket.db import compute as db
 from jacket.compute import exception
 from jacket.i18n import _LE
 from jacket.compute import notifications
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 from jacket.compute import utils
@@ -203,7 +203,7 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
 
     @property
     def image_meta(self):
-        return compute.ImageMeta.from_instance(self)
+        return objects.ImageMeta.from_instance(self)
 
     def _reset_metadata_tracking(self, fields=None):
         if fields is None or 'system_metadata' in fields:
@@ -262,14 +262,14 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
 
         flavor_info = jsonutils.loads(db_flavor)
 
-        self.flavor = compute.Flavor.obj_from_primitive(flavor_info['cur'])
+        self.flavor = objects.Flavor.obj_from_primitive(flavor_info['cur'])
         if flavor_info['old']:
-            self.old_flavor = compute.Flavor.obj_from_primitive(
+            self.old_flavor = objects.Flavor.obj_from_primitive(
                 flavor_info['old'])
         else:
             self.old_flavor = None
         if flavor_info['new']:
-            self.new_flavor = compute.Flavor.obj_from_primitive(
+            self.new_flavor = objects.Flavor.obj_from_primitive(
                 flavor_info['new'])
         else:
             self.new_flavor = None
@@ -277,7 +277,7 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
 
     @staticmethod
     def _from_db_object(context, instance, db_inst, expected_attrs=None):
-        """Method to help with migration to compute.
+        """Method to help with migration to objects.
 
         Converts a database entity to a formal object.
         """
@@ -308,7 +308,7 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
             instance['system_metadata'] = utils.instance_sys_meta(db_inst)
         if 'fault' in expected_attrs:
             instance['fault'] = (
-                compute.InstanceFault.get_latest_for_instance(
+                objects.InstanceFault.get_latest_for_instance(
                     context, instance.uuid))
         if 'numa_topology' in expected_attrs:
             if have_extra:
@@ -342,7 +342,7 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
             elif not instance.obj_attr_is_set('info_cache'):
                 # TODO(danms): If this ever happens on a backlevel instance
                 # passed to us by a backlevel service, things will break
-                instance.info_cache = compute.InstanceInfoCache(context)
+                instance.info_cache = objects.InstanceInfoCache(context)
             if instance.info_cache is not None:
                 instance.info_cache._from_db_object(context,
                                                     instance.info_cache,
@@ -359,25 +359,25 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
         # above note for new info_caches
         if 'pci_devices' in expected_attrs:
             pci_devices = base.obj_make_list(
-                    context, compute.PciDeviceList(context),
-                    compute.PciDevice, db_inst['pci_devices'])
+                    context, objects.PciDeviceList(context),
+                    objects.PciDevice, db_inst['pci_devices'])
             instance['pci_devices'] = pci_devices
         if 'security_groups' in expected_attrs:
             sec_groups = base.obj_make_list(
-                    context, compute.SecurityGroupList(context),
-                    compute.SecurityGroup, db_inst.get('security_groups', []))
+                    context, objects.SecurityGroupList(context),
+                    objects.SecurityGroup, db_inst.get('security_groups', []))
             instance['security_groups'] = sec_groups
 
         if 'tags' in expected_attrs:
             tags = base.obj_make_list(
-                context, compute.TagList(context),
-                compute.Tag, db_inst['tags'])
+                context, objects.TagList(context),
+                objects.Tag, db_inst['tags'])
             instance['tags'] = tags
 
         if 'services' in expected_attrs:
             services = base.obj_make_list(
-                    context, compute.ServiceList(context),
-                    compute.Service, db_inst['services'])
+                    context, objects.ServiceList(context),
+                    objects.Service, db_inst['services'])
             instance['services'] = services
 
         instance.obj_reset_changes()
@@ -523,7 +523,7 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
             with self.numa_topology.obj_alternate_context(context):
                 self.numa_topology._save()
         else:
-            compute.InstanceNUMATopology.delete_by_instance_uuid(
+            objects.InstanceNUMATopology.delete_by_instance_uuid(
                     context, self.uuid)
 
     def _save_pci_requests(self, context):
@@ -563,7 +563,7 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
             self._save_flavor(context)
 
     def _save_vcpu_model(self, context):
-        # TODO(yjiang5): should merge the compute accesses for all the extra
+        # TODO(yjiang5): should merge the db accesses for all the extra
         # fields
         if 'vcpu_model' in self.obj_what_changed():
             if self.vcpu_model:
@@ -584,7 +584,7 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
             with self.migration_context.obj_alternate_context(context):
                 self.migration_context._save()
         else:
-            compute.MigrationContext._destroy(context, self.uuid)
+            objects.MigrationContext._destroy(context, self.uuid)
 
     @base.remotable
     def save(self, expected_vm_state=None,
@@ -606,7 +606,7 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
 
         """
         # Store this on the class because _cell_name_blocks_sync is useless
-        # after the compute update call below.
+        # after the db update call below.
         self._sync_cells = not self._cell_name_blocks_sync()
 
         context = self._context
@@ -615,7 +615,7 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
         if cell_type is not None:
             # NOTE(comstud): We need to stash a copy of ourselves
             # before any updates are applied.  When we call the save
-            # methods on nested compute, we will lose any changes to
+            # methods on nested objects, we will lose any changes to
             # them.  But we need to make sure child cells can tell
             # what is changed.
             #
@@ -761,18 +761,18 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
                 reason='loading %s requires recursion' % attrname)
 
     def _load_fault(self):
-        self.fault = compute.InstanceFault.get_latest_for_instance(
+        self.fault = objects.InstanceFault.get_latest_for_instance(
             self._context, self.uuid)
 
     def _load_numa_topology(self, db_topology=None):
         if db_topology is not None:
             self.numa_topology = \
-                compute.InstanceNUMATopology.obj_from_db_obj(self.uuid,
+                objects.InstanceNUMATopology.obj_from_db_obj(self.uuid,
                                                              db_topology)
         else:
             try:
                 self.numa_topology = \
-                    compute.InstanceNUMATopology.get_by_instance_uuid(
+                    objects.InstanceNUMATopology.get_by_instance_uuid(
                         self._context, self.uuid)
             except exception.NumaTopologyNotFound:
                 self.numa_topology = None
@@ -780,11 +780,11 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
     def _load_pci_requests(self, db_requests=None):
         # FIXME: also do this if none!
         if db_requests is not None:
-            self.pci_requests = compute.InstancePCIRequests.obj_from_db(
+            self.pci_requests = objects.InstancePCIRequests.obj_from_db(
                 self._context, self.uuid, db_requests)
         else:
             self.pci_requests = \
-                compute.InstancePCIRequests.get_by_instance_uuid(
+                objects.InstancePCIRequests.get_by_instance_uuid(
                     self._context, self.uuid)
 
     def _load_flavor(self):
@@ -807,36 +807,36 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
 
     def _load_vcpu_model(self, db_vcpu_model=None):
         if db_vcpu_model is None:
-            self.vcpu_model = compute.VirtCPUModel.get_by_instance_uuid(
+            self.vcpu_model = objects.VirtCPUModel.get_by_instance_uuid(
                 self._context, self.uuid)
         else:
             db_vcpu_model = jsonutils.loads(db_vcpu_model)
-            self.vcpu_model = compute.VirtCPUModel.obj_from_primitive(
+            self.vcpu_model = objects.VirtCPUModel.obj_from_primitive(
                 db_vcpu_model)
 
     def _load_ec2_ids(self):
-        self.ec2_ids = compute.EC2Ids.get_by_instance(self._context, self)
+        self.ec2_ids = objects.EC2Ids.get_by_instance(self._context, self)
 
     def _load_security_groups(self):
-        self.security_groups = compute.SecurityGroupList.get_by_instance(
+        self.security_groups = objects.SecurityGroupList.get_by_instance(
             self._context, self)
 
     def _load_pci_devices(self):
-        self.pci_devices = compute.PciDeviceList.get_by_instance_uuid(
+        self.pci_devices = objects.PciDeviceList.get_by_instance_uuid(
             self._context, self.uuid)
 
     def _load_migration_context(self, db_context=_NO_DATA_SENTINEL):
         if db_context is _NO_DATA_SENTINEL:
             try:
                 self.migration_context = (
-                    compute.MigrationContext.get_by_instance_uuid(
+                    objects.MigrationContext.get_by_instance_uuid(
                         self._context, self.uuid))
             except exception.MigrationContextNotFound:
                 self.migration_context = None
         elif db_context is None:
             self.migration_context = None
         else:
-            self.migration_context = compute.MigrationContext.obj_from_db_obj(
+            self.migration_context = objects.MigrationContext.obj_from_db_obj(
                 db_context)
 
     def apply_migration_context(self):
@@ -871,7 +871,7 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
     @base.remotable
     def drop_migration_context(self):
         if self.migration_context:
-            compute.MigrationContext._destroy(self._context, self.uuid)
+            objects.MigrationContext._destroy(self._context, self.uuid)
             self.migration_context = None
 
     def clear_numa_topology(self):
@@ -919,7 +919,7 @@ class Instance(base.NovaPersistentObject, base.NovaObject,
             # NOTE(mriedem): The join in the data model for instances.services
             # filters on instances.deleted == 0, so if the instance is deleted
             # don't attempt to even load services since we'll fail.
-            self.services = compute.ServiceList(self._context)
+            self.services = objects.ServiceList(self._context)
         else:
             # FIXME(comstud): This should be optimized to only load the attr.
             self._load_generic(attrname)
@@ -1007,13 +1007,13 @@ def _make_instance_list(context, inst_list, db_inst_list, expected_attrs):
         # Build an instance_uuid:latest-fault mapping
         expected_attrs.remove('fault')
         instance_uuids = [inst['uuid'] for inst in db_inst_list]
-        faults = compute.InstanceFaultList.get_by_instance_uuids(
+        faults = objects.InstanceFaultList.get_by_instance_uuids(
             context, instance_uuids)
         for fault in faults:
             if fault.instance_uuid not in inst_faults:
                 inst_faults[fault.instance_uuid] = fault
 
-    inst_cls = compute.Instance
+    inst_cls = objects.Instance
 
     inst_list.objects = []
     for db_inst in db_inst_list:
@@ -1126,7 +1126,7 @@ class InstanceList(base.ObjectListBase, base.NovaObject):
                                     expected_attrs=None,
                                     use_slave=False):
         # NOTE(mriedem): We need to convert the begin/end timestamp strings
-        # to timezone-aware datetime compute for the DB API call.
+        # to timezone-aware datetime objects for the DB API call.
         begin = timeutils.parse_isotime(begin)
         end = timeutils.parse_isotime(end) if end else None
         db_inst_list = cls._db_instance_get_active_by_window_joined(
@@ -1154,7 +1154,7 @@ class InstanceList(base.ObjectListBase, base.NovaObject):
         :returns: InstanceList
 
         """
-        # NOTE(mriedem): We have to convert the datetime compute to string
+        # NOTE(mriedem): We have to convert the datetime objects to string
         # primitives for the remote call.
         begin = utils.isotime(begin)
         end = utils.isotime(end) if end else None
@@ -1188,7 +1188,7 @@ class InstanceList(base.ObjectListBase, base.NovaObject):
         :returns: A list of instance uuids for which faults were found.
         """
         uuids = [inst.uuid for inst in self]
-        faults = compute.InstanceFaultList.get_by_instance_uuids(
+        faults = objects.InstanceFaultList.get_by_instance_uuids(
             self._context, uuids)
         faults_by_uuid = {}
         for fault in faults:

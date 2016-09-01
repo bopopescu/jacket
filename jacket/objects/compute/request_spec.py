@@ -18,7 +18,7 @@ import six
 from jacket.db.compute.sqlalchemy import api as db
 from jacket.db.compute.sqlalchemy import api_models
 from jacket.compute import exception
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 from jacket.objects.compute import instance as obj_instance
@@ -80,14 +80,14 @@ class RequestSpec(base.NovaObject):
         return self.flavor.swap
 
     def _image_meta_from_image(self, image):
-        if isinstance(image, compute.ImageMeta):
+        if isinstance(image, objects.ImageMeta):
             self.image = image
         elif isinstance(image, dict):
             # NOTE(sbauza): Until Nova is fully providing an ImageMeta object
             # for getting properties, we still need to hydrate it here
             # TODO(sbauza): To be removed once all RequestSpec hydrations are
             # done on the conductor side and if the image is an ImageMeta
-            self.image = compute.ImageMeta.from_dict(image)
+            self.image = objects.ImageMeta.from_dict(image)
         else:
             self.image = None
 
@@ -121,7 +121,7 @@ class RequestSpec(base.NovaObject):
 
     def _from_instance_pci_requests(self, pci_requests):
         if isinstance(pci_requests, dict):
-            pci_req_cls = compute.InstancePCIRequests
+            pci_req_cls = objects.InstancePCIRequests
             self.pci_requests = pci_req_cls.from_request_spec_instance_props(
                 pci_requests)
         else:
@@ -135,7 +135,7 @@ class RequestSpec(base.NovaObject):
             self.numa_topology = numa_topology
 
     def _from_flavor(self, flavor):
-        if isinstance(flavor, compute.Flavor):
+        if isinstance(flavor, objects.Flavor):
             self.flavor = flavor
         elif isinstance(flavor, dict):
             # NOTE(sbauza): Again, request_spec is primitived by
@@ -143,7 +143,7 @@ class RequestSpec(base.NovaObject):
             # select_destinations() like this
             # TODO(sbauza): To be removed once all RequestSpec hydrations are
             # done on the conductor side
-            self.flavor = compute.Flavor(**flavor)
+            self.flavor = objects.Flavor(**flavor)
 
     def _from_retry(self, retry_dict):
         self.retry = (SchedulerRetries.from_dict(self._context, retry_dict)
@@ -160,7 +160,7 @@ class RequestSpec(base.NovaObject):
             policies = list(filter_properties.get('group_policies'))
             hosts = list(filter_properties.get('group_hosts'))
             members = list(filter_properties.get('group_members'))
-            self.instance_group = compute.InstanceGroup(policies=policies,
+            self.instance_group = objects.InstanceGroup(policies=policies,
                                                         hosts=hosts,
                                                         members=members)
             # hosts has to be not part of the updates for saving the object
@@ -332,7 +332,7 @@ class RequestSpec(base.NovaObject):
         """Returns a new RequestSpec object hydrated by various components.
 
         This helper is useful in creating the RequestSpec from the various
-        compute that are assembled early in the boot process.  This method
+        objects that are assembled early in the boot process.  This method
         creates a complete RequestSpec object with all properties set or
         intentionally left blank.
 
@@ -406,8 +406,8 @@ class RequestSpec(base.NovaObject):
     def _get_update_primitives(self):
         """Serialize object to match the db model.
 
-        We store copies of embedded compute rather than
-        references to these compute because we want a snapshot of the request
+        We store copies of embedded objects rather than
+        references to these objects because we want a snapshot of the request
         at this point.  If the references changed or were deleted we would
         not be able to reschedule this instance under the same conditions as
         it was originally scheduled with.
@@ -487,10 +487,10 @@ class SchedulerRetries(base.NovaObject):
             return retry_obj
         retry_obj.num_attempts = retry_dict.get('num_attempts')
         # NOTE(sbauza): each retry_dict['hosts'] item is a list of [host, node]
-        computes = [compute.ComputeNode(context=context, host=host,
+        computes = [objects.ComputeNode(context=context, host=host,
                                         hypervisor_hostname=node)
                     for host, node in retry_dict.get('hosts')]
-        retry_obj.hosts = compute.ComputeNodeList(compute=computes)
+        retry_obj.hosts = objects.ComputeNodeList(objects=computes)
         return retry_obj
 
     def to_dict(self):

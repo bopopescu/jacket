@@ -28,7 +28,7 @@ from jacket.compute import cloud
 from jacket.compute.cloud import vm_states
 from jacket.compute import exception
 from jacket.i18n import _
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute import volume
 
 ALIAS = "os-volumes"
@@ -270,7 +270,7 @@ class VolumeAttachmentController(wsgi.Controller):
         volume_id = id
         instance = common.get_instance(self.compute_api, context, server_id)
 
-        bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = objects.BlockDeviceMappingList.get_by_instance_uuid(
                 context, instance.uuid)
 
         if not bdms:
@@ -364,7 +364,7 @@ class VolumeAttachmentController(wsgi.Controller):
 
         instance = common.get_instance(self.compute_api, context, server_id)
 
-        bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = objects.BlockDeviceMappingList.get_by_instance_uuid(
                 context, instance.uuid)
         found = False
         try:
@@ -413,7 +413,7 @@ class VolumeAttachmentController(wsgi.Controller):
         except exception.VolumeNotFound as e:
             raise exc.HTTPNotFound(explanation=e.format_message())
 
-        bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = objects.BlockDeviceMappingList.get_by_instance_uuid(
                 context, instance.uuid)
         if not bdms:
             msg = _("Instance %s is not attached.") % server_id
@@ -459,7 +459,7 @@ class VolumeAttachmentController(wsgi.Controller):
 
         instance = common.get_instance(self.compute_api, context, server_id)
 
-        bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = objects.BlockDeviceMappingList.get_by_instance_uuid(
                 context, instance.uuid)
         limited_list = common.limited(bdms, req)
         results = []

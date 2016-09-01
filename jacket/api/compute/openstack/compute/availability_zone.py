@@ -17,7 +17,7 @@ from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.compute import availability_zones
 import jacket.compute.conf
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute import servicegroup
 
 CONF = jacket.compute.conf.CONF
@@ -62,7 +62,7 @@ class AvailabilityZoneController(wsgi.Controller):
             availability_zones.get_availability_zones(ctxt)
 
         # Available services
-        enabled_services = compute.ServiceList.get_all(context, disabled=False,
+        enabled_services = objects.ServiceList.get_all(context, disabled=False,
                                                        set_zones=True)
         zone_hosts = {}
         host_services = {}

@@ -41,7 +41,7 @@ from jacket.compute import exception
 from jacket.i18n import _
 from jacket.i18n import _LW
 from jacket.compute.image import glance
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute import utils
 
 ALIAS = 'servers'
@@ -413,7 +413,7 @@ class ServersController(wsgi.Controller):
         except exception.FlavorNotFound:
             LOG.debug("Flavor '%s' could not be found ",
                       search_opts['flavor'])
-            instance_list = cloud.InstanceList()
+            instance_list = objects.InstanceList()
 
         if is_detail:
             instance_list._context = context
@@ -448,7 +448,7 @@ class ServersController(wsgi.Controller):
         networks = []
         network_uuids = []
         for network in requested_networks:
-            request = cloud.NetworkRequest()
+            request = objects.NetworkRequest()
             try:
                 # fixed IP address is optional
                 # if the fixed IP address is not provided then
@@ -497,7 +497,7 @@ class ServersController(wsgi.Controller):
                 expl = _('Bad networks format')
                 raise exc.HTTPBadRequest(explanation=expl)
 
-        return cloud.NetworkRequestList(cloud=networks)
+        return objects.NetworkRequestList(objects=networks)
 
     # NOTE(vish): Without this regex, b64decode will happily
     #             ignore illegal bytes in the base64 encoded
@@ -1093,7 +1093,7 @@ class ServersController(wsgi.Controller):
 
         instance = self._get_server(context, req, id)
 
-        bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = objects.BlockDeviceMappingList.get_by_instance_uuid(
                     context, instance.uuid)
 
         try:
@@ -1146,7 +1146,7 @@ class ServersController(wsgi.Controller):
     def _get_instance(self, context, instance_uuid):
         try:
             attrs = ['system_metadata', 'metadata']
-            return cloud.Instance.get_by_uuid(context, instance_uuid,
+            return objects.Instance.get_by_uuid(context, instance_uuid,
                                                 expected_attrs=attrs)
         except exception.InstanceNotFound as e:
             raise webob.exc.HTTPNotFound(explanation=e.format_message())

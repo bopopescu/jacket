@@ -15,7 +15,7 @@ from oslo_versionedobjects import base as ovo
 from jacket.db.compute.sqlalchemy import api as db_api
 from jacket.db.compute.sqlalchemy import api_models
 from jacket.compute import exception
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 
@@ -124,5 +124,5 @@ class InstanceMappingList(base.ObjectListBase, base.NovaObject):
     def get_by_project_id(cls, context, project_id):
         db_mappings = cls._get_by_project_id_from_db(context, project_id)
 
-        return base.obj_make_list(context, cls(), compute.InstanceMapping,
+        return base.obj_make_list(context, cls(), objects.InstanceMapping,
                 db_mappings)

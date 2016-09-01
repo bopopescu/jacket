@@ -19,7 +19,7 @@ from oslo_serialization import jsonutils
 from oslo_utils import versionutils
 import six
 
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 
@@ -57,7 +57,7 @@ class PciDevicePool(base.NovaObject):
         pool.tags = pool_dict
         return pool
 
-    # NOTE(sbauza): Before using compute, pci stats was a list of
+    # NOTE(sbauza): Before using objects, pci stats was a list of
     # dictionaries not having tags. For compatibility with other modules, let's
     # create a reversible method
     def to_dict(self):
@@ -82,7 +82,7 @@ class PciDevicePoolList(base.ObjectListBase, base.NovaObject):
 def from_pci_stats(pci_stats):
     """Create and return a PciDevicePoolList from the data stored in the db,
     which can be either the serialized object, or, prior to the creation of the
-    device pool compute, a simple dict or a list of such dicts.
+    device pool objects, a simple dict or a list of such dicts.
     """
     pools = []
     if isinstance(pci_stats, six.string_types):
@@ -93,12 +93,12 @@ def from_pci_stats(pci_stats):
     if pci_stats:
         # Check for object-ness, or old-style storage format.
         if 'jacket_object.namespace' in pci_stats:
-            return compute.PciDevicePoolList.obj_from_primitive(pci_stats)
+            return objects.PciDevicePoolList.obj_from_primitive(pci_stats)
         else:
             # This can be either a dict or a list of dicts
             if isinstance(pci_stats, list):
-                pools = [compute.PciDevicePool.from_dict(stat)
+                pools = [objects.PciDevicePool.from_dict(stat)
                          for stat in pci_stats]
             else:
-                pools = [compute.PciDevicePool.from_dict(pci_stats)]
-    return compute.PciDevicePoolList(compute=pools)
+                pools = [objects.PciDevicePool.from_dict(pci_stats)]
+    return objects.PciDevicePoolList(objects=pools)

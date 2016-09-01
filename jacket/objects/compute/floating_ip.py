@@ -12,9 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from jacket import db
+from jacket.db import compute as db
 from jacket.compute import exception
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base as obj_base
 from jacket.objects.compute import fields
 
@@ -59,8 +59,8 @@ class FloatingIP(obj_base.NovaPersistentObject, obj_base.NovaObject,
                 floatingip[field] = db_floatingip[field]
         if ('fixed_ip' in expected_attrs and
                 db_floatingip['fixed_ip'] is not None):
-            floatingip.fixed_ip = compute.FixedIP._from_db_object(
-                context, compute.FixedIP(context), db_floatingip['fixed_ip'])
+            floatingip.fixed_ip = objects.FixedIP._from_db_object(
+                context, objects.FixedIP(context), db_floatingip['fixed_ip'])
         floatingip._context = context
         floatingip.obj_reset_changes()
         return floatingip
@@ -74,7 +74,7 @@ class FloatingIP(obj_base.NovaPersistentObject, obj_base.NovaObject,
             raise exception.OrphanedObjectError(method='obj_load_attr',
                                                 objtype=self.obj_name())
         if self.fixed_ip_id is not None:
-            self.fixed_ip = compute.FixedIP.get_by_id(
+            self.fixed_ip = objects.FixedIP.get_by_id(
                 self._context, self.fixed_ip_id, expected_attrs=['network'])
         else:
             self.fixed_ip = None
@@ -112,8 +112,8 @@ class FloatingIP(obj_base.NovaPersistentObject, obj_base.NovaObject,
         floating = FloatingIP(
             context=context, address=floating_address, host=host,
             fixed_ip_id=db_fixed['id'],
-            fixed_ip=compute.FixedIP._from_db_object(
-                context, compute.FixedIP(context), db_fixed,
+            fixed_ip=objects.FixedIP._from_db_object(
+                context, objects.FixedIP(context), db_fixed,
                 expected_attrs=['network']))
         return floating
 
@@ -131,8 +131,8 @@ class FloatingIP(obj_base.NovaPersistentObject, obj_base.NovaObject,
 
         return cls(context=context, address=address,
                    fixed_ip_id=db_fixed['id'],
-                   fixed_ip=compute.FixedIP._from_db_object(
-                       context, compute.FixedIP(context), db_fixed,
+                   fixed_ip=objects.FixedIP._from_db_object(
+                       context, objects.FixedIP(context), db_fixed,
                        expected_attrs=['network']))
 
     @obj_base.remotable_classmethod
@@ -182,26 +182,26 @@ class FloatingIPList(obj_base.ObjectListBase, obj_base.NovaObject):
     def get_all(cls, context):
         db_floatingips = db.floating_ip_get_all(context)
         return obj_base.obj_make_list(context, cls(context),
-                                      db.FloatingIP, db_floatingips)
+                                      objects.FloatingIP, db_floatingips)
 
     @obj_base.remotable_classmethod
     def get_by_host(cls, context, host):
         db_floatingips = db.floating_ip_get_all_by_host(context, host)
         return obj_base.obj_make_list(context, cls(context),
-                                      compute.FloatingIP, db_floatingips)
+                                      objects.FloatingIP, db_floatingips)
 
     @obj_base.remotable_classmethod
     def get_by_project(cls, context, project_id):
         db_floatingips = db.floating_ip_get_all_by_project(context, project_id)
         return obj_base.obj_make_list(context, cls(context),
-                                      compute.FloatingIP, db_floatingips)
+                                      objects.FloatingIP, db_floatingips)
 
     @obj_base.remotable_classmethod
     def get_by_fixed_address(cls, context, fixed_address):
         db_floatingips = db.floating_ip_get_by_fixed_address(
             context, str(fixed_address))
         return obj_base.obj_make_list(context, cls(context),
-                                      compute.FloatingIP, db_floatingips)
+                                      objects.FloatingIP, db_floatingips)
 
     @obj_base.remotable_classmethod
     def get_by_fixed_ip_id(cls, context, fixed_ip_id):

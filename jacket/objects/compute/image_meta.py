@@ -17,7 +17,7 @@ import copy
 from oslo_utils import versionutils
 
 from jacket.compute import exception
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 from jacket.compute import utils
@@ -93,7 +93,7 @@ class ImageMeta(base.NovaObject):
         # so copy image_meta to avoid changing original
         image_meta = copy.deepcopy(image_meta)
         image_meta["properties"] = \
-            compute.ImageMetaProps.from_dict(
+            objects.ImageMetaProps.from_dict(
                 image_meta.get("properties", {}))
 
         # Some fields are nullable in Glance DB schema, but was not marked that

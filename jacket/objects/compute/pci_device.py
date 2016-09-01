@@ -20,9 +20,9 @@ from oslo_serialization import jsonutils
 from oslo_utils import versionutils
 
 from jacket.compute import context
-from jacket import db
+from jacket.db import compute as db
 from jacket.compute import exception
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 
@@ -98,7 +98,7 @@ class PciDevice(base.NovaPersistentObject, base.NovaObject):
     fields = {
         'id': fields.IntegerField(),
         # Note(yjiang5): the compute_node_id may be None because the pci
-        # device compute are created before the compute node is created in DB
+        # device objects are created before the compute node is created in DB
         'compute_node_id': fields.IntegerField(nullable=True),
         'address': fields.StringField(),
         'vendor_id': fields.StringField(),
@@ -121,7 +121,7 @@ class PciDevice(base.NovaPersistentObject, base.NovaObject):
         services = ('conductor', 'api')
         min_parent_addr_version = 4
 
-        min_deployed = min(compute.Service.get_minimum_version(
+        min_deployed = min(objects.Service.get_minimum_version(
             context.get_admin_context(), 'compute-' + service)
             for service in services)
         return min_deployed >= min_parent_addr_version
@@ -216,7 +216,7 @@ class PciDevice(base.NovaPersistentObject, base.NovaObject):
     def create(cls, context, dev_dict):
         """Create a PCI device based on hypervisor information.
 
-        As the device object is just created and is not synced with compute yet
+        As the device object is just created and is not synced with db yet
         thus we should not reset changes here for fields from dict.
         """
         pci_device = cls()
@@ -274,7 +274,7 @@ class PciDevice(base.NovaPersistentObject, base.NovaObject):
         if self.dev_type == fields.PciDeviceType.SRIOV_PF:
             # Update PF status to CLAIMED if all of it dependants are free
             # and set their status to UNCLAIMABLE
-            vfs_list = compute.PciDeviceList.get_by_parent_address(
+            vfs_list = objects.PciDeviceList.get_by_parent_address(
                                              self._context,
                                              self.compute_node_id,
                                              self.address)
@@ -338,7 +338,7 @@ class PciDevice(base.NovaPersistentObject, base.NovaObject):
                 address=self.address, owner=self.instance_uuid,
                 hopeowner=instance['uuid'])
         if self.dev_type == fields.PciDeviceType.SRIOV_PF:
-            vfs_list = compute.PciDeviceList.get_by_parent_address(
+            vfs_list = objects.PciDeviceList.get_by_parent_address(
                                              self._context,
                                              self.compute_node_id,
                                              self.address)
@@ -407,7 +407,7 @@ class PciDevice(base.NovaPersistentObject, base.NovaObject):
                 hopeowner=instance['uuid'])
         if self.dev_type == fields.PciDeviceType.SRIOV_PF:
             # Set all PF dependants status to AVAILABLE
-            vfs_list = compute.PciDeviceList.get_by_parent_address(
+            vfs_list = objects.PciDeviceList.get_by_parent_address(
                                              self._context,
                                              self.compute_node_id,
                                              self.address)
@@ -416,7 +416,7 @@ class PciDevice(base.NovaPersistentObject, base.NovaObject):
             free_devs.extend(vfs_list)
         if self.dev_type == fields.PciDeviceType.SRIOV_VF:
             # Set PF status to AVAILABLE if all of it's VFs are free
-            vfs_list = compute.PciDeviceList.get_by_parent_address(
+            vfs_list = objects.PciDeviceList.get_by_parent_address(
                                              self._context,
                                              self.compute_node_id,
                                              self.parent_addr)
@@ -473,13 +473,13 @@ class PciDeviceList(base.ObjectListBase, base.NovaObject):
     @base.remotable_classmethod
     def get_by_compute_node(cls, context, node_id):
         db_dev_list = db.pci_device_get_all_by_node(context, node_id)
-        return base.obj_make_list(context, cls(context), compute.PciDevice,
+        return base.obj_make_list(context, cls(context), objects.PciDevice,
                                   db_dev_list)
 
     @base.remotable_classmethod
     def get_by_instance_uuid(cls, context, uuid):
         db_dev_list = db.pci_device_get_all_by_instance_uuid(context, uuid)
-        return base.obj_make_list(context, cls(context), compute.PciDevice,
+        return base.obj_make_list(context, cls(context), objects.PciDevice,
                                   db_dev_list)
 
     @base.remotable_classmethod
@@ -487,5 +487,5 @@ class PciDeviceList(base.ObjectListBase, base.NovaObject):
         db_dev_list = db.pci_device_get_all_by_parent_addr(context,
                                                            node_id,
                                                            parent_addr)
-        return base.obj_make_list(context, cls(context), compute.PciDevice,
+        return base.obj_make_list(context, cls(context), objects.PciDevice,
                                   db_dev_list)

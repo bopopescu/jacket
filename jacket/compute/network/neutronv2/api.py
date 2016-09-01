@@ -35,7 +35,7 @@ from jacket.i18n import _, _LE, _LI, _LW
 from jacket.compute.network import base_api
 from jacket.compute.network import model as network_model
 from jacket.compute.network.neutronv2 import constants
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute.pci import manager as pci_manager
 from jacket.compute.pci import request as pci_request
 from jacket.compute.pci import whitelist as pci_whitelist
@@ -345,16 +345,16 @@ class API(base_api.NetworkAPI):
                                     requested_networks, hypervisor_macs=None):
         """Processes and validates requested networks for allocation.
 
-        Iterates over the list of NetworkRequest compute, validating the
+        Iterates over the list of NetworkRequest objects, validating the
         request and building sets of ports, networks and MAC addresses to
         use for allocating ports for the instance.
 
         :param instance: allocate networks on this instance
-        :type instance: compute.compute.Instance
+        :type instance: nova.objects.Instance
         :param neutron: neutron client session
         :type neutron: neutronclient.v2_0.client.Client
         :param requested_networks: list of NetworkRequests
-        :type requested_networks: compute.compute.NetworkRequestList
+        :type requested_networks: nova.objects.NetworkRequestList
         :param hypervisor_macs: None or a set of MAC addresses that the
             instance should use. hypervisor_macs are supplied by the hypervisor
             driver (contrast with requested_networks which is user supplied).
@@ -367,21 +367,21 @@ class API(base_api.NetworkAPI):
         :returns: tuple of:
             - ports: dict mapping of port id to port dict
             - net_ids: list of requested network ids
-            - ordered_networks: list of compute.compute.NetworkRequest compute
+            - ordered_networks: list of nova.objects.NetworkRequest objects
                 for requested networks (either via explicit network request
                 or the network for an explicit port request)
             - available_macs: set of available MAC addresses to use if creating
                 a port later; this is the set of hypervisor_macs after removing
                 any MAC addresses from explicitly requested ports.
-        :raises compute.exception.PortNotFound: If a requested port is not found
+        :raises nova.exception.PortNotFound: If a requested port is not found
             in Neutron.
-        :raises compute.exception.PortNotUsable: If a requested port is not owned
+        :raises nova.exception.PortNotUsable: If a requested port is not owned
             by the same tenant that the instance is created under. This error
             can also be raised if hypervisor_macs is not None and a requested
             port's MAC address is not in that set.
-        :raises compute.exception.PortInUse: If a requested port is already
+        :raises nova.exception.PortInUse: If a requested port is already
             attached to another instance.
-        :raises compute.exception.PortNotUsableDNS: If a requested port has a
+        :raises nova.exception.PortNotUsableDNS: If a requested port has a
             value assigned to its dns_name attribute.
         """
 
@@ -479,15 +479,15 @@ class API(base_api.NetworkAPI):
         port allocation.
 
         :param instance: allocate networks on this instance
-        :type instance: compute.compute.Instance
+        :type instance: nova.objects.Instance
         :param neutron: neutron client session
         :type neutron: neutronclient.v2_0.client.Client
         :param security_groups: list of requested security group name or IDs
             to use when allocating new ports for the instance
         :return: list of security group IDs to use when allocating new ports
-        :raises compute.exception.NoUniqueMatch: If multiple security groups
+        :raises nova.exception.NoUniqueMatch: If multiple security groups
             are requested with the same name.
-        :raises compute.exception.SecurityGroupNotFound: If a requested security
+        :raises nova.exception.SecurityGroupNotFound: If a requested security
             group is not in the tenant-filtered list of available security
             groups in Neutron.
         """
@@ -533,7 +533,7 @@ class API(base_api.NetworkAPI):
         """Allocate network resources for the instance.
 
         :param context: The request context.
-        :param instance: compute.compute.instance.Instance object.
+        :param instance: nova.objects.instance.Instance object.
         :param requested_networks: optional value containing
             network_id, fixed_ip, and port_id
         :param security_groups: security groups to allocate for instance
@@ -549,7 +549,7 @@ class API(base_api.NetworkAPI):
             determine the DHCP BOOTP response, eg. for PXE booting an instance
             configured with the baremetal hypervisor. It is expected that these
             are already formatted for the neutron v2 api.
-            See compute/virt/driver.py:dhcp_options_for_instance for an example.
+            See nova/virt/driver.py:dhcp_options_for_instance for an example.
         :param bind_host_id: the host ID to attach to the ports being created.
         """
         hypervisor_macs = kwargs.get('macs', None)
@@ -611,7 +611,7 @@ class API(base_api.NetworkAPI):
                          "ID to be more specific.")
                 raise exception.NetworkAmbiguous(msg)
             ordered_networks.append(
-                compute.NetworkRequest(network_id=nets[0]['id']))
+                objects.NetworkRequest(network_id=nets[0]['id']))
 
         # NOTE(melwitt): check external net attach permission after the
         #                check for ambiguity, there could be another
@@ -823,7 +823,7 @@ class API(base_api.NetworkAPI):
 
         requested_networks = kwargs.get('requested_networks') or []
         # NOTE(danms): Temporary and transitional
-        if isinstance(requested_networks, compute.NetworkRequestList):
+        if isinstance(requested_networks, objects.NetworkRequestList):
             requested_networks = requested_networks.as_tuples()
         ports_to_skip = set([port_id for nets, fips, port_id, pci_request_id
                              in requested_networks])
@@ -850,8 +850,8 @@ class API(base_api.NetworkAPI):
                                    network_id=None, requested_ip=None,
                                    bind_host_id=None):
         """Allocate a port for the instance."""
-        requested_networks = compute.NetworkRequestList(
-            compute=[compute.NetworkRequest(network_id=network_id,
+        requested_networks = objects.NetworkRequestList(
+            objects=[objects.NetworkRequest(network_id=network_id,
                                             address=requested_ip,
                                             port_id=port_id,
                                             pci_request_id=None)])
@@ -1088,7 +1088,7 @@ class API(base_api.NetworkAPI):
                     context, neutron, request_net.port_id)
             pci_request_id = None
             if vnic_type in network_model.VNIC_TYPES_SRIOV:
-                request = compute.InstancePCIRequest(
+                request = objects.InstancePCIRequest(
                     count=1,
                     spec=[{pci_request.PCI_NET_TAG: phynet_name}],
                     request_id=str(uuid.uuid4()))
@@ -1117,8 +1117,8 @@ class API(base_api.NetworkAPI):
 
             # TODO(danms): Remove me when all callers pass an object
             if isinstance(requested_networks[0], tuple):
-                requested_networks = compute.NetworkRequestList(
-                    compute=[compute.NetworkRequest.from_tuple(t)
+                requested_networks = objects.NetworkRequestList(
+                    objects=[objects.NetworkRequest.from_tuple(t)
                              for t in requested_networks])
 
             for request in requested_networks:
@@ -1256,7 +1256,7 @@ class API(base_api.NetworkAPI):
         """Associate a floating IP with a fixed IP."""
 
         # Note(amotoki): 'affect_auto_assigned' is not respected
-        # since it is not used anywhere in compute code and I could
+        # since it is not used anywhere in nova code and I could
         # find why this parameter exists.
 
         client = get_client(context)
@@ -1277,7 +1277,7 @@ class API(base_api.NetworkAPI):
             LOG.info(_LI('re-assign floating IP %(address)s from '
                          'instance %(instance_id)s'), msg_dict,
                      instance=instance)
-            orig_instance = compute.Instance.get_by_uuid(context,
+            orig_instance = objects.Instance.get_by_uuid(context,
                                                          orig_instance_uuid)
 
             # purge cached nw info for the original instance
@@ -1290,12 +1290,12 @@ class API(base_api.NetworkAPI):
         networks = client.list_networks().get('networks')
         network_objs = []
         for network in networks:
-            network_objs.append(compute.Network(context=context,
+            network_objs.append(objects.Network(context=context,
                                                 name=network['name'],
                                                 label=network['name'],
                                                 uuid=network['id']))
-        return compute.NetworkList(context=context,
-                                   compute=network_objs)
+        return objects.NetworkList(context=context,
+                                   objects=network_objs)
 
     def get(self, context, network_uuid):
         """Get specific network for client."""
@@ -1304,7 +1304,7 @@ class API(base_api.NetworkAPI):
             network = client.show_network(network_uuid).get('network') or {}
         except neutron_client_exc.NetworkNotFoundClient:
             raise exception.NetworkNotFound(network_id=network_uuid)
-        net_obj = compute.Network(context=context,
+        net_obj = objects.Network(context=context,
                                   name=network['name'],
                                   label=network['name'],
                                   uuid=network['id'])
@@ -1387,7 +1387,7 @@ class API(base_api.NetworkAPI):
         client = get_client(context)
         pools = self._get_floating_ip_pools(client)
         # Note(salv-orlando): Return a list of names to be consistent with
-        # compute.network.api.get_floating_ip_pools
+        # nova.network.api.get_floating_ip_pools
         return [n['name'] or n['id'] for n in pools]
 
     def _format_floating_ip_model(self, fip, pool_dict, port_dict):
@@ -1406,7 +1406,7 @@ class API(base_api.NetworkAPI):
             instance_uuid = port_dict[fip['port_id']]['device_id']
             result['instance'] = {'uuid': instance_uuid}
             # TODO(mriedem): remove this workaround once the get_floating_ip*
-            # API methods are converted to use compute compute.
+            # API methods are converted to use nova objects.
             result['fixed_ip']['instance_uuid'] = instance_uuid
         else:
             result['instance'] = None
@@ -1525,10 +1525,10 @@ class API(base_api.NetworkAPI):
         # Note(amotoki): We cannot handle a case where multiple pools
         # have overlapping IP address range. In this case we cannot use
         # 'address' as a unique key.
-        # This is a limitation of the current compute.
+        # This is a limitation of the current nova.
 
         # Note(amotoki): 'affect_auto_assigned' is not respected
-        # since it is not used anywhere in compute code and I could
+        # since it is not used anywhere in nova code and I could
         # find why this parameter exists.
 
         self._release_floating_ip(context, address)
@@ -1558,7 +1558,7 @@ class API(base_api.NetworkAPI):
         """Disassociate a floating IP from the instance."""
 
         # Note(amotoki): 'affect_auto_assigned' is not respected
-        # since it is not used anywhere in compute code and I could
+        # since it is not used anywhere in nova code and I could
         # find why this parameter exists.
 
         client = get_client(context)
@@ -1667,7 +1667,7 @@ class API(base_api.NetworkAPI):
 
     def _get_preexisting_port_ids(self, instance):
         """Retrieve the preexisting ports associated with the given instance.
-        These ports were not created by compute and hence should not be
+        These ports were not created by nova and hence should not be
         deallocated upon instance deletion.
         """
         net_info = compute_utils.get_nw_info_for_instance(instance)
@@ -1692,7 +1692,7 @@ class API(base_api.NetworkAPI):
                          this value will be populated from the existing
                          cached value.
         :param admin_client: A neutron client for the admin context.
-        :param preexisting_port_ids: List of port_ids that compute didn't
+        :param preexisting_port_ids: List of port_ids that nova didn't
                         allocate and there shouldn't be deleted when
                         an instance is de-allocated. Supplied list will
                         be added to the cached list of preexisting port
@@ -1850,11 +1850,11 @@ class API(base_api.NetworkAPI):
         raise NotImplementedError()
 
     def create_private_dns_domain(self, context, domain, availability_zone):
-        """Create a private DNS domain with compute availability zone."""
+        """Create a private DNS domain with nova availability zone."""
         raise NotImplementedError()
 
     def create_public_dns_domain(self, context, domain, project=None):
-        """Create a private DNS domain with optional compute project."""
+        """Create a private DNS domain with optional nova project."""
         raise NotImplementedError()
 
     def setup_instance_network_on_host(self, context, instance, host):

@@ -13,7 +13,7 @@
 #    under the License.
 
 from jacket import db
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 
@@ -68,5 +68,5 @@ class DNSDomainList(base.ObjectListBase, base.NovaObject):
     @base.remotable_classmethod
     def get_all(cls, context):
         db_domains = db.dnsdomain_get_all(context)
-        return base.obj_make_list(context, cls(context), compute.DNSDomain,
+        return base.obj_make_list(context, cls(context), objects.DNSDomain,
                                   db_domains)

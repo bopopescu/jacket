@@ -13,7 +13,7 @@
 #    under the License.
 
 from jacket.api.compute.ec2 import ec2utils
-from jacket import db
+from jacket.db import compute as db
 from jacket.compute import exception
 from jacket.objects.compute import base
 from jacket.objects.compute import fields

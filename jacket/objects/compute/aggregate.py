@@ -18,7 +18,7 @@ from oslo_utils import uuidutils
 from jacket.compute.cloud import utils as compute_utils
 from jacket import db
 from jacket.compute import exception
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 
@@ -207,13 +207,13 @@ class AggregateList(base.ObjectListBase, base.NovaObject):
     @base.remotable_classmethod
     def get_all(cls, context):
         db_aggregates = db.aggregate_get_all(context)
-        return base.obj_make_list(context, cls(context), compute.Aggregate,
+        return base.obj_make_list(context, cls(context), objects.Aggregate,
                                   db_aggregates)
 
     @base.remotable_classmethod
     def get_by_host(cls, context, host, key=None):
         db_aggregates = db.aggregate_get_by_host(context, host, key=key)
-        return base.obj_make_list(context, cls(context), compute.Aggregate,
+        return base.obj_make_list(context, cls(context), objects.Aggregate,
                                   db_aggregates)
 
     @base.remotable_classmethod
@@ -221,5 +221,5 @@ class AggregateList(base.ObjectListBase, base.NovaObject):
         db_aggregates = db.aggregate_get_by_metadata_key(context, key=key)
         if hosts is not None:
             db_aggregates = cls._filter_db_aggregates(db_aggregates, hosts)
-        return base.obj_make_list(context, cls(context), compute.Aggregate,
+        return base.obj_make_list(context, cls(context), objects.Aggregate,
                                   db_aggregates)

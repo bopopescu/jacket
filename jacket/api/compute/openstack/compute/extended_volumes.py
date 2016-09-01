@@ -16,7 +16,7 @@
 from jacket.api.compute.openstack import api_version_request
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.objects import compute
+from jacket.objects import compute as objects
 
 ALIAS = "os-extended-volumes"
 soft_authorize = extensions.os_compute_soft_authorizer(ALIAS)
@@ -46,7 +46,7 @@ class ExtendedVolumesController(wsgi.Controller):
         context = req.environ['compute.context']
         if soft_authorize(context):
             server = resp_obj.obj['server']
-            bdms = compute.BlockDeviceMappingList.bdms_by_instance_uuid(
+            bdms = objects.BlockDeviceMappingList.bdms_by_instance_uuid(
                 context, [server['id']])
             instance_bdms = self._get_instance_bdms(bdms, server)
             self._extend_server(context, server, req, instance_bdms)
@@ -57,7 +57,7 @@ class ExtendedVolumesController(wsgi.Controller):
         if soft_authorize(context):
             servers = list(resp_obj.obj['servers'])
             instance_uuids = [server['id'] for server in servers]
-            bdms = compute.BlockDeviceMappingList.bdms_by_instance_uuid(
+            bdms = objects.BlockDeviceMappingList.bdms_by_instance_uuid(
                 context, instance_uuids)
             for server in servers:
                 instance_bdms = self._get_instance_bdms(bdms, server)

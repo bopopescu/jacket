@@ -12,9 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from jacket import db
+from jacket.db import compute as db
 from jacket.compute import exception
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 
@@ -267,5 +267,5 @@ class FlavorList(base.ObjectListBase, base.NovaObject):
                                        filters=filters, sort_key=sort_key,
                                        sort_dir=sort_dir, limit=limit,
                                        marker=marker)
-        return base.obj_make_list(context, cls(context), compute.Flavor,
+        return base.obj_make_list(context, cls(context), objects.Flavor,
                                   db_flavors, expected_attrs=['extra_specs'])

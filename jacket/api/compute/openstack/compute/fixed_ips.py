@@ -21,7 +21,7 @@ from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
 from jacket.compute import exception
 from jacket.i18n import _
-from jacket.objects import compute
+from jacket.objects import compute as objects
 
 ALIAS = 'os-fixed-ips'
 authorize = extensions.os_compute_authorizer(ALIAS)
@@ -47,7 +47,7 @@ class FixedIPController(wsgi.Controller):
 
         attrs = ['network', 'instance']
         try:
-            fixed_ip = compute.FixedIP.get_by_address(context, id,
+            fixed_ip = objects.FixedIP.get_by_address(context, id,
                                                       expected_attrs=attrs)
         except exception.FixedIpNotFoundForAddress as ex:
             raise webob.exc.HTTPNotFound(explanation=ex.format_message())
@@ -94,7 +94,7 @@ class FixedIPController(wsgi.Controller):
 
     def _set_reserved(self, context, address, reserved):
         try:
-            fixed_ip = compute.FixedIP.get_by_address(context, address)
+            fixed_ip = objects.FixedIP.get_by_address(context, address)
             fixed_ip.reserved = reserved
             fixed_ip.save()
         except exception.FixedIpNotFoundForAddress:

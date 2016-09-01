@@ -18,10 +18,10 @@ from oslo_log import log as logging
 
 from jacket.compute.cells import opts as cells_opts
 from jacket.compute.cells import rpcapi as cells_rpcapi
-from jacket import db
+from jacket.db import compute as db
 from jacket.compute import exception
 from jacket.i18n import _LE
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 
@@ -107,5 +107,5 @@ class InstanceFaultList(base.ObjectListBase, base.NovaObject):
         db_faultdict = db.instance_fault_get_by_instance_uuids(context,
                                                                instance_uuids)
         db_faultlist = itertools.chain(*db_faultdict.values())
-        return base.obj_make_list(context, cls(context), compute.InstanceFault,
+        return base.obj_make_list(context, cls(context), objects.InstanceFault,
                                   db_faultlist)

@@ -25,7 +25,7 @@ from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
 from jacket.compute import exception
 from jacket.i18n import _
-from jacket.objects import compute
+from jacket.objects import compute as objects
 
 ALIAS = 'os-flavor-access'
 soft_authorize = extensions.os_compute_soft_authorizer(ALIAS)
@@ -130,7 +130,7 @@ class FlavorActionController(wsgi.Controller):
         vals = body['removeTenantAccess']
         tenant = vals['tenant']
 
-        flavor = compute.Flavor(context=context, flavorid=id)
+        flavor = objects.Flavor(context=context, flavorid=id)
         try:
             flavor.remove_access(tenant)
         except (exception.FlavorAccessNotFound,

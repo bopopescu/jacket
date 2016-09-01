@@ -28,7 +28,7 @@ from jacket.api.compute import validation
 import jacket.compute.exception
 from jacket.i18n import _
 from jacket.i18n import _LE
-from jacket.objects import compute
+from jacket.objects import compute as objects
 
 LOG = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ class ServerGroupController(wsgi.Controller):
         if group.members:
             # Display the instances that are not deleted.
             filters = {'uuid': group.members, 'deleted': False}
-            instances = compute.InstanceList.get_by_filters(
+            instances = objects.InstanceList.get_by_filters(
                 context, filters=filters)
             members = [instance.uuid for instance in instances]
         server_group['members'] = members
@@ -79,7 +79,7 @@ class ServerGroupController(wsgi.Controller):
         """Return data about the given server group."""
         context = _authorize_context(req)
         try:
-            sg = compute.InstanceGroup.get_by_uuid(context, id)
+            sg = objects.InstanceGroup.get_by_uuid(context, id)
         except jacket.compute.exception.InstanceGroupNotFound as e:
             raise webob.exc.HTTPNotFound(explanation=e.format_message())
         return {'server_group': self._format_server_group(context, sg, req)}
@@ -90,12 +90,12 @@ class ServerGroupController(wsgi.Controller):
         """Delete an server group."""
         context = _authorize_context(req)
         try:
-            sg = compute.InstanceGroup.get_by_uuid(context, id)
+            sg = objects.InstanceGroup.get_by_uuid(context, id)
         except jacket.compute.exception.InstanceGroupNotFound as e:
             raise webob.exc.HTTPNotFound(explanation=e.format_message())
 
-        quotas = compute.Quotas(context=context)
-        project_id, user_id = compute.quotas.ids_from_server_group(context, sg)
+        quotas = objects.Quotas(context=context)
+        project_id, user_id = objects.quotas.ids_from_server_group(context, sg)
         try:
             # We have to add the quota back to the user that created
             # the server group
@@ -122,9 +122,9 @@ class ServerGroupController(wsgi.Controller):
         context = _authorize_context(req)
         project_id = context.project_id
         if 'all_projects' in req.GET and context.is_admin:
-            sgs = compute.InstanceGroupList.get_all(context)
+            sgs = objects.InstanceGroupList.get_all(context)
         else:
-            sgs = compute.InstanceGroupList.get_by_project_id(
+            sgs = objects.InstanceGroupList.get_by_project_id(
                     context, project_id)
         limited_list = common.limited(sgs.objects, req)
         result = [self._format_server_group(context, group, req)
@@ -139,7 +139,7 @@ class ServerGroupController(wsgi.Controller):
         """Creates a new server group."""
         context = _authorize_context(req)
 
-        quotas = compute.Quotas(context=context)
+        quotas = objects.Quotas(context=context)
         try:
             quotas.reserve(project_id=context.project_id,
                            user_id=context.user_id, server_groups=1)
@@ -148,7 +148,7 @@ class ServerGroupController(wsgi.Controller):
             raise exc.HTTPForbidden(explanation=msg)
 
         vals = body['server_group']
-        sg = compute.InstanceGroup(context)
+        sg = objects.InstanceGroup(context)
         sg.project_id = context.project_id
         sg.user_id = context.user_id
         try:

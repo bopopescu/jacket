@@ -29,7 +29,7 @@ from jacket.compute.cloud import vm_states
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.compute import network
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute import utils
 
 CONF = cfg.CONF
@@ -158,7 +158,7 @@ class CloudpipeController(wsgi.Controller):
             raise exc.HTTPBadRequest(explanation=msg)
 
         project_id = context.project_id
-        networks = cloud.NetworkList.get_by_project(context, project_id)
+        networks = objects.NetworkList.get_by_project(context, project_id)
 
         params = body['configure_project']
         vpn_ip = params['vpn_ip']

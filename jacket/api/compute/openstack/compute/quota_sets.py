@@ -24,7 +24,7 @@ from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
 from jacket.compute import exception
 from jacket.i18n import _
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute import quota
 
 
@@ -137,10 +137,10 @@ class QuotaSetsController(wsgi.Controller):
         # the validation up front in the loop above.
         for key, value in valid_quotas.items():
             try:
-                compute.Quotas.create_limit(context, project_id,
+                objects.Quotas.create_limit(context, project_id,
                                             key, value, user_id=user_id)
             except exception.QuotaExists:
-                compute.Quotas.update_limit(context, project_id,
+                objects.Quotas.update_limit(context, project_id,
                                             key, value, user_id=user_id)
         # Note(gmann): Removed 'id' from update's response to make it same
         # as V2. If needed it can be added with microversion.

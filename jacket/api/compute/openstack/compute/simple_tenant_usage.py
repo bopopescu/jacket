@@ -25,7 +25,7 @@ from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.compute import exception
 from jacket.i18n import _
-from jacket.objects import compute
+from jacket.objects import compute as objects
 
 ALIAS = "os-simple-tenant-usage"
 authorize = extensions.os_compute_authorizer(ALIAS)
@@ -89,7 +89,7 @@ class SimpleTenantUsageController(wsgi.Controller):
             return flavors_cache[flavor_type]
 
         try:
-            flavor_ref = compute.Flavor.get_by_id(context, flavor_type)
+            flavor_ref = objects.Flavor.get_by_id(context, flavor_type)
             flavors_cache[flavor_type] = flavor_ref
         except exception.FlavorNotFound:
             # can't bill if there is no flavor
@@ -100,7 +100,7 @@ class SimpleTenantUsageController(wsgi.Controller):
     def _tenant_usages_for_period(self, context, period_start,
                                   period_stop, tenant_id=None, detailed=True):
 
-        instances = compute.InstanceList.get_active_by_window_joined(
+        instances = objects.InstanceList.get_active_by_window_joined(
                         context, period_start, period_stop, tenant_id,
                         expected_attrs=['flavor'])
         rval = {}
@@ -128,7 +128,7 @@ class SimpleTenantUsageController(wsgi.Controller):
 
             # NOTE(mriedem): We need to normalize the start/end times back
             # to timezone-naive so the response doesn't change after the
-            # conversion to compute.
+            # conversion to objects.
             info['started_at'] = timeutils.normalize_time(instance.launched_at)
 
             info['ended_at'] = (

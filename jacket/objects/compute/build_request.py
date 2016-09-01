@@ -19,7 +19,7 @@ from jacket.db.compute.sqlalchemy import api as db
 from jacket.db.compute.sqlalchemy import api_models
 from jacket.compute import exception
 from jacket.i18n import _LE
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 
@@ -64,15 +64,15 @@ class BuildRequest(base.NovaObject):
     }
 
     def _load_request_spec(self, db_spec):
-        self.request_spec = compute.RequestSpec._from_db_object(self._context,
-                compute.RequestSpec(), db_spec)
+        self.request_spec = objects.RequestSpec._from_db_object(self._context,
+                objects.RequestSpec(), db_spec)
 
     def _load_info_cache(self, db_info_cache):
-        self.info_cache = compute.InstanceInfoCache.obj_from_primitive(
+        self.info_cache = objects.InstanceInfoCache.obj_from_primitive(
                 jsonutils.loads(db_info_cache))
 
     def _load_security_groups(self, db_sec_group):
-        self.security_groups = compute.SecurityGroupList.obj_from_primitive(
+        self.security_groups = objects.SecurityGroupList.obj_from_primitive(
                 jsonutils.loads(db_sec_group))
 
     @staticmethod

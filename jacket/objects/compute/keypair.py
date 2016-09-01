@@ -14,9 +14,9 @@
 
 from oslo_utils import versionutils
 
-from jacket import db
+from jacket.db import compute as db
 from jacket.compute import exception
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 
@@ -95,7 +95,7 @@ class KeyPairList(base.ObjectListBase, base.NovaObject):
     @base.remotable_classmethod
     def get_by_user(cls, context, user_id):
         db_keypairs = db.key_pair_get_all_by_user(context, user_id)
-        return base.obj_make_list(context, cls(context), compute.KeyPair,
+        return base.obj_make_list(context, cls(context), objects.KeyPair,
                                   db_keypairs)
 
     @base.remotable_classmethod

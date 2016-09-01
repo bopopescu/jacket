@@ -23,7 +23,7 @@ from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
 from jacket.compute import exception
 from jacket.i18n import _
-from jacket.objects import compute
+from jacket.objects import compute as objects
 
 CONF = cfg.CONF
 CONF.import_opt('default_floating_pool', 'jacket.compute.network.floating_ips')
@@ -57,12 +57,12 @@ class FloatingIPBulkController(wsgi.Controller):
 
         if host is None:
             try:
-                floating_ips = compute.FloatingIPList.get_all(context)
+                floating_ips = objects.FloatingIPList.get_all(context)
             except exception.NoFloatingIpsDefined:
                 return floating_ip_info
         else:
             try:
-                floating_ips = compute.FloatingIPList.get_by_host(context,
+                floating_ips = objects.FloatingIPList.get_by_host(context,
                                                                   host)
             except exception.FloatingIpNotFoundForHost as e:
                 raise webob.exc.HTTPNotFound(explanation=e.format_message())
@@ -98,13 +98,13 @@ class FloatingIPBulkController(wsgi.Controller):
         interface = params.get('interface', CONF.public_interface)
 
         try:
-            ips = [compute.FloatingIPList.make_ip_info(addr, pool, interface)
+            ips = [objects.FloatingIPList.make_ip_info(addr, pool, interface)
                    for addr in self._address_to_hosts(ip_range)]
         except exception.InvalidInput as exc:
             raise webob.exc.HTTPBadRequest(explanation=exc.format_message())
 
         try:
-            compute.FloatingIPList.create(context, ips)
+            objects.FloatingIPList.create(context, ips)
         except exception.FloatingIpExists as exc:
             raise webob.exc.HTTPConflict(explanation=exc.format_message())
 
@@ -124,11 +124,11 @@ class FloatingIPBulkController(wsgi.Controller):
             raise webob.exc.HTTPNotFound(explanation=msg)
         ip_range = body['ip_range']
         try:
-            ips = (compute.FloatingIPList.make_ip_info(address, None, None)
+            ips = (objects.FloatingIPList.make_ip_info(address, None, None)
                    for address in self._address_to_hosts(ip_range))
         except exception.InvalidInput as exc:
             raise webob.exc.HTTPBadRequest(explanation=exc.format_message())
-        compute.FloatingIPList.destroy(context, ips)
+        objects.FloatingIPList.destroy(context, ips)
 
         return {"floating_ips_bulk_delete": ip_range}
 

@@ -12,8 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from jacket import db
-from jacket.objects import compute
+from jacket.db import compute as db
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 
@@ -93,32 +93,32 @@ class SecurityGroupList(base.ObjectListBase, base.NovaObject):
     def get_all(cls, context):
         groups = db.security_group_get_all(context)
         return base.obj_make_list(context, cls(context),
-                                  compute.SecurityGroup, groups)
+                                  objects.SecurityGroup, groups)
 
     @base.remotable_classmethod
     def get_by_project(cls, context, project_id):
         groups = db.security_group_get_by_project(context, project_id)
         return base.obj_make_list(context, cls(context),
-                                  compute.SecurityGroup, groups)
+                                  objects.SecurityGroup, groups)
 
     @base.remotable_classmethod
     def get_by_instance(cls, context, instance):
         groups = db.security_group_get_by_instance(context, instance.uuid)
         return base.obj_make_list(context, cls(context),
-                                  compute.SecurityGroup, groups)
+                                  objects.SecurityGroup, groups)
 
 
 def make_secgroup_list(security_groups):
-    """A helper to make security group compute from a list of names.
+    """A helper to make security group objects from a list of names.
 
     Note that this does not make them save-able or have the rest of the
     attributes they would normally have, but provides a quick way to fill,
     for example, an instance object during create.
     """
-    secgroups = compute.SecurityGroupList()
+    secgroups = objects.SecurityGroupList()
     secgroups.objects = []
     for name in security_groups:
-        secgroup = compute.SecurityGroup()
+        secgroup = objects.SecurityGroup()
         secgroup.name = name
         secgroups.objects.append(secgroup)
     return secgroups

@@ -16,7 +16,7 @@ from oslo_log import log as logging
 
 from jacket.compute.cells import opts as cells_opts
 from jacket.compute.cells import rpcapi as cells_rpcapi
-from jacket import db
+from jacket.db import compute as db
 from jacket.compute import exception
 from jacket.i18n import _LE
 from jacket.objects.compute import base

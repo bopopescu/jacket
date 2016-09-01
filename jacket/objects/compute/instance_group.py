@@ -16,9 +16,9 @@ from oslo_utils import uuidutils
 from oslo_utils import versionutils
 
 from jacket.compute.cloud import utils as compute_utils
-from jacket import db
+from jacket.db import compute as db
 from jacket.compute import exception
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 
@@ -66,7 +66,7 @@ class InstanceGroup(base.NovaPersistentObject, base.NovaObject,
 
     @staticmethod
     def _from_db_object(context, instance_group, db_inst):
-        """Method to help with migration to compute.
+        """Method to help with migration to objects.
 
         Converts a database entity to a formal object.
         """
@@ -100,10 +100,10 @@ class InstanceGroup(base.NovaPersistentObject, base.NovaObject,
     @base.remotable_classmethod
     def get_by_name(cls, context, name):
         # TODO(russellb) We need to get the group by name here.  There's no
-        # compute.api method for this yet.  Come back and optimize this by
+        # db.api method for this yet.  Come back and optimize this by
         # adding a new query by name.  This is unnecessarily expensive if a
         # tenant has lots of groups.
-        igs = compute.InstanceGroupList.get_by_project_id(context,
+        igs = objects.InstanceGroupList.get_by_project_id(context,
                                                           context.project_id)
         for ig in igs:
             if ig.name == name:
@@ -212,7 +212,7 @@ class InstanceGroup(base.NovaPersistentObject, base.NovaObject,
         if exclude:
             filter_uuids = set(filter_uuids) - set(exclude)
         filters = {'uuid': filter_uuids, 'deleted': False}
-        instances = compute.InstanceList.get_by_filters(self._context,
+        instances = objects.InstanceList.get_by_filters(self._context,
                                                         filters=filters)
         return list(set([instance.host for instance in instances
                          if instance.host]))
@@ -222,7 +222,7 @@ class InstanceGroup(base.NovaPersistentObject, base.NovaObject,
         """Count the number of instances in a group belonging to a user."""
         filter_uuids = self.members
         filters = {'uuid': filter_uuids, 'user_id': user_id, 'deleted': False}
-        instances = compute.InstanceList.get_by_filters(self._context,
+        instances = objects.InstanceList.get_by_filters(self._context,
                                                         filters=filters)
         return len(instances)
 
@@ -247,11 +247,11 @@ class InstanceGroupList(base.ObjectListBase, base.NovaObject):
     @base.remotable_classmethod
     def get_by_project_id(cls, context, project_id):
         groups = db.instance_group_get_all_by_project_id(context, project_id)
-        return base.obj_make_list(context, cls(context), compute.InstanceGroup,
+        return base.obj_make_list(context, cls(context), objects.InstanceGroup,
                                   groups)
 
     @base.remotable_classmethod
     def get_all(cls, context):
         groups = db.instance_group_get_all(context)
-        return base.obj_make_list(context, cls(context), compute.InstanceGroup,
+        return base.obj_make_list(context, cls(context), objects.InstanceGroup,
                                   groups)

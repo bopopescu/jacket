@@ -14,9 +14,9 @@
 
 from oslo_utils import versionutils
 
-from jacket import db
+from jacket.db import compute as db
 from jacket.compute import exception
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 
@@ -142,7 +142,7 @@ class Migration(base.NovaPersistentObject, base.NovaObject,
     @property
     def instance(self):
         if not hasattr(self, '_cached_instance'):
-            self._cached_instance = compute.Instance.get_by_uuid(
+            self._cached_instance = objects.Instance.get_by_uuid(
                 self._context, self.instance_uuid)
         return self._cached_instance
 
@@ -177,20 +177,20 @@ class MigrationList(base.ObjectListBase, base.NovaObject):
                                         dest_compute, use_slave=False):
         db_migrations = cls._db_migration_get_unconfirmed_by_dest_compute(
             context, confirm_window, dest_compute, use_slave=use_slave)
-        return base.obj_make_list(context, cls(context), compute.Migration,
+        return base.obj_make_list(context, cls(context), objects.Migration,
                                   db_migrations)
 
     @base.remotable_classmethod
     def get_in_progress_by_host_and_node(cls, context, host, node):
         db_migrations = db.migration_get_in_progress_by_host_and_node(
             context, host, node)
-        return base.obj_make_list(context, cls(context), compute.Migration,
+        return base.obj_make_list(context, cls(context), objects.Migration,
                                   db_migrations)
 
     @base.remotable_classmethod
     def get_by_filters(cls, context, filters):
         db_migrations = db.migration_get_all_by_filters(context, filters)
-        return base.obj_make_list(context, cls(context), compute.Migration,
+        return base.obj_make_list(context, cls(context), objects.Migration,
                                   db_migrations)
 
     @base.remotable_classmethod
@@ -198,5 +198,5 @@ class MigrationList(base.ObjectListBase, base.NovaObject):
                                     migration_type=None):
         db_migrations = db.migration_get_in_progress_by_instance(
             context, instance_uuid, migration_type)
-        return base.obj_make_list(context, cls(context), compute.Migration,
+        return base.obj_make_list(context, cls(context), objects.Migration,
                                   db_migrations)

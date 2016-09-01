@@ -12,9 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from jacket import db
+from jacket.db import compute as db
 from jacket.compute import exception
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 
@@ -41,8 +41,8 @@ class SecurityGroupRule(base.NovaPersistentObject, base.NovaObject):
     def _from_db_subgroup(context, db_group):
         if db_group is None:
             return None
-        return compute.SecurityGroup._from_db_object(
-            context, compute.SecurityGroup(context), db_group)
+        return objects.SecurityGroup._from_db_object(
+            context, objects.SecurityGroup(context), db_group)
 
     @staticmethod
     def _from_db_object(context, rule, db_rule, expected_attrs=None):
@@ -91,7 +91,7 @@ class SecurityGroupRuleList(base.ObjectListBase, base.NovaObject):
         db_rules = db.security_group_rule_get_by_security_group(
             context, secgroup_id, columns_to_join=['grantee_group'])
         return base.obj_make_list(context, cls(context),
-                                  compute.SecurityGroupRule, db_rules,
+                                  objects.SecurityGroupRule, db_rules,
                                   expected_attrs=['grantee_group'])
 
     @classmethod
@@ -103,7 +103,7 @@ class SecurityGroupRuleList(base.ObjectListBase, base.NovaObject):
         db_rules = db.security_group_rule_get_by_instance(context,
                                                           instance_uuid)
         return base.obj_make_list(context, cls(context),
-                                  compute.SecurityGroupRule, db_rules,
+                                  objects.SecurityGroupRule, db_rules,
                                   expected_attrs=['grantee_group'])
 
     @classmethod

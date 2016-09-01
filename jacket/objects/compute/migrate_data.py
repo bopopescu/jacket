@@ -16,7 +16,7 @@ from oslo_log import log
 from oslo_serialization import jsonutils
 from oslo_utils import versionutils
 
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base as obj_base
 from jacket.objects.compute import fields
 
@@ -147,7 +147,7 @@ class LibvirtLiveMigrateData(LiveMigrateData):
         volume = legacy_pre_result.get('volume', {})
         for serial in volume:
             vol = volume[serial]
-            bdmi = compute.LibvirtLiveMigrateBDMInfo(serial=serial)
+            bdmi = objects.LibvirtLiveMigrateBDMInfo(serial=serial)
             bdmi.connection_info = vol['connection_info']
             bdmi.bus = vol['disk_info']['bus']
             bdmi.dev = vol['disk_info']['dev']

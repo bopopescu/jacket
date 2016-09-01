@@ -14,7 +14,7 @@
 
 from jacket import db
 from jacket.compute import exception
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 
@@ -47,7 +47,7 @@ class Agent(base.NovaPersistentObject, base.NovaObject):
                                                 os, architecture)
         if not db_agent:
             return None
-        return cls._from_db_object(context, compute.Agent(), db_agent)
+        return cls._from_db_object(context, objects.Agent(), db_agent)
 
     @base.remotable
     def create(self):
@@ -80,4 +80,4 @@ class AgentList(base.ObjectListBase, base.NovaObject):
     @base.remotable_classmethod
     def get_all(cls, context, hypervisor=None):
         db_agents = db.agent_build_get_all(context, hypervisor=hypervisor)
-        return base.obj_make_list(context, cls(), compute.Agent, db_agents)
+        return base.obj_make_list(context, cls(), objects.Agent, db_agents)

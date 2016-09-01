@@ -27,7 +27,7 @@ from jacket.api.compute import validation
 from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _LI
-from jacket.objects import compute
+from jacket.objects import compute as objects
 
 LOG = logging.getLogger(__name__)
 ALIAS = 'os-hosts'
@@ -268,7 +268,7 @@ class HostController(wsgi.Controller):
         host_name = id
         try:
             compute_node = (
-                cloud.ComputeNode.get_first_node_by_host_for_old_compat(
+                objects.ComputeNode.get_first_node_by_host_for_old_compat(
                     context, host_name))
         except exception.ComputeHostNotFound as e:
             raise webob.exc.HTTPNotFound(explanation=e.format_message())

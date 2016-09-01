@@ -64,7 +64,7 @@ remotable = ovoo_base.remotable
 class NovaObject(ovoo_base.VersionedObject):
     """Base class and object factory.
 
-    This forms the base of all compute that can be remoted or instantiated
+    This forms the base of all objects that can be remoted or instantiated
     via RPC. Simply defining a class that inherits from this base class
     will make it remotely instantiatable. Objects should implement the
     necessary "get" classmethod routines as well as "save" object methods
@@ -98,7 +98,7 @@ class NovaObject(ovoo_base.VersionedObject):
 
         :param fields: List of fields to reset, or "all" if None.
         :param recursive: Call obj_reset_changes(recursive=True) on
-                          any sub-compute within the list of fields
+                          any sub-objects within the list of fields
                           being reset.
         """
         if recursive:
@@ -178,10 +178,10 @@ class NovaObjectDictCompat(ovoo_base.VersionedObjectDictCompat):
 
 
 class NovaTimestampObject(object):
-    """Mixin class for db backed compute with timestamp fields.
+    """Mixin class for db backed objects with timestamp fields.
 
     Sqlalchemy models that inherit from the oslo_db TimestampMixin will include
-    these fields and the corresponding compute will benefit from this mixin.
+    these fields and the corresponding objects will benefit from this mixin.
     """
     fields = {
         'created_at': obj_fields.DateTimeField(nullable=True),
@@ -190,9 +190,9 @@ class NovaTimestampObject(object):
 
 
 class NovaPersistentObject(object):
-    """Mixin class for Persistent compute.
+    """Mixin class for Persistent objects.
 
-    This adds the fields that we use in common for most persistent compute.
+    This adds the fields that we use in common for most persistent objects.
     """
     fields = {
         'created_at': obj_fields.DateTimeField(nullable=True),
@@ -225,7 +225,7 @@ class NovaObjectSerializer(messaging.NoOpSerializer):
     This implements the Oslo Serializer interface and provides the
     ability to serialize and deserialize NovaObject entities. Any service
     that needs to accept or return NovaObjects as arguments or result values
-    should pass this to its RPCClient and RPCServer compute.
+    should pass this to its RPCClient and RPCServer objects.
     """
 
     @property
@@ -322,7 +322,7 @@ def obj_make_dict_of_lists(context, list_cls, obj_list, item_key):
 
     :param:context: Request context
     :param:list_cls: The ObjectListBase class
-    :param:obj_list: The list of compute to place in the dictionary
+    :param:obj_list: The list of objects to place in the dictionary
     :param:item_key: The object attribute name to use as a dictionary key
     """
 
@@ -347,8 +347,8 @@ def obj_make_list(context, list_obj, item_cls, db_list, **extra_args):
 
     :param:context: Request context
     :param:list_obj: An ObjectListBase object
-    :param:item_cls: The NovaObject class of the compute within the list
-    :param:db_list: The list of primitives to convert to compute
+    :param:item_cls: The NovaObject class of the objects within the list
+    :param:db_list: The list of primitives to convert to objects
     :param:extra_args: Extra arguments to pass to _from_db_object()
     :returns: list_obj
     """
@@ -389,7 +389,7 @@ def serialize_args(fn):
 def obj_equal_prims(obj_1, obj_2, ignore=None):
     """Compare two primitives for equivalence ignoring some keys.
 
-    This operation tests the primitives of two compute for equivalence.
+    This operation tests the primitives of two objects for equivalence.
     Object primitives may contain a list identifying fields that have been
     changed - this is ignored in the comparison. The ignore parameter lists
     any other keys to be ignored.

@@ -123,7 +123,7 @@ class Service(base.NovaPersistentObject, base.NovaObject,
     def __init__(self, *args, **kwargs):
         # NOTE(danms): We're going against the rules here and overriding
         # init. The reason is that we want to *ensure* that we're always
-        # setting the current service version on our compute, overriding
+        # setting the current service version on our objects, overriding
         # whatever else might be set in the database, or otherwise (which
         # is the normal reason not to override init).
         #
@@ -161,11 +161,11 @@ class Service(base.NovaPersistentObject, base.NovaObject,
             # NOTE(sbauza): Some drivers (VMware, Ironic) can have multiple
             # nodes for the same service, but for keeping same behaviour,
             # returning only the first elem of the list
-            compute = compute.ComputeNodeList.get_all_by_host(
+            compute = objects.ComputeNodeList.get_all_by_host(
                 context, primitive['host'])[0]
         except Exception:
             return
-        primitive['compute_node'] = objects.obj_to_primitive(
+        primitive['compute_node'] = compute.obj_to_primitive(
             target_version=target_version,
             version_manifest=version_manifest)
 

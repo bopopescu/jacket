@@ -12,9 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from jacket import db
+from jacket.db import compute as db
 from jacket.compute import exception
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 
@@ -91,7 +91,7 @@ class VirtualInterfaceList(base.ObjectListBase, base.NovaObject):
     def get_all(cls, context):
         db_vifs = db.virtual_interface_get_all(context)
         return base.obj_make_list(context, cls(context),
-                                  compute.VirtualInterface, db_vifs)
+                                  objects.VirtualInterface, db_vifs)
 
     @staticmethod
     @db.select_db_reader_mode
@@ -104,4 +104,4 @@ class VirtualInterfaceList(base.ObjectListBase, base.NovaObject):
         db_vifs = cls._db_virtual_interface_get_by_instance(
             context, instance_uuid, use_slave=use_slave)
         return base.obj_make_list(context, cls(context),
-                                  compute.VirtualInterface, db_vifs)
+                                  objects.VirtualInterface, db_vifs)

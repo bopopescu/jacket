@@ -17,10 +17,10 @@ from oslo_log import log as logging
 from jacket.compute import block_device
 from jacket.compute.cells import opts as cells_opts
 from jacket.compute.cells import rpcapi as cells_rpcapi
-from jacket import db
+from jacket.db import compute as db
 from jacket.compute import exception
 from jacket.i18n import _, _LW
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 
@@ -93,7 +93,7 @@ class BlockDeviceMapping(base.NovaPersistentObject, base.NovaObject,
                 continue
             block_device_obj[key] = db_block_device[key]
         if 'instance' in expected_attrs:
-            my_inst = compute.Instance(context)
+            my_inst = objects.Instance(context)
             my_inst._from_db_object(context, my_inst,
                                     db_block_device['instance'])
             block_device_obj.instance = my_inst
@@ -213,7 +213,7 @@ class BlockDeviceMapping(base.NovaPersistentObject, base.NovaObject,
                             'BDMs for volume %(volume)s'),
                         {'volume': volume_id})
         db_bdm = db_bdms[0]
-        # NOTE (ndipanov): Move this to the compute layer into a
+        # NOTE (ndipanov): Move this to the db layer into a
         # get_by_instance_and_volume_id method
         if instance_uuid and instance_uuid != db_bdm['instance_uuid']:
             raise exception.InvalidVolume(
@@ -278,7 +278,7 @@ class BlockDeviceMapping(base.NovaPersistentObject, base.NovaObject,
                    'name': self.obj_name(),
                    'uuid': self.uuid,
                    })
-        self.instance = compute.Instance.get_by_uuid(self._context,
+        self.instance = objects.Instance.get_by_uuid(self._context,
                                                      self.instance_uuid)
         self.obj_reset_changes(fields=['instance'])
 
@@ -334,7 +334,7 @@ class BlockDeviceMappingList(base.ObjectListBase, base.NovaObject):
         db_bdms = cls._db_block_device_mapping_get_all_by_instance_uuids(
             context, instance_uuids, use_slave=use_slave)
         return base.obj_make_list(
-                context, cls(), compute.BlockDeviceMapping, db_bdms or [])
+                context, cls(), objects.BlockDeviceMapping, db_bdms or [])
 
     @staticmethod
     @db.select_db_reader_mode
@@ -348,7 +348,7 @@ class BlockDeviceMappingList(base.ObjectListBase, base.NovaObject):
         db_bdms = cls._db_block_device_mapping_get_all_by_instance(
             context, instance_uuid, use_slave=use_slave)
         return base.obj_make_list(
-                context, cls(), compute.BlockDeviceMapping, db_bdms or [])
+                context, cls(), objects.BlockDeviceMapping, db_bdms or [])
 
     def root_bdm(self):
         """It only makes sense to call this method when the
@@ -372,12 +372,12 @@ class BlockDeviceMappingList(base.ObjectListBase, base.NovaObject):
 
 def block_device_make_list(context, db_list, **extra_args):
     return base.obj_make_list(context,
-                              compute.BlockDeviceMappingList(context),
-                              compute.BlockDeviceMapping, db_list,
+                              objects.BlockDeviceMappingList(context),
+                              objects.BlockDeviceMapping, db_list,
                               **extra_args)
 
 
 def block_device_make_list_from_dicts(context, bdm_dicts_list):
-    bdm_objects = [compute.BlockDeviceMapping(context=context, **bdm)
+    bdm_objects = [objects.BlockDeviceMapping(context=context, **bdm)
                    for bdm in bdm_dicts_list]
     return BlockDeviceMappingList(objects=bdm_objects)

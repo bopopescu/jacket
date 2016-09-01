@@ -15,7 +15,7 @@ from sqlalchemy.orm import joinedload
 from jacket.db.compute.sqlalchemy import api as db_api
 from jacket.db.compute.sqlalchemy import models
 from jacket.compute import exception
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 
@@ -193,5 +193,5 @@ class InventoryList(base.ObjectListBase, base.NovaObject):
     def get_all_by_resource_provider_uuid(cls, context, rp_uuid):
         db_inventory_list = cls._get_all_by_resource_provider(context,
                                                               rp_uuid)
-        return base.obj_make_list(context, cls(context), compute.Inventory,
+        return base.obj_make_list(context, cls(context), objects.Inventory,
                                   db_inventory_list)

@@ -10,8 +10,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from jacket import db
-from jacket.objects import compute
+from jacket.db import compute as db
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 
@@ -62,12 +62,12 @@ class TagList(base.ObjectListBase, base.NovaObject):
     @base.remotable_classmethod
     def get_by_resource_id(cls, context, resource_id):
         db_tags = db.instance_tag_get_by_instance_uuid(context, resource_id)
-        return base.obj_make_list(context, cls(), compute.Tag, db_tags)
+        return base.obj_make_list(context, cls(), objects.Tag, db_tags)
 
     @base.remotable_classmethod
     def create(cls, context, resource_id, tags):
         db_tags = db.instance_tag_set(context, resource_id, tags)
-        return base.obj_make_list(context, cls(), compute.Tag, db_tags)
+        return base.obj_make_list(context, cls(), objects.Tag, db_tags)
 
     @base.remotable_classmethod
     def destroy(cls, context, resource_id):

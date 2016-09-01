@@ -24,7 +24,7 @@ from oslo_utils import importutils
 from oslo_utils import timeutils
 import six
 
-from jacket.db import compute
+from jacket.db import compute as db
 from jacket.objects import compute as objects
 from jacket.compute import exception
 from jacket.i18n import _LE
@@ -94,17 +94,17 @@ class DbQuotaDriver(object):
     def get_by_project_and_user(self, context, project_id, user_id, resource):
         """Get a specific quota by project and user."""
 
-        return compute.quota_get(context, project_id, resource, user_id=user_id)
+        return db.quota_get(context, project_id, resource, user_id=user_id)
 
     def get_by_project(self, context, project_id, resource):
         """Get a specific quota by project."""
 
-        return compute.quota_get(context, project_id, resource)
+        return db.quota_get(context, project_id, resource)
 
     def get_by_class(self, context, quota_class, resource):
         """Get a specific quota by quota class."""
 
-        return compute.quota_class_get(context, quota_class, resource)
+        return db.quota_class_get(context, quota_class, resource)
 
     def get_defaults(self, context, resources):
         """Given a list of resources, retrieve the default quotas.
@@ -116,7 +116,7 @@ class DbQuotaDriver(object):
         """
 
         quotas = {}
-        default_quotas = compute.quota_class_get_default(context)
+        default_quotas = db.quota_class_get_default(context)
         for resource in resources.values():
             quotas[resource.name] = default_quotas.get(resource.name,
                                                        resource.default)
@@ -138,7 +138,7 @@ class DbQuotaDriver(object):
         """
 
         quotas = {}
-        class_quotas = compute.quota_class_get_all_by_name(context, quota_class)
+        class_quotas = db.quota_class_get_all_by_name(context, quota_class)
         for resource in resources.values():
             if defaults or resource.name in class_quotas:
                 quotas[resource.name] = class_quotas.get(resource.name,
@@ -157,7 +157,7 @@ class DbQuotaDriver(object):
         if project_id == context.project_id:
             quota_class = context.quota_class
         if quota_class:
-            class_quotas = compute.quota_class_get_all_by_name(context, quota_class)
+            class_quotas = db.quota_class_get_all_by_name(context, quota_class)
         else:
             class_quotas = {}
 
@@ -186,7 +186,7 @@ class DbQuotaDriver(object):
                 modified_quotas[resource.name].update(remains=limit)
 
         if remains:
-            all_quotas = compute.quota_get_all(context, project_id)
+            all_quotas = db.quota_get_all(context, project_id)
             for quota in all_quotas:
                 if quota.resource in modified_quotas:
                     modified_quotas[quota.resource]['remains'] -= \
@@ -223,18 +223,18 @@ class DbQuotaDriver(object):
         if user_quotas:
             user_quotas = user_quotas.copy()
         else:
-            user_quotas = compute.quota_get_all_by_project_and_user(context,
+            user_quotas = db.quota_get_all_by_project_and_user(context,
                                                                project_id,
                                                                user_id)
         # Use the project quota for default user quota.
-        proj_quotas = project_quotas or compute.quota_get_all_by_project(
+        proj_quotas = project_quotas or db.quota_get_all_by_project(
             context, project_id)
         for key, value in six.iteritems(proj_quotas):
             if key not in user_quotas.keys():
                 user_quotas[key] = value
         user_usages = None
         if usages:
-            user_usages = compute.quota_usage_get_all_by_project_and_user(context,
+            user_usages = db.quota_usage_get_all_by_project_and_user(context,
                                                          project_id,
                                                          user_id)
         return self._process_quotas(context, resources, project_id,
@@ -265,12 +265,12 @@ class DbQuotaDriver(object):
                         will be returned.
         :param project_quotas: Quotas dictionary for the specified project.
         """
-        project_quotas = project_quotas or compute.quota_get_all_by_project(
+        project_quotas = project_quotas or db.quota_get_all_by_project(
             context, project_id)
         project_usages = None
         if usages:
             LOG.debug('Getting all quota usages for project: %s', project_id)
-            project_usages = compute.quota_usage_get_all_by_project(context,
+            project_usages = db.quota_usage_get_all_by_project(context,
                                                                project_id)
         return self._process_quotas(context, resources, project_id,
                                     project_quotas, quota_class,
@@ -313,12 +313,12 @@ class DbQuotaDriver(object):
         """
 
         settable_quotas = {}
-        compute_proj_quotas = db.quota_get_all_by_project(context, project_id)
+        db_proj_quotas = db.quota_get_all_by_project(context, project_id)
         project_quotas = self.get_project_quotas(context, resources,
                                                  project_id, remains=True,
                                                  project_quotas=db_proj_quotas)
         if user_id:
-            setted_quotas = compute.quota_get_all_by_project_and_user(context,
+            setted_quotas = db.quota_get_all_by_project_and_user(context,
                                                      project_id,
                                                      user_id)
             user_quotas = self.get_user_quotas(context, resources,
@@ -441,7 +441,7 @@ class DbQuotaDriver(object):
             user_id = context.user_id
 
         # Get the applicable quotas
-        project_quotas = compute.quota_get_all_by_project(context, project_id)
+        project_quotas = db.quota_get_all_by_project(context, project_id)
         quotas = self._get_quotas(context, resources, values.keys(),
                                   has_sync=False, project_id=project_id,
                                   project_quotas=project_quotas)
@@ -535,7 +535,7 @@ class DbQuotaDriver(object):
         # NOTE(Vek): We're not worried about races at this point.
         #            Yes, the admin may be in the process of reducing
         #            quotas, but that's a pretty rare thing.
-        project_quotas = compute.quota_get_all_by_project(context, project_id)
+        project_quotas = db.quota_get_all_by_project(context, project_id)
         LOG.debug('Quota limits for project %(project_id)s: '
                   '%(project_quotas)s', {'project_id': project_id,
                                          'project_quotas': project_quotas})
@@ -559,7 +559,7 @@ class DbQuotaDriver(object):
         #            which means access to the session.  Since the
         #            session isn't available outside the DBAPI, we
         #            have to do the work there.
-        return compute.quota_reserve(context, resources, quotas, user_quotas,
+        return db.quota_reserve(context, resources, quotas, user_quotas,
                                 deltas, expire,
                                 CONF.until_refresh, CONF.max_age,
                                 project_id=project_id, user_id=user_id)
@@ -584,7 +584,7 @@ class DbQuotaDriver(object):
         if user_id is None:
             user_id = context.user_id
 
-        compute.reservation_commit(context, reservations, project_id=project_id,
+        db.reservation_commit(context, reservations, project_id=project_id,
                               user_id=user_id)
 
     def rollback(self, context, reservations, project_id=None, user_id=None):
@@ -607,7 +607,7 @@ class DbQuotaDriver(object):
         if user_id is None:
             user_id = context.user_id
 
-        compute.reservation_rollback(context, reservations, project_id=project_id,
+        db.reservation_rollback(context, reservations, project_id=project_id,
                                 user_id=user_id)
 
     def usage_reset(self, context, resources):
@@ -632,7 +632,7 @@ class DbQuotaDriver(object):
             try:
                 # Reset the usage to -1, which will force it to be
                 # refreshed
-                compute.quota_usage_update(elevated, context.project_id,
+                db.quota_usage_update(elevated, context.project_id,
                                       context.user_id,
                                       resource, in_use=-1)
             except exception.QuotaUsageNotFound:
@@ -648,7 +648,7 @@ class DbQuotaDriver(object):
         :param user_id: The ID of the user being deleted.
         """
 
-        compute.quota_destroy_all_by_project_and_user(context, project_id, user_id)
+        db.quota_destroy_all_by_project_and_user(context, project_id, user_id)
 
     def destroy_all_by_project(self, context, project_id):
         """Destroy all quotas, usages, and reservations associated with a
@@ -658,7 +658,7 @@ class DbQuotaDriver(object):
         :param project_id: The ID of the project being deleted.
         """
 
-        compute.quota_destroy_all_by_project(context, project_id)
+        db.quota_destroy_all_by_project(context, project_id)
 
     def expire(self, context):
         """Expire reservations.
@@ -669,7 +669,7 @@ class DbQuotaDriver(object):
         :param context: The request context, for access checks.
         """
 
-        compute.reservation_expire(context)
+        db.reservation_expire(context)
 
 
 class NoopQuotaDriver(object):
@@ -1021,7 +1021,7 @@ class ReservableResource(BaseResource):
         """Initializes a ReservableResource.
 
         Reservable resources are those resources which directly
-        correspond to compute in the database, i.e., instances,
+        correspond to objects in the database, i.e., instances,
         cores, etc.
 
         Usage synchronization function must be associated with each
@@ -1065,7 +1065,7 @@ class CountableResource(AbsoluteResource):
         """Initializes a CountableResource.
 
         Countable resources are those resources which directly
-        correspond to compute in the database, i.e., instances, cores,
+        correspond to objects in the database, i.e., instances, cores,
         etc., but for which a count by project ID is inappropriate.  A
         CountableResource must be constructed with a counting
         function, which will be called to determine the current counts
@@ -1431,12 +1431,12 @@ class QuotaEngine(object):
 
 
 def _keypair_get_count_by_user(*args, **kwargs):
-    """Helper method to avoid referencing compute.KeyPairList on import."""
+    """Helper method to avoid referencing objects.KeyPairList on import."""
     return objects.KeyPairList.get_count_by_user(*args, **kwargs)
 
 
 def _server_group_count_members_by_user(context, group, user_id):
-    """Helper method to avoid referencing compute.InstanceGroup on import."""
+    """Helper method to avoid referencing objects.InstanceGroup on import."""
     return group.count_members_by_user(user_id)
 
 
@@ -1459,7 +1459,7 @@ resources = [
     AbsoluteResource('injected_file_path_bytes',
                      'quota_injected_file_path_length'),
     CountableResource('security_group_rules',
-                      compute.security_group_rule_count_by_group,
+                      db.security_group_rule_count_by_group,
                       'quota_security_group_rules'),
     CountableResource('key_pairs', _keypair_get_count_by_user,
                       'quota_key_pairs'),

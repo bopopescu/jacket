@@ -18,7 +18,7 @@ from oslo_serialization import jsonutils
 from oslo_utils import uuidutils
 from oslo_utils import versionutils
 
-from jacket import db
+from jacket.db import compute as db
 from jacket.compute import exception
 from jacket.objects import compute as objects
 from jacket.objects.compute import base
@@ -113,7 +113,7 @@ class ComputeNode(base.NovaPersistentObject, base.NovaObject,
         if target_version < (1, 13) and primitive.get('service_id') is None:
             # service_id is non-nullable in versions before 1.13
             try:
-                service = compute.Service.get_by_compute_host(
+                service = objects.Service.get_by_compute_host(
                     self._context, primitive['host'])
                 primitive['service_id'] = service.id
             except (exception.ComputeHostNotFound, KeyError):
@@ -145,7 +145,7 @@ class ComputeNode(base.NovaPersistentObject, base.NovaObject,
             # Service field of ComputeNode could be deprecated in a next patch,
             # so let's use directly the Service object
             try:
-                service = compute.Service.get_by_id(
+                service = objects.Service.get_by_id(
                     compute._context, db_compute['service_id'])
             except exception.ServiceNotFound:
                 compute['host'] = None

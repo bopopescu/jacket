@@ -14,8 +14,8 @@
 
 from oslo_utils import timeutils
 
-from jacket import db
-from jacket.objects import compute
+from jacket.db import compute as db
+from jacket.objects import compute as objects
 from jacket.objects.compute import base
 from jacket.objects.compute import fields
 
@@ -214,4 +214,4 @@ class InstanceActionEventList(base.ObjectListBase, base.NovaObject):
     def get_by_action(cls, context, action_id):
         db_events = db.action_events_get(context, action_id)
         return base.obj_make_list(context, cls(context),
-                                  compute.InstanceActionEvent, db_events)
+                                  objects.InstanceActionEvent, db_events)

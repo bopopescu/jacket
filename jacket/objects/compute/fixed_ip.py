@@ -15,9 +15,9 @@
 from oslo_utils import timeutils
 from oslo_utils import versionutils
 
-from jacket import db
+from jacket.db import compute as db
 from jacket.compute import exception
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base as obj_base
 from jacket.objects.compute import fields
 from jacket.compute import utils
@@ -89,26 +89,26 @@ class FixedIP(obj_base.NovaPersistentObject, obj_base.NovaObject,
                 fixedip[field] = db_fixedip[field]
         # NOTE(danms): Instance could be deleted, and thus None
         if 'instance' in expected_attrs:
-            fixedip.instance = compute.Instance._from_db_object(
+            fixedip.instance = objects.Instance._from_db_object(
                 context,
-                compute.Instance(context),
+                objects.Instance(context),
                 db_fixedip['instance']) if db_fixedip['instance'] else None
         if 'network' in expected_attrs:
-            fixedip.network = compute.Network._from_db_object(
+            fixedip.network = objects.Network._from_db_object(
                 context,
-                compute.Network(context),
+                objects.Network(context),
                 db_fixedip['network']) if db_fixedip['network'] else None
         if 'virtual_interface' in expected_attrs:
             db_vif = db_fixedip['virtual_interface']
-            vif = compute.VirtualInterface._from_db_object(
+            vif = objects.VirtualInterface._from_db_object(
                 context,
-                compute.VirtualInterface(context),
+                objects.VirtualInterface(context),
                 db_fixedip['virtual_interface']) if db_vif else None
             fixedip.virtual_interface = vif
         if 'floating_ips' in expected_attrs:
             fixedip.floating_ips = obj_base.obj_make_list(
-                    context, compute.FloatingIPList(context),
-                    compute.FloatingIP, db_fixedip['floating_ips'])
+                    context, objects.FloatingIPList(context),
+                    objects.FloatingIP, db_fixedip['floating_ips'])
         fixedip._context = context
         fixedip.obj_reset_changes()
         return fixedip
@@ -229,28 +229,28 @@ class FixedIPList(obj_base.ObjectListBase, obj_base.NovaObject):
     def get_all(cls, context):
         db_fixedips = db.fixed_ip_get_all(context)
         return obj_base.obj_make_list(context, cls(context),
-                                      compute.FixedIP, db_fixedips)
+                                      objects.FixedIP, db_fixedips)
 
     @obj_base.remotable_classmethod
     def get_by_instance_uuid(cls, context, instance_uuid):
         expected_attrs = ['network', 'virtual_interface', 'floating_ips']
         db_fixedips = db.fixed_ip_get_by_instance(context, instance_uuid)
         return obj_base.obj_make_list(context, cls(context),
-                                      compute.FixedIP, db_fixedips,
+                                      objects.FixedIP, db_fixedips,
                                       expected_attrs=expected_attrs)
 
     @obj_base.remotable_classmethod
     def get_by_host(cls, context, host):
         db_fixedips = db.fixed_ip_get_by_host(context, host)
         return obj_base.obj_make_list(context, cls(context),
-                                      compute.FixedIP, db_fixedips)
+                                      objects.FixedIP, db_fixedips)
 
     @obj_base.remotable_classmethod
     def get_by_virtual_interface_id(cls, context, vif_id):
         expected_attrs = ['network', 'floating_ips']
         db_fixedips = db.fixed_ips_by_virtual_interface(context, vif_id)
         return obj_base.obj_make_list(context, cls(context),
-                                      compute.FixedIP, db_fixedips,
+                                      objects.FixedIP, db_fixedips,
                                       expected_attrs=expected_attrs)
 
     @obj_base.remotable_classmethod
@@ -261,18 +261,18 @@ class FixedIPList(obj_base.ObjectListBase, obj_base.NovaObject):
         if not ipinfo:
             return []
 
-        fips = cls(context=context, compute=[])
+        fips = cls(context=context, objects=[])
 
         for info in ipinfo:
-            inst = compute.Instance(context=context,
+            inst = objects.Instance(context=context,
                                     uuid=info['instance_uuid'],
                                     hostname=info['instance_hostname'],
                                     created_at=info['instance_created'],
                                     updated_at=info['instance_updated'])
-            vif = compute.VirtualInterface(context=context,
+            vif = objects.VirtualInterface(context=context,
                                            id=info['vif_id'],
                                            address=info['vif_address'])
-            fip = compute.FixedIP(context=context,
+            fip = objects.FixedIP(context=context,
                                   address=info['address'],
                                   instance_uuid=info['instance_uuid'],
                                   network_id=info['network_id'],

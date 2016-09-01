@@ -20,7 +20,7 @@ from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.api.compute import validation
 from jacket.compute import exception
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute import utils
 
 
@@ -60,7 +60,7 @@ class AgentController(wsgi.Controller):
         if 'hypervisor' in req.GET:
             hypervisor = req.GET['hypervisor']
 
-        builds = compute.AgentList.get_all(context, hypervisor=hypervisor)
+        builds = objects.AgentList.get_all(context, hypervisor=hypervisor)
         for agent_build in builds:
             agents.append({'hypervisor': agent_build.hypervisor,
                            'os': agent_build.os,
@@ -94,7 +94,7 @@ class AgentController(wsgi.Controller):
         except exception.InvalidInput as exc:
             raise webob.exc.HTTPBadRequest(explanation=exc.format_message())
 
-        agent = compute.Agent(context=context, id=id)
+        agent = objects.Agent(context=context, id=id)
         agent.obj_reset_changes()
         agent.version = version
         agent.url = url
@@ -128,7 +128,7 @@ class AgentController(wsgi.Controller):
             raise webob.exc.HTTPBadRequest(explanation=exc.format_message())
 
         try:
-            agent = compute.Agent(context=context, id=id)
+            agent = objects.Agent(context=context, id=id)
             agent.destroy()
         except exception.AgentBuildNotFound as ex:
             raise webob.exc.HTTPNotFound(explanation=ex.format_message())
@@ -152,7 +152,7 @@ class AgentController(wsgi.Controller):
         url = agent['url']
         md5hash = agent['md5hash']
 
-        agent_obj = compute.Agent(context=context)
+        agent_obj = objects.Agent(context=context)
         agent_obj.hypervisor = hypervisor
         agent_obj.os = os
         agent_obj.architecture = architecture
