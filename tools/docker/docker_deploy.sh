@@ -14,6 +14,7 @@ sudo apt-get install linux-image-extra-$(uname -r) linux-image-extra-virtual
 sudo apt-get update
 sudo apt-get -y install docker-engine
 
+#默认让docker启动
 chkconfig docker on
 
 sed -i 's|other_args="|other_args="--registry-mirror=http://768e1313.m.daocloud.io |g' /etc/sysconfig/docker

@@ -125,7 +125,7 @@ class CGSnapshotList(base.ObjectListBase, base.CinderObject):
     VERSION = '1.0'
 
     fields = {
-        'storage': fields.ListOfObjectsField('CGSnapshot')
+        'objects': fields.ListOfObjectsField('CGSnapshot')
     }
 
     @base.remotable_classmethod

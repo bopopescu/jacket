@@ -39,6 +39,9 @@ neutronpass="P@ssw0rd"
 metadata_shared_secret="P@ssw0rd"
 integration_bridge="br-int"
 
+#compute
+virt_type="qemu"
+instances_path="/root/mnt/sdb/instances"
 
 #keystone中设置jacket
 openstack user show $jacketuser | openstack user create --domain $keystonedomain --password $jacketpass --email "root@email" $jacketuser
@@ -133,6 +136,8 @@ crudini --set /etc/jacket/jacket.conf DEFAULT rootwrap_config /etc/jacket/rootwr
 crudini --set /etc/jacket/jacket.conf DEFAULT compute_topic "jacket-worker"
 crudini --set /etc/jacket/jacket.conf DEFAULT volume_topic "jacket-worker"
 crudini --set /etc/jacket/jacket.conf DEFAULT use_local true
+crudini --set /etc/jacket/jacket.conf DEFAULT instances_path ${instances_path}
+crudini --set /etc/jacket/jacket.conf libvirt virt_type ${virt_type}
 
 # storage
 backend="lvm"

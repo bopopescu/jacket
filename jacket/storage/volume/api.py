@@ -39,7 +39,8 @@ from jacket.storage.i18n import _, _LE, _LI, _LW
 from jacket.storage.image import cache as image_cache
 from jacket.storage.image import glance
 from jacket.storage import keymgr
-from jacket import objects as storage
+from jacket.objects import storage
+from jacket import objects
 from jacket.objects.storage import base as objects_base
 from jacket.objects.storage import fields
 import jacket.storage.policy
@@ -157,7 +158,7 @@ class API(base.Base):
             ctxt = context.get_admin_context()
             LOG.debug("+++hw, ctxt = %s", ctxt)
             # services = storage.ServiceList.get_all_by_topic(ctxt, topic)
-            services = storage.ServiceList.get_by_topic(ctxt, topic)
+            services = objects.ServiceList.get_by_topic(ctxt, topic)
             LOG.debug("+++hw, services = %s", services)
             for s in services:
                 LOG.debug("+++hw, -------s = %s", s)
@@ -186,7 +187,7 @@ class API(base.Base):
                             first_type=None, second_type=None):
         safe = False
         elevated = context.elevated()
-        services = storage.ServiceList.get_all_by_topic(elevated,
+        services = objects.ServiceList.get_all_by_topic(elevated,
                                                         'storage-volume',
                                                         disabled=True)
         if len(services.objects) == 1:
@@ -408,7 +409,7 @@ class API(base.Base):
             values = {'status': 'deleting'}
             expected = {'status': ('available', 'error', 'deleting'),
                         'cgsnapshot_id': None}
-            snapshots = storage.snapshot.SnapshotList.get_all_for_volume(
+            snapshots = storage.SnapshotList.get_all_for_volume(
                 context, volume.id)
             for s in snapshots:
                 result = s.conditional_update(values, expected, filters)
@@ -591,7 +592,7 @@ class API(base.Base):
         expected = {'status': 'attaching'}
         # Status change depends on whether it has attachments (in-use) or not
         # (available)
-        value = {'status': storage.Case([(storage.volume_has_attachments_filter(),
+        value = {'status': db.Case([(db.volume_has_attachments_filter(),
                                      'in-use')],
                                    else_='available')}
         volume.conditional_update(value, expected)
@@ -1298,7 +1299,7 @@ class API(base.Base):
         # Make sure the host is in the list of available hosts
         elevated = context.elevated()
         topic = CONF.volume_topic
-        services = storage.ServiceList.get_all_by_topic(
+        services = objects.ServiceList.get_all_by_topic(
             elevated, topic, disabled=False)
         found = False
         for service in services:
@@ -1539,7 +1540,7 @@ class API(base.Base):
         elevated = context.elevated()
         try:
             svc_host = volume_utils.extract_host(host, 'backend')
-            service = storage.Service.get_by_args(
+            service = objects.Service.get_by_args(
                 elevated, svc_host, 'storage-volume')
         except exception.ServiceNotFound:
             with excutils.save_and_reraise_exception():
@@ -1593,7 +1594,7 @@ class API(base.Base):
         try:
             # NOTE(jdg): We don't use this, we just make sure it's valid
             # and exists before sending off the call
-            service = storage.Service.get_by_args(
+            service = objects.Service.get_by_args(
                 context.elevated(), host, 'storage-volume')
         except exception.ServiceNotFound:
             with excutils.save_and_reraise_exception():
@@ -1623,7 +1624,7 @@ class API(base.Base):
         ctxt = context.get_admin_context()
         svc_host = volume_utils.extract_host(host, 'backend')
 
-        service = storage.Service.get_by_args(
+        service = objects.Service.get_by_args(
             ctxt, svc_host, 'storage-volume')
         expected = {'replication_status': [fields.ReplicationStatus.ENABLED,
                     fields.ReplicationStatus.FAILED_OVER]}
@@ -1644,7 +1645,7 @@ class API(base.Base):
         ctxt = context.get_admin_context()
         svc_host = volume_utils.extract_host(host, 'backend')
 
-        service = storage.Service.get_by_args(
+        service = objects.Service.get_by_args(
             ctxt, svc_host, 'storage-volume')
         expected = {'frozen': False}
         result = service.conditional_update(
@@ -1664,7 +1665,7 @@ class API(base.Base):
         ctxt = context.get_admin_context()
         svc_host = volume_utils.extract_host(host, 'backend')
 
-        service = storage.Service.get_by_args(
+        service = objects.Service.get_by_args(
             ctxt, svc_host, 'storage-volume')
         expected = {'frozen': True}
         result = service.conditional_update(

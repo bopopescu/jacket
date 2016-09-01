@@ -161,7 +161,7 @@ class BackupList(base.ObjectListBase, base.CinderObject):
     VERSION = '1.0'
 
     fields = {
-        'storage': fields.ListOfObjectsField('Backup'),
+        'objects': fields.ListOfObjectsField('Backup'),
     }
 
     @base.remotable_classmethod
