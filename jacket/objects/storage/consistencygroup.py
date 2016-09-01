@@ -141,7 +141,7 @@ class ConsistencyGroupList(base.ObjectListBase, base.CinderObject):
     VERSION = '1.1'
 
     fields = {
-        'storage': fields.ListOfObjectsField('ConsistencyGroup')
+        'objects': fields.ListOfObjectsField('ConsistencyGroup')
     }
 
     @base.remotable_classmethod

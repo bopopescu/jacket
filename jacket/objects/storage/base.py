@@ -271,7 +271,7 @@ class CinderObject(base.VersionedObject):
                    for v in values.values()):
                 # Read back object from DB
                 obj = type(self).get_by_id(self._context, self.id)
-                db_values = obj.obj_to_primitive()['versioned_object.data']
+                db_values = obj.obj_to_primitive()['jacket_object.data']
                 # Only update fields were changes were requested
                 values = {field: db_values[field]
                           for field, value in values.items()}

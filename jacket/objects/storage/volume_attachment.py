@@ -68,7 +68,7 @@ class VolumeAttachmentList(base.ObjectListBase, base.CinderObject):
     VERSION = '1.0'
 
     fields = {
-        'storage': fields.ListOfObjectsField('VolumeAttachment'),
+        'objects': fields.ListOfObjectsField('VolumeAttachment'),
     }
 
     @base.remotable_classmethod

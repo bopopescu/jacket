@@ -223,7 +223,7 @@ class SnapshotList(base.ObjectListBase, base.CinderObject):
     VERSION = '1.0'
 
     fields = {
-        'storage': fields.ListOfObjectsField('Snapshot'),
+        'objects': fields.ListOfObjectsField('Snapshot'),
     }
 
     @base.remotable_classmethod

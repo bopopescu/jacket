@@ -21,7 +21,7 @@ from jacket.api.storage import common
 from jacket.api.storage import extensions
 from jacket.api.storage.openstack import wsgi
 from jacket.api.storage import xmlutil
-from jacket import db
+from jacket.db import storage as db
 from jacket.storage import exception
 from jacket.storage.i18n import _
 from jacket import rpc
@@ -54,7 +54,7 @@ class VolumeTypeExtraSpecsController(wsgi.Controller):
     """The volume type extra specs API controller for the OpenStack API."""
 
     def _get_extra_specs(self, context, type_id):
-        extra_specs = storage.volume_type_extra_specs_get(context, type_id)
+        extra_specs = db.volume_type_extra_specs_get(context, type_id)
         specs_dict = {}
         for key, value in extra_specs.items():
             specs_dict[key] = value
@@ -97,7 +97,7 @@ class VolumeTypeExtraSpecsController(wsgi.Controller):
         self._check_key_names(specs.keys())
         self._validate_extra_specs(specs)
 
-        storage.volume_type_extra_specs_update_or_create(context,
+        db.volume_type_extra_specs_update_or_create(context,
                                                     type_id,
                                                     specs)
         notifier_info = dict(type_id=type_id, specs=specs)
@@ -123,7 +123,7 @@ class VolumeTypeExtraSpecsController(wsgi.Controller):
         self._check_key_names(body.keys())
         self._validate_extra_specs(body)
 
-        storage.volume_type_extra_specs_update_or_create(context,
+        db.volume_type_extra_specs_update_or_create(context,
                                                     type_id,
                                                     body)
         notifier_info = dict(type_id=type_id, id=id)
@@ -154,7 +154,7 @@ class VolumeTypeExtraSpecsController(wsgi.Controller):
         authorize(context)
 
         try:
-            storage.volume_type_extra_specs_delete(context, type_id, id)
+            db.volume_type_extra_specs_delete(context, type_id, id)
         except exception.VolumeTypeExtraSpecsNotFound as error:
             raise webob.exc.HTTPNotFound(explanation=error.msg)
 

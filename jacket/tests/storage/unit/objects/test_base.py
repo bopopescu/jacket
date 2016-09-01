@@ -634,8 +634,8 @@ class TestCinderObjectSerializer(test_objects.BaseObjectsTestCase):
         """Test single element serializer with no backport."""
         serializer = storage.base.CinderObjectSerializer('1.6')
         primitive = serializer.serialize_entity(self.context, self.obj)
-        self.assertEqual('1.2', primitive['versioned_object.version'])
-        data = primitive['versioned_object.data']
+        self.assertEqual('1.2', primitive['jacket_object.version'])
+        data = primitive['jacket_object.data']
         self.assertEqual(1, data['integer'])
         self.assertEqual('text', data['text'])
 
@@ -643,8 +643,8 @@ class TestCinderObjectSerializer(test_objects.BaseObjectsTestCase):
         """Test single element serializer with backport."""
         serializer = storage.base.CinderObjectSerializer('1.5')
         primitive = serializer.serialize_entity(self.context, self.obj)
-        self.assertEqual('1.1', primitive['versioned_object.version'])
-        data = primitive['versioned_object.data']
+        self.assertEqual('1.1', primitive['jacket_object.version'])
+        data = primitive['jacket_object.data']
         self.assertNotIn('integer', data)
         self.assertEqual('text', data['text'])
 
@@ -652,11 +652,11 @@ class TestCinderObjectSerializer(test_objects.BaseObjectsTestCase):
         """Test related elements serialization with no backport."""
         serializer = storage.base.CinderObjectSerializer('1.6')
         primitive = serializer.serialize_entity(self.context, self.parent_list)
-        self.assertEqual('1.1', primitive['versioned_object.version'])
-        parent = primitive['versioned_object.data']['storage'][0]
-        self.assertEqual('1.1', parent['versioned_object.version'])
-        child = parent['versioned_object.data']['child']
-        self.assertEqual('1.2', child['versioned_object.version'])
+        self.assertEqual('1.1', primitive['jacket_object.version'])
+        parent = primitive['jacket_object.data']['storage'][0]
+        self.assertEqual('1.1', parent['jacket_object.version'])
+        child = parent['jacket_object.data']['child']
+        self.assertEqual('1.2', child['jacket_object.version'])
 
     def test_serialize_entity_full_backport_last_children(self):
         """Test related elements serialization with backport of the last child.
@@ -666,14 +666,14 @@ class TestCinderObjectSerializer(test_objects.BaseObjectsTestCase):
         """
         serializer = storage.base.CinderObjectSerializer('1.5')
         primitive = serializer.serialize_entity(self.context, self.parent_list)
-        self.assertEqual('1.1', primitive['versioned_object.version'])
-        parent = primitive['versioned_object.data']['storage'][0]
-        self.assertEqual('1.1', parent['versioned_object.version'])
+        self.assertEqual('1.1', primitive['jacket_object.version'])
+        parent = primitive['jacket_object.data']['storage'][0]
+        self.assertEqual('1.1', parent['jacket_object.version'])
         # Only the child has been backported
-        child = parent['versioned_object.data']['child']
-        self.assertEqual('1.1', child['versioned_object.version'])
+        child = parent['jacket_object.data']['child']
+        self.assertEqual('1.1', child['jacket_object.version'])
         # Check that the backport has been properly done
-        data = child['versioned_object.data']
+        data = child['jacket_object.data']
         self.assertNotIn('integer', data)
         self.assertEqual('text', data['text'])
 
@@ -682,17 +682,17 @@ class TestCinderObjectSerializer(test_objects.BaseObjectsTestCase):
         serializer = storage.base.CinderObjectSerializer('1.3')
         primitive = serializer.serialize_entity(self.context, self.parent_list)
         # List has been backported
-        self.assertEqual('1.0', primitive['versioned_object.version'])
-        parent = primitive['versioned_object.data']['storage'][0]
+        self.assertEqual('1.0', primitive['jacket_object.version'])
+        parent = primitive['jacket_object.data']['storage'][0]
         # Parent has been backported as well
-        self.assertEqual('1.0', parent['versioned_object.version'])
+        self.assertEqual('1.0', parent['jacket_object.version'])
         # And the backport has been properly done
-        data = parent['versioned_object.data']
+        data = parent['jacket_object.data']
         self.assertNotIn('scheduled_at', data)
         # And child as well
-        child = parent['versioned_object.data']['child']
-        self.assertEqual('1.1', child['versioned_object.version'])
+        child = parent['jacket_object.data']['child']
+        self.assertEqual('1.1', child['jacket_object.version'])
         # Check that the backport has been properly done
-        data = child['versioned_object.data']
+        data = child['jacket_object.data']
         self.assertNotIn('integer', data)
         self.assertEqual('text', data['text'])

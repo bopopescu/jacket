@@ -105,7 +105,7 @@ class VolumeTypeList(base.ObjectListBase, base.CinderObject):
     VERSION = '1.1'
 
     fields = {
-        'storage': fields.ListOfObjectsField('VolumeType'),
+        'objects': fields.ListOfObjectsField('VolumeType'),
     }
 
     @base.remotable_classmethod

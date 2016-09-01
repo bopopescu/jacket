@@ -20,7 +20,7 @@ import webob
 from jacket.api.storage import extensions
 from jacket.api.storage.openstack import wsgi
 from jacket.api.storage import xmlutil
-from jacket import db
+from jacket.db import storage as db
 from jacket.storage import exception
 from jacket.storage.i18n import _
 from jacket import rpc
@@ -43,7 +43,7 @@ class VolumeTypeEncryptionController(wsgi.Controller):
     """The volume type encryption API controller for the OpenStack API."""
 
     def _get_volume_type_encryption(self, context, type_id):
-        encryption_ref = storage.volume_type_encryption_get(context, type_id)
+        encryption_ref = db.volume_type_encryption_get(context, type_id)
         encryption_specs = {}
         if not encryption_ref:
             return encryption_specs
@@ -61,7 +61,7 @@ class VolumeTypeEncryptionController(wsgi.Controller):
         if encryption.get('key_size') is not None:
             encryption['key_size'] = utils.validate_integer(
                 encryption['key_size'], 'key_size',
-                min_value=0, max_value=storage.MAX_INT)
+                min_value=0, max_value=db.MAX_INT)
 
         if create:
             msg = None
@@ -80,7 +80,7 @@ class VolumeTypeEncryptionController(wsgi.Controller):
                 raise exception.InvalidInput(reason=msg)
 
     def _encrypted_type_in_use(self, context, volume_type_id):
-        volume_list = storage.volume_type_encryption_volume_get(context,
+        volume_list = db.volume_type_encryption_volume_get(context,
                                                            volume_type_id)
         # If there is at least one volume in the list
         # returned, this type is in use by a volume.
@@ -119,7 +119,7 @@ class VolumeTypeEncryptionController(wsgi.Controller):
 
         self._check_encryption_input(encryption_specs)
 
-        storage.volume_type_encryption_create(context, type_id, encryption_specs)
+        db.volume_type_encryption_create(context, type_id, encryption_specs)
         notifier_info = dict(type_id=type_id, specs=encryption_specs)
         notifier = rpc.get_notifier('volumeTypeEncryption')
         notifier.info(context, 'volume_type_encryption.create', notifier_info)
@@ -146,7 +146,7 @@ class VolumeTypeEncryptionController(wsgi.Controller):
         encryption_specs = body['encryption']
         self._check_encryption_input(encryption_specs, create=False)
 
-        storage.volume_type_encryption_update(context, type_id, encryption_specs)
+        db.volume_type_encryption_update(context, type_id, encryption_specs)
         notifier_info = dict(type_id=type_id, id=id)
         notifier = rpc.get_notifier('volumeTypeEncryption')
         notifier.info(context, 'volume_type_encryption.update', notifier_info)
@@ -178,7 +178,7 @@ class VolumeTypeEncryptionController(wsgi.Controller):
             raise webob.exc.HTTPBadRequest(explanation=expl)
         else:
             try:
-                storage.volume_type_encryption_delete(context, type_id)
+                db.volume_type_encryption_delete(context, type_id)
             except exception.VolumeTypeEncryptionNotFound as ex:
                 raise webob.exc.HTTPNotFound(explanation=ex.msg)
 
