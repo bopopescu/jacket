@@ -33,7 +33,7 @@ _network_opts = [
                                 'should be used instead.',
                            deprecated_for_removal=True),
     oslo_config.cfg.BoolOpt('use_neutron',
-                            default=False,
+                            default=True,
                             help="""
 Whether to use Neutron or Nova Network as the back end for networking.
 Defaults to False (indicating Nova network). Set to True to use neutron.

@@ -487,7 +487,7 @@
     "os_compute_api:os-assisted-volume-snapshots:delete": "rule:admin_api",
     "os_compute_api:os-assisted-volume-snapshots:discoverable": "@",
     "os_compute_api:os-console-auth-tokens": "rule:admin_api",
-    "os_compute_api:os-server-external-events:create": "rule:admin_api"
+    "os_compute_api:os-server-external-events:create": "rule:admin_api",
     
     
     "volume:create": "",
