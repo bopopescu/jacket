@@ -23,7 +23,7 @@ from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import timeutils
 
-from jacket.storage import context as cinder_context
+from jacket import context as cinder_context
 from jacket.storage import exception
 from jacket.objects import storage
 from jacket.storage import utils

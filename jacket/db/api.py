@@ -29,4 +29,4 @@ these objects be simple dictionaries.
 
 from jacket.db.compute.api import *
 from jacket.db.storage.api import *
-from jacket.db.cloud_config.api import *
+from jacket.db.hybrid_cloud.api import *

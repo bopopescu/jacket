@@ -24,7 +24,7 @@ from oslo_config import cfg
 from oslo_log import log as logging
 from requests import exceptions as request_exceptions
 
-from jacket.storage import context as ctx
+from jacket import context as ctx
 from jacket.db import base
 from jacket.storage import exception
 

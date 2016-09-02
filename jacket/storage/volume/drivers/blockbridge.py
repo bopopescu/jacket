@@ -26,7 +26,7 @@ import six
 from six.moves import http_client
 from six.moves import urllib
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.storage.i18n import _
 from jacket.storage.volume import driver

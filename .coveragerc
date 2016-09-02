@@ -1,0 +1,7 @@
+[run]
+branch = True
+source = jacket
+omit = jacket/tests/*,jacket/openstack/*
+
+[report]
+ignore_errors = True

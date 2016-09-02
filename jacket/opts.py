@@ -14,8 +14,8 @@
 
 import itertools
 
-from jacket.api.jacket_api import common as jacket_api_common
-from jacket.api.jacket_api.views import versions as jacket_api_views_versions
+from jacket.api.hybrid_cloud import common as jacket_api_common
+from jacket.api.hybrid_cloud.views import versions as jacket_api_views_versions
 from jacket.api.middleware import sizelimit as jacket_api_sizelimit
 from jacket.common import config as jacket_config
 from jacket.db import base as jacket_db_base

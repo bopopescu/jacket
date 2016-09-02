@@ -229,7 +229,7 @@ class DbCommands(object):
             print(_("Must supply a positive, non-zero value for age"))
             sys.exit(1)
         ctxt = context.get_admin_context()
-        storage.purge_deleted_rows(ctxt, age_in_days)
+        db.purge_deleted_rows(ctxt, age_in_days)
 
 
 class VersionCommands(object):

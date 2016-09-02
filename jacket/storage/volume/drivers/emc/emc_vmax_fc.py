@@ -18,7 +18,7 @@ import ast
 from oslo_log import log as logging
 import six
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage.i18n import _LW
 from jacket.storage.volume import driver
 from jacket.storage.volume.drivers.emc import emc_vmax_common
