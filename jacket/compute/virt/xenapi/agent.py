@@ -32,7 +32,7 @@ from jacket import context
 from jacket.compute import crypto
 from jacket.compute import exception
 from jacket.i18n import _, _LE, _LI, _LW
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute import utils
 
 
@@ -233,7 +233,7 @@ class XenAPIBasedAgent(object):
 
     def _get_expected_build(self):
         ctxt = context.get_admin_context()
-        agent_build = compute.Agent.get_by_triple(
+        agent_build = objects.Agent.get_by_triple(
             ctxt, 'xen', self.instance['os_type'],
             self.instance['architecture'])
         if agent_build:

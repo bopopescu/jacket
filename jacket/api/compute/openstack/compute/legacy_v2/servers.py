@@ -37,7 +37,7 @@ from jacket.compute import cloud
 from jacket.compute.cloud import flavors
 from jacket.compute import exception
 from jacket.i18n import _
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute import policy
 from jacket.compute import utils
 
@@ -230,7 +230,7 @@ class Controller(wsgi.Controller):
             raise exc.HTTPBadRequest(explanation=msg)
         except exception.FlavorNotFound:
             LOG.debug("Flavor '%s' could not be found", search_opts['flavor'])
-            instance_list = cloud.InstanceList()
+            instance_list = objects.InstanceList()
 
         if is_detail:
             instance_list._context = context
@@ -302,7 +302,7 @@ class Controller(wsgi.Controller):
         networks = []
         network_uuids = []
         for network in requested_networks:
-            request = cloud.NetworkRequest()
+            request = objects.NetworkRequest()
             try:
                 try:
                     request.port_id = network.get('port', None)
@@ -355,7 +355,7 @@ class Controller(wsgi.Controller):
                 expl = _('Bad networks format')
                 raise exc.HTTPBadRequest(explanation=expl)
 
-        return cloud.NetworkRequestList(cloud=networks)
+        return objects.NetworkRequestList(objects=networks)
 
     # NOTE(vish): Without this regex, b64decode will happily
     #             ignore illegal bytes in the base64 encoded
@@ -1090,7 +1090,7 @@ class Controller(wsgi.Controller):
 
         instance = self._get_server(context, req, id)
 
-        bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = objects.BlockDeviceMappingList.get_by_instance_uuid(
                     context, instance.uuid)
 
         try:

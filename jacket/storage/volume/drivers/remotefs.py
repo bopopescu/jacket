@@ -28,7 +28,7 @@ from oslo_utils import units
 import six
 
 from jacket.storage import compute
-from jacket import db
+from jacket.db import storage as db
 from jacket.storage import exception
 from jacket.storage import utils
 from jacket.storage.i18n import _, _LE, _LI, _LW

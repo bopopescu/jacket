@@ -45,7 +45,7 @@ import six
 import jacket.compute.conf
 from jacket.compute import exception
 from jacket.i18n import _
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import fields as obj_fields
 from jacket.compute.pci import utils
 
@@ -128,7 +128,7 @@ def _translate_alias_to_requests(alias_spec):
         if name not in pci_aliases:
             raise exception.PciRequestAliasNotDefined(alias=name)
         else:
-            request = compute.InstancePCIRequest(
+            request = objects.InstancePCIRequest(
                 count=int(count),
                 spec=copy.deepcopy(pci_aliases[name]),
                 alias_name=name)
@@ -175,4 +175,4 @@ def get_pci_requests_from_flavor(flavor):
             'pci_passthrough:alias' in flavor['extra_specs']):
         pci_requests = _translate_alias_to_requests(
             flavor['extra_specs']['pci_passthrough:alias'])
-    return compute.InstancePCIRequests(requests=pci_requests)
+    return objects.InstancePCIRequests(requests=pci_requests)

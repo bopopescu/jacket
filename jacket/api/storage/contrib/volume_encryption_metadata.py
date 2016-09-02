@@ -18,7 +18,7 @@
 from jacket.api.storage import extensions
 from jacket.api.storage.openstack import wsgi
 from jacket.api.storage import xmlutil
-from jacket.db import compute as db
+from jacket.db import storage as db
 
 authorize = extensions.extension_authorizer('volume',
                                             'volume_encryption_metadata')

@@ -46,7 +46,7 @@ from jacket import context as nova_context
 from jacket.compute import exception
 from jacket.i18n import _, _LE, _LI, _LW
 from jacket.compute import network
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute import utils
 from jacket import version
 from jacket.compute.virt import configdrive
@@ -330,7 +330,7 @@ class VMwareVMOps(object):
         return vm_ref
 
     def _get_extra_specs(self, flavor, image_meta=None):
-        image_meta = image_meta or cloud.ImageMeta.from_dict({})
+        image_meta = image_meta or objects.ImageMeta.from_dict({})
         extra_specs = vm_util.ExtraSpecs()
         for resource in ['cpu', 'memory', 'disk_io', 'vif']:
             for (key, type) in (('limit', int),
@@ -1501,7 +1501,7 @@ class VMwareVMOps(object):
                                               vm_ref,
                                               lst_properties)
         data = {}
-        # All of values received are cloud. Convert them to dictionaries
+        # All of values received are objects. Convert them to dictionaries
         for value in vm_props.values():
             prop_dict = vim_util.object_to_dict(value, list_depth=1)
             data.update(prop_dict)

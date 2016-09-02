@@ -33,7 +33,7 @@ from jacket.i18n import _LE
 from jacket.compute.image import glance
 from jacket.compute import network
 from jacket.compute.network import model as network_model
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base as obj_base
 from jacket import rpc
 from jacket.compute import utils
@@ -292,7 +292,7 @@ def bandwidth_usage(instance_ref, audit_start,
     admin_context = jacket.context.get_admin_context(read_deleted='yes')
 
     def _get_nwinfo_old_skool():
-        """Support for getting network info without compute."""
+        """Support for getting network info without objects."""
         if (instance_ref.get('info_cache') and
                 instance_ref['info_cache'].get('network_info') is not None):
             cached_info = instance_ref['info_cache']['network_info']
@@ -323,7 +323,7 @@ def bandwidth_usage(instance_ref, audit_start,
     macs = [vif['address'] for vif in nw_info]
     uuids = [instance_ref["uuid"]]
 
-    bw_usages = compute.BandwidthUsageList.get_by_uuids(admin_context, uuids,
+    bw_usages = objects.BandwidthUsageList.get_by_uuids(admin_context, uuids,
                                                         audit_start)
     bw = {}
 

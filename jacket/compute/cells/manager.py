@@ -35,7 +35,7 @@ from jacket import context
 from jacket.compute import exception
 from jacket.i18n import _LW
 from jacket import manager
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base as base_obj
 from jacket.objects.compute import instance as instance_obj
 
@@ -167,7 +167,7 @@ class CellsManager(manager.Manager):
                 if not instance_uuid:
                     return
                 try:
-                    instance = compute.Instance.get_by_uuid(rd_context,
+                    instance = objects.Instance.get_by_uuid(rd_context,
                             instance_uuid)
                 except exception.InstanceNotFound:
                     continue
@@ -191,18 +191,18 @@ class CellsManager(manager.Manager):
         filter_properties = build_inst_kwargs.get('filter_properties')
         if (filter_properties is not None and
             not isinstance(filter_properties['instance_type'],
-                           compute.Flavor)):
+                           objects.Flavor)):
             # NOTE(danms): Handle pre-1.30 build_instances() call. Remove me
             # when we bump the RPC API version to 2.0.
-            flavor = compute.Flavor(**filter_properties['instance_type'])
+            flavor = objects.Flavor(**filter_properties['instance_type'])
             build_inst_kwargs['filter_properties'] = dict(
                 filter_properties, instance_type=flavor)
         instances = build_inst_kwargs['instances']
-        if not isinstance(instances[0], compute.Instance):
+        if not isinstance(instances[0], objects.Instance):
             # NOTE(danms): Handle pre-1.32 build_instances() call. Remove me
             # when we bump the RPC API version to 2.0
             build_inst_kwargs['instances'] = instance_obj._make_instance_list(
-                ctxt, compute.InstanceList(), instances, ['system_metadata',
+                ctxt, objects.InstanceList(), instances, ['system_metadata',
                                                           'metadata'])
         our_cell = self.state_manager.get_my_state()
         self.msg_runner.build_instances(ctxt, our_cell, build_inst_kwargs)
@@ -234,8 +234,8 @@ class CellsManager(manager.Manager):
         deleted or soft_deleted.  So, we'll broadcast this everywhere.
         """
         if isinstance(instance, dict):
-            instance = compute.Instance._from_db_object(ctxt,
-                    compute.Instance(), instance)
+            instance = objects.Instance._from_db_object(ctxt,
+                    objects.Instance(), instance)
         self.msg_runner.instance_delete_everywhere(ctxt, instance,
                                                    delete_type)
 
@@ -416,7 +416,7 @@ class CellsManager(manager.Manager):
     def validate_console_port(self, ctxt, instance_uuid, console_port,
                               console_type):
         """Validate console port with child cell compute node."""
-        instance = compute.Instance.get_by_uuid(ctxt, instance_uuid)
+        instance = objects.Instance.get_by_uuid(ctxt, instance_uuid)
         if not instance.cell_name:
             raise exception.InstanceUnknownCell(instance_uuid=instance_uuid)
         response = self.msg_runner.validate_console_port(ctxt,
@@ -429,7 +429,7 @@ class CellsManager(manager.Manager):
 
     def bdm_update_or_create_at_top(self, ctxt, bdm, create=None):
         """BDM was created/updated in this cell.  Tell the API cells."""
-        # TODO(ndipanov): Move inter-cell RPC to use compute
+        # TODO(ndipanov): Move inter-cell RPC to use objects
         bdm = base_obj.obj_to_primitive(bdm)
         self.msg_runner.bdm_update_or_create_at_top(ctxt, bdm, create=create)
 

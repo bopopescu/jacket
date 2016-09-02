@@ -19,7 +19,7 @@ import webob.exc
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.i18n import _
-from jacket.objects import compute
+from jacket.objects import compute as objects
 
 authorize = extensions.extension_authorizer('compute', 'cloudpipe_update')
 
@@ -42,7 +42,7 @@ class CloudpipeUpdateController(wsgi.Controller):
             raise webob.exc.HTTPBadRequest(explanation=msg)
 
         project_id = context.project_id
-        networks = compute.NetworkList.get_by_project(context, project_id)
+        networks = objects.NetworkList.get_by_project(context, project_id)
 
         try:
             params = body['configure_project']

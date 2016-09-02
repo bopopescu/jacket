@@ -25,7 +25,7 @@ from oslo_utils import units
 
 from jacket.compute import exception
 from jacket.i18n import _, _LE
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute.virt import configdrive
 from jacket.compute.virt.hyperv import imagecache
 from jacket.compute.virt.hyperv import pathutils
@@ -174,7 +174,7 @@ class MigrationOps(object):
 
         eph_vhd_path = self._pathutils.lookup_ephemeral_vhd_path(instance_name)
 
-        image_meta = compute.ImageMeta.from_instance(instance)
+        image_meta = objects.ImageMeta.from_instance(instance)
         vm_gen = self._vmops.get_image_vm_generation(
             instance.uuid, root_vhd_path, image_meta)
         self._vmops.create_instance(instance, network_info, block_device_info,

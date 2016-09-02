@@ -77,7 +77,7 @@ from jacket.i18n import _LI
 from jacket.i18n import _LW
 from jacket.compute import image
 from jacket.compute.network import model as network_model
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import fields
 from jacket.objects.compute import migrate_data as migrate_data_obj
 from jacket.compute.pci import manager as pci_manager
@@ -1419,7 +1419,7 @@ class LibvirtDriver(driver.ComputeDriver):
 
         # Save updates made in connection_info when connect_volume was called
         volume_id = new_connection_info.get('serial')
-        bdm = compute.BlockDeviceMapping.get_by_volume_and_instance(
+        bdm = objects.BlockDeviceMapping.get_by_volume_and_instance(
             nova_context.get_admin_context(), volume_id, instance.uuid)
         driver_bdm = driver_block_device.DriverVolumeBlockDevice(bdm)
         driver_bdm['connection_info'] = new_connection_info
@@ -2038,7 +2038,7 @@ class LibvirtDriver(driver.ComputeDriver):
             raise
 
     def _volume_refresh_connection_info(self, context, instance, volume_id):
-        bdm = compute.BlockDeviceMapping.get_by_volume_and_instance(
+        bdm = objects.BlockDeviceMapping.get_by_volume_and_instance(
                   context, volume_id, instance.uuid)
 
         driver_bdm = driver_block_device.convert_volume(bdm)
@@ -3458,7 +3458,7 @@ class LibvirtDriver(driver.ComputeDriver):
 
         ctx = nova_context.get_admin_context()
         try:
-            service = compute.Service.get_by_compute_host(ctx, CONF.host)
+            service = objects.Service.get_by_compute_host(ctx, CONF.host)
 
             if service.disabled != disable_service:
                 # Note(jang): this is a quick fix to stop operator-
@@ -3929,7 +3929,7 @@ class LibvirtDriver(driver.ComputeDriver):
 
     def _get_guest_numa_config(self, instance_numa_topology, flavor, pci_devs,
                                allowed_cpus=None, image_meta=None):
-        """Returns the config compute for the guest NUMA specs.
+        """Returns the config objects for the guest NUMA specs.
 
         Determines the CPUs that the guest can be pinned to if the guest
         specifies a cell topology and the host supports it. Constructs the
@@ -4457,7 +4457,7 @@ class LibvirtDriver(driver.ComputeDriver):
         if not cpu_config:
             return
         if not vcpu_model:
-            vcpu_model = compute.VirtCPUModel()
+            vcpu_model = objects.VirtCPUModel()
 
         vcpu_model.arch = cpu_config.arch
         vcpu_model.vendor = cpu_config.vendor
@@ -4466,14 +4466,14 @@ class LibvirtDriver(driver.ComputeDriver):
         vcpu_model.match = cpu_config.match
 
         if cpu_config.sockets:
-            vcpu_model.topology = compute.VirtCPUTopology(
+            vcpu_model.topology = objects.VirtCPUTopology(
                 sockets=cpu_config.sockets,
                 cores=cpu_config.cores,
                 threads=cpu_config.threads)
         else:
             vcpu_model.topology = None
 
-        features = [compute.VirtCPUFeature(
+        features = [objects.VirtCPUFeature(
             name=f.name,
             policy=f.policy) for f in cpu_config.features]
         vcpu_model.features = features
@@ -5163,7 +5163,7 @@ class LibvirtDriver(driver.ComputeDriver):
         of 'address', 'vendor_id', 'product_id', 'dev_type', 'dev_id',
         'label' and other optional device specific information.
 
-        Refer to the compute/pci_device.py for more idea of these keys.
+        Refer to the objects/pci_device.py for more idea of these keys.
 
         :returns: a JSON string containaing a list of the assignable PCI
                   devices information
@@ -5262,13 +5262,13 @@ class LibvirtDriver(driver.ComputeDriver):
             mempages = []
             if self._has_hugepage_support():
                 mempages = [
-                    compute.NUMAPagesTopology(
+                    objects.NUMAPagesTopology(
                         size_kb=pages.size,
                         total=pages.total,
                         used=0)
                     for pages in cell.mempages]
 
-            cell = compute.NUMACell(id=cell.id, cpuset=cpuset,
+            cell = objects.NUMACell(id=cell.id, cpuset=cpuset,
                                     memory=cell.memory / units.Ki,
                                     cpu_usage=0, memory_usage=0,
                                     siblings=siblings,
@@ -5276,7 +5276,7 @@ class LibvirtDriver(driver.ComputeDriver):
                                     mempages=mempages)
             cells.append(cell)
 
-        return compute.NUMATopology(cells=cells)
+        return objects.NUMATopology(cells=cells)
 
     def get_all_volume_usage(self, context, compute_host_bdms):
         """Return usage info for volumes attached to vms on
@@ -5472,7 +5472,7 @@ class LibvirtDriver(driver.ComputeDriver):
         # Create file on storage, to be checked on source host
         filename = self._create_shared_storage_test_file()
 
-        data = compute.LibvirtLiveMigrateData()
+        data = objects.LibvirtLiveMigrateData()
         data.filename = filename
         data.image_type = CONF.libvirt.images_type
         # Notes(eliqiao): block_migration and disk_over_commit are not
@@ -5512,7 +5512,7 @@ class LibvirtDriver(driver.ComputeDriver):
         source = CONF.host
 
         if not isinstance(dest_check_data, migrate_data_obj.LiveMigrateData):
-            md_obj = compute.LibvirtLiveMigrateData()
+            md_obj = objects.LibvirtLiveMigrateData()
             md_obj.from_legacy_dict(dest_check_data)
             dest_check_data = md_obj
 
@@ -6192,7 +6192,7 @@ class LibvirtDriver(driver.ComputeDriver):
         # version to >= 1.2.17
         if self._host.has_min_version(
                 MIN_LIBVIRT_BLOCK_LM_WITH_VOLUMES_VERSION):
-            bdm_list = compute.BlockDeviceMappingList.get_by_instance_uuid(
+            bdm_list = objects.BlockDeviceMappingList.get_by_instance_uuid(
                 context, instance.uuid)
             block_device_info = driver.get_block_device_info(instance,
                                                              bdm_list)
@@ -6381,7 +6381,7 @@ class LibvirtDriver(driver.ComputeDriver):
                 if (n % 10) == 0:
                     # Note(Shaohe Feng) every 5 secs to update the migration
                     # db, that keeps updates to the instance and migration
-                    # compute in sync.
+                    # objects in sync.
                     migration.memory_total = info.memory_total
                     migration.memory_processed = info.memory_processed
                     migration.memory_remaining = info.memory_remaining
@@ -6605,7 +6605,7 @@ class LibvirtDriver(driver.ComputeDriver):
         is_block_migration = True
         if migrate_data:
             if not isinstance(migrate_data, migrate_data_obj.LiveMigrateData):
-                obj = compute.LibvirtLiveMigrateData()
+                obj = objects.LibvirtLiveMigrateData()
                 obj.from_legacy_dict(migrate_data)
                 migrate_data = obj
             LOG.debug('migrate_data in pre_live_migration: %s', migrate_data,
@@ -6721,7 +6721,7 @@ class LibvirtDriver(driver.ComputeDriver):
 
         # Store vncserver_listen and latest disk device info
         if not migrate_data:
-            migrate_data = compute.LibvirtLiveMigrateData(bdms=[])
+            migrate_data = objects.LibvirtLiveMigrateData(bdms=[])
         else:
             migrate_data.bdms = []
         migrate_data.graphics_listen_addr_vnc = CONF.vnc.vncserver_listen
@@ -6739,7 +6739,7 @@ class LibvirtDriver(driver.ComputeDriver):
                     instance, CONF.libvirt.virt_type,
                     instance.image_meta, vol)
 
-                bdmi = compute.LibvirtLiveMigrateBDMInfo()
+                bdmi = objects.LibvirtLiveMigrateBDMInfo()
                 bdmi.serial = connection_info['serial']
                 bdmi.connection_info = connection_info
                 bdmi.bus = disk_info['bus']
@@ -7022,7 +7022,7 @@ class LibvirtDriver(driver.ComputeDriver):
         ctx = nova_context.get_admin_context()
         # Get instance object list by uuid filter
         filters = {'uuid': instance_uuids}
-        # NOTE(ankit): compute.InstanceList.get_by_filters method is
+        # NOTE(ankit): objects.InstanceList.get_by_filters method is
         # getting called twice one is here and another in the
         # _update_available_resource method of resource_tracker. Since
         # _update_available_resource method is synchronized, there is a
@@ -7030,13 +7030,13 @@ class LibvirtDriver(driver.ComputeDriver):
         # disk_over_committed_size would differ to the list you would get
         # in _update_available_resource method for calculating usages based
         # on instance utilization.
-        local_instance_list = compute.InstanceList.get_by_filters(
+        local_instance_list = objects.InstanceList.get_by_filters(
             ctx, filters, use_slave=True)
         # Convert instance list to dictionary with instace uuid as key.
         local_instances = {inst.uuid: inst for inst in local_instance_list}
 
         # Get bdms by instance uuids
-        bdms = compute.BlockDeviceMappingList.bdms_by_instance_uuid(
+        bdms = objects.BlockDeviceMappingList.bdms_by_instance_uuid(
             ctx, instance_uuids)
 
         for dom in instance_domains:

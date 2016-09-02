@@ -36,7 +36,7 @@ from jacket import context
 from jacket.db import base
 from jacket.compute import exception
 from jacket.i18n import _LE
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket import rpc
 from jacket.compute import servicegroup
 from jacket.compute import utils
@@ -255,10 +255,10 @@ class CellStateManager(base.Base):
 
         def _get_compute_hosts():
             service_refs = {service.host: service
-                            for service in compute.ServiceList.get_by_binary(
+                            for service in objects.ServiceList.get_by_binary(
                                 ctxt, 'jacket-worker')}
 
-            compute_nodes = compute.ComputeNodeList.get_all(ctxt)
+            compute_nodes = objects.ComputeNodeList.get_all(ctxt)
             for compute in compute_nodes:
                 host = compute.host
                 service = service_refs.get(host)
@@ -268,7 +268,7 @@ class CellStateManager(base.Base):
                 # NOTE: This works because it is only used for computes found
                 # in the cell this is run in. It can not be used to check on
                 # computes in a child cell from the api cell. If this is run
-                # in the api cell compute.ComputeNodeList.get_all() above will
+                # in the api cell objects.ComputeNodeList.get_all() above will
                 # return an empty list.
                 alive = self.servicegroup_api.service_is_up(service)
                 if not alive:

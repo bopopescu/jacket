@@ -28,7 +28,7 @@ from stevedore import driver
 
 import jacket.compute.conf
 from jacket.i18n import _, _LW
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute import servicegroup
 
 CONF = jacket.compute.conf.CONF
@@ -73,7 +73,7 @@ class Scheduler(object):
     def hosts_up(self, context, topic):
         """Return the list of hosts that have a running service for topic."""
 
-        services = compute.ServiceList.get_by_topic(context, topic)
+        services = objects.ServiceList.get_by_topic(context, topic)
         return [service.host
                 for service in services
                 if self.servicegroup_api.service_is_up(service)]

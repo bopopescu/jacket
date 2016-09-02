@@ -18,7 +18,7 @@ import webob
 from jacket.api.storage import extensions
 from jacket.api.storage.openstack import wsgi
 from jacket.api.storage import xmlutil
-from jacket.db import compute as db
+from jacket.db import storage as db
 from jacket.storage import exception
 from jacket.storage.i18n import _
 from jacket.storage import quota

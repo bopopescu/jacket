@@ -42,10 +42,10 @@ from oslo_log import log as logging
 
 from jacket.storage import i18n
 i18n.enable_lazy()
-from jacket.storage import context
-from jacket import db
+from jacket import context
+from jacket.storage import compute as db
 from jacket.storage.i18n import _, _LE
-from jacket.objects import storage
+from jacket.objects import storage as objects
 from jacket import rpc
 from jacket.storage import utils
 from jacket.storage import version
@@ -71,7 +71,7 @@ CONF.register_cli_opts(script_opts)
 
 
 def main():
-    storage.register_all()
+    objects.register_all()
     admin_context = context.get_admin_context()
     CONF(sys.argv[1:], project='storage',
          version=version.version_string())
@@ -100,7 +100,7 @@ def main():
         'audit_period_ending': str(end),
     }
 
-    volumes = storage.volume_get_active_by_window(admin_context,
+    volumes = db.volume_get_active_by_window(admin_context,
                                              begin,
                                              end)
     LOG.debug("Found %d volumes", len(volumes))
@@ -172,7 +172,7 @@ def main():
                 LOG.exception(_LE("Delete volume notification failed: %s"),
                               exc_msg, resource=volume_ref)
 
-    snapshots = storage.SnapshotList.get_active_by_window(admin_context,
+    snapshots = objects.SnapshotList.get_active_by_window(admin_context,
                                                           begin, end)
     LOG.debug("Found %d snapshots", len(snapshots))
     for snapshot_ref in snapshots:

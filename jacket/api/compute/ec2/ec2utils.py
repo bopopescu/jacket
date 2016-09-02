@@ -28,7 +28,7 @@ from jacket.compute import exception
 from jacket.i18n import _
 from jacket.i18n import _LI
 from jacket.compute.network import model as network_model
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base as obj_base
 
 LOG = logging.getLogger(__name__)
@@ -103,7 +103,7 @@ def resource_type_from_id(context, resource_id):
 @memoize
 def id_to_glance_id(context, image_id):
     """Convert an internal (db) id to a glance id."""
-    return compute.S3ImageMapping.get_by_id(context, image_id).uuid
+    return objects.S3ImageMapping.get_by_id(context, image_id).uuid
 
 
 @memoize
@@ -112,9 +112,9 @@ def glance_id_to_id(context, glance_id):
     if not glance_id:
         return
     try:
-        return compute.S3ImageMapping.get_by_uuid(context, glance_id).id
+        return objects.S3ImageMapping.get_by_uuid(context, glance_id).id
     except exception.NotFound:
-        s3imap = compute.S3ImageMapping(context, uuid=glance_id)
+        s3imap = objects.S3ImageMapping(context, uuid=glance_id)
         s3imap.create()
         return s3imap.id
 
@@ -166,7 +166,7 @@ def get_ip_info_for_instance(context, instance):
     if isinstance(instance, obj_base.NovaObject):
         nw_info = instance.info_cache.network_info
     else:
-        # FIXME(comstud): Temporary as we transition to compute.
+        # FIXME(comstud): Temporary as we transition to objects.
         info_cache = instance.info_cache or {}
         nw_info = info_cache.get('network_info')
     # Make sure empty response is turned into the model
@@ -200,7 +200,7 @@ def ec2_inst_id_to_uuid(context, ec2_id):
 
 @memoize
 def get_instance_uuid_from_int_id(context, int_id):
-    imap = compute.EC2InstanceMapping.get_by_id(context, int_id)
+    imap = objects.EC2InstanceMapping.get_by_id(context, int_id)
     return imap.uuid
 
 
@@ -298,10 +298,10 @@ def get_int_id_from_instance_uuid(context, instance_uuid):
     if instance_uuid is None:
         return
     try:
-        imap = compute.EC2InstanceMapping.get_by_uuid(context, instance_uuid)
+        imap = objects.EC2InstanceMapping.get_by_uuid(context, instance_uuid)
         return imap.id
     except exception.NotFound:
-        imap = compute.EC2InstanceMapping(context)
+        imap = objects.EC2InstanceMapping(context)
         imap.uuid = instance_uuid
         imap.create()
         return imap.id
@@ -312,10 +312,10 @@ def get_int_id_from_volume_uuid(context, volume_uuid):
     if volume_uuid is None:
         return
     try:
-        vmap = compute.EC2VolumeMapping.get_by_uuid(context, volume_uuid)
+        vmap = objects.EC2VolumeMapping.get_by_uuid(context, volume_uuid)
         return vmap.id
     except exception.NotFound:
-        vmap = compute.EC2VolumeMapping(context)
+        vmap = objects.EC2VolumeMapping(context)
         vmap.uuid = volume_uuid
         vmap.create()
         return vmap.id
@@ -323,7 +323,7 @@ def get_int_id_from_volume_uuid(context, volume_uuid):
 
 @memoize
 def get_volume_uuid_from_int_id(context, int_id):
-    vmap = compute.EC2VolumeMapping.get_by_id(context, int_id)
+    vmap = objects.EC2VolumeMapping.get_by_id(context, int_id)
     return vmap.uuid
 
 
@@ -341,17 +341,17 @@ def get_int_id_from_snapshot_uuid(context, snapshot_uuid):
     if snapshot_uuid is None:
         return
     try:
-        smap = compute.EC2SnapshotMapping.get_by_uuid(context, snapshot_uuid)
+        smap = objects.EC2SnapshotMapping.get_by_uuid(context, snapshot_uuid)
         return smap.id
     except exception.NotFound:
-        smap = compute.EC2SnapshotMapping(context, uuid=snapshot_uuid)
+        smap = objects.EC2SnapshotMapping(context, uuid=snapshot_uuid)
         smap.create()
         return smap.id
 
 
 @memoize
 def get_snapshot_uuid_from_int_id(context, int_id):
-    smap = compute.EC2SnapshotMapping.get_by_id(context, int_id)
+    smap = objects.EC2SnapshotMapping.get_by_id(context, int_id)
     return smap.uuid
 
 

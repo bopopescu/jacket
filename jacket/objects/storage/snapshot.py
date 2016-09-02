@@ -17,10 +17,10 @@ from oslo_log import log as logging
 from oslo_utils import versionutils
 from oslo_versionedobjects import fields
 
-from jacket import db
+from jacket.db import storage as db
 from jacket.storage import exception
 from jacket.storage.i18n import _
-from jacket.objects import storage
+from jacket.objects import storage as objects
 from jacket.objects.storage import base
 
 CONF = cfg.CONF
@@ -120,11 +120,11 @@ class Snapshot(base.CinderPersistentObject, base.CinderObject,
             setattr(snapshot, name, value)
 
         if 'volume' in expected_attrs:
-            volume = storage.Volume(context)
+            volume = objects.Volume(context)
             volume._from_db_object(context, volume, db_snapshot['volume'])
             snapshot.volume = volume
         if 'cgsnapshot' in expected_attrs:
-            cgsnapshot = storage.CGSnapshot(context)
+            cgsnapshot = objects.CGSnapshot(context)
             cgsnapshot._from_db_object(context, cgsnapshot,
                                        db_snapshot['cgsnapshot'])
             snapshot.cgsnapshot = cgsnapshot
@@ -192,11 +192,11 @@ class Snapshot(base.CinderPersistentObject, base.CinderObject,
                                                 objtype=self.obj_name())
 
         if attrname == 'volume':
-            self.volume = storage.Volume.get_by_id(self._context,
+            self.volume = objects.Volume.get_by_id(self._context,
                                                    self.volume_id)
 
         if attrname == 'cgsnapshot':
-            self.cgsnapshot = storage.CGSnapshot.get_by_id(self._context,
+            self.cgsnapshot = objects.CGSnapshot.get_by_id(self._context,
                                                            self.cgsnapshot_id)
 
         self.obj_reset_changes(fields=[attrname])
@@ -232,14 +232,14 @@ class SnapshotList(base.ObjectListBase, base.CinderObject):
         snapshots = db.snapshot_get_all(context, search_opts, marker, limit,
                                         sort_keys, sort_dirs, offset)
         expected_attrs = Snapshot._get_expected_attrs(context)
-        return base.obj_make_list(context, cls(context), storage.Snapshot,
+        return base.obj_make_list(context, cls(context), objects.Snapshot,
                                   snapshots, expected_attrs=expected_attrs)
 
     @base.remotable_classmethod
     def get_by_host(cls, context, host, filters=None):
         snapshots = db.snapshot_get_by_host(context, host, filters)
         expected_attrs = Snapshot._get_expected_attrs(context)
-        return base.obj_make_list(context, cls(context), storage.Snapshot,
+        return base.obj_make_list(context, cls(context), objects.Snapshot,
                                   snapshots, expected_attrs=expected_attrs)
 
     @base.remotable_classmethod
@@ -250,26 +250,26 @@ class SnapshotList(base.ObjectListBase, base.CinderObject):
             context, project_id, search_opts, marker, limit, sort_keys,
             sort_dirs, offset)
         expected_attrs = Snapshot._get_expected_attrs(context)
-        return base.obj_make_list(context, cls(context), storage.Snapshot,
+        return base.obj_make_list(context, cls(context), objects.Snapshot,
                                   snapshots, expected_attrs=expected_attrs)
 
     @base.remotable_classmethod
     def get_all_for_volume(cls, context, volume_id):
         snapshots = db.snapshot_get_all_for_volume(context, volume_id)
         expected_attrs = Snapshot._get_expected_attrs(context)
-        return base.obj_make_list(context, cls(context), storage.Snapshot,
+        return base.obj_make_list(context, cls(context), objects.Snapshot,
                                   snapshots, expected_attrs=expected_attrs)
 
     @base.remotable_classmethod
     def get_active_by_window(cls, context, begin, end):
         snapshots = db.snapshot_get_active_by_window(context, begin, end)
         expected_attrs = Snapshot._get_expected_attrs(context)
-        return base.obj_make_list(context, cls(context), storage.Snapshot,
+        return base.obj_make_list(context, cls(context), objects.Snapshot,
                                   snapshots, expected_attrs=expected_attrs)
 
     @base.remotable_classmethod
     def get_all_for_cgsnapshot(cls, context, cgsnapshot_id):
         snapshots = db.snapshot_get_all_for_cgsnapshot(context, cgsnapshot_id)
         expected_attrs = Snapshot._get_expected_attrs(context)
-        return base.obj_make_list(context, cls(context), storage.Snapshot,
+        return base.obj_make_list(context, cls(context), objects.Snapshot,
                                   snapshots, expected_attrs=expected_attrs)

@@ -37,7 +37,7 @@ from jacket import context
 from jacket.compute import exception
 from jacket.compute import network
 from jacket.compute.network.security_group import openstack_driver
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import keypair as keypair_obj
 from jacket.compute import utils
 from jacket.compute.virt import netutils
@@ -557,7 +557,7 @@ def get_metadata_by_address(address):
 
 def get_metadata_by_instance_id(instance_id, address, ctxt=None):
     ctxt = ctxt or context.get_admin_context()
-    instance = compute.Instance.get_by_uuid(
+    instance = objects.Instance.get_by_uuid(
         ctxt, instance_id, expected_attrs=['ec2_ids', 'flavor', 'info_cache',
                                            'metadata', 'system_metadata',
                                            'security_groups'])
@@ -565,7 +565,7 @@ def get_metadata_by_instance_id(instance_id, address, ctxt=None):
 
 
 def _format_instance_mapping(ctxt, instance):
-    bdms = compute.BlockDeviceMappingList.get_by_instance_uuid(
+    bdms = objects.BlockDeviceMappingList.get_by_instance_uuid(
             ctxt, instance.uuid)
     return block_device.instance_block_mapping(instance, bdms)
 

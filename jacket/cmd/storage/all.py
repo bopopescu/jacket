@@ -43,7 +43,7 @@ from jacket.cmd.storage import volume as volume_cmd
 from jacket.common.storage import config   # noqa
 from jacket.db import api as session
 from jacket.storage.i18n import _LE
-from jacket.objects import storage
+from jacket.objects import storage as objects
 from jacket import rpc
 from jacket import service
 from jacket.storage import utils
@@ -55,7 +55,7 @@ CONF = cfg.CONF
 
 # TODO(e0ne): get a rid of code duplication in storage.cmd module in Mitaka
 def main():
-    storage.register_all()
+    objects.register_all()
     gmr_opts.set_defaults(CONF)
     CONF(sys.argv[1:], project='storage',
          version=version.version_string())

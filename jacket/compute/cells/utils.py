@@ -22,7 +22,7 @@ import sys
 import six
 
 import jacket.compute.conf
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base as obj_base
 
 
@@ -89,7 +89,7 @@ class _CellProxy(object):
 
     # dict-ish syntax sugar
     def _iteritems(self):
-        """For backwards-compatibility with dict-based compute.
+        """For backwards-compatibility with dict-based objects.
 
         NOTE(sbauza): May be removed in the future.
         """
@@ -135,7 +135,7 @@ def get_instances_to_sync(context, updated_since=None, project_id=None,
     lockstep.
     """
     def _get_paginated_instances(context, filters, shuffle, limit, marker):
-        instances = compute.InstanceList.get_by_filters(
+        instances = objects.InstanceList.get_by_filters(
                 context, filters, sort_key='deleted', sort_dir='asc',
                 limit=limit, marker=marker)
         if len(instances) > 0:

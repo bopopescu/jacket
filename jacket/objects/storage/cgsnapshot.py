@@ -12,10 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from jacket import db
+from jacket.db import storage as db
 from jacket.storage import exception
 from jacket.storage.i18n import _
-from jacket.objects import storage
+from jacket.objects import storage as objects
 from jacket.objects.storage import base
 from oslo_versionedobjects import fields
 
@@ -51,7 +51,7 @@ class CGSnapshot(base.CinderPersistentObject, base.CinderObject,
             setattr(cgsnapshot, name, value)
 
         if 'consistencygroup' in expected_attrs:
-            consistencygroup = storage.ConsistencyGroup(context)
+            consistencygroup = objects.ConsistencyGroup(context)
             consistencygroup._from_db_object(context, consistencygroup,
                                              db_cgsnapshots[
                                                  'consistencygroup'])
@@ -59,8 +59,8 @@ class CGSnapshot(base.CinderPersistentObject, base.CinderObject,
 
         if 'snapshots' in expected_attrs:
             snapshots = base.obj_make_list(
-                context, storage.SnapshotsList(context),
-                storage.Snapshots,
+                context, objects.SnapshotsList(context),
+                objects.Snapshots,
                 db_cgsnapshots['snapshots'])
             cgsnapshot.snapshots = snapshots
 
@@ -92,11 +92,11 @@ class CGSnapshot(base.CinderPersistentObject, base.CinderObject,
                                                 objtype=self.obj_name())
 
         if attrname == 'consistencygroup':
-            self.consistencygroup = storage.ConsistencyGroup.get_by_id(
+            self.consistencygroup = objects.ConsistencyGroup.get_by_id(
                 self._context, self.consistencygroup_id)
 
         if attrname == 'snapshots':
-            self.snapshots = storage.SnapshotList.get_all_for_cgsnapshot(
+            self.snapshots = objects.SnapshotList.get_all_for_cgsnapshot(
                 self._context, self.id)
 
         self.obj_reset_changes(fields=[attrname])
@@ -131,14 +131,14 @@ class CGSnapshotList(base.ObjectListBase, base.CinderObject):
     @base.remotable_classmethod
     def get_all(cls, context, filters=None):
         cgsnapshots = db.cgsnapshot_get_all(context, filters)
-        return base.obj_make_list(context, cls(context), storage.CGSnapshot,
+        return base.obj_make_list(context, cls(context), objects.CGSnapshot,
                                   cgsnapshots)
 
     @base.remotable_classmethod
     def get_all_by_project(cls, context, project_id, filters=None):
         cgsnapshots = db.cgsnapshot_get_all_by_project(context, project_id,
                                                        filters)
-        return base.obj_make_list(context, cls(context), storage.CGSnapshot,
+        return base.obj_make_list(context, cls(context), objects.CGSnapshot,
                                   cgsnapshots)
 
     @base.remotable_classmethod
@@ -146,5 +146,5 @@ class CGSnapshotList(base.ObjectListBase, base.CinderObject):
         cgsnapshots = db.cgsnapshot_get_all_by_group(context, group_id,
                                                      filters)
         return base.obj_make_list(context, cls(context),
-                                  storage.CGSnapshot,
+                                  objects.CGSnapshot,
                                   cgsnapshots)

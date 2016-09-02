@@ -22,7 +22,7 @@ import os
 
 import eventlet
 
-from jacket.objects import storage
+from jacket.objects import storage as objects
 
 if os.name == 'nt':
     # eventlet monkey patching the os module causes subprocess.Popen to fail
@@ -58,7 +58,7 @@ CONF = cfg.CONF
 
 
 def main():
-    storage.register_all()
+    objects.register_all()
     gmr_opts.set_defaults(CONF)
     CONF(sys.argv[1:], project='storage',
          version=version.version_string())

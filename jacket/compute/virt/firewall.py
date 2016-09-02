@@ -23,7 +23,7 @@ import jacket.compute.conf
 from jacket import context
 from jacket.i18n import _LI
 from jacket.compute.network import linux_net
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute import utils
 from jacket.compute.virt import netutils
 
@@ -291,10 +291,10 @@ class IptablesFirewallDriver(FirewallDriver):
     def instance_rules(self, instance, network_info):
         ctxt = context.get_admin_context()
         if isinstance(instance, dict):
-            # NOTE(danms): allow old-world instance compute from
+            # NOTE(danms): allow old-world instance objects from
             # unconverted callers; all we need is instance.uuid below
-            instance = compute.Instance._from_db_object(
-                ctxt, compute.Instance(), instance, [])
+            instance = objects.Instance._from_db_object(
+                ctxt, objects.Instance(), instance, [])
 
         ipv4_rules = []
         ipv6_rules = []
@@ -316,7 +316,7 @@ class IptablesFirewallDriver(FirewallDriver):
             self._do_ra_rules(ipv6_rules, network_info)
 
         # then, security group chains and rules
-        rules = compute.SecurityGroupRuleList.get_by_instance(ctxt, instance)
+        rules = objects.SecurityGroupRuleList.get_by_instance(ctxt, instance)
 
         for rule in rules:
             if not rule.cidr:
@@ -350,7 +350,7 @@ class IptablesFirewallDriver(FirewallDriver):
                 fw_rules += [' '.join(args)]
             else:
                 if rule.grantee_group:
-                    insts = compute.InstanceList.get_by_security_group(
+                    insts = objects.InstanceList.get_by_security_group(
                             ctxt, rule.grantee_group)
                     for inst in insts:
                         if inst.info_cache.deleted:

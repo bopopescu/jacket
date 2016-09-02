@@ -34,7 +34,7 @@ from jacket.compute import exception
 from jacket.i18n import _
 from jacket.i18n import _LE
 from jacket.i18n import _LW
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute import quota
 from jacket.compute import utils
 
@@ -533,7 +533,7 @@ def raise_feature_not_supported(msg=None):
 
 def get_flavor(context, flavor_id):
     try:
-        return compute.Flavor.get_by_flavor_id(context, flavor_id)
+        return objects.Flavor.get_by_flavor_id(context, flavor_id)
     except exception.FlavorNotFound as error:
         raise exc.HTTPNotFound(explanation=error.format_message())
 

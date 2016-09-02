@@ -33,7 +33,7 @@ i18n.enable_lazy()
 
 # Need to register global_opts
 from jacket.common.storage import config  # noqa
-from jacket.objects import storage
+from jacket.objects import storage as objects
 from jacket import service
 from jacket.storage import utils
 from jacket.storage import version
@@ -43,7 +43,7 @@ CONF = cfg.CONF
 
 
 def main():
-    storage.register_all()
+    objects.register_all()
     gmr_opts.set_defaults(CONF)
     CONF(sys.argv[1:], project='storage',
          version=version.version_string())

@@ -29,7 +29,7 @@ from jacket.compute.cloud import rpcapi as compute_rpcapi
 import jacket.compute.conf
 from jacket.i18n import _LI, _LW
 from jacket import manager
-from jacket.objects import compute
+from jacket.objects import compute as objects
 
 
 LOG = logging.getLogger(__name__)
@@ -72,7 +72,7 @@ class ConsoleAuthManager(manager.Manager):
     def reset(self):
         LOG.info(_LI('Reloading compute RPC API'))
         compute_rpcapi.LAST_VERSION = None
-        self.compute_rpcapi = compute_rpcapi.JacketAPI()
+        self.compute_rpcapi = compute_rpcapi.ComputeAPI()
 
     def _get_tokens_for_instance(self, instance_uuid):
         tokens_str = self.mc_instance.get(instance_uuid.encode('UTF-8'))
@@ -132,7 +132,7 @@ class ConsoleAuthManager(manager.Manager):
             return self.cells_rpcapi.validate_console_port(context,
                     instance_uuid, token['port'], token['console_type'])
 
-        instance = compute.Instance.get_by_uuid(context, instance_uuid)
+        instance = objects.Instance.get_by_uuid(context, instance_uuid)
 
         return self.compute_rpcapi.validate_console_port(context,
                                                          instance,

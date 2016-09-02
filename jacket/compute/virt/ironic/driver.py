@@ -47,7 +47,7 @@ from jacket.i18n import _
 from jacket.i18n import _LE
 from jacket.i18n import _LI
 from jacket.i18n import _LW
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute.virt import configdrive
 from jacket.compute.virt import driver as virt_driver
 from jacket.compute.virt import firewall
@@ -479,7 +479,7 @@ class IronicDriver(virt_driver.ComputeDriver):
         # pagination until there're no more values to be returned.
         node_list = self._get_node_list(associated=True, limit=0)
         context = nova_context.get_admin_context()
-        return [compute.Instance.get_by_uuid(context,
+        return [objects.Instance.get_by_uuid(context,
                                              i.instance_uuid).name
                 for i in node_list]
 

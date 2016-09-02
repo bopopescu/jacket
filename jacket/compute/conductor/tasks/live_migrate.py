@@ -19,7 +19,7 @@ from jacket.compute.cloud import power_state
 from jacket.compute.conductor.tasks import base
 from jacket.compute import exception
 from jacket.i18n import _
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute.scheduler import utils as scheduler_utils
 from jacket.compute import utils
 
@@ -92,7 +92,7 @@ class LiveMigrationTask(base.TaskBase):
 
     def _check_host_is_up(self, host):
         try:
-            service = compute.Service.get_by_compute_host(self.context, host)
+            service = objects.Service.get_by_compute_host(self.context, host)
         except exception.NotFound:
             raise exception.ComputeServiceUnavailable(host=host)
 
@@ -134,7 +134,7 @@ class LiveMigrationTask(base.TaskBase):
                     mem_inst=mem_inst))
 
     def _get_compute_info(self, host):
-        return compute.ComputeNode.get_first_node_by_host_for_old_compat(
+        return objects.ComputeNode.get_first_node_by_host_for_old_compat(
             self.context, host)
 
     def _check_compatible_with_source_hypervisor(self, destination):
@@ -176,7 +176,7 @@ class LiveMigrationTask(base.TaskBase):
             # NOTE(sbauza): We were unable to find an original RequestSpec
             # object - probably because the instance is old.
             # We need to mock that the old way
-            request_spec = compute.RequestSpec.from_components(
+            request_spec = objects.RequestSpec.from_components(
                 self.context, self.instance.uuid, image,
                 self.instance.flavor, self.instance.numa_topology,
                 self.instance.pci_requests,

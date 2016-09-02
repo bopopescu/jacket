@@ -12,7 +12,7 @@
 
 from oslo_log import log as logging
 
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import fields
 from jacket.compute.scheduler import filters
 from jacket.compute.virt import hardware
@@ -75,7 +75,7 @@ class NUMATopologyFilter(filters.BaseHostFilter):
             return False
 
         if requested_topology and host_topology:
-            limits = compute.NUMATopologyLimits(
+            limits = objects.NUMATopologyLimits(
                 cpu_allocation_ratio=cpu_ratio,
                 ram_allocation_ratio=ram_ratio)
             instance_topology = (hardware.numa_fit_instance_to_host(

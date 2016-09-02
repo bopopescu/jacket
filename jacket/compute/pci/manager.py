@@ -22,7 +22,7 @@ from oslo_serialization import jsonutils
 
 from jacket.compute import exception
 from jacket.i18n import _LW
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import fields
 from jacket.compute.pci import stats
 from jacket.compute.pci import whitelist
@@ -59,10 +59,10 @@ class PciDevTracker(object):
         self.dev_filter = whitelist.Whitelist(CONF.pci_passthrough_whitelist)
         self._context = context
         if node_id:
-            self.pci_devs = compute.PciDeviceList.get_by_compute_node(
+            self.pci_devs = objects.PciDeviceList.get_by_compute_node(
                     context, node_id)
         else:
-            self.pci_devs = compute.PciDeviceList(compute=[])
+            self.pci_devs = objects.PciDeviceList(objects=[])
         self._initial_instance_usage()
 
     def _initial_instance_usage(self):
@@ -165,12 +165,12 @@ class PciDevTracker(object):
         for dev in [dev for dev in devices if
                     dev['address'] in new_addrs - exist_addrs]:
             dev['compute_node_id'] = self.node_id
-            dev_obj = compute.PciDevice.create(self._context, dev)
+            dev_obj = objects.PciDevice.create(self._context, dev)
             self.pci_devs.objects.append(dev_obj)
             self.stats.add_device(dev_obj)
 
     def _claim_instance(self, context, instance, prefix=''):
-        pci_requests = compute.InstancePCIRequests.get_by_instance(
+        pci_requests = objects.InstancePCIRequests.get_by_instance(
             context, instance)
         if not pci_requests.requests:
             return None
