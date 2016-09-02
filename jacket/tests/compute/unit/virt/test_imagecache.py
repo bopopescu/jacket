@@ -16,7 +16,7 @@ from oslo_config import cfg
 
 from jacket.compute import block_device
 from jacket.compute.cloud import vm_states
-from jacket.compute import context
+from jacket import context
 from jacket.objects import compute
 from jacket.objects.compute import block_device as block_device_obj
 from jacket.compute import test

@@ -15,7 +15,7 @@
 
 """Tests for transfers table."""
 
-from jacket.storage import context
+from jacket import context
 from jacket import db
 from jacket.storage import exception
 from jacket.storage import test

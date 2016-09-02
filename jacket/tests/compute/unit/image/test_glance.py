@@ -26,7 +26,7 @@ from oslo_utils import netutils
 import six
 import testtools
 
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.compute.image import glance
 from jacket.compute import test

@@ -21,7 +21,7 @@ import mock
 from oslo_concurrency import processutils
 import six
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.objects.storage import fields
 from jacket.storage import test

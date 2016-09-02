@@ -17,7 +17,7 @@
 import mock
 
 from jacket.api.storage.storage.contrib import scheduler_stats
-from jacket.storage import context
+from jacket import context
 from jacket.storage import test
 from jacket.tests.storage.unit.api import fakes
 

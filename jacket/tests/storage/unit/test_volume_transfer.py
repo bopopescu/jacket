@@ -16,7 +16,7 @@
 import datetime
 import mock
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.objects import storage
 from jacket.storage import quota

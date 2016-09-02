@@ -14,7 +14,7 @@
 #    under the License.
 import mock
 
-from jacket.storage import context
+from jacket import context
 from jacket.tests.storage.unit import fake_volume
 from jacket.tests.storage.unit.volume.drivers.emc import scaleio
 

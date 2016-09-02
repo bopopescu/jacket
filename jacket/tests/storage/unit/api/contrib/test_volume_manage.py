@@ -16,7 +16,7 @@ import mock
 from oslo_serialization import jsonutils
 import webob
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.storage import test
 from jacket.tests.storage.unit.api import fakes

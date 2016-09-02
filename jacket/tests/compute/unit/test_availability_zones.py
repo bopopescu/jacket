@@ -22,7 +22,7 @@ import six
 
 from jacket.compute import availability_zones as az
 import jacket.compute.conf
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.objects import compute
 from jacket.compute import test

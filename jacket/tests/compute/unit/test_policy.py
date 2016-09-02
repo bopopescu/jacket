@@ -21,7 +21,7 @@ from oslo_policy import policy as oslo_policy
 from oslo_serialization import jsonutils
 import requests_mock
 
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.compute import policy
 from jacket.compute import test

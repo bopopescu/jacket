@@ -15,7 +15,7 @@
 
 import mock
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.storage import test
 from jacket.storage.volume import configuration as conf

@@ -20,7 +20,7 @@ import mock
 from oslo_config import cfg
 from oslo_utils import encodeutils
 
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.compute import test
 from jacket.tests.compute.unit.virt.libvirt import fakelibvirt

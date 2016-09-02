@@ -20,7 +20,7 @@ import uuid
 import mock
 
 from jacket.compute.cloud import claims
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.compute.pci import manager as pci_manager

@@ -24,7 +24,7 @@ from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import excutils
 
-from jacket.compute import context
+from jacket import context
 from jacket import db
 from jacket.i18n import _, _LE
 from jacket.compute import paths

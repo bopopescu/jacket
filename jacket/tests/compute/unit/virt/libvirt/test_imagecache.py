@@ -30,7 +30,7 @@ from oslo_utils import importutils
 from six.moves import cStringIO
 
 from jacket.compute import conductor
-from jacket.compute import context
+from jacket import context
 from jacket.objects import compute
 from jacket.compute import test
 from jacket.tests.compute.unit import fake_instance

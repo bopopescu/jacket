@@ -19,7 +19,7 @@ Unit Tests for compute.scheduler.rpcapi
 import mock
 from oslo_config import cfg
 
-from jacket.compute import context
+from jacket import context
 from jacket.objects import compute
 from jacket.compute.scheduler import rpcapi as scheduler_rpcapi
 from jacket.compute import test

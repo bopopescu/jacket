@@ -21,7 +21,7 @@ import unicodedata
 
 import six
 
-from jacket import db
+from jacket.db import compute as db
 from jacket.i18n import _
 
 

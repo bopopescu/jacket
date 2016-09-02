@@ -34,7 +34,7 @@ from oslo_utils import strutils
 from oslo_utils import units
 import six
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.storage.i18n import _, _LE, _LI, _LW
 from jacket.storage import utils

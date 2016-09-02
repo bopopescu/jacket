@@ -11,7 +11,7 @@
 #    under the License.
 """ Tests for manage_existing TaskFlow """
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import test
 from jacket.tests.storage.unit import fake_volume
 from jacket.tests.storage.unit.volume.flows import fake_volume_api

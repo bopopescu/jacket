@@ -31,7 +31,7 @@ from jacket.compute.cells import messaging
 from jacket.compute.cells import state as cells_state
 from jacket.compute.cells import utils as cells_utils
 import jacket.compute.conf
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.i18n import _LW
 from jacket import manager

@@ -23,7 +23,7 @@ from jacket.api.compute.openstack.compute import aggregates as aggregates_v21
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import aggregates \
         as aggregates_v2
 from jacket.compute.cloud import api as compute_api
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.objects.compute import base as obj_base

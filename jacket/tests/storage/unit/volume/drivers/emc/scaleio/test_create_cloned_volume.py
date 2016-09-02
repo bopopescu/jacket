@@ -17,7 +17,7 @@ import json
 
 from six.moves import urllib
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.tests.storage.unit import fake_volume
 from jacket.tests.storage.unit.volume.drivers.emc import scaleio

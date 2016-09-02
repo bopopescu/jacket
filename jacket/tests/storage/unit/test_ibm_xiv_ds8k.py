@@ -23,7 +23,7 @@ import copy
 
 from mox3 import mox
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.storage.i18n import _
 from jacket.objects.storage import fields

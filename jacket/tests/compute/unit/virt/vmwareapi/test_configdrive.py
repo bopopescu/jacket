@@ -17,7 +17,7 @@ import fixtures
 import mock
 from mox3 import mox
 
-from jacket.compute import context
+from jacket import context
 from jacket.compute.image import glance
 from jacket.objects import compute
 from jacket.compute import test

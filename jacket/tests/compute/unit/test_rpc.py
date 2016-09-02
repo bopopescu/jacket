@@ -19,7 +19,7 @@ import oslo_messaging as messaging
 from oslo_serialization import jsonutils
 import testtools
 
-from jacket.compute import context
+from jacket import context
 from jacket import rpc
 from jacket.compute import test
 

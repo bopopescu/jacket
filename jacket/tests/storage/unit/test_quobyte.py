@@ -26,7 +26,7 @@ from oslo_config import cfg
 from oslo_utils import imageutils
 from oslo_utils import units
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.storage.image import image_utils
 from jacket.storage import test

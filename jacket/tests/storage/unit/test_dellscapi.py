@@ -17,7 +17,7 @@ import mock
 from requests import models
 import uuid
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.storage import test
 from jacket.storage.volume.drivers.dell import dell_storagecenter_api

@@ -49,7 +49,7 @@ from oslo_utils import timeutils
 import requests
 
 import jacket.compute.conf
-from jacket.compute import context
+from jacket import context
 from jacket.i18n import _LW
 from jacket.objects import compute
 from jacket.compute.scheduler import filters

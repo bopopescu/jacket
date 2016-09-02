@@ -16,7 +16,7 @@ import mock
 from mox3 import mox
 
 from jacket.compute.cloud import manager as compute_manager
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.compute import exception
 from jacket.objects import compute

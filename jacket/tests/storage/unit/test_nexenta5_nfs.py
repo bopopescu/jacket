@@ -19,7 +19,7 @@ Unit tests for OpenStack Cinder volume driver
 import mock
 from mock import patch
 
-from jacket.storage import context
+from jacket import context
 from jacket import db
 from jacket.storage import test
 from jacket.storage.volume import configuration as conf

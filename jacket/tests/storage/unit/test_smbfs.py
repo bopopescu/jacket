@@ -20,7 +20,7 @@ import ddt
 import mock
 from oslo_utils import fileutils
 
-from jacket.storage import context
+from jacket import context
 from jacket import db
 from jacket.storage import exception
 from jacket.storage.image import image_utils

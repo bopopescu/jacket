@@ -22,7 +22,7 @@ import binascii
 
 from oslo_config import cfg
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.storage.keymgr import conf_key_mgr
 from jacket.storage.keymgr import key

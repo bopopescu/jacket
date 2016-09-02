@@ -14,7 +14,7 @@
 #    under the License.
 from six.moves import urllib
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.tests.storage.unit.fake_volume import fake_volume_obj
 from jacket.tests.storage.unit.volume.drivers.emc import scaleio

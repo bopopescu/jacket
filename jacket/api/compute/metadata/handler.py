@@ -28,7 +28,7 @@ import webob.exc
 
 from jacket.api.compute.metadata import base
 from jacket.compute import cache_utils
-from jacket.compute import context as nova_context
+from jacket import context as nova_context
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.i18n import _LE

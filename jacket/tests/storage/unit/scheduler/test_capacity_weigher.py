@@ -19,7 +19,7 @@ Tests For Capacity Weigher.
 import mock
 from oslo_config import cfg
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage.scheduler import weights
 from jacket.storage import test
 from jacket.tests.storage.unit.scheduler import fakes

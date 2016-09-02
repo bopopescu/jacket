@@ -21,7 +21,7 @@ import mock
 from oslo_utils import uuidutils
 
 from jacket.cmd.compute import manage
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.db.compute import migration
 from jacket.db.compute.sqlalchemy import migration as sqla_migration

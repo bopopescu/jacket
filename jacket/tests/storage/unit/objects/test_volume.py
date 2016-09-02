@@ -16,7 +16,7 @@ import ddt
 import mock
 import six
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.objects import storage
 from jacket.tests.storage.unit import fake_consistencygroup

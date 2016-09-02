@@ -33,7 +33,7 @@ from jacket.compute import availability_zones as az
 from jacket.compute import block_device
 from jacket.compute.cells import opts as cells_opts
 from jacket.compute.cells import rpcapi as cells_rpcapi
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.compute import network
 from jacket.compute.network.security_group import openstack_driver

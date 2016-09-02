@@ -28,7 +28,7 @@ import six.moves.urllib.parse as urlparse
 import websockify
 
 from jacket.compute.consoleauth import rpcapi as consoleauth_rpcapi
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.i18n import _
 

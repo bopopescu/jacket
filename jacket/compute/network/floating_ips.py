@@ -24,7 +24,7 @@ from oslo_utils import importutils
 from oslo_utils import uuidutils
 import six
 
-from jacket.compute import context
+from jacket import context
 from jacket.db import base
 from jacket.compute import exception
 from jacket.i18n import _LE, _LI, _LW

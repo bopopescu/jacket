@@ -19,11 +19,11 @@ import webob
 
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-import jacket.compute.context
-from jacket import db
+import jacket.context
+from jacket.db import compute as db
 from jacket.compute import exception
 from jacket.i18n import _
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute import quota
 from jacket.compute import utils
 
@@ -72,10 +72,10 @@ class QuotaSetsController(wsgi.Controller):
         # `nice` way, but it seems like the only way for now:
         # http://dev.mysql.com/doc/refman/5.0/en/integer-types.html
         # http://www.postgresql.org/docs/9.1/static/datatype-numeric.html
-        if limit < -1 or limit > compute.MAX_INT:
+        if limit < -1 or limit > db.MAX_INT:
             msg = (_("Quota limit %(limit)s for %(resource)s "
                      "must be in the range of -1 and %(max)s.") %
-                   {'limit': limit, 'resource': resource, 'max': compute.MAX_INT})
+                   {'limit': limit, 'resource': resource, 'max': db.MAX_INT})
             raise webob.exc.HTTPBadRequest(explanation=msg)
 
         def conv_inf(value):
@@ -106,28 +106,28 @@ class QuotaSetsController(wsgi.Controller):
             return {k: v['limit'] for k, v in values.items()}
 
     def show(self, req, id):
-        context = req.environ['jacket.compute']
+        context = req.environ['compute.context']
         authorize_show(context)
         params = urlparse.parse_qs(req.environ.get('QUERY_STRING', ''))
         user_id = None
         if self.ext_mgr.is_loaded('os-user-quotas'):
             user_id = params.get('user_id', [None])[0]
         try:
-            jacket.compute.context.authorize_project_context(context, id)
+            jacket.context.authorize_project_context(context, id)
             return self._format_quota_set(id,
                     self._get_quotas(context, id, user_id=user_id))
         except exception.Forbidden:
             raise webob.exc.HTTPForbidden()
 
     def update(self, req, id, body):
-        context = req.environ['jacket.compute']
+        context = req.environ['compute.context']
         authorize_update(context)
         try:
             # NOTE(alex_xu): back-compatible with compute layer hard-code admin
             # permission checks. This has to be left only for API v2.0 because
             # this version has to be stable even if it means that only admins
             # can call this method while the policy could be changed.
-            jacket.compute.context.require_admin_context(context)
+            jacket.context.require_admin_context(context)
         except exception.AdminRequired:
             raise webob.exc.HTTPForbidden()
 
@@ -154,7 +154,7 @@ class QuotaSetsController(wsgi.Controller):
         try:
             # NOTE(alex_xu): back-compatible with compute layer hard-code admin
             # permission checks.
-            jacket.compute.context.authorize_project_context(context, id)
+            jacket.context.authorize_project_context(context, id)
             settable_quotas = QUOTAS.get_settable_quotas(context, project_id,
                                                          user_id=user_id)
         except exception.Forbidden:
@@ -212,36 +212,36 @@ class QuotaSetsController(wsgi.Controller):
         # the validation up front in the 2 loops above.
         for key, value in valid_quotas.items():
             try:
-                compute.Quotas.create_limit(context, project_id,
+                objects.Quotas.create_limit(context, project_id,
                                             key, value, user_id=user_id)
             except exception.QuotaExists:
-                compute.Quotas.update_limit(context, project_id,
+                objects.Quotas.update_limit(context, project_id,
                                             key, value, user_id=user_id)
         values = self._get_quotas(context, id, user_id=user_id)
         return self._format_quota_set(None, values)
 
     def defaults(self, req, id):
-        context = req.environ['jacket.compute']
+        context = req.environ['compute.context']
         authorize_show(context)
         values = QUOTAS.get_defaults(context)
         return self._format_quota_set(id, values)
 
     def delete(self, req, id):
         if self.ext_mgr.is_loaded('os-extended-quotas'):
-            context = req.environ['jacket.compute']
+            context = req.environ['compute.context']
             authorize_delete(context)
             params = urlparse.parse_qs(req.environ.get('QUERY_STRING', ''))
             user_id = params.get('user_id', [None])[0]
             if user_id and not self.ext_mgr.is_loaded('os-user-quotas'):
                 raise webob.exc.HTTPNotFound()
             try:
-                jacket.compute.context.authorize_project_context(context, id)
+                jacket.context.authorize_project_context(context, id)
                 # NOTE(alex_xu): back-compatible with compute layer hard-code admin
                 # permission checks. This has to be left only for API v2.0
                 # because this version has to be stable even if it means that
                 # only admins can call this method while the policy could be
                 # changed.
-                jacket.compute.context.require_admin_context(context)
+                jacket.context.require_admin_context(context)
                 if user_id:
                     QUOTAS.destroy_all_by_project_and_user(context,
                                                            id, user_id)

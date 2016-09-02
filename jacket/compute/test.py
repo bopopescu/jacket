@@ -44,8 +44,8 @@ from oslotest import moxstubout
 import six
 import testtools
 
-from jacket.compute import context
-from jacket import db
+from jacket import context
+from jacket.db import compute as db
 from jacket.compute.network import manager as network_manager
 from jacket.compute.network.security_group import openstack_driver
 from jacket.objects.compute import base as objects_base
@@ -100,7 +100,7 @@ class SampleNetworks(fixtures.Fixture):
                                 vpn_start=CONF.vpn_start,
                                 vlan_start=CONF.vlan_start,
                                 dns1=CONF.flat_network_dns)
-        for net in compute.network_get_all(ctxt):
+        for net in db.network_get_all(ctxt):
             network.set_network_host(ctxt, net)
 
 

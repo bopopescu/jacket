@@ -15,7 +15,7 @@
 import datetime
 from six.moves import StringIO
 
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.compute import test
 import jacket.tests.compute.unit.image.fake

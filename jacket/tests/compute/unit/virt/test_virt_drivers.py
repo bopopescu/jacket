@@ -27,7 +27,7 @@ import six
 
 from jacket.compute.compute import manager
 from jacket.compute.console import type as ctype
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.compute import objects
 from jacket.compute import test

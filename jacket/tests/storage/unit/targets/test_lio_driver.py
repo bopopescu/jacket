@@ -13,7 +13,7 @@
 import mock
 from oslo_concurrency import processutils as putils
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.tests.storage.unit.targets import targets_fixture as tf
 from jacket.storage import utils

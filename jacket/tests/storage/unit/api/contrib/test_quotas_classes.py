@@ -25,7 +25,7 @@ import webob.exc
 
 
 from jacket.api.storage.storage.contrib import quota_classes
-from jacket.storage import context
+from jacket import context
 from jacket.storage import quota
 from jacket.storage import test
 from jacket.storage.volume import volume_types

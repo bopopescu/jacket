@@ -20,7 +20,7 @@ from oslo_utils import fixture as utils_fixture
 from jacket.api.compute.openstack.compute import instance_usage_audit_log as v21_ial
 from jacket.api.compute.openstack.compute.legacy_v2.contrib \
         import instance_usage_audit_log as ial
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.compute import test
 from jacket.tests.compute.unit.api.openstack import fakes

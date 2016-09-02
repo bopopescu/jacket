@@ -22,7 +22,7 @@ import mock
 from mox3 import mox
 from oslo_config import cfg
 
-from jacket.compute import context
+from jacket import context
 from jacket.compute.network import rpcapi as network_rpcapi
 from jacket.objects.compute import base as objects_base
 from jacket.compute import test

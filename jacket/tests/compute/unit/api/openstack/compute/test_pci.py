@@ -17,7 +17,7 @@ from webob import exc
 
 from jacket.api.compute.openstack.compute import pci
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.objects.compute import fields

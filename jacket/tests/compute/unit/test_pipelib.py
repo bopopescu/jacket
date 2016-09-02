@@ -16,7 +16,7 @@
 from oslo_config import cfg
 
 from jacket.compute.cloudpipe import pipelib
-from jacket.compute import context
+from jacket import context
 from jacket.compute import crypto
 from jacket.compute import test
 from jacket.compute import utils

@@ -61,7 +61,7 @@ from sqlalchemy.sql import true
 from jacket.compute import block_device
 from jacket.compute.cloud import task_states
 from jacket.compute.cloud import vm_states
-import jacket.compute.context
+import jacket.context
 from jacket.db.compute.sqlalchemy import models
 from jacket.compute import exception
 from jacket.i18n import _, _LI, _LE, _LW
@@ -227,7 +227,7 @@ def require_context(f):
 
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
-        jacket.compute.context.require_context(args[0])
+        jacket.context.require_context(args[0])
         return f(*args, **kwargs)
     return wrapper
 
@@ -376,7 +376,7 @@ def model_query(context, model,
 
     # We can't use oslo.db model_query's project_id here, as it doesn't allow
     # us to return both our projects and unowned projects.
-    if jacket.compute.context.is_user_context(context) and project_only:
+    if jacket.context.is_user_context(context) and project_only:
         if project_only == 'allow_none':
             query = query.\
                 filter(or_(model.project_id == context.project_id,
@@ -1007,7 +1007,7 @@ def floating_ip_get_pools(context):
 @main_context_manager.writer
 def floating_ip_allocate_address(context, project_id, pool,
                                  auto_assigned=False):
-    jacket.compute.context.authorize_project_context(context, project_id)
+    jacket.context.authorize_project_context(context, project_id)
     floating_ip_ref = model_query(context, models.FloatingIp,
                                   read_deleted="no").\
         filter_by(fixed_ip_id=None).\
@@ -1114,7 +1114,7 @@ def floating_ip_create(context, values):
 
 
 def _floating_ip_count_by_project(context, project_id):
-    jacket.compute.context.authorize_project_context(context, project_id)
+    jacket.context.authorize_project_context(context, project_id)
     # TODO(tr3buchet): why leave auto_assigned floating IPs out?
     return model_query(context, models.FloatingIp, read_deleted="no").\
                    filter_by(project_id=project_id).\
@@ -1218,7 +1218,7 @@ def floating_ip_get_all_by_host(context, host):
 @require_context
 @main_context_manager.reader
 def floating_ip_get_all_by_project(context, project_id):
-    jacket.compute.context.authorize_project_context(context, project_id)
+    jacket.context.authorize_project_context(context, project_id)
     # TODO(tr3buchet): why do we not want auto_assigned floating IPs here?
     return _floating_ip_get_all(context).\
                          filter_by(project_id=project_id).\
@@ -1253,8 +1253,8 @@ def _floating_ip_get_by_address(context, address):
 
     # If the floating IP has a project ID set, check to make sure
     # the non-admin user has access.
-    if result.project_id and jacket.compute.context.is_user_context(context):
-        jacket.compute.context.authorize_project_context(context, result.project_id)
+    if result.project_id and jacket.context.is_user_context(context):
+        jacket.context.authorize_project_context(context, result.project_id)
 
     return result
 
@@ -1526,11 +1526,11 @@ def fixed_ip_get(context, id, get_network=False):
 
     # FIXME(sirp): shouldn't we just use project_only here to restrict the
     # results?
-    if (jacket.compute.context.is_user_context(context) and
+    if (jacket.context.is_user_context(context) and
             result['instance_uuid'] is not None):
         instance = instance_get_by_uuid(context.elevated(read_deleted='yes'),
                                         result['instance_uuid'])
-        jacket.compute.context.authorize_project_context(context, instance.project_id)
+        jacket.context.authorize_project_context(context, instance.project_id)
 
     return result
 
@@ -1569,12 +1569,12 @@ def _fixed_ip_get_by_address(context, address, columns_to_join=None):
 
     # NOTE(sirp): shouldn't we just use project_only here to restrict the
     # results?
-    if (jacket.compute.context.is_user_context(context) and
+    if (jacket.context.is_user_context(context) and
             result['instance_uuid'] is not None):
         instance = _instance_get_by_uuid(
             context.elevated(read_deleted='yes'),
             result['instance_uuid'])
-        jacket.compute.context.authorize_project_context(context,
+        jacket.context.authorize_project_context(context,
                                                instance.project_id)
     return result
 
@@ -1660,7 +1660,7 @@ def fixed_ip_update(context, address, values):
 
 
 def _fixed_ip_count_by_project(context, project_id):
-    jacket.compute.context.authorize_project_context(context, project_id)
+    jacket.context.authorize_project_context(context, project_id)
     return model_query(context, models.FixedIp, (models.FixedIp.id,),
                        read_deleted="no").\
                 join((models.Instance,
@@ -4520,7 +4520,7 @@ def security_group_destroy(context, security_group_id):
 
 
 def _security_group_count_by_project_and_user(context, project_id, user_id):
-    jacket.compute.context.authorize_project_context(context, project_id)
+    jacket.context.authorize_project_context(context, project_id)
     return model_query(context, models.SecurityGroup, read_deleted="no").\
                    filter_by(project_id=project_id).\
                    filter_by(user_id=user_id).\

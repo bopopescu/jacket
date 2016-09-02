@@ -25,7 +25,7 @@ import mock
 import testtools
 from testtools import matchers
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.storage.volume import configuration as conf
 from jacket.storage.volume.drivers.cloudbyte import cloudbyte

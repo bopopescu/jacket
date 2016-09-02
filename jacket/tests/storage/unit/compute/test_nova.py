@@ -15,7 +15,7 @@
 import mock
 
 from jacket.storage.compute import nova
-from jacket.storage import context
+from jacket import context
 from jacket.storage import test
 
 

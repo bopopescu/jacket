@@ -18,7 +18,7 @@ Unit Tests for cells scheduler filters.
 
 from jacket.compute.cells import filters
 from jacket.compute.cells import state
-from jacket.compute import context
+from jacket import context
 from jacket.db.compute.sqlalchemy import models
 from jacket.compute import test
 from jacket.tests.compute.unit.cells import fakes

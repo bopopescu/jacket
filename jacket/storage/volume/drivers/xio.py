@@ -20,7 +20,7 @@ from oslo_serialization import base64
 from oslo_service import loopingcall
 from six.moves import urllib
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.storage.i18n import _LE, _LI, _LW
 from jacket.storage.volume import driver

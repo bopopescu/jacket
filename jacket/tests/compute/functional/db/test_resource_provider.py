@@ -10,7 +10,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.objects.compute import fields

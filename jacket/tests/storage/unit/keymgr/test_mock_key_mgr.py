@@ -19,7 +19,7 @@ Test cases for the mock key manager.
 
 import array
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.storage.keymgr import key as keymgr_key
 from jacket.tests.storage.unit.keymgr import mock_key_mgr

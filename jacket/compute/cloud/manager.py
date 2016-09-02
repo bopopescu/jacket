@@ -1242,7 +1242,7 @@ class ComputeManager(manager.Manager):
         LOG.info(_LI("VM %(state)s (Lifecycle Event)"),
                  {'state': event.get_name()},
                  instance_uuid=event.get_instance_uuid())
-        context = jacket.compute.context.get_admin_context(read_deleted='yes')
+        context = jacket.context.get_admin_context(read_deleted='yes')
         instance = objects.Instance.get_by_uuid(context,
                                                 event.get_instance_uuid(),
                                                 expected_attrs=[])
@@ -1313,7 +1313,7 @@ class ComputeManager(manager.Manager):
     def init_host(self):
         """Initialization for a standalone cloud service."""
         self.driver.init_host(host=self.host)
-        context = jacket.compute.context.get_admin_context()
+        context = jacket.context.get_admin_context()
         instances = objects.InstanceList.get_by_host(
             context, self.host, expected_attrs=['info_cache', 'metadata'])
 

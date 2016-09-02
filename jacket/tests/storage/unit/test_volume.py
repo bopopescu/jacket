@@ -42,7 +42,7 @@ from taskflow.engines.action_engine import engine
 
 from jacket.api.storage.storage import common
 from jacket.storage.brick.local_dev import lvm as brick_lvm
-from jacket.storage import context
+from jacket import context
 from jacket import db
 from jacket.storage import exception
 from jacket.storage.image import image_utils

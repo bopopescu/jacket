@@ -23,7 +23,7 @@ from six.moves import range
 from jacket.compute import cloud
 from jacket.compute.cloud import flavors
 import jacket.compute.conf
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.db.compute.sqlalchemy import api as sqa_api
 from jacket.db.compute.sqlalchemy import models as sqa_models

@@ -18,7 +18,7 @@ import time
 
 from oslo_config import cfg
 
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.db.compute.sqlalchemy import api as db_api
 from jacket.compute import test

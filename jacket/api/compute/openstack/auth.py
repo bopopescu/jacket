@@ -19,7 +19,7 @@ import webob.dec
 import webob.exc
 
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import context
+from jacket import context
 from jacket.wsgi import compute as base_wsgi
 
 CONF = cfg.CONF

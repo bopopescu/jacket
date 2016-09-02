@@ -16,7 +16,7 @@
 
 from oslo_config import cfg
 
-from jacket.storage import context
+from jacket import context
 from jacket import db
 from jacket.storage import test
 from jacket.tests.storage.unit import utils as testutils

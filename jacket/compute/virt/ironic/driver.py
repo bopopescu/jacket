@@ -41,7 +41,7 @@ from jacket.compute.cloud import task_states
 from jacket.compute.cloud import vm_mode
 from jacket.compute.cloud import vm_states
 import jacket.compute.conf
-from jacket.compute import context as nova_context
+from jacket import context as nova_context
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.i18n import _LE

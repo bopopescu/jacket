@@ -23,7 +23,7 @@ from oslo_utils import units
 import six
 
 import jacket.compute.conf
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.objects import compute

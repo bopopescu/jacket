@@ -32,7 +32,7 @@ from oslo_concurrency import processutils as putils
 from oslo_log import log as logging
 import six
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.storage.i18n import _, _LE, _LW, _LI
 from jacket.storage import utils

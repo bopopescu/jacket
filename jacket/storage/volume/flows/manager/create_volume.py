@@ -22,7 +22,7 @@ import taskflow.engines
 from taskflow.patterns import linear_flow
 from taskflow.types import failure as ft
 
-from jacket.storage import context as cinder_context
+from jacket import context as cinder_context
 from jacket.storage import exception
 from jacket.storage import flow_utils
 from jacket.storage.i18n import _, _LE, _LI, _LW

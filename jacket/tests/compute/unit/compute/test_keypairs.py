@@ -19,7 +19,7 @@ from oslo_config import cfg
 import six
 
 from jacket.compute.cloud import api as compute_api
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.objects.compute import keypair as keypair_obj
 from jacket.compute import quota

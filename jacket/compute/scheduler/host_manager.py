@@ -32,7 +32,7 @@ from oslo_utils import timeutils
 import six
 
 import jacket.compute.conf
-from jacket.compute import context as context_module
+from jacket import context as context_module
 from jacket.compute import exception
 from jacket.i18n import _LI, _LW
 from jacket.objects import compute as objects

@@ -22,7 +22,7 @@ import webob
 from webob import exc
 
 from jacket.api.storage.storage.contrib import admin_actions
-from jacket.storage import context
+from jacket import context
 from jacket import db
 from jacket.storage import exception
 from jacket.objects import storage

@@ -29,7 +29,7 @@ from oslo_utils import netutils
 import six
 import testtools
 
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.db.compute.sqlalchemy import models
 from jacket.compute import exception

@@ -57,7 +57,7 @@ from jacket.compute.cloud import vm_states
 from jacket.compute.conductor import manager as conductor_manager
 import jacket.compute.conf
 from jacket.compute.console import type as ctype
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.compute import exception
 from jacket.compute.image import api as image_api

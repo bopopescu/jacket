@@ -16,7 +16,7 @@ import json
 
 from six.moves import urllib
 
-from jacket.storage import context
+from jacket import context
 from jacket import db
 from jacket.storage import exception
 from jacket.tests.storage.unit import fake_snapshot

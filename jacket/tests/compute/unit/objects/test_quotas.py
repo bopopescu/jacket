@@ -14,7 +14,7 @@
 
 import mock
 
-from jacket.compute import context
+from jacket import context
 from jacket.objects.compute import quotas as quotas_obj
 from jacket.compute import quota
 from jacket.compute import test

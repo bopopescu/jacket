@@ -22,7 +22,7 @@ from stevedore import named
 
 from jacket.compute.cloud import resources
 from jacket.compute.cloud.resources import base
-from jacket.compute import context
+from jacket import context
 from jacket.objects.compute import flavor as flavor_obj
 from jacket.compute import test
 

@@ -35,7 +35,7 @@ try:
 except ImportError:
     import six.moves.xmlrpc_client as xmlrpclib
 
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.i18n import _, _LE, _LW
 from jacket.objects import compute

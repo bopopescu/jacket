@@ -29,7 +29,7 @@ from jacket.compute.cloud import hv_type
 from jacket.compute.cloud import task_states
 from jacket.compute.cloud import vm_mode
 from jacket.compute.cloud import vm_states
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.i18n import _, _LE, _LI, _LW
 from jacket.objects import compute

@@ -21,7 +21,7 @@ Test the base rpc API.
 from oslo_config import cfg
 
 from jacket.compute import baserpc
-from jacket.compute import context
+from jacket import context
 from jacket.compute import test
 
 CONF = cfg.CONF

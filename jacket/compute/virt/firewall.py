@@ -20,7 +20,7 @@ from oslo_utils import importutils
 
 from jacket.compute.cloud import utils as compute_utils
 import jacket.compute.conf
-from jacket.compute import context
+from jacket import context
 from jacket.i18n import _LI
 from jacket.compute.network import linux_net
 from jacket.objects import compute

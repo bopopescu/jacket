@@ -28,7 +28,7 @@ import requests
 import six
 from six.moves import urllib
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.storage.i18n import _, _LI, _LW, _LE
 from jacket.storage.image import image_utils

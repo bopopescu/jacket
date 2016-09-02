@@ -34,7 +34,7 @@ from jacket.cmd.storage import volume as cinder_cmd_volume
 from jacket.common.storage import config as cinder_common_config
 import jacket.storage.compute
 from jacket.storage.compute import nova as cinder_compute_nova
-from jacket.storage import context as cinder_context
+from jacket import context as cinder_context
 from jacket.storage import coordination as cinder_coordination
 from jacket.db import api as cinder_db_api
 from jacket.db import base as cinder_db_base

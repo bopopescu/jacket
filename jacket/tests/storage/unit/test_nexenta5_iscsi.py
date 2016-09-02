@@ -22,7 +22,7 @@ from oslo_serialization import jsonutils
 from oslo_utils import units
 import requests
 
-from jacket.storage import context
+from jacket import context
 from jacket import db
 from jacket.storage import exception
 from jacket.storage import test

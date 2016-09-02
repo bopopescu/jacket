@@ -20,7 +20,7 @@ import zlib
 from oslo_log import log as logging
 from oslo_utils import timeutils
 
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.tests.compute.functional.api import client
 from jacket.tests.compute.functional import integrated_helpers

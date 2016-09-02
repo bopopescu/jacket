@@ -17,7 +17,7 @@ from oslo_config import cfg
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
 from jacket.compute import availability_zones
-from jacket.compute import context as nova_context
+from jacket import context as nova_context
 from jacket.objects import compute
 from jacket.compute import servicegroup
 

@@ -16,7 +16,7 @@
 from six.moves import range
 from webob import exc
 
-from jacket.compute import context
+from jacket import context
 from jacket.i18n import _
 from jacket.objects import compute
 from jacket.compute import utils

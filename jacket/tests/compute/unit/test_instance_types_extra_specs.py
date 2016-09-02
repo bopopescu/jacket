@@ -15,7 +15,7 @@ Unit Tests for instance types extra specs code
 """
 
 from jacket.compute.cloud import arch
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.compute import exception
 from jacket.compute import test

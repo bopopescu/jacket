@@ -37,7 +37,7 @@ from jacket.compute.cloud import task_states
 from jacket.compute.cloud import utils as compute_utils
 from jacket.compute.cloud import vm_states
 from jacket.compute.conductor import api as conductor_api
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.compute import exception
 from jacket.compute.network import api as network_api

@@ -17,8 +17,8 @@ import webob
 
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-import jacket.compute.context
-from jacket import db
+import jacket.context
+from jacket.db import compute as db
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.compute import quota
@@ -60,17 +60,17 @@ class QuotaClassSetsController(wsgi.Controller):
         return dict(quota_class_set=result)
 
     def show(self, req, id):
-        context = req.environ['jacket.compute']
+        context = req.environ['compute.context']
         authorize(context)
         try:
-            jacket.compute.context.authorize_quota_class_context(context, id)
+            jacket.context.authorize_quota_class_context(context, id)
             values = QUOTAS.get_class_quotas(context, id)
             return self._format_quota_set(id, values)
         except exception.Forbidden:
             raise webob.exc.HTTPForbidden()
 
     def update(self, req, id, body):
-        context = req.environ['jacket.compute']
+        context = req.environ['compute.context']
         authorize(context)
         try:
             utils.check_string_length(id, 'quota_class_name',
@@ -92,7 +92,7 @@ class QuotaClassSetsController(wsgi.Controller):
                 continue
             try:
                 body['quota_class_set'][key] = utils.validate_integer(
-                    body['quota_class_set'][key], key, max_value=compute.MAX_INT)
+                    body['quota_class_set'][key], key, max_value=db.MAX_INT)
             except exception.InvalidInput as e:
                 raise webob.exc.HTTPBadRequest(
                     explanation=e.format_message())
@@ -106,15 +106,15 @@ class QuotaClassSetsController(wsgi.Controller):
             # permission checks. This has to be left only for API v2.0 because
             # this version has to be stable even if it means that only admins
             # can call this method while the policy could be changed.
-            jacket.compute.context.require_admin_context(context)
+            jacket.context.require_admin_context(context)
         except exception.AdminRequired:
             raise webob.exc.HTTPForbidden()
 
         for key, value in quota_class_set.items():
             try:
-                compute.quota_class_update(context, quota_class, key, value)
+                db.quota_class_update(context, quota_class, key, value)
             except exception.QuotaClassNotFound:
-                compute.quota_class_create(context, quota_class, key, value)
+                db.quota_class_create(context, quota_class, key, value)
 
         values = QUOTAS.get_class_quotas(context, quota_class)
         return self._format_quota_set(None, values)

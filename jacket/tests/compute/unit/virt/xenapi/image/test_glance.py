@@ -21,7 +21,7 @@ from mox3 import mox
 from oslo_log import log as logging
 
 from jacket.compute.cloud import utils as compute_utils
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.tests.compute.unit.virt.xenapi import stubs
 from jacket.compute.virt.xenapi import driver as xenapi_conn

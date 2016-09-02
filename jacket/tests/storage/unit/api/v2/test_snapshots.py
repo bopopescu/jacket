@@ -22,7 +22,7 @@ import webob
 
 from jacket.api.storage.storage import common
 from jacket.api.storage.storage.v2 import snapshots
-from jacket.storage import context
+from jacket import context
 from jacket import db
 from jacket.storage import exception
 from jacket.objects import storage

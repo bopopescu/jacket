@@ -19,7 +19,7 @@ import inspect
 import six
 from webob.util import status_reasons
 
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.compute import test
 

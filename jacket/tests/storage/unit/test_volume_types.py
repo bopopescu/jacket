@@ -20,7 +20,7 @@ import time
 
 from oslo_config import cfg
 
-from jacket.storage import context
+from jacket import context
 from jacket import db
 from jacket.db.storage.sqlalchemy import api as db_api
 from jacket.db.storage.sqlalchemy import models

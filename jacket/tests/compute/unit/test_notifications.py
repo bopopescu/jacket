@@ -24,7 +24,7 @@ from oslo_context import fixture as o_fixture
 from jacket.compute.cloud import flavors
 from jacket.compute.cloud import task_states
 from jacket.compute.cloud import vm_states
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.compute import notifications
 from jacket.objects import compute

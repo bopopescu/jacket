@@ -34,7 +34,7 @@ from jacket.api.compute.openstack import extensions
 from jacket.compute.cloud import api as compute_api
 from jacket.compute.cloud import flavors
 from jacket.compute.cloud import vm_states
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.compute import test

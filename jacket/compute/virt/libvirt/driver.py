@@ -69,7 +69,7 @@ from jacket.compute.cloud import vm_mode
 import jacket.compute.conf
 from jacket.compute.console import serial as serial_console
 from jacket.compute.console import type as ctype
-from jacket.compute import context as nova_context
+from jacket import context as nova_context
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.i18n import _LE

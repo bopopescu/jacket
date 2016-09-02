@@ -24,7 +24,7 @@ from oslo_serialization import jsonutils
 import webob
 
 from jacket.storage.consistencygroup import api as consistencygroupAPI
-from jacket.storage import context
+from jacket import context
 from jacket import db
 from jacket.storage import exception
 from jacket.objects import storage

@@ -14,7 +14,7 @@
 
 from sqlalchemy.dialects import sqlite
 
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.db.compute.sqlalchemy import api as sqlalchemy_api
 from jacket.tests.compute.functional import test_servers

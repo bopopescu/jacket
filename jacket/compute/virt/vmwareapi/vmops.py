@@ -42,7 +42,7 @@ from jacket.compute.cloud import power_state
 from jacket.compute.cloud import task_states
 import jacket.compute.conf
 from jacket.compute.console import type as ctype
-from jacket.compute import context as nova_context
+from jacket import context as nova_context
 from jacket.compute import exception
 from jacket.i18n import _, _LE, _LI, _LW
 from jacket.compute import network

@@ -17,7 +17,7 @@ import datetime
 import mock
 
 from jacket.compute.conductor import manager as conductor_manager
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.objects import compute
 from jacket.tests.compute.functional.api_sample_tests import test_servers

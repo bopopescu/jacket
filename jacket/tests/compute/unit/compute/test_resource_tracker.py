@@ -30,7 +30,7 @@ from jacket.compute.cloud import resource_tracker
 from jacket.compute.cloud import resources
 from jacket.compute.cloud import task_states
 from jacket.compute.cloud import vm_states
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.objects.compute import base as obj_base

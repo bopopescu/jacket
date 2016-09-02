@@ -24,7 +24,7 @@ import six
 from oslo_concurrency import processutils
 from oslo_config import cfg
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.storage import test
 from jacket.tests.storage.unit import fake_constants as fake

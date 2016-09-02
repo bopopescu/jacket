@@ -15,7 +15,7 @@
 import mock
 from six.moves import urllib
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.tests.storage.unit import fake_constants as fake
 from jacket.tests.storage.unit import fake_volume

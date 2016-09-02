@@ -34,7 +34,7 @@ from jacket.compute.conductor import manager as conductor_manager
 from jacket.compute.conductor import rpcapi as conductor_rpcapi
 from jacket.compute.conductor.tasks import live_migrate
 from jacket.compute.conductor.tasks import migrate
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.compute import exception as exc
 from jacket.compute.image import api as image_api

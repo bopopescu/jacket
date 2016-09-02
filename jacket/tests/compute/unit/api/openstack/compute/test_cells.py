@@ -22,7 +22,7 @@ from jacket.api.compute.openstack.compute import cells as cells_ext_v21
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import cells as cells_ext_v2
 from jacket.api.compute.openstack import extensions
 from jacket.compute.cells import rpcapi as cells_rpcapi
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket import rpc
 from jacket.compute import test

@@ -21,7 +21,7 @@ from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import admin_actions \
         as lock_server_v2
 from jacket.api.compute.openstack.compute import lock_server as lock_server_v21
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.compute import test
 from jacket.tests.compute.unit.api.openstack.compute import admin_only_action_common

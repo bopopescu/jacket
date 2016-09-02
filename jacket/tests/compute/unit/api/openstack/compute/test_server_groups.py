@@ -21,7 +21,7 @@ import mock
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import server_groups
 from jacket.api.compute.openstack.compute import server_groups as sg_v21
 from jacket.api.compute.openstack import extensions
-from jacket.compute import context
+from jacket import context
 import jacket.db.compute
 from jacket.compute import exception
 from jacket.objects import compute

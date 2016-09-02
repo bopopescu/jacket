@@ -27,7 +27,7 @@ from jacket.api.compute.openstack.compute import security_groups as \
 from jacket.api.compute.openstack import wsgi
 from jacket.compute import cloud
 from jacket.compute.cloud import power_state
-from jacket.compute import context as context_maker
+from jacket import context as context_maker
 import jacket.db.compute
 from jacket.compute import exception
 from jacket.objects import compute

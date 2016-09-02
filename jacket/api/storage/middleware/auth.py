@@ -28,7 +28,7 @@ import webob.dec
 import webob.exc
 
 from jacket.api.storage.openstack import wsgi
-from jacket.storage import context
+from jacket import context
 from jacket.i18n import _
 from jacket.wsgi import common as base_wsgi
 

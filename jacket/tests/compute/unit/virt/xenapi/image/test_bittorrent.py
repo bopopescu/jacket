@@ -16,7 +16,7 @@
 from mox3 import mox
 import six
 
-from jacket.compute import context
+from jacket import context
 from jacket.compute import test
 from jacket.tests.compute.unit.virt.xenapi import stubs
 from jacket.compute.virt.xenapi import driver as xenapi_conn

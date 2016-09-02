@@ -16,7 +16,7 @@
 Unit Tests for volume types extra specs code
 """
 
-from jacket.storage import context
+from jacket import context
 from jacket import db
 from jacket.storage import test
 

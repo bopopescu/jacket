@@ -30,7 +30,7 @@ from oslo_versionedobjects import exception as ovo_exc
 from oslo_versionedobjects import fixture
 import six
 
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.objects.compute import base

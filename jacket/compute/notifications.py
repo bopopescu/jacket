@@ -27,7 +27,7 @@ from oslo_utils import excutils
 from oslo_utils import timeutils
 import six
 
-import jacket.compute.context
+import jacket.context
 from jacket.compute import exception
 from jacket.i18n import _LE
 from jacket.compute.image import glance
@@ -83,7 +83,7 @@ def notify_decorator(name, fn):
         ctxt = (common_context.get_context_from_function_and_args(
                     fn, args, kwarg) or
                 common_context.get_current() or
-                jacket.compute.context.RequestContext())
+                jacket.context.RequestContext())
 
         notifier = rpc.get_notifier('api',
                                     publisher_id=(CONF.default_publisher_id
@@ -106,7 +106,7 @@ def send_api_fault(url, status, exception):
                'status': status}
 
     rpc.get_notifier('api').error(common_context.get_current() or
-                                  jacket.compute.context.get_admin_context(),
+                                  jacket.context.get_admin_context(),
                                   'api.fault',
                                   payload)
 
@@ -289,7 +289,7 @@ def bandwidth_usage(instance_ref, audit_start,
     """Get bandwidth usage information for the instance for the
     specified audit period.
     """
-    admin_context = jacket.compute.context.get_admin_context(read_deleted='yes')
+    admin_context = jacket.context.get_admin_context(read_deleted='yes')
 
     def _get_nwinfo_old_skool():
         """Support for getting network info without compute."""

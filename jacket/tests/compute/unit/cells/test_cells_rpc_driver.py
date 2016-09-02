@@ -24,7 +24,7 @@ import oslo_messaging
 from jacket.compute.cells import messaging
 from jacket.compute.cells import rpc_driver
 import jacket.compute.conf
-from jacket.compute import context
+from jacket import context
 from jacket import rpc
 from jacket.compute import test
 from jacket.tests.compute.unit.cells import fakes

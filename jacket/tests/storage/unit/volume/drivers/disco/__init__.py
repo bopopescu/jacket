@@ -21,7 +21,7 @@ from suds import client
 
 from os_brick.initiator import connector
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import test
 from jacket.tests.storage.unit import fake_volume
 from jacket.storage.volume import configuration as conf

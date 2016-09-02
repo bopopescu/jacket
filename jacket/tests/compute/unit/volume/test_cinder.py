@@ -17,7 +17,7 @@ from cinderclient import exceptions as cinder_exception
 from keystoneclient import exceptions as keystone_exception
 import mock
 
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.compute import test
 from jacket.tests.compute.unit.fake_instance import fake_instance_obj

@@ -20,7 +20,7 @@ from oslo_log import log as logging
 import oslo_messaging as messaging
 from oslo_serialization import jsonutils
 
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.i18n import _, _LI, _LE
 from jacket.objects import compute as objects
