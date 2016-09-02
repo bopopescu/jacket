@@ -17,7 +17,7 @@ from oslo_versionedobjects import fields
 
 from jacket.storage import exception
 from jacket.storage.i18n import _
-from jacket.objects import storage
+from jacket.objects import storage as objects
 from jacket.objects.storage import base
 from jacket.storage.volume import volume_types
 
@@ -117,5 +117,5 @@ class VolumeTypeList(base.ObjectListBase, base.CinderObject):
                                            sort_dirs=sort_dirs, offset=offset)
         expected_attrs = VolumeType._get_expected_attrs(context)
         return base.obj_make_list(context, cls(context),
-                                  storage.VolumeType, types.values(),
+                                  objects.VolumeType, types.values(),
                                   expected_attrs=expected_attrs)

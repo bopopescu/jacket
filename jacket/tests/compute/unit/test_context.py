@@ -16,7 +16,7 @@ import mock
 from oslo_context import context as o_context
 from oslo_context import fixture as o_fixture
 
-from jacket.compute import context
+from jacket import context
 from jacket.objects import compute
 from jacket.compute import test
 

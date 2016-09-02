@@ -34,7 +34,7 @@ import six
 from six.moves import range
 
 from jacket.compute.cloud import flavors
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.compute.network import model
 from jacket.compute.network.neutronv2 import api as neutronapi

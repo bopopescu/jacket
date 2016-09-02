@@ -58,7 +58,7 @@ from jacket.compute.cloud import power_state
 from jacket.compute.cloud import task_states
 from jacket.compute.cloud import vm_mode
 from jacket.compute.cloud import vm_states
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.compute import exception
 from jacket.compute.network import model as network_model

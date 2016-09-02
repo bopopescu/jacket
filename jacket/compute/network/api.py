@@ -28,7 +28,7 @@ from jacket.compute.network import base_api
 from jacket.compute.network import floating_ips
 from jacket.compute.network import model as network_model
 from jacket.compute.network import rpcapi as network_rpcapi
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base as obj_base
 from jacket.compute import policy
 from jacket.compute import utils
@@ -89,14 +89,14 @@ class API(base_api.NetworkAPI):
         else:
             project_only = True
         try:
-            return compute.NetworkList.get_all(context,
+            return objects.NetworkList.get_all(context,
                                                project_only=project_only)
         except exception.NoNetworksFound:
             return []
 
     @wrap_check_policy
     def get(self, context, network_uuid):
-        return compute.Network.get_by_uuid(context, network_uuid)
+        return objects.Network.get_by_uuid(context, network_uuid)
 
     @wrap_check_policy
     def create(self, context, **kwargs):
@@ -112,39 +112,39 @@ class API(base_api.NetworkAPI):
     @wrap_check_policy
     def disassociate(self, context, network_uuid):
         network = self.get(context, network_uuid)
-        compute.Network.disassociate(context, network.id,
+        objects.Network.disassociate(context, network.id,
                                      host=True, project=True)
 
     @wrap_check_policy
     def get_fixed_ip(self, context, id):
-        return compute.FixedIP.get_by_id(context, id)
+        return objects.FixedIP.get_by_id(context, id)
 
     @wrap_check_policy
     def get_fixed_ip_by_address(self, context, address):
-        return compute.FixedIP.get_by_address(context, address)
+        return objects.FixedIP.get_by_address(context, address)
 
     @wrap_check_policy
     def get_floating_ip(self, context, id):
         if not strutils.is_int_like(id):
             raise exception.InvalidID(id=id)
-        return compute.FloatingIP.get_by_id(context, id)
+        return objects.FloatingIP.get_by_id(context, id)
 
     @wrap_check_policy
     def get_floating_ip_pools(self, context):
-        return compute.FloatingIP.get_pool_names(context)
+        return objects.FloatingIP.get_pool_names(context)
 
     @wrap_check_policy
     def get_floating_ip_by_address(self, context, address):
-        return compute.FloatingIP.get_by_address(context, address)
+        return objects.FloatingIP.get_by_address(context, address)
 
     @wrap_check_policy
     def get_floating_ips_by_project(self, context):
-        return compute.FloatingIPList.get_by_project(context,
+        return objects.FloatingIPList.get_by_project(context,
                                                      context.project_id)
 
     @wrap_check_policy
     def get_instance_id_by_floating_address(self, context, address):
-        fixed_ip = compute.FixedIP.get_by_floating_address(context, address)
+        fixed_ip = objects.FixedIP.get_by_floating_address(context, address)
         if fixed_ip is None:
             return None
         else:
@@ -152,21 +152,21 @@ class API(base_api.NetworkAPI):
 
     @wrap_check_policy
     def get_vifs_by_instance(self, context, instance):
-        vifs = compute.VirtualInterfaceList.get_by_instance_uuid(context,
+        vifs = objects.VirtualInterfaceList.get_by_instance_uuid(context,
                                                                  instance.uuid)
         for vif in vifs:
             if vif.network_id is not None:
-                network = compute.Network.get_by_id(context, vif.network_id,
+                network = objects.Network.get_by_id(context, vif.network_id,
                                                     project_only='allow_none')
                 vif.net_uuid = network.uuid
         return vifs
 
     @wrap_check_policy
     def get_vif_by_mac_address(self, context, mac_address):
-        vif = compute.VirtualInterface.get_by_address(context,
+        vif = objects.VirtualInterface.get_by_address(context,
                                                       mac_address)
         if vif.network_id is not None:
-            network = compute.Network.get_by_id(context, vif.network_id,
+            network = objects.Network.get_by_id(context, vif.network_id,
                                                 project_only='allow_none')
             vif.net_uuid = network.uuid
         return vif
@@ -224,7 +224,7 @@ class API(base_api.NetworkAPI):
                             instance_id=orig_instance_uuid)
             LOG.info(_LI('re-assign floating IP %(address)s from '
                          'instance %(instance_id)s'), msg_dict)
-            orig_instance = compute.Instance.get_by_uuid(
+            orig_instance = objects.Instance.get_by_uuid(
                 context, orig_instance_uuid, expected_attrs=['flavor'])
 
             # purge cached nw info for the original instance
@@ -293,8 +293,8 @@ class API(base_api.NetworkAPI):
         #             have db access so we do it on the other side of the
         #             rpc.
         if not isinstance(instance, obj_base.NovaObject):
-            instance = compute.Instance._from_db_object(context,
-                    compute.Instance(), instance)
+            instance = objects.Instance._from_db_object(context,
+                    objects.Instance(), instance)
         self.network_rpcapi.deallocate_for_instance(context, instance=instance,
                 requested_networks=requested_networks)
 
@@ -356,17 +356,17 @@ class API(base_api.NetworkAPI):
         network = self.get(context, network_uuid)
         if host is not base_api.SENTINEL:
             if host is None:
-                compute.Network.disassociate(context, network.id,
+                objects.Network.disassociate(context, network.id,
                                              host=True, project=False)
             else:
                 network.host = host
                 network.save()
         if project is not base_api.SENTINEL:
             if project is None:
-                compute.Network.disassociate(context, network.id,
+                objects.Network.disassociate(context, network.id,
                                              host=False, project=True)
             else:
-                compute.Network.associate(context, project,
+                objects.Network.associate(context, project,
                                           network_id=network.id, force=True)
 
     @wrap_check_policy
@@ -493,7 +493,7 @@ class API(base_api.NetworkAPI):
 
     def _get_multi_addresses(self, context, instance):
         try:
-            fixed_ips = compute.FixedIPList.get_by_instance_uuid(
+            fixed_ips = objects.FixedIPList.get_by_instance_uuid(
                 context, instance.uuid)
         except exception.FixedIpNotFoundForInstance:
             return False, []

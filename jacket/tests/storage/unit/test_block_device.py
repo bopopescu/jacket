@@ -16,7 +16,7 @@
 import mock
 from oslo_config import cfg
 
-from jacket.storage import context
+from jacket import context
 from jacket import db
 import jacket.storage.exception
 from jacket.objects.storage import snapshot as obj_snap

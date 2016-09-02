@@ -28,7 +28,7 @@ from jacket.compute import exception
 from jacket.i18n import _, _LE, _LI, _LW
 from jacket.compute.network.neutronv2 import api as neutronapi
 from jacket.compute.network.security_group import security_group_base
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute import utils
 
 
@@ -547,7 +547,7 @@ class SecurityGroupAPI(security_group_base.SecurityGroupBase):
     def populate_security_groups(self, security_groups):
         # Returning an empty list since we do not want to populate this field
         # in the compute database if using the neutron driver
-        return compute.SecurityGroupList()
+        return objects.SecurityGroupList()
 
     def get_default_rule(self, context, id):
         msg = _("Network driver does not support this function.")

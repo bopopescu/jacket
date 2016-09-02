@@ -23,7 +23,7 @@ from oslo_serialization import jsonutils
 import webob.dec
 import webob.exc
 
-from jacket.compute import context
+from jacket import context
 from jacket.i18n import _
 from jacket.wsgi import base_wsgi as compute
 import jacket.conf

@@ -21,7 +21,7 @@ from jacket.api.compute.openstack.compute.legacy_v2.contrib import virtual_inter
 from jacket.api.compute.openstack.compute import virtual_interfaces as vi21
 from jacket.compute import cloud
 from jacket.compute.cloud import api as compute_api
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.compute import network
 from jacket.objects.compute import virtual_interface as vif_obj

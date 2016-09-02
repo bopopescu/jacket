@@ -22,7 +22,7 @@ from oslo_utils import importutils
 
 from jacket.compute.cloud import rpcapi as compute_rpcapi
 from jacket.compute.console import api as console_api
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.compute import exception
 from jacket.objects import compute

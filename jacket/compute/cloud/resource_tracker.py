@@ -704,6 +704,7 @@ class ResourceTracker(object):
             return
         # Persist the stats to the Scheduler
         # self.scheduler_client.update_resource_stats(self.compute_node)
+        self.compute_node.save()
         if self.pci_tracker:
             self.pci_tracker.save(context)
 

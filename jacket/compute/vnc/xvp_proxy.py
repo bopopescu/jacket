@@ -27,7 +27,7 @@ import webob
 
 import jacket.compute.conf
 from jacket.compute.consoleauth import rpcapi as consoleauth_rpcapi
-from jacket.compute import context
+from jacket import context
 from jacket.i18n import _LI
 from jacket.compute import utils
 from jacket import version

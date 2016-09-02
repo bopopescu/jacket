@@ -17,7 +17,7 @@ import mock
 
 from oslo_utils import timeutils
 
-from jacket.storage import context as ctxt
+from jacket import context as ctxt
 from jacket.storage.image import cache as image_cache
 from jacket.storage import test
 

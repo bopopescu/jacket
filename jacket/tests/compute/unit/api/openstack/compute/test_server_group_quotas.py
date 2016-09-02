@@ -20,7 +20,7 @@ import webob
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import server_groups
 from jacket.api.compute.openstack.compute import server_groups as sg_v21
 from jacket.api.compute.openstack import extensions
-from jacket.compute import context
+from jacket import context
 from jacket.compute import quota
 from jacket.compute import test
 from jacket.tests.compute.unit.api.openstack import fakes

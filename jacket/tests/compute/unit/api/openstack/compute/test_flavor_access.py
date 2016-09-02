@@ -25,7 +25,7 @@ from jacket.api.compute.openstack.compute import flavor_access \
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import flavor_access \
         as flavor_access_v2
 from jacket.api.compute.openstack.compute.legacy_v2 import flavors as flavors_api
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.compute import test
 from jacket.tests.compute.unit.api.openstack import fakes

@@ -44,10 +44,10 @@ from jacket.compute.cloud import vm_mode
 from jacket.compute.cloud import vm_states
 import jacket.compute.conf
 from jacket.compute.console import type as ctype
-from jacket.compute import context as nova_context
+from jacket import context as nova_context
 from jacket.compute import exception
 from jacket.i18n import _, _LE, _LI, _LW
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import migrate_data as migrate_data_obj
 from jacket.compute.pci import manager as pci_manager
 from jacket.compute import utils
@@ -2100,7 +2100,7 @@ class VMOps(object):
                                                network_info=network_info)
 
     def _get_host_uuid_from_aggregate(self, context, hostname):
-        aggregate_list = cloud.AggregateList.get_by_host(
+        aggregate_list = objects.AggregateList.get_by_host(
             context, CONF.host, key=pool_states.POOL_FLAG)
 
         reason = _('Destination host:%s must be in the same '
@@ -2179,7 +2179,7 @@ class VMOps(object):
         :param disk_over_commit: if true, allow disk over commit
 
         """
-        dest_check_data = cloud.XenapiLiveMigrateData()
+        dest_check_data = objects.XenapiLiveMigrateData()
 
         # Notes(eliqiao): if block_migration is None, we calculate it
         # by checking if src and dest node are in same aggregate
@@ -2243,7 +2243,7 @@ class VMOps(object):
                                 'relax-xsm-sr-check=true required'))
 
         if not isinstance(dest_check_data, migrate_data_obj.LiveMigrateData):
-            obj = cloud.XenapiLiveMigrateData()
+            obj = objects.XenapiLiveMigrateData()
             obj.from_legacy_dict(dest_check_data)
             dest_check_data = obj
 

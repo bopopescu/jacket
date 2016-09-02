@@ -19,7 +19,7 @@ Tests For Volume Number Weigher.
 import mock
 from oslo_config import cfg
 
-from jacket.storage import context
+from jacket import context
 from jacket.db.storage.sqlalchemy import api
 from jacket.storage.scheduler import weights
 from jacket.storage import test

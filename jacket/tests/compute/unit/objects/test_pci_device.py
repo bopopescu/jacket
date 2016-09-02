@@ -18,7 +18,7 @@ import copy
 import mock
 from oslo_utils import timeutils
 
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.compute import exception
 from jacket.objects import compute

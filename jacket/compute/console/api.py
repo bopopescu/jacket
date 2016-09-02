@@ -20,7 +20,7 @@ from oslo_config import cfg
 from jacket.compute.cloud import rpcapi as compute_rpcapi
 from jacket.compute.console import rpcapi as console_rpcapi
 from jacket.db import base
-from jacket.objects import compute
+from jacket.objects import compute as objects
 
 CONF = cfg.CONF
 CONF.import_opt('console_topic', 'jacket.compute.console.rpcapi')
@@ -51,7 +51,7 @@ class API(base.Base):
         #                They can just do an index later to fetch
         #                console info. I am not sure which is better
         #                here.
-        instance = compute.Instance.get_by_uuid(context, instance_uuid)
+        instance = objects.Instance.get_by_uuid(context, instance_uuid)
         topic = self._get_console_topic(context, instance.host)
         server = None
         if '.' in topic:
@@ -60,5 +60,5 @@ class API(base.Base):
         rpcapi.add_console(context, instance.id)
 
     def _get_console_topic(self, context, instance_host):
-        rpcapi = compute_rpcapi.JacketAPI()
+        rpcapi = compute_rpcapi.ComputeAPI()
         return rpcapi.get_console_topic(context, instance_host)

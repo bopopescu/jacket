@@ -24,7 +24,7 @@ from jacket.db import base
 from jacket.compute import hooks
 from jacket.i18n import _, _LE
 from jacket.compute.network import model as network_model
-from jacket.objects import compute
+from jacket.objects import compute as objects
 
 
 LOG = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ def update_instance_cache_with_nw_info(impl, context, instance,
         # NOTE(comstud): The save() method actually handles updating or
         # creating the instance.  We don't need to retrieve the object
         # from the DB first.
-        ic = compute.InstanceInfoCache.new(context, instance.uuid)
+        ic = objects.InstanceInfoCache.new(context, instance.uuid)
         ic.network_info = nw_info
         ic.save(update_cells=update_cells)
     except Exception:

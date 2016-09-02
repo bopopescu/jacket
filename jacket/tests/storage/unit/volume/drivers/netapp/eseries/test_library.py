@@ -28,7 +28,7 @@ import six
 from six.moves import range
 from six.moves import reduce
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.storage import test
 

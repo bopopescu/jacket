@@ -23,10 +23,10 @@ from oslo_utils import units
 import six
 
 import jacket.compute.conf
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.i18n import _
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import fields
 from jacket.objects.compute import instance as obj_instance
 
@@ -393,9 +393,9 @@ def _get_cpu_topology_constraints(flavor, image_meta):
                "threads": threads, "maxsockets": maxsockets,
                "maxcores": maxcores, "maxthreads": maxthreads})
 
-    return (compute.VirtCPUTopology(sockets=sockets, cores=cores,
+    return (objects.VirtCPUTopology(sockets=sockets, cores=cores,
                                     threads=threads),
-            compute.VirtCPUTopology(sockets=maxsockets, cores=maxcores,
+            objects.VirtCPUTopology(sockets=maxsockets, cores=maxcores,
                                     threads=maxthreads))
 
 
@@ -445,7 +445,7 @@ def _get_possible_cpu_topologies(vcpus, maxtopology,
                 if (t * c * s) != vcpus:
                     continue
                 possible.append(
-                    compute.VirtCPUTopology(sockets=s,
+                    objects.VirtCPUTopology(sockets=s,
                                             cores=c,
                                             threads=t))
 
@@ -797,7 +797,7 @@ def _pack_instance_onto_cores(available_siblings,
     if not pinning:
         return
 
-    topology = compute.VirtCPUTopology(sockets=1,
+    topology = objects.VirtCPUTopology(sockets=1,
                                        cores=len(pinning) / threads_no,
                                        threads=threads_no)
     instance_cell.pin_vcpus(*pinning)
@@ -809,12 +809,12 @@ def _pack_instance_onto_cores(available_siblings,
 def _numa_fit_instance_cell_with_pinning(host_cell, instance_cell):
     """Figure out if cells can be pinned to a host cell and return details
 
-    :param host_cell: compute.NUMACell instance - the host cell that
+    :param host_cell: objects.NUMACell instance - the host cell that
                       the isntance should be pinned to
-    :param instance_cell: compute.InstanceNUMACell instance without any
+    :param instance_cell: objects.InstanceNUMACell instance without any
                           pinning information
 
-    :returns: compute.InstanceNUMACell instance with pinning information,
+    :returns: objects.InstanceNUMACell instance with pinning information,
               or None if instance cannot be pinned to the given host
     """
     if (host_cell.avail_cpus < len(instance_cell.cpuset) or
@@ -841,10 +841,10 @@ def _numa_fit_instance_cell(host_cell, instance_cell, limit_cell=None):
 
     :param host_cell: host cell to fit the instance cell onto
     :param instance_cell: instance cell we want to fit
-    :param limit_cell: an compute.NUMATopologyLimit or None
+    :param limit_cell: an objects.NUMATopologyLimit or None
 
     Make sure we can fit the instance cell onto a host cell and if so,
-    return a new compute.InstanceNUMACell with the id set to that of
+    return a new objects.InstanceNUMACell with the id set to that of
     the host, or None if the cell exceeds the limits of the host
 
     :returns: a new instance cell or None
@@ -943,7 +943,7 @@ def _numa_get_flavor_cpu_map_list(flavor):
     hw_numa_cpus = []
     hw_numa_cpus_set = False
     extra_specs = flavor.get("extra_specs", {})
-    for cellid in range(compute.ImageMetaProps.NUMA_NODES_MAX):
+    for cellid in range(objects.ImageMetaProps.NUMA_NODES_MAX):
         cpuprop = "hw:numa_cpus.%d" % cellid
         if cpuprop not in extra_specs:
             break
@@ -972,7 +972,7 @@ def _numa_get_flavor_mem_map_list(flavor):
     hw_numa_mem = []
     hw_numa_mem_set = False
     extra_specs = flavor.get("extra_specs", {})
-    for cellid in range(compute.ImageMetaProps.NUMA_NODES_MAX):
+    for cellid in range(objects.ImageMetaProps.NUMA_NODES_MAX):
         memprop = "hw:numa_mem.%d" % cellid
         if memprop not in extra_specs:
             break
@@ -1017,7 +1017,7 @@ def _numa_get_constraints_manual(nodes, flavor, cpu_list, mem_list):
 
             availcpus.remove(cpu)
 
-        cells.append(compute.InstanceNUMACell(
+        cells.append(objects.InstanceNUMACell(
             id=node, cpuset=cpuset, memory=mem))
         totalmem = totalmem + mem
 
@@ -1030,7 +1030,7 @@ def _numa_get_constraints_manual(nodes, flavor, cpu_list, mem_list):
             memsize=totalmem,
             memtotal=flavor.memory_mb)
 
-    return compute.InstanceNUMATopology(cells=cells)
+    return objects.InstanceNUMATopology(cells=cells)
 
 
 def is_realtime_enabled(flavor):
@@ -1077,10 +1077,10 @@ def _numa_get_constraints_auto(nodes, flavor):
         start = node * ncpus
         cpuset = set(range(start, start + ncpus))
 
-        cells.append(compute.InstanceNUMACell(
+        cells.append(objects.InstanceNUMACell(
             id=node, cpuset=cpuset, memory=mem))
 
-    return compute.InstanceNUMATopology(cells=cells)
+    return objects.InstanceNUMATopology(cells=cells)
 
 
 def _add_cpu_pinning_constraint(flavor, image_meta, numa_topology):
@@ -1124,13 +1124,13 @@ def _add_cpu_pinning_constraint(flavor, image_meta, numa_topology):
             cell.cpu_policy = cpu_policy
             cell.cpu_thread_policy = cpu_thread_policy
     else:
-        single_cell = compute.InstanceNUMACell(
+        single_cell = objects.InstanceNUMACell(
                 id=0,
                 cpuset=set(range(flavor.vcpus)),
                 memory=flavor.memory_mb,
                 cpu_policy=cpu_policy,
                 cpu_thread_policy=cpu_thread_policy)
-        numa_topology = compute.InstanceNUMATopology(cells=[single_cell])
+        numa_topology = objects.InstanceNUMATopology(cells=[single_cell])
 
     return numa_topology
 
@@ -1198,9 +1198,9 @@ def numa_fit_instance_to_host(
         pci_requests=None, pci_stats=None):
     """Fit the instance topology onto the host topology given the limits
 
-    :param host_topology: compute.NUMATopology object to fit an instance on
-    :param instance_topology: compute.InstanceNUMATopology to be fitted
-    :param limits: compute.NUMATopologyLimits that defines limits
+    :param host_topology: objects.NUMATopology object to fit an instance on
+    :param instance_topology: objects.InstanceNUMATopology to be fitted
+    :param limits: objects.NUMATopologyLimits that defines limits
     :param pci_requests: instance pci_requests
     :param pci_stats: pci_stats for the host
 
@@ -1242,18 +1242,18 @@ def numa_fit_instance_to_host(
                 cells.append(got_cell)
             if len(cells) == len(host_cell_perm):
                 if not pci_requests:
-                    return compute.InstanceNUMATopology(cells=cells)
+                    return objects.InstanceNUMATopology(cells=cells)
                 elif ((pci_stats is not None) and
                     pci_stats.support_requests(pci_requests,
                                                      cells)):
-                    return compute.InstanceNUMATopology(cells=cells)
+                    return objects.InstanceNUMATopology(cells=cells)
 
 
 def _numa_pagesize_usage_from_cell(hostcell, instancecell, sign):
     topo = []
     for pages in hostcell.mempages:
         if pages.size_kb == instancecell.pagesize:
-            topo.append(compute.NUMAPagesTopology(
+            topo.append(objects.NUMAPagesTopology(
                 size_kb=pages.size_kb,
                 total=pages.total,
                 used=max(0, pages.used +
@@ -1267,14 +1267,14 @@ def _numa_pagesize_usage_from_cell(hostcell, instancecell, sign):
 def numa_usage_from_instances(host, instances, free=False):
     """Get host topology usage
 
-    :param host: compute.NUMATopology with usage information
-    :param instances: list of compute.InstanceNUMATopology
+    :param host: objects.NUMATopology with usage information
+    :param instances: list of objects.InstanceNUMATopology
     :param free: If True usage of the host will be decreased
 
     Sum the usage from all @instances to report the overall
     host topology usage
 
-    :returns: compute.NUMATopology including usage information
+    :returns: objects.NUMATopology including usage information
     """
 
     if host is None:
@@ -1287,7 +1287,7 @@ def numa_usage_from_instances(host, instances, free=False):
         memory_usage = hostcell.memory_usage
         cpu_usage = hostcell.cpu_usage
 
-        newcell = compute.NUMACell(
+        newcell = objects.NUMACell(
             id=hostcell.id, cpuset=hostcell.cpuset, memory=hostcell.memory,
             cpu_usage=0, memory_usage=0, mempages=hostcell.mempages,
             pinned_cpus=hostcell.pinned_cpus, siblings=hostcell.siblings)
@@ -1327,16 +1327,16 @@ def numa_usage_from_instances(host, instances, free=False):
 
         cells.append(newcell)
 
-    return compute.NUMATopology(cells=cells)
+    return objects.NUMATopology(cells=cells)
 
 
-# TODO(ndipanov): Remove when all code paths are using compute
+# TODO(ndipanov): Remove when all code paths are using objects
 def instance_topology_from_instance(instance):
     """Convenience method for getting the numa_topology out of instances
 
     Since we may get an Instance as either a dict, a db object, or an actual
     Instance object, this makes sure we get beck either None, or an instance
-    of compute.InstanceNUMATopology class.
+    of objects.InstanceNUMATopology class.
     """
     if isinstance(instance, obj_instance.Instance):
         # NOTE (ndipanov): This may cause a lazy-load of the attribute
@@ -1347,7 +1347,7 @@ def instance_topology_from_instance(instance):
         elif 'uuid' in instance:
             try:
                 instance_numa_topology = (
-                    compute.InstanceNUMATopology.get_by_instance_uuid(
+                    objects.InstanceNUMATopology.get_by_instance_uuid(
                             context.get_admin_context(), instance['uuid'])
                     )
             except exception.NumaTopologyNotFound:
@@ -1358,7 +1358,7 @@ def instance_topology_from_instance(instance):
     if instance_numa_topology:
         if isinstance(instance_numa_topology, six.string_types):
             instance_numa_topology = (
-                compute.InstanceNUMATopology.obj_from_primitive(
+                objects.InstanceNUMATopology.obj_from_primitive(
                     jsonutils.loads(instance_numa_topology)))
 
         elif isinstance(instance_numa_topology, dict):
@@ -1367,15 +1367,15 @@ def instance_topology_from_instance(instance):
             # InstanceNUMATopology object is serialized raw using
             # the obj_base.obj_to_primitive, (which is buggy and
             # will give us a dict with a list of InstanceNUMACell
-            # compute), and then passed to jsonutils.to_primitive,
-            # which will make a dict out of those compute. All of
+            # objects), and then passed to jsonutils.to_primitive,
+            # which will make a dict out of those objects. All of
             # this is done by scheduler.utils.build_request_spec
             # called in the conductor.
             #
             # Remove when request_spec is a proper object itself!
             dict_cells = instance_numa_topology.get('cells')
             if dict_cells:
-                cells = [compute.InstanceNUMACell(
+                cells = [objects.InstanceNUMACell(
                     id=cell['id'],
                     cpuset=set(cell['cpuset']),
                     memory=cell['memory'],
@@ -1384,19 +1384,19 @@ def instance_topology_from_instance(instance):
                     cpu_policy=cell.get('cpu_policy'),
                     cpu_thread_policy=cell.get('cpu_thread_policy'))
                          for cell in dict_cells]
-                instance_numa_topology = compute.InstanceNUMATopology(
+                instance_numa_topology = objects.InstanceNUMATopology(
                     cells=cells)
 
     return instance_numa_topology
 
 
-# TODO(ndipanov): Remove when all code paths are using compute
+# TODO(ndipanov): Remove when all code paths are using objects
 def host_topology_and_format_from_host(host):
     """Convenience method for getting the numa_topology out of hosts
 
     Since we may get a host as either a dict, a db object, or an actual
     ComputeNode object, or an instance of HostState class, this makes sure we
-    get beck either None, or an instance of compute.NUMATopology class.
+    get beck either None, or an instance of objects.NUMATopology class.
 
     :returns: A two-tuple, first element is the topology itself or None, second
               is a boolean set to True if topology was in JSON format.
@@ -1411,21 +1411,21 @@ def host_topology_and_format_from_host(host):
             host_numa_topology, six.string_types):
         was_json = True
 
-        host_numa_topology = (compute.NUMATopology.obj_from_db_obj(
+        host_numa_topology = (objects.NUMATopology.obj_from_db_obj(
             host_numa_topology))
 
     return host_numa_topology, was_json
 
 
-# TODO(ndipanov): Remove when all code paths are using compute
+# TODO(ndipanov): Remove when all code paths are using objects
 def get_host_numa_usage_from_instance(host, instance, free=False,
                                      never_serialize_result=False):
     """Calculate new 'numa_usage' of 'host' from 'instance' NUMA usage
 
     This is a convenience method to help us handle the fact that we use several
-    different types throughout the code (ComputeNode and Instance compute,
+    different types throughout the code (ComputeNode and Instance objects,
     dicts, scheduler HostState) which may have both json and deserialized
-    versions of compute.numa classes.
+    versions of objects.numa classes.
 
     Handles all the complexity without polluting the class method with it.
 
@@ -1434,10 +1434,10 @@ def get_host_numa_usage_from_instance(host, instance, free=False,
     :param free: if True the returned topology will have it's usage
                  decreased instead.
     :param never_serialize_result: if True result will always be an instance of
-                                   compute.NUMATopology class.
+                                   objects.NUMATopology class.
 
     :returns: numa_usage in the format it was on the host or
-              compute.NUMATopology instance if never_serialize_result was True
+              objects.NUMATopology instance if never_serialize_result was True
     """
     instance_numa_topology = instance_topology_from_instance(instance)
     if instance_numa_topology:

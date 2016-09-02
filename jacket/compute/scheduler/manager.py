@@ -30,7 +30,7 @@ import jacket.compute.conf
 from jacket.compute import exception
 from jacket.i18n import _, _LW
 from jacket import manager
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute import quota
 
 
@@ -98,7 +98,7 @@ class SchedulerManager(manager.Manager):
         # TODO(sbauza): Change the method signature to only accept a spec_obj
         # argument once API v5 is provided.
         if spec_obj is self._sentinel:
-            spec_obj = compute.RequestSpec.from_primitives(ctxt,
+            spec_obj = objects.RequestSpec.from_primitives(ctxt,
                                                            request_spec,
                                                            filter_properties)
         dests = self.driver.select_destinations(ctxt, spec_obj)

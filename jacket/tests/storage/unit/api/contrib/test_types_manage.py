@@ -18,7 +18,7 @@ import six
 import webob
 
 from jacket.api.storage.storage.contrib import types_manage
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.storage import test
 from jacket.tests.storage.unit.api import fakes

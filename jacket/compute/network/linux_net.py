@@ -38,7 +38,7 @@ import six
 from jacket.compute import exception
 from jacket.i18n import _, _LE, _LW
 from jacket.compute.network import model as network_model
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute import paths
 from jacket.compute.pci import utils as pci_utils
 from jacket.compute import utils
@@ -937,7 +937,7 @@ def get_dhcp_leases(context, network_ref):
     host = None
     if network_ref['multi_host']:
         host = CONF.host
-    for fixedip in compute.FixedIPList.get_by_network(context,
+    for fixedip in objects.FixedIPList.get_by_network(context,
                                                       network_ref,
                                                       host=host):
         # NOTE(cfb): Don't return a lease entry if the IP isn't
@@ -963,7 +963,7 @@ def get_dhcp_hosts(context, network_ref, fixedips):
 def get_dns_hosts(context, network_ref):
     """Get network's DNS hosts in hosts format."""
     hosts = []
-    for fixedip in compute.FixedIPList.get_by_network(context, network_ref):
+    for fixedip in objects.FixedIPList.get_by_network(context, network_ref):
         if fixedip.allocated:
             hosts.append(_host_dns(fixedip))
     return '\n'.join(hosts)
@@ -1049,7 +1049,7 @@ def update_dhcp(context, dev, network_ref):
     host = None
     if network_ref['multi_host']:
         host = CONF.host
-    fixedips = compute.FixedIPList.get_by_network(context,
+    fixedips = objects.FixedIPList.get_by_network(context,
                                                   network_ref,
                                                   host=host)
     write_to_file(conffile, get_dhcp_hosts(context, network_ref, fixedips))
@@ -1061,7 +1061,7 @@ def update_dns(context, dev, network_ref):
     host = None
     if network_ref['multi_host']:
         host = CONF.host
-    fixedips = compute.FixedIPList.get_by_network(context,
+    fixedips = objects.FixedIPList.get_by_network(context,
                                                   network_ref,
                                                   host=host)
     write_to_file(hostsfile, get_dns_hosts(context, network_ref))

@@ -20,7 +20,7 @@ import uuid
 
 from oslo_utils import timeutils
 
-from jacket.storage import context
+from jacket import context
 from jacket import db
 from jacket.db.storage.sqlalchemy import api as db_api
 from jacket.storage import exception

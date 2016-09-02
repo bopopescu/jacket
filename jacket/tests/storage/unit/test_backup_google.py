@@ -31,7 +31,7 @@ import mock
 from oslo_utils import units
 
 from jacket.storage.backup.drivers import google as google_dr
-from jacket.storage import context
+from jacket import context
 from jacket import db
 from jacket.storage import exception
 from jacket.storage.i18n import _

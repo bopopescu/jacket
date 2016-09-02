@@ -35,7 +35,8 @@ from six.moves import range
 
 from jacket.storage.brick.local_dev import lvm as brick_lvm
 from jacket import context
-from jacket import db
+
+from jacket.db import storage as db
 from jacket.storage import exception
 from jacket.storage.i18n import _, _LI, _LW, _LE
 from jacket import rpc

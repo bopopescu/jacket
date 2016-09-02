@@ -31,7 +31,7 @@ from oslo_utils import fileutils
 from jacket.compute import cloud
 from jacket.compute.cloud import flavors
 from jacket.compute import crypto
-from jacket import db
+from jacket.db import compute as db
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.compute import paths
@@ -137,7 +137,7 @@ class CloudPipe(object):
                  'name': group_name,
                  'description': 'Group for vpn'}
         try:
-            group_ref = cloud.security_group_create(context, group)
+            group_ref = db.security_group_create(context, group)
         except exception.SecurityGroupExists:
             return group_name
         rule = {'parent_group_id': group_ref['id'],
@@ -145,13 +145,13 @@ class CloudPipe(object):
                 'protocol': 'udp',
                 'from_port': 1194,
                 'to_port': 1194}
-        cloud.security_group_rule_create(context, rule)
+        db.security_group_rule_create(context, rule)
         rule = {'parent_group_id': group_ref['id'],
                 'cidr': '0.0.0.0/0',
                 'protocol': 'icmp',
                 'from_port': -1,
                 'to_port': -1}
-        cloud.security_group_rule_create(context, rule)
+        db.security_group_rule_create(context, rule)
         # NOTE(vish): No need to trigger the group since the instance
         #             has not been run yet.
         return group_name

@@ -25,7 +25,7 @@ from jacket.api.compute.openstack import extensions
 from jacket.compute import availability_zones
 from jacket.compute.cloud import api as compute_api
 from jacket.compute.cloud import flavors
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.compute import exception
 from jacket.compute import servicegroup

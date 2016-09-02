@@ -49,9 +49,9 @@ from oslo_utils import timeutils
 import requests
 
 import jacket.compute.conf
-from jacket.compute import context
+from jacket import context
 from jacket.i18n import _LW
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute.scheduler import filters
 
 LOG = logging.getLogger(__name__)
@@ -149,7 +149,7 @@ class ComputeAttestationCache(object):
         # Fetch compute node list to initialize the compute_nodes,
         # so that we don't need poll OAT service one by one for each
         # host in the first round that scheduler invokes us.
-        computes = compute.ComputeNodeList.get_all(admin)
+        computes = objects.ComputeNodeList.get_all(admin)
         for compute in computes:
             host = compute.hypervisor_hostname
             self._init_cache_entry(host)

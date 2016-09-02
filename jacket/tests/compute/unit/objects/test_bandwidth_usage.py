@@ -16,7 +16,7 @@ import iso8601
 import mock
 from oslo_utils import timeutils
 
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.objects.compute import bandwidth_usage
 from jacket.compute import test

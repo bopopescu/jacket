@@ -20,7 +20,7 @@ from jacket.api.compute.openstack import wsgi
 from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
-from jacket.objects import compute
+from jacket.objects import compute as objects
 
 
 class ServerStartStopActionController(wsgi.Controller):
@@ -31,7 +31,7 @@ class ServerStartStopActionController(wsgi.Controller):
     def _get_instance(self, context, instance_uuid):
         try:
             attrs = ['system_metadata', 'metadata']
-            return cloud.Instance.get_by_uuid(context, instance_uuid,
+            return objects.Instance.get_by_uuid(context, instance_uuid,
                                                 expected_attrs=attrs)
         except exception.NotFound:
             msg = _("Instance not found")
@@ -71,11 +71,11 @@ class ServerStartStopActionController(wsgi.Controller):
 
 
 class Server_start_stop(extensions.ExtensionDescriptor):
-    """Start/Stop instance cloud API support."""
+    """Start/Stop instance compute API support."""
 
     name = "ServerStartStop"
     alias = "os-server-start-stop"
-    namespace = "http://docs.openstack.org/cloud/ext/servers/api/v1.1"
+    namespace = "http://docs.openstack.org/compute/ext/servers/api/v1.1"
     updated = "2012-01-23T00:00:00Z"
 
     def get_controller_extensions(self):

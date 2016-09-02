@@ -18,7 +18,7 @@ import mock
 import oslo_messaging
 
 from jacket.api.storage.storage.contrib import capabilities
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.storage import test
 from jacket.tests.storage.unit.api import fakes

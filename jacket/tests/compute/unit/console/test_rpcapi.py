@@ -20,7 +20,7 @@ import mock
 from oslo_config import cfg
 
 from jacket.compute.console import rpcapi as console_rpcapi
-from jacket.compute import context
+from jacket import context
 from jacket.compute import test
 
 CONF = cfg.CONF

@@ -20,7 +20,7 @@ from oslo_serialization import jsonutils
 import webob
 
 from jacket.api.storage.storage.contrib import extended_snapshot_attributes
-from jacket.storage import context
+from jacket import context
 from jacket.storage import test
 from jacket.tests.storage.unit.api import fakes
 from jacket.tests.storage.unit import fake_snapshot

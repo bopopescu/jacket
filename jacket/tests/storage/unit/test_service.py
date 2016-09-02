@@ -24,7 +24,7 @@ from oslo_concurrency import processutils
 from oslo_config import cfg
 from oslo_db import exception as db_exc
 
-from jacket.storage import context
+from jacket import context
 from jacket import db
 from jacket.storage import exception
 from jacket.storage import manager

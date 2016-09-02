@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.tests.storage.unit import fake_volume
 from jacket.tests.storage.unit.volume.drivers.emc import scaleio

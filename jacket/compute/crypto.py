@@ -41,8 +41,8 @@ from oslo_utils import fileutils
 import paramiko
 import six
 
-from jacket.compute import context
-from jacket import db
+from jacket import context
+from jacket.db import compute as db
 from jacket.compute import exception
 from jacket.i18n import _, _LE
 from jacket.compute import paths

@@ -28,7 +28,7 @@ from oslo_utils import imageutils
 from oslo_utils import units
 from oslo_utils import uuidutils
 
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.compute import keymgr
 from jacket.objects import compute

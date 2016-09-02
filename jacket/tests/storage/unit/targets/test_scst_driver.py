@@ -12,7 +12,7 @@
 
 import mock
 
-from jacket.storage import context
+from jacket import context
 from jacket.tests.storage.unit.targets import targets_fixture as tf
 from jacket.storage import utils
 from jacket.storage.volume.targets import scst

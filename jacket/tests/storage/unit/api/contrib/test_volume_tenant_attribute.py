@@ -18,7 +18,7 @@ from lxml import etree
 from oslo_serialization import jsonutils
 import webob
 
-from jacket.storage import context
+from jacket import context
 from jacket.objects import storage
 from jacket.storage import test
 from jacket.tests.storage.unit.api import fakes

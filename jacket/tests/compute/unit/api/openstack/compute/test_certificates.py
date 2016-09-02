@@ -25,7 +25,7 @@ from jacket.api.compute.openstack.compute import certificates \
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import certificates \
         as certificates_v2
 from jacket.compute.cert import rpcapi
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.compute import policy
 from jacket.compute import test

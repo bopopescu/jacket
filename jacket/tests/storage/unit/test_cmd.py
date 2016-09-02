@@ -35,7 +35,7 @@ from jacket.cmd.storage import rtstool as cinder_rtstool
 from jacket.cmd.storage import scheduler as cinder_scheduler
 from jacket.cmd.storage import volume as cinder_volume
 from jacket.cmd.storage import volume_usage_audit
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.objects.storage import fields
 from jacket.storage import test

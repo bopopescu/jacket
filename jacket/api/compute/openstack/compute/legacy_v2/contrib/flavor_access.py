@@ -20,10 +20,10 @@ import webob
 from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack import wsgi
-from jacket.compute import context as nova_context
+from jacket import context as nova_context
 from jacket.compute import exception
 from jacket.i18n import _
-from jacket.objects import compute
+from jacket.objects import compute as objects
 
 
 soft_authorize = extensions.soft_extension_authorizer('compute',
@@ -115,7 +115,7 @@ class FlavorActionController(wsgi.Controller):
             msg = _("Missing tenant parameter")
             raise webob.exc.HTTPBadRequest(explanation=msg)
 
-        flavor = compute.Flavor(context=context, flavorid=id)
+        flavor = objects.Flavor(context=context, flavorid=id)
         try:
             flavor.add_access(tenant)
         except exception.FlavorAccessExists as err:
@@ -140,7 +140,7 @@ class FlavorActionController(wsgi.Controller):
             msg = _("Missing tenant parameter")
             raise webob.exc.HTTPBadRequest(explanation=msg)
 
-        flavor = compute.Flavor(context=context, flavorid=id)
+        flavor = objects.Flavor(context=context, flavorid=id)
         try:
             flavor.remove_access(tenant)
         except (exception.FlavorNotFound,

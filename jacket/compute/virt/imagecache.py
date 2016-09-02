@@ -17,7 +17,7 @@ from oslo_config import cfg
 
 from jacket.compute.cloud import task_states
 from jacket.compute.cloud import vm_states
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute.virt import block_device as driver_block_device
 
 imagecache_opts = [
@@ -102,7 +102,7 @@ class ImageCacheManager(object):
                 image_popularity.setdefault(image_ref_str, 0)
                 image_popularity[image_ref_str] += 1
 
-            gb = compute.BlockDeviceMappingList.get_by_instance_uuid
+            gb = objects.BlockDeviceMappingList.get_by_instance_uuid
             bdms = gb(context, instance.uuid)
             if bdms:
                 swap = driver_block_device.convert_swap(bdms)

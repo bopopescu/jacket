@@ -30,7 +30,7 @@ from jacket.api.compute.openstack import wsgi as os_wsgi
 from jacket.compute import availability_zones
 from jacket.compute.cells import utils as cells_utils
 from jacket.compute.cloud import cells_api
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.compute.servicegroup.drivers import db as db_driver

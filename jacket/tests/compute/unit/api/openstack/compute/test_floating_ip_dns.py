@@ -23,7 +23,7 @@ from jacket.api.compute.openstack.compute import floating_ip_dns \
         as fipdns_v21
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import floating_ip_dns \
         as fipdns_v2
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.compute import exception
 from jacket.compute import network

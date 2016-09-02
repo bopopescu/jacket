@@ -16,7 +16,7 @@ from oslo_utils import importutils
 
 from jacket.compute.cloud import power_state
 import jacket.compute.conf
-from jacket.compute import context
+from jacket import context
 from jacket.objects import compute
 from jacket.objects.compute import instance as instance_obj
 from jacket.tests.compute.unit.compute import eventlet_utils

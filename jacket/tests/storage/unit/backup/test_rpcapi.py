@@ -21,7 +21,7 @@ import copy
 import mock
 
 from jacket.storage.backup import rpcapi as backup_rpcapi
-from jacket.storage import context
+from jacket import context
 from jacket.objects import storage
 from jacket.storage import test
 from jacket.tests.storage.unit import fake_backup

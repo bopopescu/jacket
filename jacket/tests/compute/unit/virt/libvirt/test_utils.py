@@ -24,7 +24,7 @@ from oslo_utils import fileutils
 import six
 
 from jacket.compute.cloud import arch
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.compute import test

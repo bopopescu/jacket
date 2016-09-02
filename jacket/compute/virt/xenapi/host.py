@@ -29,10 +29,10 @@ from jacket.compute.cloud import hv_type
 from jacket.compute.cloud import task_states
 from jacket.compute.cloud import vm_mode
 from jacket.compute.cloud import vm_states
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.i18n import _, _LE, _LI, _LW
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute.virt.xenapi import pool_states
 from jacket.compute.virt.xenapi import vm_utils
 
@@ -80,10 +80,10 @@ class Host(object):
                                          'to a new host'),
                                      {'name': name, 'host': host})
                             continue
-                    instance = compute.Instance.get_by_uuid(ctxt, uuid)
+                    instance = objects.Instance.get_by_uuid(ctxt, uuid)
                     vm_counter = vm_counter + 1
 
-                    aggregate = compute.AggregateList.get_by_host(
+                    aggregate = objects.AggregateList.get_by_host(
                         ctxt, host, key=pool_states.POOL_FLAG)
                     if not aggregate:
                         msg = _('Aggregate for host %(host)s count not be'
@@ -123,7 +123,7 @@ class Host(object):
         # Since capabilities are gone, use service table to disable a node
         # in scheduler
         cntxt = context.get_admin_context()
-        service = compute.Service.get_by_args(cntxt, CONF.host,
+        service = objects.Service.get_by_args(cntxt, CONF.host,
                                               'jacket-worker')
         service.disabled = not enabled
         service.disabled_reason = 'set by xenapi host_state'
@@ -371,7 +371,7 @@ def call_xenhost(session, method, arg_dict):
 
 def _uuid_find(context, host, name_label):
     """Return instance uuid by name_label."""
-    for i in compute.InstanceList.get_by_host(context, host):
+    for i in objects.InstanceList.get_by_host(context, host):
         if i.name == name_label:
             return i.uuid
     return None

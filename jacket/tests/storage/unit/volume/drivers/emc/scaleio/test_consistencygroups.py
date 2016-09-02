@@ -17,7 +17,7 @@ import json
 
 import mock
 
-from jacket.storage import context
+from jacket import context
 from jacket.tests.storage.unit import fake_consistencygroup
 from jacket.tests.storage.unit import fake_snapshot
 from jacket.tests.storage.unit import fake_volume

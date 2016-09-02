@@ -32,7 +32,7 @@ from oslo_utils import importutils
 from jacket.compute.conductor import rpcapi as conductor_rpcapi
 import jacket.compute.conf
 from jacket.compute import config
-from jacket.compute import context
+from jacket import context
 import jacket.db.compute.api
 from jacket.compute import exception
 from jacket.i18n import _LE, _LW

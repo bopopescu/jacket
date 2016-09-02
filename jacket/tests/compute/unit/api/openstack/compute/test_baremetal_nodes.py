@@ -24,7 +24,7 @@ from jacket.api.compute.openstack.compute import baremetal_nodes \
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import baremetal_nodes \
         as b_nodes_v2
 from jacket.api.compute.openstack import extensions
-from jacket.compute import context
+from jacket import context
 from jacket.compute import test
 from jacket.tests.compute.unit.virt.ironic import utils as ironic_utils
 

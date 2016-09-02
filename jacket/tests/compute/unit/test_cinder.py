@@ -19,7 +19,7 @@ from cinderclient.v2 import client as cinder_client_v2
 from requests_mock.contrib import fixture
 from testtools import matchers
 
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.compute import test
 from jacket.compute.volume import cinder

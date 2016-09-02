@@ -29,7 +29,7 @@ from jacket.i18n import _
 from jacket.i18n import _LE
 from jacket.compute.network import linux_net
 from jacket.compute.network import model as network_model
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute import utils
 from jacket.compute.virt.libvirt import config as vconfig
 from jacket.compute.virt.libvirt import designer
@@ -145,8 +145,8 @@ class LibvirtGenericVIFDriver(object):
         """
         driver = None
         vhost_queues = None
-        if not isinstance(image_meta, compute.ImageMeta):
-            image_meta = compute.ImageMeta.from_dict(image_meta)
+        if not isinstance(image_meta, objects.ImageMeta):
+            image_meta = objects.ImageMeta.from_dict(image_meta)
         img_props = image_meta.properties
         if img_props.get('hw_vif_multiqueue_enabled'):
             driver = 'vhost'

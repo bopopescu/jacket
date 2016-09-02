@@ -13,7 +13,7 @@
 from oslo_serialization import jsonutils
 from oslo_utils import uuidutils
 
-from jacket.compute import context
+from jacket import context
 from jacket.objects import compute
 from jacket.tests.compute.unit import fake_flavor
 

@@ -22,7 +22,7 @@ from webob import exc
 
 from jacket.api.compute.openstack import extensions
 from jacket.compute.cloud import api as compute_api
-from jacket.compute import context as nova_context
+from jacket import context as nova_context
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.compute import utils

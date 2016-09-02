@@ -21,7 +21,7 @@ from oslo_service import loopingcall
 from oslo_utils import timeutils
 import oslo_versionedobjects
 
-from jacket.storage import context
+from jacket import context
 from jacket import db
 from jacket.objects import storage
 from jacket.objects.storage import fields

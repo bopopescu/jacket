@@ -23,7 +23,7 @@ import mock
 from six.moves import builtins
 
 from jacket.storage.backup.drivers import posix
-from jacket.storage import context
+from jacket import context
 from jacket.storage import test
 from jacket.tests.storage.unit import fake_constants as fake
 

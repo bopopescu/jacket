@@ -22,7 +22,7 @@ from migrate.versioning import api as versioning_api
 from oslo_db.sqlalchemy import utils as db_utils
 import sqlalchemy
 
-from jacket.compute import context
+from jacket import context
 from jacket.db.compute.sqlalchemy import api as db_api
 from jacket.db.compute.sqlalchemy import migration
 from jacket.compute import exception

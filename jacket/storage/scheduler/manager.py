@@ -28,12 +28,12 @@ from oslo_utils import importutils
 import six
 
 from jacket import context
-from jacket import db
+from jacket.db import storage as db
 from jacket.storage import exception
 from jacket.storage import flow_utils
 from jacket.storage.i18n import _, _LE
 from jacket.storage import manager
-from jacket.objects import storage
+from jacket.objects import storage as objects
 from jacket.storage import quota
 from jacket import rpc
 from jacket.storage.scheduler.flows import create_volume
@@ -130,11 +130,11 @@ class SchedulerManager(manager.Manager):
         if volume is None:
             # For older clients, mimic the old behavior and look up the
             # volume by its volume_id.
-            volume = storage.Volume.get_by_id(context, volume_id)
+            volume = objects.Volume.get_by_id(context, volume_id)
 
         try:
             flow_engine = create_volume.get_flow(context,
-                                                 storage, self.driver,
+                                                 db, self.driver,
                                                  request_spec,
                                                  filter_properties,
                                                  volume,
@@ -162,7 +162,7 @@ class SchedulerManager(manager.Manager):
         if volume is None:
             # For older clients, mimic the old behavior and look up the
             # volume by its volume_id.
-            volume = storage.Volume.get_by_id(context, volume_id)
+            volume = objects.Volume.get_by_id(context, volume_id)
 
         def _migrate_volume_set_error(self, context, ex, request_spec):
             if volume.status == 'maintenance':
@@ -208,7 +208,7 @@ class SchedulerManager(manager.Manager):
         if volume is None:
             # For older clients, mimic the old behavior and look up the
             # volume by its volume_id.
-            volume = storage.Volume.get_by_id(context, volume_id)
+            volume = objects.Volume.get_by_id(context, volume_id)
 
         def _retype_volume_set_error(self, context, ex, request_spec,
                                      volume_ref, msg, reservations):
@@ -266,7 +266,7 @@ class SchedulerManager(manager.Manager):
             self._set_volume_state_and_notify('manage_existing', volume_state,
                                               context, ex, request_spec)
 
-        volume_ref = storage.volume_get(context, volume_id)
+        volume_ref = db.volume_get(context, volume_id)
         try:
             self.driver.host_passes_filters(context,
                                             volume_ref['host'],
@@ -304,7 +304,7 @@ class SchedulerManager(manager.Manager):
         volume_id = request_spec.get('volume_id', None)
 
         if volume_id:
-            storage.volume_update(context, volume_id, volume_state)
+            db.volume_update(context, volume_id, volume_state)
 
         payload = dict(request_spec=request_spec,
                        volume_properties=properties,

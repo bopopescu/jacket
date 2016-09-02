@@ -45,7 +45,7 @@ from oslo_utils import units
 from oslo_utils import versionutils
 import six
 
-from jacket.compute import context as nova_context
+from jacket import context as nova_context
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.i18n import _LE

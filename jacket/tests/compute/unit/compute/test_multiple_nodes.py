@@ -17,7 +17,7 @@
 from oslo_utils import importutils
 
 import jacket.compute.conf
-from jacket.compute import context
+from jacket import context
 from jacket.objects import compute
 from jacket.compute import test
 from jacket.tests.compute import uuidsentinel

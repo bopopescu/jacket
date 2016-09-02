@@ -19,7 +19,7 @@ from oslo_log import log as logging
 from oslo_serialization import jsonutils
 from oslo_utils import versionutils
 
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute as db
 from jacket.compute import exception
 from jacket.objects import compute as objects

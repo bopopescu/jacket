@@ -23,7 +23,7 @@ from oslo_log import log as logging
 from oslo_utils import units
 
 from jacket import context
-from jacket import db
+from jacket.db import storage as db
 from jacket.storage import exception
 from jacket.storage.i18n import _, _LI, _LE, _LW
 from jacket.storage.volume import driver
@@ -355,7 +355,7 @@ class NexentaISCSIDriver(driver.ISCSIDriver):  # pylint: disable=R0921
 
     def _get_snapshot_volume(self, snapshot):
         ctxt = context.get_admin_context()
-        return storage.volume_get(ctxt, snapshot['volume_id'])
+        return db.volume_get(ctxt, snapshot['volume_id'])
 
     def _get_target_by_alias(self, alias):
         """Get an iSCSI target by it's alias.

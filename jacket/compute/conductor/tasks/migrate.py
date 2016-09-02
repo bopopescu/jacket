@@ -11,7 +11,7 @@
 #    under the License.
 
 from jacket.compute.conductor.tasks import base
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute.scheduler import utils as scheduler_utils
 
 
@@ -32,7 +32,7 @@ class MigrationTask(base.TaskBase):
 
     def _execute(self):
         image = self.request_spec.get('image')
-        self.quotas = compute.Quotas.from_reservations(self.context,
+        self.quotas = objects.Quotas.from_reservations(self.context,
                                                        self.reservations,
                                                        instance=self.instance)
         scheduler_utils.setup_instance_group(self.context, self.request_spec,
@@ -41,7 +41,7 @@ class MigrationTask(base.TaskBase):
                                        self.instance.uuid)
         # TODO(sbauza): Hydrate here the object until we modify the
         # scheduler.utils methods to directly use the RequestSpec object
-        spec_obj = compute.RequestSpec.from_primitives(
+        spec_obj = objects.RequestSpec.from_primitives(
             self.context, self.request_spec, self.filter_properties)
         hosts = self.scheduler_client.select_destinations(
             self.context, spec_obj)

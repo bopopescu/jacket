@@ -24,7 +24,7 @@ import webob
 import jacket.api.storage.storage.common as common
 from jacket.api.storage.storage.v2 import types
 from jacket.api.storage.storage.v2.views import types as views_types
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.storage import test
 from jacket.tests.storage.unit.api import fakes

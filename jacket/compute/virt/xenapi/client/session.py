@@ -35,12 +35,12 @@ try:
 except ImportError:
     import six.moves.xmlrpc_client as xmlrpclib
 
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.i18n import _, _LE, _LW
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket import version
-from jacket.objects import compute as cli_objects
+from jacket.compute.virt.xenapi.client import objects as cli_objects
 from jacket.compute.virt.xenapi import pool
 from jacket.compute.virt.xenapi import pool_states
 
@@ -144,7 +144,7 @@ class XenAPISession(object):
 
     def _get_host_uuid(self):
         if self.is_slave:
-            aggr = compute.AggregateList.get_by_host(
+            aggr = objects.AggregateList.get_by_host(
                 context.get_admin_context(),
                 CONF.host, key=pool_states.POOL_FLAG)[0]
             if not aggr:

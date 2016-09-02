@@ -21,7 +21,7 @@ from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.i18n import _LI
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import external_event as external_event_obj
 
 
@@ -53,7 +53,7 @@ class ServerExternalEventsController(wsgi.Controller):
 
         for _event in body_events:
             client_event = dict(_event)
-            event = cloud.InstanceExternalEvent(context)
+            event = objects.InstanceExternalEvent(context)
 
             status = client_event.get('status', 'completed')
             if status not in external_event_obj.EVENT_STATUSES:
@@ -81,7 +81,7 @@ class ServerExternalEventsController(wsgi.Controller):
             instance = instances.get(event.instance_uuid)
             if not instance:
                 try:
-                    instance = cloud.Instance.get_by_uuid(
+                    instance = objects.Instance.get_by_uuid(
                         context, event.instance_uuid)
                     instances[event.instance_uuid] = instance
                 except exception.InstanceNotFound:
@@ -138,7 +138,7 @@ class Server_external_events(extensions.ExtensionDescriptor):
 
     name = "ServerExternalEvents"
     alias = "os-server-external-events"
-    namespace = ("http://docs.openstack.org/cloud/ext/"
+    namespace = ("http://docs.openstack.org/compute/ext/"
                  "server-external-events/api/v2")
     updated = "2014-02-18T00:00:00Z"
 

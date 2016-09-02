@@ -19,7 +19,7 @@ from oslo_serialization import jsonutils
 from oslo_utils import timeutils
 import webob
 
-from jacket.storage import context
+from jacket import context
 from jacket import db
 from jacket.objects import storage
 from jacket.storage import test

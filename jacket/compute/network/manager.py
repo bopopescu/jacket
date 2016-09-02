@@ -44,7 +44,7 @@ from oslo_utils import timeutils
 from oslo_utils import uuidutils
 import six
 
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.i18n import _, _LI, _LE, _LW
 from jacket.compute import ipv6
@@ -55,7 +55,7 @@ from jacket.compute.network import floating_ips
 from jacket.compute.network import model as network_model
 from jacket.compute.network import rpcapi as network_rpcapi
 from jacket.compute.network.security_group import openstack_driver
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base as obj_base
 from jacket.objects.compute import quotas as quotas_obj
 from jacket.compute import servicegroup
@@ -210,7 +210,7 @@ class RPCAllocateFixedIP(object):
         """Call the superclass deallocate_fixed_ip if i'm the correct host
         otherwise call to the correct host
         """
-        fixed_ip = compute.FixedIP.get_by_address(
+        fixed_ip = objects.FixedIP.get_by_address(
             context, address, expected_attrs=['network'])
         network = fixed_ip.network
 
@@ -224,7 +224,7 @@ class RPCAllocateFixedIP(object):
                     address, instance=instance)
 
         if network.multi_host:
-            service = compute.Service.get_by_host_and_binary(
+            service = objects.Service.get_by_host_and_binary(
                 context, host, 'compute-network')
             if not service or not self.servicegroup_api.service_is_up(service):
                 # NOTE(vish): deallocate the fixed ip locally but don't
@@ -281,7 +281,7 @@ class NetworkManager(manager.Manager):
         l3_lib = kwargs.get("l3_lib", CONF.l3_lib)
         self.l3driver = importutils.import_object(l3_lib)
 
-        self.quotas_cls = compute.Quotas
+        self.quotas_cls = objects.Quotas
 
         super(NetworkManager, self).__init__(service_name='network',
                                              *args, **kwargs)
@@ -303,13 +303,13 @@ class NetworkManager(manager.Manager):
             host = self.host
         network_id = network_ref['id']
         try:
-            fip = compute.FixedIP.get_by_network_and_host(context,
+            fip = objects.FixedIP.get_by_network_and_host(context,
                                                                network_id,
                                                                host)
             return fip.address
         except exception.FixedIpNotFoundForNetworkHost:
             elevated = context.elevated()
-            fip = compute.FixedIP.associate_pool(elevated,
+            fip = objects.FixedIP.associate_pool(elevated,
                                                       network_id,
                                                       host=host)
             return fip.address
@@ -326,7 +326,7 @@ class NetworkManager(manager.Manager):
         # NOTE(vish): Set up networks for which this host already has
         #             an ip address.
         ctxt = context.get_admin_context()
-        for network in compute.NetworkList.get_by_host(ctxt, self.host):
+        for network in objects.NetworkList.get_by_host(ctxt, self.host):
             self._setup_network_on_host(ctxt, network)
             if CONF.update_dns_entries:
                 LOG.debug('Update DNS on network %s for host %s',
@@ -342,7 +342,7 @@ class NetworkManager(manager.Manager):
             now = timeutils.utcnow()
             timeout = CONF.fixed_ip_disassociate_timeout
             time = now - datetime.timedelta(seconds=timeout)
-            num = compute.FixedIP.disassociate_all_by_timeout(context,
+            num = objects.FixedIP.disassociate_all_by_timeout(context,
                                                               self.host,
                                                               time)
             if num:
@@ -353,8 +353,8 @@ class NetworkManager(manager.Manager):
         # TODO(mriedem): Remove this compat shim when network RPC API version
         # 1.0 is dropped.
         if not isinstance(network_ref, obj_base.NovaObject):
-            network_ref = compute.Network._from_db_object(
-                context, compute.Network(), network_ref)
+            network_ref = objects.Network._from_db_object(
+                context, objects.Network(), network_ref)
         LOG.debug('Setting host %s for network %s', self.host,
                   network_ref.uuid, context=context)
         network_ref.host = self.host
@@ -366,7 +366,7 @@ class NetworkManager(manager.Manager):
         # NOTE(francois.charlier): the instance may have been deleted already
         # thus enabling `read_deleted`
         admin_context = context.get_admin_context(read_deleted='yes')
-        instance = compute.Instance.get_by_uuid(admin_context, instance_id)
+        instance = objects.Instance.get_by_uuid(admin_context, instance_id)
 
         try:
             # NOTE(vish): We need to make sure the instance info cache has been
@@ -376,7 +376,7 @@ class NetworkManager(manager.Manager):
             #             bug fix.
             nw_info = self.get_instance_nw_info(admin_context, instance_id,
                                                 None, None)
-            ic = compute.InstanceInfoCache.new(admin_context, instance_id)
+            ic = objects.InstanceInfoCache.new(admin_context, instance_id)
             ic.network_info = nw_info
             ic.save(update_cells=False)
         except exception.InstanceInfoCacheNotFound:
@@ -400,7 +400,7 @@ class NetworkManager(manager.Manager):
         #                this. But for now it "works", this could suck on
         #                large installs.
 
-        vifs = compute.VirtualInterfaceList.get_all(context)
+        vifs = objects.VirtualInterfaceList.get_all(context)
         results = []
 
         for vif in vifs:
@@ -418,7 +418,7 @@ class NetworkManager(manager.Manager):
                 results.append({'instance_uuid': vif.instance_uuid,
                                 'ip': fixed_ipv6})
 
-            fixed_ips = compute.FixedIPList.get_by_virtual_interface_id(
+            fixed_ips = objects.FixedIPList.get_by_virtual_interface_id(
                 context, vif.id)
             for fixed_ip in fixed_ips:
                 if not fixed_ip or not fixed_ip.address:
@@ -453,7 +453,7 @@ class NetworkManager(manager.Manager):
             networks = self._get_networks_by_uuids(context, network_uuids)
         else:
             try:
-                networks = compute.NetworkList.get_all(context)
+                networks = objects.NetworkList.get_all(context)
             except exception.NoNetworksFound:
                 return []
         # return only networks which are not vlan networks
@@ -473,9 +473,9 @@ class NetworkManager(manager.Manager):
         requested_networks = kwargs.get('requested_networks')
         if (requested_networks and
                 not isinstance(requested_networks,
-                               compute.NetworkRequestList)):
-            requested_networks = compute.NetworkRequestList(
-                compute=[compute.NetworkRequest.from_tuple(t)
+                               objects.NetworkRequestList)):
+            requested_networks = objects.NetworkRequestList(
+                objects=[objects.NetworkRequest.from_tuple(t)
                          for t in requested_networks])
         vpn = kwargs['vpn']
         macs = kwargs['macs']
@@ -495,7 +495,7 @@ class NetworkManager(manager.Manager):
             with excutils.save_and_reraise_exception():
                 # If we fail to allocate any one mac address, clean up all
                 # allocated VIFs
-                compute.VirtualInterface.delete_by_instance_uuid(
+                objects.VirtualInterface.delete_by_instance_uuid(
                         context, instance_uuid)
 
         self._allocate_fixed_ips(admin_context, instance_uuid,
@@ -530,10 +530,10 @@ class NetworkManager(manager.Manager):
         else:
             instance_id = kwargs['instance_id']
             if uuidutils.is_uuid_like(instance_id):
-                instance = compute.Instance.get_by_uuid(
+                instance = objects.Instance.get_by_uuid(
                         read_deleted_context, instance_id)
             else:
-                instance = compute.Instance.get_by_id(
+                instance = objects.Instance.get_by_id(
                         read_deleted_context, instance_id)
             # NOTE(russellb) in case instance_id was an ID and not UUID
             instance_uuid = instance.uuid
@@ -543,14 +543,14 @@ class NetworkManager(manager.Manager):
             requested_networks = kwargs.get('requested_networks')
             if requested_networks:
                 # NOTE(obondarev): Temporary and transitional
-                if isinstance(requested_networks, compute.NetworkRequestList):
+                if isinstance(requested_networks, objects.NetworkRequestList):
                     requested_networks = requested_networks.as_tuples()
 
                 network_ids = set([net_id for (net_id, ip)
                                    in requested_networks])
                 fixed_ips = [ip for (net_id, ip) in requested_networks if ip]
             else:
-                fixed_ip_list = compute.FixedIPList.get_by_instance_uuid(
+                fixed_ip_list = objects.FixedIPList.get_by_instance_uuid(
                     read_deleted_context, instance_uuid)
                 network_ids = set([str(fixed_ip.network_id) for fixed_ip
                                in fixed_ip_list])
@@ -569,7 +569,7 @@ class NetworkManager(manager.Manager):
             self.network_rpcapi.update_dns(context, list(network_ids))
 
         # deallocate vifs (mac addresses)
-        compute.VirtualInterface.delete_by_instance_uuid(
+        objects.VirtualInterface.delete_by_instance_uuid(
                 read_deleted_context, instance_uuid)
         LOG.info(_LI("Network deallocated for instance (fixed IPs: '%s')"),
                  fixed_ips, context=context, instance_uuid=instance_uuid)
@@ -591,7 +591,7 @@ class NetworkManager(manager.Manager):
         LOG.debug('Get instance network info', instance_uuid=instance_uuid)
 
         try:
-            fixed_ips = compute.FixedIPList.get_by_instance_uuid(
+            fixed_ips = objects.FixedIPList.get_by_instance_uuid(
                     context, instance_uuid)
         except exception.FixedIpNotFoundForInstance:
             fixed_ips = []
@@ -769,7 +769,7 @@ class NetworkManager(manager.Manager):
         attempts = 1 if mac else CONF.create_unique_mac_address_attempts
         for i in range(attempts):
             try:
-                vif = compute.VirtualInterface(context)
+                vif = objects.VirtualInterface(context)
                 vif.address = mac or utils.generate_mac_address()
                 vif.instance_uuid = instance_uuid
                 vif.network_id = network_id
@@ -805,7 +805,7 @@ class NetworkManager(manager.Manager):
                                       address, rxtx_factor=None):
         """Removes a fixed IP from an instance from specified network."""
         LOG.debug('Remove fixed IP %s', address, instance_uuid=instance_id)
-        fixed_ips = compute.FixedIPList.get_by_instance_uuid(context,
+        fixed_ips = objects.FixedIPList.get_by_instance_uuid(context,
                                                              instance_id)
         for fixed_ip in fixed_ips:
             if str(fixed_ip.address) == address:
@@ -826,7 +826,7 @@ class NetworkManager(manager.Manager):
             return True
         instance_domain = self.instance_dns_domain
 
-        domainref = compute.DNSDomain.get_by_domain(context, instance_domain)
+        domainref = objects.DNSDomain.get_by_domain(context, instance_domain)
         if domainref is None:
             LOG.warning(_LW('instance-dns-zone not found |%s|.'),
                      instance_domain, instance=instance)
@@ -857,7 +857,7 @@ class NetworkManager(manager.Manager):
 
         # NOTE(vish) This db query could be removed if we pass az and name
         #            (or the whole instance object).
-        instance = compute.Instance.get_by_uuid(context, instance_id)
+        instance = objects.Instance.get_by_uuid(context, instance_id)
         LOG.debug('Allocate fixed IP on network %s', network['uuid'],
                   instance=instance)
 
@@ -892,7 +892,7 @@ class NetworkManager(manager.Manager):
                 # instance to reduce a race window where a previous instance
                 # was associated with the fixed IP and has released it, because
                 # release_fixed_ip will disassociate if allocated is False.
-                vif = compute.VirtualInterface.get_by_instance_and_network(
+                vif = objects.VirtualInterface.get_by_instance_and_network(
                         context, instance_id, network['id'])
                 if vif is None:
                     LOG.debug('vif for network %(network)s is used up, '
@@ -909,7 +909,7 @@ class NetworkManager(manager.Manager):
                               {'address': address, 'network': network['id'],
                                'cidr': network['cidr']},
                               instance=instance)
-                    fip = compute.FixedIP.associate(
+                    fip = objects.FixedIP.associate(
                             context, str(address), instance_id, network['id'],
                             vif_id=vif.id)
                 else:
@@ -918,7 +918,7 @@ class NetworkManager(manager.Manager):
                               {'network': network['id'],
                                'cidr': network['cidr']},
                               instance=instance)
-                    fip = compute.FixedIP.associate_pool(
+                    fip = objects.FixedIP.associate_pool(
                         context.elevated(), network['id'], instance_id,
                         vif_id=vif.id)
                     LOG.debug('Associated instance with fixed IP: %s', fip,
@@ -983,7 +983,7 @@ class NetworkManager(manager.Manager):
     def deallocate_fixed_ip(self, context, address, host=None, teardown=True,
             instance=None):
         """Returns a fixed IP to the pool."""
-        fixed_ip_ref = compute.FixedIP.get_by_address(
+        fixed_ip_ref = objects.FixedIP.get_by_address(
             context, address, expected_attrs=['network'])
         instance_uuid = fixed_ip_ref.instance_uuid
         vif_id = fixed_ip_ref.virtual_interface_id
@@ -996,7 +996,7 @@ class NetworkManager(manager.Manager):
             # NOTE(danms) We can't use fixed_ip_ref.instance because
             #             instance may be deleted and the relationship
             #             doesn't extend to deleted instances
-            instance = compute.Instance.get_by_uuid(
+            instance = objects.Instance.get_by_uuid(
                 context.elevated(read_deleted='yes'), instance_uuid)
 
         quotas = self.quotas_cls(context=context)
@@ -1038,7 +1038,7 @@ class NetworkManager(manager.Manager):
                                      "doesn't exist"), address)
                         return
 
-                    vif = compute.VirtualInterface.get_by_id(context, vif_id)
+                    vif = objects.VirtualInterface.get_by_id(context, vif_id)
 
                     if not vif:
                         LOG.info(_LI("Unable to release %s because vif "
@@ -1065,7 +1065,7 @@ class NetworkManager(manager.Manager):
                     # ip. DHCPRELEASE packet sent to dnsmasq would not trigger
                     # dhcp-bridge to run. Thus it is better to disassociate
                     # such fixed ip here.
-                    fixed_ip_ref = compute.FixedIP.get_by_address(
+                    fixed_ip_ref = objects.FixedIP.get_by_address(
                         context, address)
                     if (instance_uuid == fixed_ip_ref.instance_uuid and
                             not fixed_ip_ref.leased):
@@ -1091,7 +1091,7 @@ class NetworkManager(manager.Manager):
     def lease_fixed_ip(self, context, address):
         """Called by dhcp-bridge when IP is leased."""
         LOG.debug('Leased IP |%s|', address, context=context)
-        fixed_ip = compute.FixedIP.get_by_address(context, address)
+        fixed_ip = objects.FixedIP.get_by_address(context, address)
 
         if fixed_ip.instance_uuid is None:
             LOG.warning(_LW('IP %s leased that is not associated'), fixed_ip,
@@ -1106,7 +1106,7 @@ class NetworkManager(manager.Manager):
     def release_fixed_ip(self, context, address, mac=None):
         """Called by dhcp-bridge when IP is released."""
         LOG.debug('Released IP |%s|', address, context=context)
-        fixed_ip = compute.FixedIP.get_by_address(context, address)
+        fixed_ip = objects.FixedIP.get_by_address(context, address)
 
         if fixed_ip.instance_uuid is None:
             LOG.warning(_LW('IP %s released that is not associated'), fixed_ip,
@@ -1130,7 +1130,7 @@ class NetworkManager(manager.Manager):
                 LOG.debug('Checking to see if virtual interface with MAC '
                           '%(mac)s is still associated to instance.',
                           {'mac': mac}, instance_uuid=fixed_ip.instance_uuid)
-                vif = compute.VirtualInterface.get_by_address(context, mac)
+                vif = objects.VirtualInterface.get_by_address(context, mac)
                 if vif:
                     LOG.debug('Found VIF: %s', vif,
                               instance_uuid=fixed_ip.instance_uuid)
@@ -1195,7 +1195,7 @@ class NetworkManager(manager.Manager):
         if not label:
             raise exception.NetworkNotCreated(req="label")
 
-        # Size of "label" column in compute.networks is 255, hence the restriction
+        # Size of "label" column in objects.networks is 255, hence the restriction
         # NOTE: We can remove this check after v2.0 API code is removed because
         # jsonschema has checked already before this.
         if len(label) > 255:
@@ -1351,16 +1351,16 @@ class NetworkManager(manager.Manager):
             # NOTE(jkoelker): This replaces the _validate_cidrs call and
             #                 prevents looping multiple times
             try:
-                nets = compute.NetworkList.get_all(context)
+                nets = objects.NetworkList.get_all(context)
             except exception.NoNetworksFound:
                 nets = []
             num_used_nets = len(nets)
             self._validate_cidr(context, nets, subnets_v4, fixed_net_v4)
 
-        networks = compute.NetworkList(context=context, compute=[])
+        networks = objects.NetworkList(context=context, objects=[])
         subnets = six.moves.zip_longest(subnets_v4, subnets_v6)
         for index, (subnet_v4, subnet_v6) in enumerate(subnets):
-            net = compute.Network(context=context)
+            net = objects.Network(context=context)
             uuid = kwargs.get('uuid')
             if uuid:
                 net.uuid = uuid
@@ -1457,9 +1457,9 @@ class NetworkManager(manager.Manager):
         # Prefer uuid but we'll also take cidr for backwards compatibility
         elevated = context.elevated()
         if uuid:
-            network = compute.Network.get_by_uuid(elevated, uuid)
+            network = objects.Network.get_by_uuid(elevated, uuid)
         elif fixed_range:
-            network = compute.Network.get_by_cidr(elevated, fixed_range)
+            network = objects.Network.get_by_cidr(elevated, fixed_range)
         LOG.debug('Delete network %s', network['uuid'])
 
         if require_disassociated and network.project_id is not None:
@@ -1498,7 +1498,7 @@ class NetworkManager(manager.Manager):
             ips.append({'network_id': network_id,
                         'address': address,
                         'reserved': reserved})
-        compute.FixedIPList.bulk_create(context, ips)
+        objects.FixedIPList.bulk_create(context, ips)
 
     def _allocate_fixed_ips(self, context, instance_id, host, networks,
                             **kwargs):
@@ -1515,12 +1515,12 @@ class NetworkManager(manager.Manager):
         else:
             call_func = self._setup_network_on_host
         if instance is None:
-            instance = compute.Instance.get_by_id(context, instance_id)
-        vifs = compute.VirtualInterfaceList.get_by_instance_uuid(
+            instance = objects.Instance.get_by_id(context, instance_id)
+        vifs = objects.VirtualInterfaceList.get_by_instance_uuid(
                 context, instance.uuid)
         LOG.debug('Setup networks on host', instance=instance)
         for vif in vifs:
-            network = compute.Network.get_by_id(context, vif.network_id)
+            network = objects.Network.get_by_id(context, vif.network_id)
             if not network.multi_host:
                 # NOTE (tr3buchet): if using multi_host, host is instance.host
                 host = network['host']
@@ -1545,7 +1545,7 @@ class NetworkManager(manager.Manager):
             call_func = self._setup_network_on_host
 
         # subcall from original setup_networks_on_host
-        network = compute.Network.get_by_id(context, network_id)
+        network = objects.Network.get_by_id(context, network_id)
         call_func(context, network)
 
     def _initialize_network(self, network):
@@ -1578,7 +1578,7 @@ class NetworkManager(manager.Manager):
                 if not netutils.is_valid_ip(address):
                     raise exception.FixedIpInvalid(address=address)
 
-                fixed_ip_ref = compute.FixedIP.get_by_address(
+                fixed_ip_ref = objects.FixedIP.get_by_address(
                     context, address, expected_attrs=['network'])
                 network = fixed_ip_ref.network
                 if network.uuid != network_uuid:
@@ -1590,11 +1590,11 @@ class NetworkManager(manager.Manager):
                         instance_uuid=fixed_ip_ref.instance_uuid)
 
     def _get_network_by_id(self, context, network_id):
-        return compute.Network.get_by_id(context, network_id,
+        return objects.Network.get_by_id(context, network_id,
                                          project_only='allow_none')
 
     def _get_networks_by_uuids(self, context, network_uuids):
-        networks = compute.NetworkList.get_by_uuids(
+        networks = objects.NetworkList.get_by_uuids(
             context, network_uuids, project_only="allow_none")
         networks.sort(key=lambda x: network_uuids.index(x.uuid))
         return networks
@@ -1603,12 +1603,12 @@ class NetworkManager(manager.Manager):
         """Returns the vifs associated with an instance."""
         # NOTE(vish): This is no longer used but can't be removed until
         #             we major version the network_rpcapi to 2.0.
-        instance = compute.Instance.get_by_id(context, instance_id)
+        instance = objects.Instance.get_by_id(context, instance_id)
         LOG.debug('Get VIFs for instance', instance=instance)
 
         # NOTE(russellb) No need to object-ify this since
         # get_vifs_by_instance() is unused and set to be removed.
-        vifs = compute.VirtualInterfaceList.get_by_instance_uuid(context,
+        vifs = objects.VirtualInterfaceList.get_by_instance_uuid(context,
                                                                  instance.uuid)
         for vif in vifs:
             if vif.network_id is not None:
@@ -1621,7 +1621,7 @@ class NetworkManager(manager.Manager):
         # NOTE(vish): This is no longer used but can't be removed until
         #             we major version the network_rpcapi to 2.0.
         LOG.debug('Get instance for floating address %s', address)
-        fixed_ip = compute.FixedIP.get_by_floating_address(context, address)
+        fixed_ip = objects.FixedIP.get_by_floating_address(context, address)
         if fixed_ip is None:
             return None
         else:
@@ -1630,14 +1630,14 @@ class NetworkManager(manager.Manager):
     def get_network(self, context, network_uuid):
         # NOTE(vish): used locally
 
-        return compute.Network.get_by_uuid(context.elevated(), network_uuid)
+        return objects.Network.get_by_uuid(context.elevated(), network_uuid)
 
     def get_all_networks(self, context):
         # NOTE(vish): This is no longer used but can't be removed until
         #             we major version the network_rpcapi to 2.0.
         try:
             return obj_base.obj_to_primitive(
-                compute.NetworkList.get_all(context))
+                objects.NetworkList.get_all(context))
         except exception.NoNetworksFound:
             return []
 
@@ -1651,12 +1651,12 @@ class NetworkManager(manager.Manager):
         """Return a fixed IP."""
         # NOTE(vish): This is no longer used but can't be removed until
         #             we major version the network_rpcapi to 2.0.
-        return compute.FixedIP.get_by_id(context, id)
+        return objects.FixedIP.get_by_id(context, id)
 
     def get_fixed_ip_by_address(self, context, address):
         # NOTE(vish): This is no longer used but can't be removed until
         #             we major version the network_rpcapi to 2.0.
-        return compute.FixedIP.get_by_address(context, address)
+        return objects.FixedIP.get_by_address(context, address)
 
     def get_vif_by_mac_address(self, context, mac_address):
         """Returns the vifs record for the mac_address."""
@@ -1664,7 +1664,7 @@ class NetworkManager(manager.Manager):
         #             we major version the network_rpcapi to 2.0.
         # NOTE(russellb) No need to object-ify this since
         # get_vifs_by_instance() is unused and set to be removed.
-        vif = compute.VirtualInterface.get_by_address(context, mac_address)
+        vif = objects.VirtualInterface.get_by_address(context, mac_address)
         if vif.network_id is not None:
             network = self._get_network_by_id(context, vif.network_id)
             vif.net_uuid = network.uuid
@@ -1674,7 +1674,7 @@ class NetworkManager(manager.Manager):
         spacing=CONF.dns_update_periodic_interval)
     def _periodic_update_dns(self, context):
         """Update local DNS entries of all networks on this host."""
-        networks = compute.NetworkList.get_by_host(context, self.host)
+        networks = objects.NetworkList.get_by_host(context, self.host)
         for network in networks:
             dev = self.driver.get_dev(network)
             self.driver.update_dns(context, dev, network)
@@ -1686,7 +1686,7 @@ class NetworkManager(manager.Manager):
 
         LOG.debug('Update DNS for network ids: %s', network_ids)
         networks = [network for network in
-                    compute.NetworkList.get_by_host(context, self.host)
+                    objects.NetworkList.get_by_host(context, self.host)
                     if network.multi_host and network.id in network_ids]
         for network in networks:
             dev = self.driver.get_dev(network)
@@ -1750,7 +1750,7 @@ class FlatManager(NetworkManager):
         super(FlatManager, self).deallocate_fixed_ip(context, address, host,
                                                      teardown,
                                                      instance=instance)
-        compute.FixedIP.disassociate_by_address(context, address)
+        objects.FixedIP.disassociate_by_address(context, address)
 
     def _setup_network_on_host(self, context, network):
         """Setup Network on this host."""
@@ -1871,7 +1871,7 @@ class FlatDHCPManager(RPCAllocateFixedIP, floating_ips.FloatingIP,
         standalone service.
         """
         ctxt = context.get_admin_context()
-        networks = compute.NetworkList.get_by_host(ctxt, self.host)
+        networks = objects.NetworkList.get_by_host(ctxt, self.host)
 
         self.driver.iptables_manager.defer_apply_on()
 
@@ -1950,7 +1950,7 @@ class VlanManager(RPCAllocateFixedIP, floating_ips.FloatingIP, NetworkManager):
                                           *args, **kwargs)
         # NOTE(cfb) VlanManager doesn't enforce quotas on fixed IP addresses
         #           because a project is assigned an entire network.
-        self.quotas_cls = compute.QuotasNoOp
+        self.quotas_cls = objects.QuotasNoOp
 
     def init_host(self):
         """Do any initialization that needs to be run if this is a
@@ -1959,7 +1959,7 @@ class VlanManager(RPCAllocateFixedIP, floating_ips.FloatingIP, NetworkManager):
 
         LOG.debug('Setup network on host %s', self.host)
         ctxt = context.get_admin_context()
-        networks = compute.NetworkList.get_by_host(ctxt, self.host)
+        networks = objects.NetworkList.get_by_host(ctxt, self.host)
 
         self.driver.iptables_manager.defer_apply_on()
 
@@ -1979,7 +1979,7 @@ class VlanManager(RPCAllocateFixedIP, floating_ips.FloatingIP, NetworkManager):
         # instance to reduce a race window where a previous instance
         # was associated with the fixed IP and has released it, because
         # release_fixed_ip will disassociate if allocated is False.
-        vif = compute.VirtualInterface.get_by_instance_and_network(
+        vif = objects.VirtualInterface.get_by_instance_and_network(
             context, instance_id, network['id'])
         if vif is None:
             LOG.debug('vif for network %(network)s and instance '
@@ -1992,19 +1992,19 @@ class VlanManager(RPCAllocateFixedIP, floating_ips.FloatingIP, NetworkManager):
 
         if kwargs.get('vpn', None):
             address = network['vpn_private_address']
-            fip = compute.FixedIP.associate(context, str(address),
+            fip = objects.FixedIP.associate(context, str(address),
                                             instance_id, network['id'],
                                             reserved=True,
                                             vif_id=vif.id)
         else:
             address = kwargs.get('address', None)
             if address:
-                fip = compute.FixedIP.associate(context, str(address),
+                fip = objects.FixedIP.associate(context, str(address),
                                                 instance_id,
                                                 network['id'],
                                                 vif_id=vif.id)
             else:
-                fip = compute.FixedIP.associate_pool(
+                fip = objects.FixedIP.associate_pool(
                         context, network['id'], instance_id,
                         vif_id=vif.id)
         address = fip.address
@@ -2015,7 +2015,7 @@ class VlanManager(RPCAllocateFixedIP, floating_ips.FloatingIP, NetworkManager):
 
         # NOTE(vish) This db query could be removed if we pass az and name
         #            (or the whole instance object).
-        instance = compute.Instance.get_by_uuid(context, instance_id)
+        instance = objects.Instance.get_by_uuid(context, instance_id)
 
         name = instance.display_name
         if self._validate_instance_zone_for_dns_domain(context, instance):
@@ -2038,7 +2038,7 @@ class VlanManager(RPCAllocateFixedIP, floating_ips.FloatingIP, NetworkManager):
             network_id = self.get_network(context, network_uuid).id
         else:
             network_id = None
-        compute.Network.associate(context, project_id, network_id, force=True)
+        objects.Network.associate(context, project_id, network_id, force=True)
 
     def associate(self, context, network_uuid, associations):
         """Associate or disassociate host or project to network."""
@@ -2067,14 +2067,14 @@ class VlanManager(RPCAllocateFixedIP, floating_ips.FloatingIP, NetworkManager):
         # NOTE(vish): Don't allow access to networks with project_id=None as
         #             these are networks that haven't been allocated to a
         #             project yet.
-        return compute.Network.get_by_id(context, network_id,
+        return objects.Network.get_by_id(context, network_id,
                                          project_only=True)
 
     def _get_networks_by_uuids(self, context, network_uuids):
         # NOTE(vish): Don't allow access to networks with project_id=None as
         #             these are networks that haven't been allocated to a
         #             project yet.
-        networks = compute.NetworkList.get_by_uuids(
+        networks = objects.NetworkList.get_by_uuids(
             context, network_uuids, project_only=True)
         networks.sort(key=lambda x: network_uuids.index(x.uuid))
         return networks
@@ -2089,7 +2089,7 @@ class VlanManager(RPCAllocateFixedIP, floating_ips.FloatingIP, NetworkManager):
             networks = self._get_networks_by_uuids(context, network_uuids)
         else:
             # NOTE(vish): Allocates network on demand so requires admin.
-            networks = compute.NetworkList.get_by_project(
+            networks = objects.NetworkList.get_by_project(
                     context.elevated(), project_id)
         return networks
 
@@ -2178,14 +2178,14 @@ class VlanManager(RPCAllocateFixedIP, floating_ips.FloatingIP, NetworkManager):
             vpn_address = network['vpn_public_address']
             if (CONF.teardown_unused_network_gateway and
                 network['multi_host'] and vpn_address != CONF.vpn_ip and
-                not compute.Network.in_use_on_host(context, network['id'],
+                not objects.Network.in_use_on_host(context, network['id'],
                                                    self.host)):
                 LOG.debug("Remove unused gateway %s", network['bridge'])
                 if network.enable_dhcp:
                     self.driver.kill_dhcp(dev)
                 self.l3driver.remove_gateway(network)
                 if not self._uses_shared_ip(network):
-                    fip = compute.FixedIP.get_by_address(context,
+                    fip = objects.FixedIP.get_by_address(context,
                                                          network.dhcp_server)
                     fip.allocated = False
                     fip.host = None

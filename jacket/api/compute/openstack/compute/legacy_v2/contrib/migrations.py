@@ -12,7 +12,7 @@
 
 from jacket.api.compute.openstack import extensions
 from jacket.compute import cloud
-from jacket.compute import context as nova_context
+from jacket import context as nova_context
 from jacket.objects.compute import base as obj_base
 
 

@@ -28,7 +28,7 @@ from oslo_utils import timeutils
 from jacket import storage
 from jacket.storage.backup import api
 from jacket.storage.backup import manager
-from jacket.storage import context
+from jacket import context
 from jacket import db
 from jacket.storage import exception
 from jacket.objects import storage

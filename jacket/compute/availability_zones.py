@@ -74,7 +74,7 @@ def set_availability_zones(context, services):
     # gather all of the availability zones associated with a service host
     for service in services:
         az = CONF.internal_service_availability_zone
-        if service['topic'] == "compute":
+        if service['topic'] == "jacket-worker":
             if metadata.get(service['host']):
                 az = u','.join(list(metadata[service['host']]))
             else:

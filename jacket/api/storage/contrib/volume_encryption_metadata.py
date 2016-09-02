@@ -18,7 +18,7 @@
 from jacket.api.storage import extensions
 from jacket.api.storage.openstack import wsgi
 from jacket.api.storage import xmlutil
-from jacket import db
+from jacket.db import storage as db
 
 authorize = extensions.extension_authorizer('volume',
                                             'volume_encryption_metadata')
@@ -38,7 +38,7 @@ class VolumeEncryptionMetadataController(wsgi.Controller):
         """Returns the encryption metadata for a given volume."""
         context = req.environ['storage.context']
         authorize(context)
-        return storage.volume_encryption_metadata_get(context, volume_id)
+        return db.volume_encryption_metadata_get(context, volume_id)
 
     @wsgi.serializers(xml=VolumeEncryptionMetadataTemplate)
     def show(self, req, volume_id, id):

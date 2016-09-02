@@ -20,7 +20,7 @@ from oslo_serialization import jsonutils
 
 from jacket import compute
 from jacket.compute.cloud import vm_states
-from jacket.compute import context
+from jacket import context
 from jacket.objects import compute
 from jacket.objects.compute import fields
 from jacket.compute.pci import manager

@@ -16,7 +16,7 @@ import mock
 import six
 
 from jacket.compute.cells import rpcapi as cells_rpcapi
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.compute import exception
 from jacket.objects import compute

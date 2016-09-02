@@ -30,7 +30,7 @@ from jacket.api.storage.storage import urlmap
 from jacket.api.storage.storage.v2 import limits
 from jacket.api.storage.storage.v2 import router
 from jacket.api.storage.storage import versions
-from jacket.storage import context
+from jacket import context
 
 
 FAKE_UUID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'

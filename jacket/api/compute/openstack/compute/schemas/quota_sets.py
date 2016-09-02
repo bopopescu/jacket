@@ -15,7 +15,7 @@
 import copy
 
 from jacket.api.compute.validation import parameter_types
-from jacket import db
+from jacket.db import compute as db
 
 common_quota = {
     'type': ['integer', 'string'],

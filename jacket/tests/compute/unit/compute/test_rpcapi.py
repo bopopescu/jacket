@@ -21,7 +21,7 @@ from oslo_config import cfg
 from oslo_serialization import jsonutils
 
 from jacket.compute.cloud import rpcapi as compute_rpcapi
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.objects.compute import block_device as objects_block_dev
 from jacket.objects.compute import migrate_data as migrate_data_obj

@@ -18,7 +18,7 @@ import webob
 from jacket.api.storage import extensions
 from jacket.api.storage.openstack import wsgi
 from jacket.api.storage import xmlutil
-from jacket import db
+from jacket.db import storage as db
 from jacket.storage import exception
 from jacket.storage.i18n import _
 from jacket.storage import quota
@@ -58,7 +58,7 @@ class QuotaClassSetsController(wsgi.Controller):
         context = req.environ['storage.context']
         authorize(context)
         try:
-            storage.sqlalchemy.api.authorize_quota_class_context(context, id)
+            db.sqlalchemy.api.authorize_quota_class_context(context, id)
         except exception.NotAuthorized:
             raise webob.exc.HTTPForbidden()
 
@@ -82,10 +82,10 @@ class QuotaClassSetsController(wsgi.Controller):
             if key in QUOTAS:
                 try:
                     value = utils.validate_integer(value, key, min_value=-1,
-                                                   max_value=storage.MAX_INT)
-                    storage.quota_class_update(context, quota_class, key, value)
+                                                   max_value=db.MAX_INT)
+                    db.quota_class_update(context, quota_class, key, value)
                 except exception.QuotaClassNotFound:
-                    storage.quota_class_create(context, quota_class, key, value)
+                    db.quota_class_create(context, quota_class, key, value)
                 except exception.AdminRequired:
                     raise webob.exc.HTTPForbidden()
         return {'quota_class_set': QUOTAS.get_class_quotas(context,

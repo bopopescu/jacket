@@ -19,7 +19,7 @@ from jacket.api.compute.openstack.compute.legacy_v2.contrib import \
     security_group_default_rules as security_group_default_rules_v2
 from jacket.api.compute.openstack.compute import \
     security_group_default_rules as security_group_default_rules_v21
-from jacket.compute import context
+from jacket import context
 import jacket.db.compute
 from jacket.compute import exception
 from jacket.compute import test

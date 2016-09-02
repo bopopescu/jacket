@@ -17,10 +17,10 @@ from oslo_log import log as logging
 from oslo_utils import versionutils
 from oslo_versionedobjects import fields
 
-from jacket import db
+from jacket.db import storage as db
 from jacket.storage import exception
 from jacket.storage.i18n import _
-from jacket.objects import storage
+from jacket.objects import storage as objects
 from jacket.objects.storage import base
 
 CONF = cfg.CONF
@@ -257,25 +257,25 @@ class Volume(base.CinderPersistentObject, base.CinderObject,
                 vt_expected_attrs = []
                 if 'volume_type.extra_specs' in expected_attrs:
                     vt_expected_attrs.append('extra_specs')
-                volume.volume_type = storage.VolumeType._from_db_object(
-                    context, storage.VolumeType(), db_volume_type,
+                volume.volume_type = objects.VolumeType._from_db_object(
+                    context, objects.VolumeType(), db_volume_type,
                     expected_attrs=vt_expected_attrs)
         if 'volume_attachment' in expected_attrs:
             attachments = base.obj_make_list(
-                context, storage.VolumeAttachmentList(context),
-                storage.VolumeAttachment,
+                context, objects.VolumeAttachmentList(context),
+                objects.VolumeAttachment,
                 db_volume.get('volume_attachment'))
             volume.volume_attachment = attachments
         if 'consistencygroup' in expected_attrs:
-            consistencygroup = storage.ConsistencyGroup(context)
+            consistencygroup = objects.ConsistencyGroup(context)
             consistencygroup._from_db_object(context,
                                              consistencygroup,
                                              db_volume['consistencygroup'])
             volume.consistencygroup = consistencygroup
         if 'snapshots' in expected_attrs:
             snapshots = base.obj_make_list(
-                context, storage.SnapshotList(context),
-                storage.Snapshot,
+                context, objects.SnapshotList(context),
+                objects.Snapshot,
                 db_volume['snapshots'])
             volume.snapshots = snapshots
 
@@ -362,20 +362,20 @@ class Volume(base.CinderPersistentObject, base.CinderObject,
                 self.glance_metadata = {}
         elif attrname == 'volume_type':
             # If the volume doesn't have volume_type, VolumeType.get_by_id
-            # would trigger a storage call which raise VolumeTypeNotFound exception.
-            self.volume_type = (storage.VolumeType.get_by_id(
+            # would trigger a db call which raise VolumeTypeNotFound exception.
+            self.volume_type = (objects.VolumeType.get_by_id(
                 self._context, self.volume_type_id) if self.volume_type_id
                 else None)
         elif attrname == 'volume_attachment':
-            attachments = storage.VolumeAttachmentList.get_all_by_volume_id(
+            attachments = objects.VolumeAttachmentList.get_all_by_volume_id(
                 self._context, self.id)
             self.volume_attachment = attachments
         elif attrname == 'consistencygroup':
-            consistencygroup = storage.ConsistencyGroup.get_by_id(
+            consistencygroup = objects.ConsistencyGroup.get_by_id(
                 self._context, self.consistencygroup_id)
             self.consistencygroup = consistencygroup
         elif attrname == 'snapshots':
-            self.snapshots = storage.SnapshotList.get_all_for_volume(
+            self.snapshots = objects.SnapshotList.get_all_for_volume(
                 self._context, self.id)
 
         self.obj_reset_changes(fields=[attrname])
@@ -457,32 +457,31 @@ class VolumeList(base.ObjectListBase, base.CinderObject):
                                     sort_keys=sort_keys, sort_dirs=sort_dirs,
                                     filters=filters, offset=offset)
         expected_attrs = cls._get_expected_attrs(context)
-        return base.obj_make_list(context, cls(context), storage.Volume,
+        return base.obj_make_list(context, cls(context), objects.Volume,
                                   volumes, expected_attrs=expected_attrs)
 
     @base.remotable_classmethod
     def get_all_by_host(cls, context, host, filters=None):
         volumes = db.volume_get_all_by_host(context, host, filters)
         expected_attrs = cls._get_expected_attrs(context)
-        return base.obj_make_list(context, cls(context), storage.Volume,
+        return base.obj_make_list(context, cls(context), objects.Volume,
                                   volumes, expected_attrs=expected_attrs)
 
     @base.remotable_classmethod
     def get_all_by_group(cls, context, group_id, filters=None):
         volumes = db.volume_get_all_by_group(context, group_id, filters)
         expected_attrs = cls._get_expected_attrs(context)
-        return base.obj_make_list(context, cls(context), storage.Volume,
+        return base.obj_make_list(context, cls(context), objects.Volume,
                                   volumes, expected_attrs=expected_attrs)
 
     @base.remotable_classmethod
     def get_all_by_project(cls, context, project_id, marker, limit,
                            sort_keys=None, sort_dirs=None, filters=None,
                            offset=None):
-        LOG.debug("+++hw, dir(storage) = %s", dir(storage))
         volumes = db.volume_get_all_by_project(context, project_id, marker,
                                                limit, sort_keys=sort_keys,
                                                sort_dirs=sort_dirs,
                                                filters=filters, offset=offset)
         expected_attrs = cls._get_expected_attrs(context)
-        return base.obj_make_list(context, cls(context), storage.Volume,
+        return base.obj_make_list(context, cls(context), objects.Volume,
                                   volumes, expected_attrs=expected_attrs)

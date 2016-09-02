@@ -18,7 +18,7 @@ Volume driver Test for Tegile storage.
 
 import mock
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage.exception import TegileAPIException
 from jacket.storage import test
 from jacket.storage.volume.drivers import tegile

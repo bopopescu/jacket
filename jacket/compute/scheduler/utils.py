@@ -27,7 +27,7 @@ from jacket.compute.cloud import utils as compute_utils
 import jacket.compute.conf
 from jacket.compute import exception
 from jacket.i18n import _, _LE, _LW
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base as obj_base
 from jacket.objects.compute import instance as obj_instance
 from jacket import rpc
@@ -62,7 +62,7 @@ def build_request_spec(ctxt, image, instances, instance_type=None):
         # to detach our metadata blob because we modify it below.
         instance['system_metadata'] = dict(instance.get('system_metadata', {}))
 
-    if isinstance(instance_type, compute.Flavor):
+    if isinstance(instance_type, objects.Flavor):
         instance_type = obj_base.obj_to_primitive(instance_type)
         # NOTE(danms): Replicate this old behavior because the
         # scheduler RPC interface technically expects it to be
@@ -99,7 +99,7 @@ def set_vm_state_and_notify(context, instance_uuid, service, method, updates,
     LOG.warning(_LW('Setting instance to %s state.'), state,
                 instance_uuid=instance_uuid)
 
-    instance = compute.Instance(context=context, uuid=instance_uuid,
+    instance = objects.Instance(context=context, uuid=instance_uuid,
                                 **updates)
     instance.obj_reset_changes(['uuid'])
     instance.save()
@@ -302,7 +302,7 @@ def _get_group_details(context, instance_uuid, user_group_hosts=None):
         return
 
     try:
-        group = compute.InstanceGroup.get_by_instance_uuid(context,
+        group = objects.InstanceGroup.get_by_instance_uuid(context,
                                                            instance_uuid)
     except exception.InstanceGroupNotFound:
         return

@@ -23,7 +23,7 @@ from mox3 import mox
 from oslo_policy import policy as oslo_policy
 
 from jacket.compute.cloud import flavors
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.compute import network
 from jacket.compute.network import api

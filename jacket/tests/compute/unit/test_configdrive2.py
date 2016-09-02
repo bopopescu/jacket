@@ -22,7 +22,7 @@ from mox3 import mox
 from oslo_config import cfg
 from oslo_utils import fileutils
 
-from jacket.compute import context
+from jacket import context
 from jacket.compute import test
 from jacket.tests.compute.unit import fake_instance
 from jacket.compute import utils

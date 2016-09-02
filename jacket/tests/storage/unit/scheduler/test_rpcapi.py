@@ -21,7 +21,7 @@ import copy
 
 import mock
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage.scheduler import rpcapi as scheduler_rpcapi
 from jacket.storage import test
 

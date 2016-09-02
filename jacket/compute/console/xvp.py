@@ -24,8 +24,8 @@ from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import excutils
 
-from jacket.compute import context
-from jacket import db
+from jacket import context
+from jacket.db import compute as db
 from jacket.i18n import _, _LE
 from jacket.compute import paths
 from jacket.compute import utils
@@ -53,7 +53,7 @@ xvp_opts = [
 
 CONF = cfg.CONF
 CONF.register_opts(xvp_opts)
-CONF.import_opt('host', 'jacket.compute.netconf')
+CONF.import_opt('host', 'jacket.db.netconf')
 LOG = logging.getLogger(__name__)
 
 
@@ -100,7 +100,7 @@ class XVPConsoleProxy(object):
     def _rebuild_xvp_conf(self, context):
         LOG.debug('Rebuilding xvp conf')
         pools = [pool for pool in
-                 compute.console_pool_get_all_by_host_type(context, self.host,
+                 db.console_pool_get_all_by_host_type(context, self.host,
                                                        self.console_type)
                   if pool['consoles']]
         if not pools:

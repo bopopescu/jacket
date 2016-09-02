@@ -32,7 +32,7 @@ import jacket.compute.conf
 from jacket.db import base
 from jacket.compute import exception
 from jacket.i18n import _LE, _LI
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base as obj_base
 from jacket.compute.scheduler import utils as scheduler_utils
 from jacket.compute import utils
@@ -90,7 +90,7 @@ class CellsScheduler(base.Base):
             self.compute_api.security_group_api.populate_security_groups(
                 security_groups))
         for i, instance_uuid in enumerate(instance_uuids):
-            instance = cloud.Instance(context=ctxt)
+            instance = objects.Instance(context=ctxt)
             instance.update(instance_values)
             instance.uuid = instance_uuid
             instance.flavor = instance_type
@@ -111,7 +111,7 @@ class CellsScheduler(base.Base):
 
     def _create_action_here(self, ctxt, instance_uuids):
         for instance_uuid in instance_uuids:
-            cloud.InstanceAction.action_start(
+            objects.InstanceAction.action_start(
                     ctxt,
                     instance_uuid,
                     instance_actions.CREATE,
@@ -231,7 +231,7 @@ class CellsScheduler(base.Base):
                           {'instance_uuids': instance_uuids})
             ctxt = message.ctxt
             for instance_uuid in instance_uuids:
-                instance = cloud.Instance(context=ctxt, uuid=instance_uuid,
+                instance = objects.Instance(context=ctxt, uuid=instance_uuid,
                                             vm_state=vm_states.ERROR)
                 self.msg_runner.instance_update_at_top(ctxt, instance)
                 try:

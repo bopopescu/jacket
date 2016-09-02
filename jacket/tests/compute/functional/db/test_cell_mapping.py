@@ -12,7 +12,7 @@
 
 from oslo_utils import uuidutils
 
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.objects.compute import cell_mapping
 from jacket.compute import test

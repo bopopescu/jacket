@@ -28,7 +28,7 @@ from jacket.compute import cloud
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.i18n import _LI
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute import volume
 
 LOG = logging.getLogger(__name__)
@@ -261,7 +261,7 @@ class VolumeAttachmentController(wsgi.Controller):
 
         volume_id = id
         instance = common.get_instance(self.compute_api, context, server_id)
-        bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = objects.BlockDeviceMappingList.get_by_instance_uuid(
                 context, instance.uuid)
 
         if not bdms:
@@ -370,7 +370,7 @@ class VolumeAttachmentController(wsgi.Controller):
 
         instance = common.get_instance(self.compute_api, context, server_id)
 
-        bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = objects.BlockDeviceMappingList.get_by_instance_uuid(
                 context, instance.uuid)
         found = False
         try:
@@ -411,7 +411,7 @@ class VolumeAttachmentController(wsgi.Controller):
 
         volume = self.volume_api.get(context, volume_id)
 
-        bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = objects.BlockDeviceMappingList.get_by_instance_uuid(
                 context, instance.uuid)
         if not bdms:
             msg = _("Instance %s is not attached.") % server_id
@@ -452,7 +452,7 @@ class VolumeAttachmentController(wsgi.Controller):
 
         instance = common.get_instance(self.compute_api, context, server_id)
 
-        bdms = cloud.BlockDeviceMappingList.get_by_instance_uuid(
+        bdms = objects.BlockDeviceMappingList.get_by_instance_uuid(
                 context, instance.uuid)
         limited_list = common.limited(bdms, req)
         results = []
@@ -580,7 +580,7 @@ class Volumes(extensions.ExtensionDescriptor):
 
     name = "Volumes"
     alias = "os-volumes"
-    namespace = "http://docs.openstack.org/cloud/ext/volumes/api/v1.1"
+    namespace = "http://docs.openstack.org/compute/ext/volumes/api/v1.1"
     updated = "2011-03-25T00:00:00Z"
 
     def get_resources(self):

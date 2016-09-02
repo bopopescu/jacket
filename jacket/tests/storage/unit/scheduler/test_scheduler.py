@@ -20,7 +20,7 @@ Tests For Scheduler
 import mock
 from oslo_config import cfg
 
-from jacket.storage import context
+from jacket import context
 from jacket import db
 from jacket.storage import exception
 from jacket.objects import storage

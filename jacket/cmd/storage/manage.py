@@ -70,13 +70,13 @@ i18n.enable_lazy()
 
 # Need to register global_opts
 from jacket.common.storage import config  # noqa
-from jacket.storage import context
-from jacket import db
+from jacket import context
+from jacket.db import storage as db
 from jacket.db.storage import migration as db_migration
 from jacket.db.storage.sqlalchemy import api as db_api
 from jacket.storage import exception
 from jacket.storage.i18n import _
-from jacket.objects import storage
+from jacket.objects import storage as objects
 from jacket import rpc
 from jacket.storage import utils
 from jacket.storage import version
@@ -188,7 +188,7 @@ class HostCommands(object):
         """
         print(_("%(host)-25s\t%(zone)-15s") % {'host': 'host', 'zone': 'zone'})
         ctxt = context.get_admin_context()
-        services = storage.ServiceList.get_all(ctxt)
+        services = objects.ServiceList.get_all(ctxt)
         if zone:
             services = [s for s in services if s.availability_zone == zone]
         hosts = []
@@ -256,7 +256,7 @@ class VolumeCommands(object):
             if not rpc.initialized():
                 rpc.init(CONF)
                 target = messaging.Target(topic=CONF.volume_topic)
-                serializer = storage.base.CinderObjectSerializer()
+                serializer = objects.base.CinderObjectSerializer()
                 self._client = rpc.get_client(target, serializer=serializer)
 
         return self._client
@@ -266,7 +266,7 @@ class VolumeCommands(object):
     def delete(self, volume_id):
         """Delete a volume, bypassing the check that it must be available."""
         ctxt = context.get_admin_context()
-        volume = storage.Volume.get_by_id(ctxt, volume_id)
+        volume = objects.Volume.get_by_id(ctxt, volume_id)
         host = vutils.extract_host(volume.host) if volume.host else None
 
         if not host:
@@ -293,10 +293,10 @@ class VolumeCommands(object):
         multi-backend config.
         """
         ctxt = context.get_admin_context()
-        volumes = storage.volume_get_all_by_host(ctxt,
+        volumes = db.volume_get_all_by_host(ctxt,
                                             currenthost)
         for v in volumes:
-            storage.volume_update(ctxt, v['id'],
+            db.volume_update(ctxt, v['id'],
                              {'host': newhost})
 
 
@@ -386,7 +386,7 @@ class BackupCommands(object):
         on which the backup operation is running.
         """
         ctxt = context.get_admin_context()
-        backups = storage.BackupList.get_all(ctxt)
+        backups = objects.BackupList.get_all(ctxt)
 
         hdr = "%-32s\t%-32s\t%-32s\t%-24s\t%-24s\t%-12s\t%-12s\t%-12s\t%-12s"
         print(hdr % (_('ID'),
@@ -423,7 +423,7 @@ class BackupCommands(object):
         their Cinder Backup node, and not set backup_use_same_backend.
         """
         ctxt = context.get_admin_context()
-        backups = storage.BackupList.get_all_by_host(ctxt, currenthost)
+        backups = objects.BackupList.get_all_by_host(ctxt, currenthost)
         for bk in backups:
             bk.host = newhost
             bk.save()
@@ -434,7 +434,7 @@ class ServiceCommands(object):
     def list(self):
         """Show a list of all storage services."""
         ctxt = context.get_admin_context()
-        services = storage.ServiceList.get_all(ctxt)
+        services = objects.ServiceList.get_all(ctxt)
         print_format = "%-16s %-36s %-16s %-10s %-5s %-20s %-12s %-15s"
         print(print_format % (_('Binary'),
                               _('Host'),
@@ -469,7 +469,7 @@ class ServiceCommands(object):
         """Completely removes a service."""
         ctxt = context.get_admin_context()
         try:
-            svc = storage.Service.get_by_args(ctxt, host_name, binary)
+            svc = objects.Service.get_by_args(ctxt, host_name, binary)
             svc.destroy()
         except exception.ServiceNotFound as e:
             print(_("Host not found. Failed to remove %(service)s"
@@ -483,7 +483,7 @@ class ServiceCommands(object):
 CATEGORIES = {
     'backup': BackupCommands,
     'config': ConfigCommands,
-    'storage': DbCommands,
+    'db': DbCommands,
     'host': HostCommands,
     'logs': GetLogCommands,
     'service': ServiceCommands,
@@ -558,7 +558,7 @@ def fetch_func_args(func):
 
 
 def main():
-    storage.register_all()
+    objects.register_all()
     """Parse options and call the appropriate class/method."""
     CONF.register_cli_opt(category_opt)
     script_name = sys.argv[0]

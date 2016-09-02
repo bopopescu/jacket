@@ -25,7 +25,7 @@ import platform
 import mock
 from oslo_concurrency import processutils as putils
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.storage import test
 import jacket.tests.storage.unit.volume.drivers.netapp.fakes as fake

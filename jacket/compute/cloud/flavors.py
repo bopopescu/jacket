@@ -27,7 +27,7 @@ from oslo_utils import strutils
 import six
 
 from jacket.api.compute.validation import parameter_types
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute as db
 from jacket.compute import exception
 from jacket.i18n import _

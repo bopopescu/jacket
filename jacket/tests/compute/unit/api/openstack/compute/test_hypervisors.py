@@ -24,7 +24,7 @@ from jacket.api.compute.openstack.compute.legacy_v2.contrib import hypervisors \
         as hypervisors_v2
 from jacket.api.compute.openstack import extensions
 from jacket.compute.cells import utils as cells_utils
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.objects import compute
 from jacket.compute import test

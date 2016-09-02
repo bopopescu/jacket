@@ -20,7 +20,7 @@ import glanceclient.exc
 import mock
 from oslo_config import cfg
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.storage.image import glance
 from jacket.storage import test

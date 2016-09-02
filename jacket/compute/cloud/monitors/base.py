@@ -14,7 +14,7 @@ import abc
 
 import six
 
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import fields
 
 
@@ -59,7 +59,7 @@ class MonitorBase(object):
         raise NotImplementedError('get_metrics')
 
     def add_metrics_to_list(self, metrics_list):
-        """Adds metric compute to a supplied list object.
+        """Adds metric objects to a supplied list object.
 
         :param metric_list: compute.compute.MonitorMetricList that the monitor
                             plugin should append compute.compute.MonitorMetric
@@ -68,7 +68,7 @@ class MonitorBase(object):
         metric_data = self.get_metrics()
         metrics = []
         for (name, value, timestamp) in metric_data:
-            metric = compute.MonitorMetric(name=name,
+            metric = objects.MonitorMetric(name=name,
                                            value=value,
                                            timestamp=timestamp,
                                            source=self.source)

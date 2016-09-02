@@ -72,7 +72,7 @@ import six
 from jacket.api.compute.ec2 import ec2utils
 from jacket.compute import availability_zones
 from jacket.compute import config
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute as db
 from jacket.db.compute import migration
 from jacket.compute import exception

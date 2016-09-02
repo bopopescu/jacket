@@ -15,7 +15,7 @@
 
 from oslo_config import cfg
 
-from jacket.compute import context as nova_context
+from jacket import context as nova_context
 from jacket.compute import test
 from jacket.tests.compute.unit import fake_instance
 from jacket.tests.compute.unit.virt.ironic import utils as ironic_utils

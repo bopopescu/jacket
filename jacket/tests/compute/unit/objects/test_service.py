@@ -18,7 +18,7 @@ from oslo_versionedobjects import base as ovo_base
 from oslo_versionedobjects import exception as ovo_exc
 
 from jacket.compute.cloud import manager as compute_manager
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.compute import exception
 from jacket.objects import compute

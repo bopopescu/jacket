@@ -17,7 +17,7 @@ from jacket.api.compute.openstack.compute import floating_ip_pools \
         as fipp_v21
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import floating_ip_pools \
         as fipp_v2
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.compute import network
 from jacket.compute import test

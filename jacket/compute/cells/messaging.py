@@ -49,11 +49,11 @@ from jacket.compute.cloud import task_states
 from jacket.compute.cloud import vm_states
 import jacket.compute.conf
 from jacket.compute.consoleauth import rpcapi as consoleauth_rpcapi
-from jacket.compute import context
+from jacket import context
 from jacket.db import base
 from jacket.compute import exception
 from jacket.i18n import _, _LE, _LI, _LW
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base as objects_base
 from jacket import rpc
 from jacket.compute import utils
@@ -293,7 +293,7 @@ class _BaseMessage(object):
         # Convert context to dict.
         _dict['ctxt'] = _dict['ctxt'].to_dict()
         # NOTE(comstud): 'method_kwargs' needs special serialization
-        # because it may contain cloud.
+        # because it may contain objects.
         method_kwargs = _dict['method_kwargs']
         for k, v in method_kwargs.items():
             method_kwargs[k] = self.serializer.serialize_entity(self.ctxt, v)
@@ -662,7 +662,7 @@ class _TargetedMessageMethods(_BaseMessageMethods):
                           'info_cache']
 
         try:
-            instance = cloud.Instance.get_by_uuid(message.ctxt,
+            instance = objects.Instance.get_by_uuid(message.ctxt,
                     instance_uuid, expected_attrs=expected_attrs)
             args[0] = instance
         except exception.InstanceNotFound:
@@ -670,7 +670,7 @@ class _TargetedMessageMethods(_BaseMessageMethods):
                 # Must be a race condition.  Let's try to resolve it by
                 # telling the top level cells that this instance doesn't
                 # exist.
-                instance = cloud.Instance(context=message.ctxt,
+                instance = objects.Instance(context=message.ctxt,
                                             uuid=instance_uuid)
                 self.msg_runner.instance_destroy_at_top(message.ctxt,
                                                         instance)
@@ -710,7 +710,7 @@ class _TargetedMessageMethods(_BaseMessageMethods):
 
     def service_get_by_compute_host(self, message, host_name):
         """Return the service entry for a cloud host."""
-        return cloud.Service.get_by_compute_host(message.ctxt, host_name)
+        return objects.Service.get_by_compute_host(message.ctxt, host_name)
 
     def service_update(self, message, host_name, binary, params_to_update):
         """Used to enable/disable a service. For cloud services, setting to
@@ -732,7 +732,7 @@ class _TargetedMessageMethods(_BaseMessageMethods):
                              topic, timeout):
         """Proxy RPC to the given cloud topic."""
         # Check that the host exists.
-        cloud.Service.get_by_compute_host(message.ctxt, host_name)
+        objects.Service.get_by_compute_host(message.ctxt, host_name)
 
         topic, _sep, server = topic.partition('.')
 
@@ -749,7 +749,7 @@ class _TargetedMessageMethods(_BaseMessageMethods):
 
     def compute_node_get(self, message, compute_id):
         """Get cloud node by ID."""
-        return cloud.ComputeNode.get_by_id(message.ctxt, compute_id)
+        return objects.ComputeNode.get_by_id(message.ctxt, compute_id)
 
     def actions_get(self, message, instance_uuid):
         actions = self.db.actions_get(message.ctxt, instance_uuid)
@@ -770,19 +770,19 @@ class _TargetedMessageMethods(_BaseMessageMethods):
         # 1st arg is instance_uuid that we need to turn into the
         # instance object.
         try:
-            instance = cloud.Instance.get_by_uuid(message.ctxt,
+            instance = objects.Instance.get_by_uuid(message.ctxt,
                                                     instance_uuid)
         except exception.InstanceNotFound:
             with excutils.save_and_reraise_exception():
                 # Must be a race condition.  Let's try to resolve it by
                 # telling the top level cells that this instance doesn't
                 # exist.
-                instance = cloud.Instance(context=message.ctxt,
+                instance = objects.Instance(context=message.ctxt,
                                             uuid=instance_uuid)
                 self.msg_runner.instance_destroy_at_top(message.ctxt,
                                                         instance)
         return self.compute_rpcapi.validate_console_port(message.ctxt,
-                                                         instance, console_port, console_type)
+                instance, console_port, console_type)
 
     def get_migrations(self, message, filters):
         return self.compute_api.get_migrations(message.ctxt, filters)
@@ -815,7 +815,7 @@ class _TargetedMessageMethods(_BaseMessageMethods):
                 # Must be a race condition.  Let's try to resolve it by
                 # telling the top level cells that this instance doesn't
                 # exist.
-                instance = cloud.Instance(context=ctxt,
+                instance = objects.Instance(context=ctxt,
                                             uuid=instance.uuid)
                 self.msg_runner.instance_destroy_at_top(ctxt,
                                                         instance)
@@ -1050,7 +1050,7 @@ class _BroadcastMessageMethods(_BaseMessageMethods):
             # that would be true.  But for cells we'll try to pull the actual
             # instance and try to delete it again.
             try:
-                instance = cloud.Instance.get_by_uuid(message.ctxt,
+                instance = objects.Instance.get_by_uuid(message.ctxt,
                         instance.uuid)
                 instance.destroy()
             except exception.InstanceNotFound:
@@ -1078,7 +1078,7 @@ class _BroadcastMessageMethods(_BaseMessageMethods):
         for key in items_to_remove:
             instance_fault.pop(key, None)
         LOG.debug("Got message to create instance fault: %s", instance_fault)
-        fault = cloud.InstanceFault(context=message.ctxt)
+        fault = objects.InstanceFault(context=message.ctxt)
         fault.update(instance_fault)
         fault.create()
 
@@ -1113,7 +1113,7 @@ class _BroadcastMessageMethods(_BaseMessageMethods):
         if filters is None:
             filters = {}
         disabled = filters.pop('disabled', None)
-        services = cloud.ServiceList.get_all(message.ctxt, disabled=disabled)
+        services = objects.ServiceList.get_all(message.ctxt, disabled=disabled)
         ret_services = []
         for service in services:
             for key, val in six.iteritems(filters):
@@ -1126,9 +1126,9 @@ class _BroadcastMessageMethods(_BaseMessageMethods):
     def compute_node_get_all(self, message, hypervisor_match):
         """Return cloud nodes in this cell."""
         if hypervisor_match is not None:
-            return cloud.ComputeNodeList.get_by_hypervisor(message.ctxt,
+            return objects.ComputeNodeList.get_by_hypervisor(message.ctxt,
                                                              hypervisor_match)
-        return cloud.ComputeNodeList.get_all(message.ctxt)
+        return objects.ComputeNodeList.get_all(message.ctxt)
 
     def compute_node_stats(self, message):
         """Return cloud node stats from this cell."""
@@ -1212,7 +1212,7 @@ class _BroadcastMessageMethods(_BaseMessageMethods):
             return
 
         try:
-            return cloud.KeyPair.get_by_name(message.ctxt, user_id, name)
+            return objects.KeyPair.get_by_name(message.ctxt, user_id, name)
         except exception.KeypairNotFound:
             pass
 
@@ -1552,7 +1552,7 @@ class MessageRunner(object):
         If 'host' is not None, filter by host.
         If 'state' is not None, filter by state.
 
-        Return a list of Response cloud.
+        Return a list of Response objects.
         """
         method_kwargs = dict(task_name=task_name,
                              period_beginning=period_beginning,

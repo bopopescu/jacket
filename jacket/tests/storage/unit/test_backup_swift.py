@@ -31,7 +31,7 @@ from oslo_config import cfg
 from swiftclient import client as swift
 
 from jacket.storage.backup.drivers import swift as swift_dr
-from jacket.storage import context
+from jacket import context
 from jacket import db
 from jacket.storage import exception
 from jacket.storage.i18n import _

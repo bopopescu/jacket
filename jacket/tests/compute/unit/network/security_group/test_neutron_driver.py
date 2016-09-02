@@ -20,7 +20,7 @@ from neutronclient.v2_0 import client
 
 from six.moves import range
 
-from jacket.compute import context
+from jacket import context
 from jacket.compute import exception
 from jacket.compute.network.neutronv2 import api as neutronapi
 from jacket.compute.network.security_group import neutron_driver

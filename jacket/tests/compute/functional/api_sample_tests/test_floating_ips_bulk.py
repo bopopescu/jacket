@@ -15,7 +15,7 @@
 
 from oslo_config import cfg
 
-from jacket.compute import context
+from jacket import context
 from jacket.tests.compute.functional.api_sample_tests import api_sample_base
 
 CONF = cfg.CONF

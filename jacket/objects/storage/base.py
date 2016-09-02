@@ -22,7 +22,7 @@ from oslo_utils import versionutils
 from oslo_versionedobjects import base
 from oslo_versionedobjects import fields
 
-from jacket import db
+from jacket.db import storage as db
 from jacket.storage import exception
 from jacket.i18n import _
 from jacket.objects import storage

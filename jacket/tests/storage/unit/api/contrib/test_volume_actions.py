@@ -22,7 +22,7 @@ from oslo_serialization import jsonutils
 import webob
 
 from jacket.api.storage.storage.contrib import volume_actions
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.storage.image import glance
 from jacket.objects import storage

@@ -16,9 +16,9 @@
 from six.moves import range
 from webob import exc
 
-from jacket.compute import context
+from jacket import context
 from jacket.i18n import _
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.compute import utils
 
 
@@ -63,7 +63,7 @@ def handle_password(req, meta_data):
             msg = _("Request is too large.")
             raise exc.HTTPBadRequest(explanation=msg)
 
-        instance = compute.Instance.get_by_uuid(ctxt, meta_data.uuid)
+        instance = objects.Instance.get_by_uuid(ctxt, meta_data.uuid)
         instance.system_metadata.update(convert_password(ctxt, req.body))
         instance.save()
     else:

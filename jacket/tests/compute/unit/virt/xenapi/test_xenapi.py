@@ -41,7 +41,7 @@ from jacket.compute.cloud import task_states
 from jacket.compute.cloud import utils as compute_utils
 from jacket.compute.cloud import vm_states
 import jacket.compute.conf
-from jacket.compute import context
+from jacket import context
 from jacket.compute import crypto
 from jacket.db import compute
 from jacket.compute import exception

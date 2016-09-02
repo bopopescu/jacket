@@ -19,7 +19,7 @@ Tests For Scheduler
 
 import mock
 
-from jacket.compute import context
+from jacket import context
 from jacket.objects import compute
 from jacket.compute.scheduler import caching_scheduler
 from jacket.compute.scheduler import chance

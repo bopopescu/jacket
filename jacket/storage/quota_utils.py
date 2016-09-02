@@ -22,7 +22,7 @@ from keystoneclient import client
 from keystoneclient import exceptions
 from keystoneclient import session
 
-from jacket import db
+from jacket.db import storage as db
 from jacket.storage import exception
 from jacket.storage.i18n import _, _LW
 

@@ -26,7 +26,7 @@ from jacket.compute.cells import filters
 from jacket.compute.cells import weights
 from jacket.compute.cloud import vm_states
 import jacket.compute.conf
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.compute import exception
 from jacket.objects import compute

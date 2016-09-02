@@ -30,7 +30,7 @@ from jacket.compute.cloud import flavors
 from jacket.compute.cloud import utils as compute_utils
 from jacket.compute.cloud import vm_states
 import jacket.compute.conf
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.compute import exception
 from jacket.objects import compute

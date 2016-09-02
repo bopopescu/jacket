@@ -21,11 +21,11 @@ import webob.exc
 
 from jacket.api.compute.openstack import extensions
 from jacket.compute import cloud
-from jacket.compute import context as nova_context
+from jacket import context as nova_context
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket.i18n import _LI
-from jacket.objects import compute
+from jacket.objects import compute as objects
 
 LOG = logging.getLogger(__name__)
 authorize = extensions.extension_authorizer('cloud', 'hosts')
@@ -301,7 +301,7 @@ class HostController(object):
         host_name = id
         try:
             compute_node = (
-                cloud.ComputeNode.get_first_node_by_host_for_old_compat(
+                objects.ComputeNode.get_first_node_by_host_for_old_compat(
                     context, host_name))
         except exception.NotFound as e:
             raise webob.exc.HTTPNotFound(explanation=e.format_message())
@@ -323,7 +323,7 @@ class Hosts(extensions.ExtensionDescriptor):
 
     name = "Hosts"
     alias = "os-hosts"
-    namespace = "http://docs.openstack.org/cloud/ext/hosts/api/v1.1"
+    namespace = "http://docs.openstack.org/compute/ext/hosts/api/v1.1"
     updated = "2011-06-29T00:00:00Z"
 
     def get_resources(self):

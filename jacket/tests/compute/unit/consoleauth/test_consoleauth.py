@@ -23,7 +23,7 @@ from mox3 import mox
 from oslo_utils import timeutils
 
 from jacket.compute.consoleauth import manager
-from jacket.compute import context
+from jacket import context
 from jacket.compute import test
 
 

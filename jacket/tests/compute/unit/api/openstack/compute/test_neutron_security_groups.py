@@ -25,7 +25,7 @@ import webob
 
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import security_groups
 from jacket.compute import cloud
-from jacket.compute import context
+from jacket import context
 import jacket.db.compute
 from jacket.compute import exception
 from jacket.compute.network import model

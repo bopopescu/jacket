@@ -25,7 +25,7 @@ from six.moves import range
 from jacket.compute.cells import messaging
 from jacket.compute.cells import utils as cells_utils
 import jacket.compute.conf
-from jacket.compute import context
+from jacket import context
 from jacket.objects import compute
 from jacket.compute import test
 from jacket.tests.compute.unit.cells import fakes

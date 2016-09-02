@@ -20,7 +20,7 @@ from jacket.api.compute.openstack.compute import hosts as os_hosts_v21
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import hosts as os_hosts_v2
 from jacket.compute.cloud import power_state
 from jacket.compute.cloud import vm_states
-from jacket.compute import context as context_maker
+from jacket import context as context_maker
 from jacket.db import compute
 from jacket.compute import exception
 from jacket.compute import test

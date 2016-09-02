@@ -68,7 +68,7 @@ from jacket.compute.cloud import vm_states
 from jacket.compute import conductor
 import jacket.compute.conf
 from jacket.compute import consoleauth
-import jacket.compute.context
+import jacket.context
 from jacket.compute import exception
 from jacket.compute import hooks
 from jacket.i18n import _
@@ -84,7 +84,7 @@ from jacket.compute.network import model as network_model
 from jacket.compute.network.security_group import openstack_driver
 from jacket.objects import compute as objects
 from jacket.objects.compute import base as obj_base
-from jacket.objects.compute import instance as obj_instance
+#from jacket.objects.compute import instance as obj_instance
 from jacket.objects.compute import migrate_data as migrate_data_obj
 from jacket.compute import paths
 from jacket import rpc
@@ -1242,7 +1242,7 @@ class ComputeManager(manager.Manager):
         LOG.info(_LI("VM %(state)s (Lifecycle Event)"),
                  {'state': event.get_name()},
                  instance_uuid=event.get_instance_uuid())
-        context = jacket.compute.context.get_admin_context(read_deleted='yes')
+        context = jacket.context.get_admin_context(read_deleted='yes')
         instance = objects.Instance.get_by_uuid(context,
                                                 event.get_instance_uuid(),
                                                 expected_attrs=[])
@@ -1313,7 +1313,7 @@ class ComputeManager(manager.Manager):
     def init_host(self):
         """Initialization for a standalone cloud service."""
         self.driver.init_host(host=self.host)
-        context = jacket.compute.context.get_admin_context()
+        context = jacket.context.get_admin_context()
         instances = objects.InstanceList.get_by_host(
             context, self.host, expected_attrs=['info_cache', 'metadata'])
 
@@ -1342,7 +1342,7 @@ class ComputeManager(manager.Manager):
         the service up by listening on RPC queues, make sure to update
         our available resources (and indirectly our available nodes).
         """
-        self.update_available_resource(jacket.compute.context.get_admin_context())
+        self.update_available_resource(jacket.context.get_admin_context())
 
     def _get_power_state(self, context, instance):
         """Retrieve the power state for the given instance."""
@@ -1776,44 +1776,44 @@ class ComputeManager(manager.Manager):
         instance.launched_at = timeutils.utcnow()
         configdrive.update_instance(instance)
 
-    '''
-    def _update_scheduler_instance_info(self, context, instance):
-        """Sends an InstanceList with created or updated Instance cloud to
-        the Scheduler client.
 
-        In the case of init_host, the value passed will already be an
-        InstanceList. Other calls will send individual Instance cloud that
-        have been created or resized. In this case, we create an InstanceList
-        object containing that Instance.
-        """
-        if not self.send_instance_updates:
-            return
-        if isinstance(instance, obj_instance.Instance):
-            instance = cloud.InstanceList(cloud=[instance])
-        context = context.elevated()
-        self.scheduler_client.update_instance_info(context, self.host,
-                                                   instance)
+    # def _update_scheduler_instance_info(self, context, instance):
+    #     """Sends an InstanceList with created or updated Instance cloud to
+    #     the Scheduler client.
+    #
+    #     In the case of init_host, the value passed will already be an
+    #     InstanceList. Other calls will send individual Instance cloud that
+    #     have been created or resized. In this case, we create an InstanceList
+    #     object containing that Instance.
+    #     """
+    #     if not self.send_instance_updates:
+    #         return
+    #     if isinstance(instance, obj_instance.Instance):
+    #         instance = cloud.InstanceList(cloud=[instance])
+    #     context = context.elevated()
+    #     self.scheduler_client.update_instance_info(context, self.host,
+    #                                                instance)
+    #
+    #
+    # def _delete_scheduler_instance_info(self, context, instance_uuid):
+    #     """Sends the uuid of the deleted Instance to the Scheduler client."""
+    #     if not self.send_instance_updates:
+    #         return
+    #     context = context.elevated()
+    #     self.scheduler_client.delete_instance_info(context, self.host,
+    #                                                instance_uuid)
+    #
+    # @periodic_task.periodic_task(spacing=CONF.scheduler_instance_sync_interval)
+    # def _sync_scheduler_instance_info(self, context):
+    #     if not self.send_instance_updates:
+    #         return
+    #     context = context.elevated()
+    #     instances = cloud.InstanceList.get_by_host(context, self.host,
+    #                                                  expected_attrs=[],
+    #                                                  use_slave=True)
+    #     uuids = [instance.uuid for instance in instances]
+    #     self.scheduler_client.sync_instance_info(context, self.host, uuids)
 
-
-    def _delete_scheduler_instance_info(self, context, instance_uuid):
-        """Sends the uuid of the deleted Instance to the Scheduler client."""
-        if not self.send_instance_updates:
-            return
-        context = context.elevated()
-        self.scheduler_client.delete_instance_info(context, self.host,
-                                                   instance_uuid)
-
-    @periodic_task.periodic_task(spacing=CONF.scheduler_instance_sync_interval)
-    def _sync_scheduler_instance_info(self, context):
-        if not self.send_instance_updates:
-            return
-        context = context.elevated()
-        instances = cloud.InstanceList.get_by_host(context, self.host,
-                                                     expected_attrs=[],
-                                                     use_slave=True)
-        uuids = [instance.uuid for instance in instances]
-        self.scheduler_client.sync_instance_info(context, self.host, uuids)
-    '''
 
     def _notify_about_instance_usage(self, context, instance, event_suffix,
                                      network_info=None, system_metadata=None,

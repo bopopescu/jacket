@@ -30,7 +30,7 @@ from oslo_utils import importutils
 from oslo_utils import units
 import six
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import exception
 from jacket.storage.i18n import _
 from jacket.objects.storage import fields

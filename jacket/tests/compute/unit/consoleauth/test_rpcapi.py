@@ -21,7 +21,7 @@ from oslo_config import cfg
 import six
 
 from jacket.compute.consoleauth import rpcapi as consoleauth_rpcapi
-from jacket.compute import context
+from jacket import context
 from jacket.compute import test
 
 CONF = cfg.CONF

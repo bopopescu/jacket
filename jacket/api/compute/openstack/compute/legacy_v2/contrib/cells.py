@@ -26,7 +26,7 @@ from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack import extensions
 from jacket.compute.cells import rpcapi as cells_rpcapi
 import jacket.compute.conf
-from jacket.compute import context as nova_context
+from jacket import context as nova_context
 from jacket.compute import exception
 from jacket.i18n import _
 from jacket import rpc

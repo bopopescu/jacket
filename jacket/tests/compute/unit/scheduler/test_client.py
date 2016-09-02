@@ -16,7 +16,7 @@
 import mock
 import oslo_messaging as messaging
 
-from jacket.compute import context
+from jacket import context
 from jacket.objects import compute
 from jacket.objects.compute import pci_device_pool
 from jacket.compute.scheduler import client as scheduler_client

@@ -30,7 +30,7 @@ from oslo_serialization import jsonutils
 import jacket.compute.conf
 from jacket.compute import exception
 from jacket.i18n import _LE
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base as objects_base
 from jacket import rpc
 
@@ -85,13 +85,13 @@ class CellsAPI(object):
 
         * 1.25 - Adds rebuild_instance()
         * 1.26 - Adds service_delete()
-        * 1.27 - Updates instance_delete_everywhere() for instance compute
+        * 1.27 - Updates instance_delete_everywhere() for instance objects
 
         ... Icehouse supports message version 1.27.  So, any changes to
         existing methods in 1.x after that point should be done such that they
         can handle the version_cap being set to 1.27.
 
-        * 1.28 - Make bdm_update_or_create_at_top and use bdm compute
+        * 1.28 - Make bdm_update_or_create_at_top and use bdm objects
         * 1.29 - Adds set_admin_password()
 
         ... Juno supports message version 1.29.  So, any changes to
@@ -100,9 +100,9 @@ class CellsAPI(object):
 
         * 1.30 - Make build_instances() use flavor object
         * 1.31 - Add clean_shutdown to stop, resize, rescue, and shelve
-        * 1.32 - Send compute for instances in build_instances()
+        * 1.32 - Send objects for instances in build_instances()
         * 1.33 - Add clean_shutdown to resize_instance()
-        * 1.34 - build_instances uses BlockDeviceMapping compute, drops
+        * 1.34 - build_instances uses BlockDeviceMapping objects, drops
                  legacy_bdm argument
 
         ... Kilo supports message version 1.34.  So, any changes to
@@ -110,7 +110,7 @@ class CellsAPI(object):
         can handle the version_cap being set to 1.34.
 
         * 1.35 - Make instance_update_at_top, instance_destroy_at_top
-                 and instance_info_cache_update_at_top use instance compute
+                 and instance_info_cache_update_at_top use instance objects
         * 1.36 - Added 'delete_type' parameter to terminate_instance()
         * 1.37 - Add get_keypair_at_top to fetch keypair from api cell
 
@@ -248,7 +248,7 @@ class CellsAPI(object):
     def instance_info_cache_update_at_top(self, ctxt, instance_info_cache):
         """Broadcast up that an instance's info_cache has changed."""
         version = '1.35'
-        instance = compute.Instance(uuid=instance_info_cache.instance_uuid,
+        instance = objects.Instance(uuid=instance_info_cache.instance_uuid,
                                     info_cache=instance_info_cache)
         if not self.client.can_send_version('1.35'):
             instance = objects_base.obj_to_primitive(instance)

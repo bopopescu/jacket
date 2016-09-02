@@ -21,7 +21,7 @@ import six
 
 from jacket.compute import exception
 from jacket.i18n import _LE
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import fields
 from jacket.objects.compute import pci_device_pool
 from jacket.compute.pci import utils
@@ -188,7 +188,7 @@ class PciDeviceStats(object):
         decreased, unless it is no longer in a pool.
         """
         if pci_dev.dev_type == fields.PciDeviceType.SRIOV_PF:
-            vfs_list = compute.PciDeviceList.get_by_parent_address(
+            vfs_list = objects.PciDeviceList.get_by_parent_address(
                                        pci_dev._context,
                                        pci_dev.compute_node_id,
                                        pci_dev.address)

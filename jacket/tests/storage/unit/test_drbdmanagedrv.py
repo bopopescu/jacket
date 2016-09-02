@@ -23,7 +23,7 @@ import mock
 from oslo_utils import importutils
 from oslo_utils import timeutils
 
-from jacket.storage import context
+from jacket import context
 from jacket.storage import test
 from jacket.storage.volume import configuration as conf
 

@@ -26,7 +26,7 @@ from jacket.api.compute.openstack.compute.legacy_v2.contrib import floating_ips 
 from jacket.api.compute.openstack import extensions
 from jacket.compute import cloud
 from jacket.compute.cloud import utils as compute_utils
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.compute import exception
 from jacket.compute import network

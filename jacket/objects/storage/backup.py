@@ -19,10 +19,10 @@ from oslo_serialization import jsonutils
 from oslo_utils import versionutils
 from oslo_versionedobjects import fields
 
-from jacket import db
+from jacket.db import storage as db
 from jacket.storage import exception
 from jacket.storage.i18n import _
-from jacket.objects import storage
+from jacket.objects import storage as objects
 from jacket.objects.storage import base
 from jacket.objects.storage import fields as c_fields
 
@@ -169,13 +169,13 @@ class BackupList(base.ObjectListBase, base.CinderObject):
                 offset=None, sort_keys=None, sort_dirs=None):
         backups = db.backup_get_all(context, filters, marker, limit, offset,
                                     sort_keys, sort_dirs)
-        return base.obj_make_list(context, cls(context), storage.Backup,
+        return base.obj_make_list(context, cls(context), objects.Backup,
                                   backups)
 
     @base.remotable_classmethod
     def get_all_by_host(cls, context, host):
         backups = db.backup_get_all_by_host(context, host)
-        return base.obj_make_list(context, cls(context), storage.Backup,
+        return base.obj_make_list(context, cls(context), objects.Backup,
                                   backups)
 
     @base.remotable_classmethod
@@ -185,13 +185,13 @@ class BackupList(base.ObjectListBase, base.CinderObject):
         backups = db.backup_get_all_by_project(context, project_id, filters,
                                                marker, limit, offset,
                                                sort_keys, sort_dirs)
-        return base.obj_make_list(context, cls(context), storage.Backup,
+        return base.obj_make_list(context, cls(context), objects.Backup,
                                   backups)
 
     @base.remotable_classmethod
     def get_all_by_volume(cls, context, volume_id, filters=None):
         backups = db.backup_get_all_by_volume(context, volume_id, filters)
-        return base.obj_make_list(context, cls(context), storage.Backup,
+        return base.obj_make_list(context, cls(context), objects.Backup,
                                   backups)
 
 
@@ -205,7 +205,7 @@ class BackupImport(Backup):
     On creation it allows to specify the ID for the backup, since it's the
     reference used in parent_id it is imperative that this is preserved.
 
-    Backup Import storage get promoted to standard Backups when the import is
+    Backup Import objects get promoted to standard Backups when the import is
     completed.
     """
 

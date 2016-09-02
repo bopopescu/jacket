@@ -27,13 +27,13 @@ from oslo_utils import excutils
 from oslo_utils import timeutils
 import six
 
-import jacket.compute.context
+import jacket.context
 from jacket.compute import exception
 from jacket.i18n import _LE
 from jacket.compute.image import glance
 from jacket.compute import network
 from jacket.compute.network import model as network_model
-from jacket.objects import compute
+from jacket.objects import compute as objects
 from jacket.objects.compute import base as obj_base
 from jacket import rpc
 from jacket.compute import utils
@@ -83,7 +83,7 @@ def notify_decorator(name, fn):
         ctxt = (common_context.get_context_from_function_and_args(
                     fn, args, kwarg) or
                 common_context.get_current() or
-                jacket.compute.context.RequestContext())
+                jacket.context.RequestContext())
 
         notifier = rpc.get_notifier('api',
                                     publisher_id=(CONF.default_publisher_id
@@ -106,7 +106,7 @@ def send_api_fault(url, status, exception):
                'status': status}
 
     rpc.get_notifier('api').error(common_context.get_current() or
-                                  jacket.compute.context.get_admin_context(),
+                                  jacket.context.get_admin_context(),
                                   'api.fault',
                                   payload)
 
@@ -289,10 +289,10 @@ def bandwidth_usage(instance_ref, audit_start,
     """Get bandwidth usage information for the instance for the
     specified audit period.
     """
-    admin_context = jacket.compute.context.get_admin_context(read_deleted='yes')
+    admin_context = jacket.context.get_admin_context(read_deleted='yes')
 
     def _get_nwinfo_old_skool():
-        """Support for getting network info without compute."""
+        """Support for getting network info without objects."""
         if (instance_ref.get('info_cache') and
                 instance_ref['info_cache'].get('network_info') is not None):
             cached_info = instance_ref['info_cache']['network_info']
@@ -323,7 +323,7 @@ def bandwidth_usage(instance_ref, audit_start,
     macs = [vif['address'] for vif in nw_info]
     uuids = [instance_ref["uuid"]]
 
-    bw_usages = compute.BandwidthUsageList.get_by_uuids(admin_context, uuids,
+    bw_usages = objects.BandwidthUsageList.get_by_uuids(admin_context, uuids,
                                                         audit_start)
     bw = {}
 

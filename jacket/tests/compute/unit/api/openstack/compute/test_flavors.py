@@ -21,7 +21,7 @@ from jacket.api.compute.openstack import common
 from jacket.api.compute.openstack.compute import flavors as flavors_v21
 from jacket.api.compute.openstack.compute.legacy_v2 import flavors as flavors_v2
 import jacket.compute.cloud.flavors
-from jacket.compute import context
+from jacket import context
 from jacket.db import compute
 from jacket.compute import exception
 from jacket.compute import test

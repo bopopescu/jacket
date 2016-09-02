@@ -25,7 +25,7 @@ number and the weighing has the opposite effect of the default.
 from oslo_config import cfg
 from oslo_log import log as logging
 
-from jacket import db
+from jacket.db import storage as db
 from jacket.storage.scheduler import weights
 
 

@@ -22,7 +22,7 @@ import webob
 from jacket.api.storage.storage import extensions
 from jacket.api.storage.storage.v1 import snapshot_metadata
 from jacket.api.storage.storage.v1 import snapshots
-from jacket.storage import context
+from jacket import context
 import jacket.db.storage
 from jacket.storage import exception
 from jacket.storage import test

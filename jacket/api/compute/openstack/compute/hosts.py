@@ -88,7 +88,8 @@ class HostController(wsgi.Controller):
         services = self.api.service_get_all(context, filters=filters,
                                             set_zones=True)
         hosts = []
-        api_services = ('cloud-osapi_compute', 'cloud-ec2', 'cloud-metadata')
+        api_services = ('cloud-osapi_compute', 'cloud-ec2', 'cloud-metadata',
+                        'jacket-osapi_volume', 'jacket-osapi_compute')
         for service in services:
             if service.binary not in api_services:
                 hosts.append({'host_name': service['host'],
