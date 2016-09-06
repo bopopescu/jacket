@@ -7,10 +7,8 @@ from oslo_log import log as logging
 import oslo_messaging as messaging
 from jacket.compute import exception
 from jacket.i18n import _
-from jacket.objects.compute import base as objects_base
 from jacket import rpc
-from jacket.compute.cloud.rpcapi import ComputeAPI
-from jacket.storage.volume.rpcapi import VolumeAPI
+from jacket.objects import base as objects_base
 
 rpcapi_opts = [
     cfg.StrOpt('jacket_topic',
@@ -72,9 +70,9 @@ class JacketAPI(object):
     }
 
     def __init__(self):
-        # super(JacketAPI, self).__init__()
+        super(JacketAPI, self).__init__()
         target = messaging.Target(topic=CONF.jacket_topic, version='1.0')
-        serializer = objects_base.NovaObjectSerializer()
+        serializer = objects_base.JacketObjectSerializer()
         self.client = self.get_client(target, '1.0', serializer)
 
     def get_client(self, target, version_cap, serializer):

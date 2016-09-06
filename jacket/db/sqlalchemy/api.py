@@ -18,6 +18,6 @@
 
 """Implementation of SQLAlchemy backend."""
 
-from jacket.db.cloud_config.sqlalchemy.api import *
+from jacket.db.hybrid_cloud.sqlalchemy.api import *
 from jacket.db.compute.sqlalchemy.api import *
 from jacket.db.storage.sqlalchemy.api import *  # noqu

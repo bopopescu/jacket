@@ -12,6 +12,7 @@ sudo apt-get update
 sudo apt-get install linux-image-extra-$(uname -r) linux-image-extra-virtual
 
 sudo apt-get update
+#安装docker
 sudo apt-get -y install docker-engine
 
 #默认让docker启动
