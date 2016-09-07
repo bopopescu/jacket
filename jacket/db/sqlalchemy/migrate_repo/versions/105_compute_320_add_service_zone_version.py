@@ -22,9 +22,18 @@ def upgrade(migrate_engine):
 
     for table_prefix in ('', 'shadow_'):
         zone_column = Column('availability_zone', String(255))
+        rpc_column = Column('rpc_current_version', String(36))
+        object_current_version = Column('object_current_version', String(36))
+
         services = Table('%sservices' % table_prefix, meta)
         if not hasattr(services.c, 'availability_zone'):
             services.create_column(zone_column)
+
+        if not hasattr(services.c, 'rpc_current_version'):
+            services.create_column(rpc_column)
+
+        if not hasattr(services.c, 'object_current_version'):
+            services.create_column(object_current_version)
 
 
 def downgrade(migrate_engine):
@@ -35,3 +44,9 @@ def downgrade(migrate_engine):
         services = Table('%sservices' % table_prefix, meta)
         if hasattr(services.c, 'availability_zone'):
             services.c.availability_zone.drop()
+
+        if hasattr(services.c, 'rpc_current_version'):
+            services.c.rpc_current_version.drop()
+
+        if hasattr(services.c, 'object_current_version'):
+            services.c.object_current_version.drop()

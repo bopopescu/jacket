@@ -18,7 +18,7 @@ def upgrade(migrate_engine):
     meta = MetaData()
     meta.bind = migrate_engine
 
-    Table('snapshots', meta, autoload=True)
+    Table('storage_snapshots', meta, autoload=True)
 
     # New table
     snapshot_metadata = Table(
@@ -28,7 +28,7 @@ def upgrade(migrate_engine):
         Column('deleted_at', DateTime),
         Column('deleted', Boolean),
         Column('id', Integer, primary_key=True, nullable=False),
-        Column('snapshot_id', String(length=36), ForeignKey('snapshots.id'),
+        Column('snapshot_id', String(length=36), ForeignKey('storage_snapshots.id'),
                nullable=False),
         Column('key', String(length=255)),
         Column('value', String(length=255)),

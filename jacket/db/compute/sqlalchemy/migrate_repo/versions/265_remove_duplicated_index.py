@@ -21,7 +21,7 @@ INDEXES = [
     # subset of instances_host_deleted_cleaned_idx
     ('instances', 'instances_host_deleted_idx'),
     # subset of iscsi_targets_host_volume_id_deleted_idx
-    ('iscsi_targets', 'iscsi_targets_host_idx'),
+    ('compute_iscsi_targets', 'iscsi_targets_host_idx'),
 ]
 
 

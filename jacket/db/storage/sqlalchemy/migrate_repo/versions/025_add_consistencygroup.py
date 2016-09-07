@@ -73,7 +73,7 @@ def upgrade(migrate_engine):
     volumes.update().values(consistencygroup_id=None).execute()
 
     # Add column to snapshots table
-    snapshots = Table('snapshots', meta, autoload=True)
+    snapshots = Table('storage_snapshots', meta, autoload=True)
     cgsnapshot_id = Column('cgsnapshot_id', String(36),
                            ForeignKey('cgsnapshots.id'))
 

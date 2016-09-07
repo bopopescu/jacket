@@ -21,7 +21,7 @@ def upgrade(migrate_engine):
     meta.bind = migrate_engine
 
     # New table
-    quota_classes = Table('quota_classes', meta,
+    quota_classes = Table('storage_quota_classes', meta,
                           Column('created_at', DateTime(timezone=False)),
                           Column('updated_at', DateTime(timezone=False)),
                           Column('deleted_at', DateTime(timezone=False)),
@@ -40,7 +40,7 @@ def upgrade(migrate_engine):
 
     quota_classes.create()
 
-    quota_usages = Table('quota_usages', meta,
+    quota_usages = Table('storage_quota_usages', meta,
                          Column('created_at', DateTime(timezone=False)),
                          Column('updated_at', DateTime(timezone=False)),
                          Column('deleted_at', DateTime(timezone=False)),
@@ -61,7 +61,7 @@ def upgrade(migrate_engine):
 
     quota_usages.create()
 
-    reservations = Table('reservations', meta,
+    reservations = Table('storage_reservations', meta,
                          Column('created_at', DateTime(timezone=False)),
                          Column('updated_at', DateTime(timezone=False)),
                          Column('deleted_at', DateTime(timezone=False)),
@@ -73,7 +73,7 @@ def upgrade(migrate_engine):
                                 nullable=False),
                          Column('usage_id',
                                 Integer(),
-                                ForeignKey('quota_usages.id'),
+                                ForeignKey('storage_quota_usages.id'),
                                 nullable=False),
                          Column('project_id',
                                 String(length=255),

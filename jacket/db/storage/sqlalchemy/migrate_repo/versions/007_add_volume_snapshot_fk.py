@@ -19,7 +19,7 @@ def upgrade(migrate_engine):
     meta = MetaData()
     meta.bind = migrate_engine
 
-    snapshots = Table('snapshots', meta, autoload=True)
+    snapshots = Table('storage_snapshots', meta, autoload=True)
     volumes = Table('volumes', meta, autoload=True)
 
     ForeignKeyConstraint(

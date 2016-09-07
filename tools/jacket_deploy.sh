@@ -41,7 +41,14 @@ integration_bridge="br-int"
 
 #compute
 virt_type="qemu"
-instances_path="/root/mnt/sdb/instances"
+#instances_path="/root/mnt/sdb/instances"
+instances_path="/var/lib/jacket/instances"
+
+#log
+log_dir="/var/log/jacket"
+
+mkdir -p "${instances_path}"
+mkdir -p "${log_dir}"
 
 #keystone中设置jacket
 openstack user show $jacketuser | openstack user create --domain $keystonedomain --password $jacketpass --email "root@email" $jacketuser
@@ -59,7 +66,6 @@ openstack endpoint create --region $endpointsregion \
         jacket admin http://$jacket_host:9774/v1/%\(tenant_id\)s
 
 
-
 #  数据库部署
 mysqlcommand="mysql --port=$mysqldbport --password=$mysqldbpassword --user=$mysqldbadm --host=$dbbackendhost"
 
@@ -75,11 +81,19 @@ echo "GRANT ALL ON $jacketapidbname.* TO '$jacketdbuser'@'localhost' IDENTIFIED 
 echo "GRANT ALL ON $jacketapidbname.* TO '$jacketdbuser'@'$jackethost' IDENTIFIED BY '$jacketdbpass';"|$mysqlcommand
 
 
-#jacket-manage db sync
-
-mkdir -p /var/log/jacket
+jacket-manage db sync
+jacket-manage api_db sync
 
 #配置文件的设置
+crudini --set /etc/jacket/jacket.conf DEFAULT osapi_jacket_listen "${jacket_host}"
+crudini --set /etc/jacket/jacket.conf DEFAULT osapi_compute_listen "${jacket_host}"
+crudini --set /etc/jacket/jacket.conf DEFAULT metadata_listen "${jacket_host}"
+crudini --set /etc/jacket/jacket.conf DEFAULT osapi_volume_listen "${jacket_host}"
+crudini --set /etc/jacket/jacket.conf DEFAULT debug "true"
+crudini --set /etc/jacket/jacket.conf DEFAULT log_dir $log_dir
+crudini --set /etc/jacket/jacket.conf wsgi api_paste_config "/etc/jacket/jacket-api-paste.ini"
+crudini --set /etc/jacket/jacket.conf DEFAULT image_service jacket.compute.image.glance.GlanceImageService
+
 crudini --set /etc/jacket/jacket.conf database connection "mysql+pymysql://${jacketdbuser}:${jacketdbpass}@${dbbackendhost}:${mysqldbport}/${jacketdbname}"
 crudini --set /etc/jacket/jacket.conf database retry_interval 10
 crudini --set /etc/jacket/jacket.conf database idle_timeout 3600
@@ -107,15 +121,6 @@ crudini --set /etc/jacket/jacket.conf keystone_authtoken project_name $keystones
 crudini --set /etc/jacket/jacket.conf keystone_authtoken username $jacketuser
 crudini --set /etc/jacket/jacket.conf keystone_authtoken password $jacketpass
 crudini --set /etc/jacket/jacket.conf keystone_authtoken memcached_servers $keystonehost:11211
-
-crudini --set /etc/jacket/jacket.conf DEFAULT osapi_jacket_listen "${jacket_host}"
-crudini --set /etc/jacket/jacket.conf DEFAULT osapi_compute_listen "${jacket_host}"
-crudini --set /etc/jacket/jacket.conf DEFAULT metadata_listen "${jacket_host}"
-crudini --set /etc/jacket/jacket.conf DEFAULT osapi_volume_listen "${jacket_host}"
-crudini --set /etc/jacket/jacket.conf DEFAULT debug "true"
-crudini --set /etc/jacket/jacket.conf DEFAULT log_dir "/var/log/jacket"
-crudini --set /etc/jacket/jacket.conf wsgi api_paste_config "/etc/jacket/jacket-api-paste.ini"
-crudini --set /etc/jacket/jacket.conf DEFAULT image_service jacket.compute.image.glance.GlanceImageService
 
 
 crudini --set /etc/jacket/jacket.conf DEFAULT rpc_backend rabbit

@@ -19,7 +19,7 @@ def upgrade(migrate_engine):
     meta = MetaData()
     meta.bind = migrate_engine
 
-    services = Table('services', meta, autoload=True)
+    services = Table('storage_services', meta, autoload=True)
     replication_status = Column('replication_status', String(length=36),
                                 default="not-capable")
     active_backend_id = Column('active_backend_id', String(length=255))

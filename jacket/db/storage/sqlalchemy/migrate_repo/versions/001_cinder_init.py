@@ -18,7 +18,7 @@ from sqlalchemy import Integer, MetaData, String, Table
 
 def define_tables(meta):
     migrations = Table(
-        'migrations', meta,
+        'storage_migrations', meta,
         Column('created_at', DateTime),
         Column('updated_at', DateTime),
         Column('deleted_at', DateTime),
@@ -35,7 +35,7 @@ def define_tables(meta):
     )
 
     services = Table(
-        'services', meta,
+        'storage_services', meta,
         Column('created_at', DateTime),
         Column('updated_at', DateTime),
         Column('deleted_at', DateTime),
@@ -94,7 +94,7 @@ def define_tables(meta):
     )
 
     snapshots = Table(
-        'snapshots', meta,
+        'storage_snapshots', meta,
         Column('created_at', DateTime),
         Column('updated_at', DateTime),
         Column('deleted_at', DateTime),
@@ -182,7 +182,7 @@ def define_tables(meta):
     )
 
     quotas = Table(
-        'quotas', meta,
+        'storage_quotas', meta,
         Column('id', Integer, primary_key=True, nullable=False),
         Column('created_at', DateTime),
         Column('updated_at', DateTime),
@@ -235,14 +235,14 @@ def upgrade(migrate_engine):
     if migrate_engine.name == "mysql":
         tables = ["sm_flavors",
                   "sm_backend_config",
-                  "snapshots",
+                  "storage_snapshots",
                   "volume_types",
                   "volumes",
                   "iscsi_targets",
                   "migrate_version",
                   "migrations",
-                  "quotas",
-                  "services",
+                  "storage_quotas",
+                  "storage_services",
                   "sm_volume",
                   "volume_metadata",
                   "volume_type_extra_specs"]

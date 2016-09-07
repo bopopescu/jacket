@@ -18,7 +18,7 @@ from sqlalchemy import Column, Integer, MetaData, Table
 def upgrade(migrate_engine):
     meta = MetaData()
     meta.bind = migrate_engine
-    quotas = Table('quotas', meta, autoload=True)
+    quotas = Table('storage_quotas', meta, autoload=True)
 
     # Add a new column allocated to save allocated quota
     allocated = Column('allocated', Integer, default=0)

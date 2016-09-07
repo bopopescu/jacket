@@ -18,7 +18,7 @@ from sqlalchemy import Integer, MetaData, String, Table
 
 def define_tables(meta):
     migrations = Table(
-        'migrations', meta,
+        'storage_migrations', meta,
         Column('created_at', DateTime),
         Column('updated_at', DateTime),
         Column('deleted_at', DateTime),

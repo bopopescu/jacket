@@ -21,7 +21,7 @@ def upgrade(migrate_engine):
     meta = MetaData()
     meta.bind = migrate_engine
 
-    services = Table('services', meta, autoload=True)
+    services = Table('storage_services', meta, autoload=True)
     rpc_current_version = Column('rpc_current_version', String(36))
     rpc_available_version = Column('rpc_available_version', String(36))
     object_current_version = Column('object_current_version', String(36))

@@ -19,9 +19,9 @@ def upgrade(migrate_engine):
     meta = MetaData()
     meta.bind = migrate_engine
 
-    reservations = Table('reservations', meta, autoload=True)
-    Table('quotas', meta, autoload=True)
-    allocated_id = Column('allocated_id', Integer, ForeignKey('quotas.id'),
+    reservations = Table('storage_reservations', meta, autoload=True)
+    Table('storage_quotas', meta, autoload=True)
+    allocated_id = Column('allocated_id', Integer, ForeignKey('storage_quotas.id'),
                           nullable=True)
     reservations.create_column(allocated_id)
     usage_id = reservations.c.usage_id

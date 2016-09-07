@@ -30,7 +30,7 @@ FKEYS = [
      'instance_system_metadata_ibfk_1'),
     ('instance_type_projects', 'instance_type_id', 'instance_types', 'id',
      'instance_type_projects_ibfk_1'),
-    ('iscsi_targets', 'volume_id', 'volumes', 'id',
+    ('iscsi_targets', 'volume_id', 'compute_volumes', 'id',
      'iscsi_targets_volume_id_fkey'),
     ('reservations', 'usage_id', 'quota_usages', 'id',
      'reservations_ibfk_1'),

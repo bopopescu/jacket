@@ -19,7 +19,7 @@ def upgrade(migrate_engine):
     meta = MetaData()
     meta.bind = migrate_engine
 
-    snapshots = Table('snapshots', meta, autoload=True)
+    snapshots = Table('storage_snapshots', meta, autoload=True)
     provider_id = Column('provider_id', String(255))
     snapshots.create_column(provider_id)
     snapshots.update().values(provider_id=None).execute()
