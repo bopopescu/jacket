@@ -27,6 +27,7 @@ from jacket.api.hybrid_cloud.views import versions as views_versions
 
 CONF = cfg.CONF
 
+
 _LINKS = [{
     "rel": "describedby",
     "type": "text/html",
@@ -77,27 +78,15 @@ class VersionsController(wsgi.Controller):
         """Return versions supported prior to the microversions epoch."""
         builder = views_versions.get_view_builder(req)
         known_versions = copy.deepcopy(_KNOWN_VERSIONS)
-        known_versions.pop('v2.0')
-        known_versions.pop('v3.0')
         return builder.build_versions(known_versions)
 
-    @index.api_version('2.0')
-    def index(self, req):  # pylint: disable=E0102
-        """Return versions supported prior to the microversions epoch."""
+    @wsgi.Controller.api_version('1.0')
+    def show(self, req, id='v1.0'):
         builder = views_versions.get_view_builder(req)
         known_versions = copy.deepcopy(_KNOWN_VERSIONS)
-        known_versions.pop('v1.0')
-        known_versions.pop('v3.0')
-        return builder.build_versions(known_versions)
+        temp_version = known_versions[id]
 
-    @index.api_version('3.0')
-    def index(self, req):  # pylint: disable=E0102
-        """Return versions supported after the start of microversions."""
-        builder = views_versions.get_view_builder(req)
-        known_versions = copy.deepcopy(_KNOWN_VERSIONS)
-        known_versions.pop('v1.0')
-        known_versions.pop('v2.0')
-        return builder.build_versions(known_versions)
+        return {'version': builder._build_version(temp_version)}
 
     # NOTE (cknight): Calling the versions API without
     # /v1, /v2, or /v3 in the URL will lead to this unversioned

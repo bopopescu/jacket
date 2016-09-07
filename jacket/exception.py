@@ -223,3 +223,8 @@ class QuotaError(JacketException):
 class NotFound(JacketException):
     msg_fmt = _("Resource could not be found.")
     code = 404
+
+
+class NotAuthorized(JacketException):
+    message = _("Not authorized.")
+    code = 403

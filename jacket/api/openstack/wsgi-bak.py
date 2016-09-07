@@ -1350,7 +1350,7 @@ class Fault(webob.exc.HTTPException):
         user_locale = req.best_match_language()
         # Replace the body with fault details.
         code = self.wrapped_exc.status_int
-        fault_name = self._fault_names.get(code, "jacketFault")
+        fault_name = self._fault_names.get(code, "computeFault")
         explanation = self.wrapped_exc.explanation
         LOG.debug("Returning %(code)s to user: %(explanation)s",
                   {'code': code, 'explanation': explanation})

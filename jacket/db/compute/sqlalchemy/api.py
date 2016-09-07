@@ -69,8 +69,6 @@ from jacket.objects.compute import fields
 from jacket.compute import quota
 from jacket.compute import safe_utils
 
-import jacket.db.storage.sqlalchemy.api as storage_sql_api
-
 db_opts = [
     cfg.StrOpt('osapi_compute_unique_server_name_scope',
                default='',

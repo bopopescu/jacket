@@ -34,28 +34,28 @@ class ImageMapperController(wsgi.Controller):
         self.config_api = worker.API()
         super(ImageMapperController, self).__init__()
 
-    def show(self, req, image_id):
+    def show(self, req, id):
         """Return data about the given volume."""
         context = req.environ['jacket.context']
 
         try:
-            image = self.config_api.image_mapper_get(context, image_id, context.project_id)
+            image = self.config_api.image_mapper_get(context, id)
         except Exception as ex:
-            LOG.error(_LE("get image(%(image_id)s) mapper failed, ex = %(ex)s"), image_id=image_id, ex=ex)
+            LOG.error(_LE("get image(%(image_id)s) mapper failed, ex = %(ex)s"), image_id=id, ex=ex)
             raise exc.HTTPBadRequest(explanation=ex)
         return {'image_mapper': image}
 
-    def delete(self, req, image_id):
+    def delete(self, req, id):
         """Delete a image mapper."""
         context = req.environ['jacket.context']
 
-        LOG.info(_LI("Delete image mapper with id: %s"), image_id)
+        LOG.info(_LI("Delete image mapper with id: %s"), id)
 
         try:
-            image = self.config_api.image_mapper_get(context, image_id, context.project_id)
-            self.config_api.image_mapper_delete(context, image_id, context.project_id)
+            image = self.config_api.image_mapper_get(context, id)
+            self.config_api.image_mapper_delete(context, id)
         except Exception as ex:
-            LOG.error(_LE("delete image mapper with id: %(id)s failed, ex = %(ex)s"), id=image_id, ex=ex)
+            LOG.error(_LE("delete image mapper with id: %(id)s failed, ex = %(ex)s"), id=id, ex=ex)
             raise exc.HTTPBadRequest(explanation=ex)
         return webob.Response(status_int=202)
 
@@ -81,18 +81,23 @@ class ImageMapperController(wsgi.Controller):
         if 'image_id' not in image_mapper:
             raise exc.HTTPUnprocessableEntity()
 
+        if 'dest_image_id' not in image_mapper:
+            raise exc.HTTPUnprocessableEntity()
+
         image_id = image_mapper.pop('image_id')
+        dest_image_id = image_mapper.pop('dest_image_id')
         project_id = image_mapper.pop('project_id', None)
 
         try:
-            image = self.config_api.image_mapper_create(context, image_id, project_id, image_mapper)
+            image = self.config_api.image_mapper_create(context, image_id, dest_image_id,
+                                                        project_id, image_mapper)
         except Exception as ex:
             LOG.error(_LE("create image(%(image_id)s) mapper failed, ex = %(ex)s"),
                       image_id=image_id, ex=ex)
             raise exc.HTTPBadRequest(explanation=ex)
         return {'image_mapper': image}
 
-    def update(self, req, image_id, body):
+    def update(self, req, id, body):
         """Update a image mapper."""
         context = req.environ['jacket.context']
         if not self.is_valid_body(body, 'image_mapper'):
@@ -101,10 +106,10 @@ class ImageMapperController(wsgi.Controller):
         image_mapper = body['image_mapper']
         project_id = image_mapper.pop('project_id', None)
         try:
-            image = self.config_api.image_mapper_update(context, image_id, project_id, image_mapper)
+            image = self.config_api.image_mapper_update(context, id, project_id, image_mapper)
         except Exception as ex:
             LOG.error(_LE("update image(%(image_id)s) mapper failed, ex = %(ex)s"),
-                      image_id=image_id, ex=ex)
+                      image_id=id, ex=ex)
             raise exc.HTTPBadRequest(explanation=ex)
         return {'image_mapper': image}
 

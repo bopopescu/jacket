@@ -35,14 +35,15 @@ from six.moves import range
 
 from jacket import exception
 import jacket.policy
-from jacket import base_rpc
+from jacket import rpc
 from jacket.db import base
-from jacket.db import api as db_api
+from jacket.db.hybrid_cloud import api as db_api
+from jacket.worker import rpcapi as worker_rpcapi
 
 
 LOG = logging.getLogger(__name__)
 
-get_notifier = functools.partial(base_rpc.get_notifier, service='jacket')
+get_notifier = functools.partial(rpc.get_notifier, service='jacket')
 
 CONF = cfg.CONF
 
@@ -89,6 +90,7 @@ class API(base.Base):
     def __init__(self, skip_policy_check=False, **kwargs):
         self.skip_policy_check = skip_policy_check
         self.db_api = db_api
+        self.worker_rpcapi = worker_rpcapi.JacketAPI()
 
         super(API, self).__init__(**kwargs)
 
@@ -98,8 +100,8 @@ class API(base.Base):
     def image_mapper_get(self, context, image_id, project_id=None):
         return self.db_api.image_mapper_get(context, image_id, project_id)
 
-    def image_mapper_create(self, context, image_id, project_id, values):
-        return self.db_api.image_mapper_create(context, image_id, project_id, values)
+    def image_mapper_create(self, context, image_id, dest_image_id, project_id, values):
+        return self.db_api.image_mapper_create(context, image_id, dest_image_id, project_id, values)
 
     def image_mapper_update(self, context, image_id, project_id, values):
         return self.db_api.image_mapper_update(context, image_id, project_id, values, delete=True)
@@ -113,8 +115,8 @@ class API(base.Base):
     def flavor_mapper_get(self, context, flavor_id, project_id=None):
         return self.db_api.flavor_mapper_get(context, flavor_id, project_id)
 
-    def flavor_mapper_create(self, context, flavor_id, project_id, values):
-        return self.db_api.flavor_mapper_create(context, flavor_id, project_id, values)
+    def flavor_mapper_create(self, context, flavor_id, dest_flavor_id, project_id, values):
+        return self.db_api.flavor_mapper_create(context, flavor_id, dest_flavor_id, project_id, values)
 
     def flavor_mapper_update(self, context, flavor_id, project_id, values):
         return self.db_api.flavor_mapper_update(context, flavor_id, project_id, values, delete=True)

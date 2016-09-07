@@ -50,7 +50,8 @@ service_opts = [
                     ' periodic task scheduler to reduce stampeding.'
                     ' (Disable by setting to 0)'),
     cfg.ListOpt('enabled_apis',
-                default=['osapi_compute', 'metadata', 'osapi_jacket', 'osapi_volume'],
+                #default=['osapi_compute', 'metadata', 'osapi_jacket', 'osapi_volume'],
+                default=['osapi_jacket'],
                 help='A list of APIs to enable by default'),
     cfg.ListOpt('enabled_ssl_apis',
                 default=[],

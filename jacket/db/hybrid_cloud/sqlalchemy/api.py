@@ -40,8 +40,8 @@ osprofiler_sqlalchemy = importutils.try_import('osprofiler.sqlalchemy')
 import sqlalchemy
 from sqlalchemy import or_, and_, case
 from sqlalchemy.sql import null
+from oslo_db.sqlalchemy import utils as sqlalchemyutils
 
-from jacket.common import sqlalchemyutils
 import jacket.context
 from jacket.db.hybrid_cloud.sqlalchemy import models
 from jacket import exception
@@ -185,7 +185,7 @@ def model_query(context, model,
                            % read_deleted)
 
     query = sqlalchemyutils.model_query(
-        model, context.session, args, **query_kwargs)
+        model, get_session(), args, **query_kwargs)
 
     # We can't use oslo.db model_query's project_id here, as it doesn't allow
     # us to return both our projects and unowned projects.
@@ -204,12 +204,25 @@ def model_query(context, model,
 
 
 def _mapper_convert_dict(key_values):
-    keys = ['image_id', 'flavor_id', 'project_id', 'availability_zone', 'key', 'value']
+    keys = ['image_id', 'dest_image_id', 'flavor_id', 'dest_flavor_id',
+            'project_id']
     ret = {}
+    LOG.debug("+++hw, key_values = %s", key_values)
     for key_value in key_values:
+        temp_key = None
+        temp_value = None
         for key, value in key_value.iteritems():
+            LOG.debug("+++hw, key = %s, value = %s", key, value)
             if key in keys:
                 ret[key] = value
+            if key == 'key':
+                temp_key = value
+            if key == 'value':
+                temp_value = value
+
+        if temp_key:
+            ret[temp_key] = temp_value
+
     return ret
 
 
@@ -230,23 +243,32 @@ def image_mapper_get(context, image_id, project_id=None):
     return _mapper_convert_dict(key_values)
 
 
-def _image_mapper_convert_objs(image_id, project_id, values_dict):
+def _image_mapper_convert_objs(image_id, dest_image_id, project_id, values_dict):
     value_refs = []
     if values_dict:
         for k, v in values_dict.items():
             value_ref = models.ImagesMapper()
             value_ref.image_id = image_id
+            value_ref.dest_image_id = dest_image_id
             value_ref.project_id = project_id
             value_ref['key'] = k
             value_ref['value'] = v
             value_refs.append(value_ref)
+    else:
+        value_ref = models.ImagesMapper()
+        value_ref.image_id = image_id
+        value_ref.dest_image_id = dest_image_id
+        value_ref.project_id = project_id
+        value_refs.append(value_ref)
     return value_refs
 
 
-def image_mapper_create(context, image_id, project_id, values):
-    value_refs = _image_mapper_convert_objs(image_id, project_id, values)
+def image_mapper_create(context, image_id, dest_image_id, project_id, values):
+    value_refs = _image_mapper_convert_objs(image_id, dest_image_id, project_id, values)
     for value in value_refs:
-        value.save(context.session)
+        value.save(get_session())
+
+    return image_mapper_get(context, image_id, project_id)
 
 
 @require_context
@@ -259,8 +281,14 @@ def image_mapper_update(context, image_id, project_id, values, delete=True):
     cur_project_id = project_id
 
     if 'project_id' in all_keys:
+        all_keys.remove('project_id')
         cur_project_id = values.pop('project_id')
         query.update({'project_id': cur_project_id})
+
+    if 'dest_image_id' in all_keys:
+        all_keys.remove('dest_image_id')
+        dest_image_id = values.pop('dest_image_id')
+        query.update({'dest_image_id': dest_image_id})
 
     if delete:
         query.filter(~models.ImagesMapper.key.in_(all_keys)).\
@@ -277,9 +305,10 @@ def image_mapper_update(context, image_id, project_id, values, delete=True):
         update_ref = models.ImagesMapper()
         update_ref.update({"image_id": image_id,
                            "project_id": cur_project_id,
+                           "dest_image_id": dest_image_id,
                            "key": key,
                            "value": values[key]})
-        context.session.add(update_ref)
+        update_ref.save(get_session())
 
     return values
 
@@ -296,33 +325,44 @@ def flavor_mapper_all(context):
     ret = []
     for flavor_id in flavor_ids:
         key_values = query.filter_by(flavor_id=flavor_id).all()
+        LOG.debug("+++hw, key_values = %s", key_values)
         ret.append(_mapper_convert_dict(key_values))
     return ret
 
 
 def flavor_mapper_get(context, flavor_id, project_id=None):
     query = model_query(context, models.FlavorsMapper, read_deleted="no")
+    LOG.debug("+++hw, flavor_id = %s, project = %s", flavor_id, project_id)
     key_values = query.filter_by(flavor_id=flavor_id, project_id=project_id).all()
     return _mapper_convert_dict(key_values)
 
 
-def _flavor_mapper_convert_objs(flavor_id, project_id, values_dict):
+def _flavor_mapper_convert_objs(flavor_id, dest_flavor_id, project_id, values_dict):
     value_refs = []
     if values_dict:
         for k, v in values_dict.items():
             value_ref = models.FlavorsMapper()
             value_ref.flavor_id = flavor_id
+            value_ref.dest_flavor_id = dest_flavor_id
             value_ref.project_id = project_id
             value_ref['key'] = k
             value_ref['value'] = v
             value_refs.append(value_ref)
+    else:
+        value_ref = models.FlavorsMapper()
+        value_ref.flavor_id = flavor_id
+        value_ref.dest_flavor_id = dest_flavor_id
+        value_ref.project_id = project_id
+        value_refs.append(value_ref)
     return value_refs
 
 
-def flavor_mapper_create(context, flavor_id, project_id, values):
-    value_refs = _flavor_mapper_convert_objs(flavor_id, project_id, values)
+def flavor_mapper_create(context, flavor_id, dest_flavor_id, project_id, values):
+    value_refs = _flavor_mapper_convert_objs(flavor_id, dest_flavor_id, project_id, values)
     for value in value_refs:
-        value.save(context.session)
+        value.save(get_session())
+
+    return flavor_mapper_get(context, flavor_id, project_id)
 
 
 @require_context
@@ -335,8 +375,14 @@ def flavor_mapper_update(context, flavor_id, project_id, values, delete=True):
     cur_project_id = project_id
 
     if 'project_id' in all_keys:
+        all_keys.remove('project_id')
         cur_project_id = values.pop('project_id')
         query.update({'project_id': cur_project_id})
+
+    if 'dest_flavor_id' in all_keys:
+        all_keys.remove('dest_flavor_id')
+        cur_dest_flavor_id = values.pop('dest_flavor_id')
+        query.update({'dest_flavor_id': cur_dest_flavor_id})
 
     if delete:
         query.filter(~models.FlavorsMapper.key.in_(all_keys)).\
@@ -348,14 +394,18 @@ def flavor_mapper_update(context, flavor_id, project_id, values, delete=True):
         already_existing_keys.append(one.key)
         one.update({"value": values[one.key]})
 
+    LOG.debug("+++hw, all_keys = %s, already_existing_keys = %s", all_keys, already_existing_keys)
+
     new_keys = set(all_keys) - set(already_existing_keys)
+    LOG.debug("+++hw, new_keys = %s", new_keys)
     for key in new_keys:
         update_ref = models.FlavorsMapper()
-        update_ref.update({"flavor_id": flavor_id,
-                           "cur_project_id": cur_project_id,
-                           "key": key,
-                           "value": values[key]})
-        context.session.add(update_ref)
+        update_ref.flavor_id = flavor_id
+        update_ref.dest_flavor_id = cur_dest_flavor_id
+        update_ref.project_id = cur_project_id
+        update_ref['key'] = key
+        update_ref['value'] = values[key]
+        update_ref.save(get_session())
 
     return values
 
@@ -391,13 +441,19 @@ def _project_mapper_convert_objs(project_id, values_dict):
             value_ref['key'] = k
             value_ref['value'] = v
             value_refs.append(value_ref)
+    else:
+        value_ref = models.ProjectsMapper()
+        value_ref.project_id = project_id
+        value_refs.append(value_ref)
     return value_refs
 
 
 def project_mapper_create(context, project_id, values):
     value_refs = _project_mapper_convert_objs(project_id, values)
     for value in value_refs:
-        value.save(context.session)
+        value.save(get_session())
+
+    return project_mapper_get(context, project_id)
 
 
 @require_context
@@ -421,7 +477,7 @@ def project_mapper_update(context, project_id, values, delete=True):
         update_ref.update({"project_id": project_id,
                            "key": key,
                            "value": values[key]})
-        context.session.add(update_ref)
+        update_ref.save(get_session())
 
     return values
 
