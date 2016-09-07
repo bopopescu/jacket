@@ -85,11 +85,10 @@ class FlavorMapperController(wsgi.Controller):
             raise exc.HTTPUnprocessableEntity()
 
         flavor_id = flavor_mapper.pop('flavor_id')
-        dest_flavor_id = flavor_mapper.pop('dest_flavor_id')
         project_id = flavor_mapper.pop('project_id', None)
 
         try:
-            flavor = self.config_api.flavor_mapper_create(context, flavor_id, dest_flavor_id,
+            flavor = self.config_api.flavor_mapper_create(context, flavor_id,
                                                           project_id, flavor_mapper)
         except Exception as ex:
             LOG.exception(_LE("create flavor(%(flavor_id)s) mapper failed, ex = %(ex)s"),

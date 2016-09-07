@@ -85,11 +85,10 @@ class ImageMapperController(wsgi.Controller):
             raise exc.HTTPUnprocessableEntity()
 
         image_id = image_mapper.pop('image_id')
-        dest_image_id = image_mapper.pop('dest_image_id')
         project_id = image_mapper.pop('project_id', None)
 
         try:
-            image = self.config_api.image_mapper_create(context, image_id, dest_image_id,
+            image = self.config_api.image_mapper_create(context, image_id,
                                                         project_id, image_mapper)
         except Exception as ex:
             LOG.error(_LE("create image(%(image_id)s) mapper failed, ex = %(ex)s"),

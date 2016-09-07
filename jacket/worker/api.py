@@ -100,8 +100,8 @@ class API(base.Base):
     def image_mapper_get(self, context, image_id, project_id=None):
         return self.db_api.image_mapper_get(context, image_id, project_id)
 
-    def image_mapper_create(self, context, image_id, dest_image_id, project_id, values):
-        return self.db_api.image_mapper_create(context, image_id, dest_image_id, project_id, values)
+    def image_mapper_create(self, context, image_id, project_id, values):
+        return self.db_api.image_mapper_create(context, image_id, project_id, values)
 
     def image_mapper_update(self, context, image_id, project_id, values):
         return self.db_api.image_mapper_update(context, image_id, project_id, values, delete=True)
@@ -115,8 +115,8 @@ class API(base.Base):
     def flavor_mapper_get(self, context, flavor_id, project_id=None):
         return self.db_api.flavor_mapper_get(context, flavor_id, project_id)
 
-    def flavor_mapper_create(self, context, flavor_id, dest_flavor_id, project_id, values):
-        return self.db_api.flavor_mapper_create(context, flavor_id, dest_flavor_id, project_id, values)
+    def flavor_mapper_create(self, context, flavor_id, project_id, values):
+        return self.db_api.flavor_mapper_create(context, flavor_id, project_id, values)
 
     def flavor_mapper_update(self, context, flavor_id, project_id, values):
         return self.db_api.flavor_mapper_update(context, flavor_id, project_id, values, delete=True)

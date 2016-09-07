@@ -79,8 +79,8 @@ def image_mapper_get(context, image_id, project_id):
     return IMPL.image_mapper_get(context, image_id, project_id)
 
 
-def image_mapper_create(context, image_id, dest_image_id, project_id, values):
-    return IMPL.image_mapper_create(context, image_id, dest_image_id, project_id, values)
+def image_mapper_create(context, image_id, project_id, values):
+    return IMPL.image_mapper_create(context, image_id, project_id, values)
 
 
 def image_mapper_update(context, image_id, project_id, values, delete=True):
@@ -99,8 +99,8 @@ def flavor_mapper_get(context, flavor_id, project_id):
     return IMPL.flavor_mapper_get(context, flavor_id, project_id)
 
 
-def flavor_mapper_create(context, flavor_id, dest_flavor_id, project_id, values):
-    return IMPL.flavor_mapper_create(context, flavor_id, dest_flavor_id, project_id, values)
+def flavor_mapper_create(context, flavor_id, project_id, values):
+    return IMPL.flavor_mapper_create(context, flavor_id, project_id, values)
 
 
 def flavor_mapper_update(context, flavor_id, project_id, values, delete=True):
