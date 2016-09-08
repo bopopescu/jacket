@@ -35,14 +35,15 @@ from six.moves import range
 
 from jacket import exception
 import jacket.policy
-from jacket import base_rpc
+from jacket import rpc
 from jacket.db import base
-from jacket.db import api as db_api
+from jacket.db.hybrid_cloud import api as db_api
+from jacket.worker import rpcapi as worker_rpcapi
 
 
 LOG = logging.getLogger(__name__)
 
-get_notifier = functools.partial(base_rpc.get_notifier, service='jacket')
+get_notifier = functools.partial(rpc.get_notifier, service='jacket')
 
 CONF = cfg.CONF
 
@@ -89,6 +90,7 @@ class API(base.Base):
     def __init__(self, skip_policy_check=False, **kwargs):
         self.skip_policy_check = skip_policy_check
         self.db_api = db_api
+        self.worker_rpcapi = worker_rpcapi.JacketAPI()
 
         super(API, self).__init__(**kwargs)
 

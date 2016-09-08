@@ -46,7 +46,7 @@ from jacket.common import constants
 CONF = cfg.CONF
 db_options.set_defaults(CONF)
 
-_BACKEND_MAPPING = {'sqlalchemy': 'jacket.db.sqlalchemy.api'}
+_BACKEND_MAPPING = {'sqlalchemy': 'jacket.db.hybrid_cloud.sqlalchemy.api'}
 
 
 IMPL = oslo_db_api.DBAPI.from_config(conf=CONF,

@@ -34,28 +34,28 @@ class ProjectMapperController(wsgi.Controller):
         self.config_api = worker.API()
         super(ProjectMapperController, self).__init__()
 
-    def show(self, req, project_id):
+    def show(self, req, id):
         """Return data about the given volume."""
         context = req.environ['jacket.context']
 
         try:
-            project = self.config_api.project_mapper_get(context, project_id)
+            project = self.config_api.project_mapper_get(context, id)
         except Exception as ex:
-            LOG.error(_LE("get project(%(project_id)s) mapper failed, ex = %(ex)s"), project_id=project_id, ex=ex)
+            LOG.error(_LE("get project(%(project_id)s) mapper failed, ex = %(ex)s"), project_id=id, ex=ex)
             raise exc.HTTPBadRequest(explanation=ex)
         return {'project_mapper': project}
 
-    def delete(self, req, project_id):
+    def delete(self, req, id):
         """Delete a project mapper."""
         context = req.environ['jacket.context']
 
-        LOG.info(_LI("Delete project mapper with id: %s"), project_id)
+        LOG.info(_LI("Delete project mapper with id: %s"), id)
 
         try:
-            project = self.config_api.project_mapper_get(context, project_id)
-            self.config_api.project_mapper_delete(context, project_id)
+            project = self.config_api.project_mapper_get(context, id)
+            self.config_api.project_mapper_delete(context, id)
         except Exception as ex:
-            LOG.error(_LE("delete project mapper with id: %(id)s failed, ex = %(ex)s"), id=project_id, ex=ex)
+            LOG.error(_LE("delete project mapper with id: %(id)s failed, ex = %(ex)s"), id=id, ex=ex)
             raise exc.HTTPBadRequest(explanation=ex)
         return webob.Response(status_int=202)
 
@@ -91,7 +91,7 @@ class ProjectMapperController(wsgi.Controller):
             raise exc.HTTPBadRequest(explanation=ex)
         return {'project_mapper': project}
 
-    def update(self, req, project_id, body):
+    def update(self, req, id, body):
         """Update a project mapper."""
         context = req.environ['jacket.context']
         if not self.is_valid_body(body, 'project_mapper'):
@@ -99,10 +99,10 @@ class ProjectMapperController(wsgi.Controller):
 
         project_mapper = body['project_mapper']
         try:
-            project = self.config_api.project_mapper_update(context, project_id, project_mapper)
+            project = self.config_api.project_mapper_update(context, id, project_mapper)
         except Exception as ex:
             LOG.error(_LE("update project(%(project_id)s) mapper failed, ex = %(ex)s"),
-                      project_id=project_id, ex=ex)
+                      project_id=id, ex=ex)
             raise exc.HTTPBadRequest(explanation=ex)
         return {'project_mapper': project}
 

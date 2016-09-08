@@ -16,6 +16,6 @@ from sqlalchemy import Column, MetaData, DateTime, Table
 def upgrade(migrate_engine):
     meta = MetaData()
     meta.bind = migrate_engine
-    services = Table('services', meta, autoload=True)
+    services = Table('storage_services', meta, autoload=True)
     modified_at = Column('modified_at', DateTime(timezone=False))
     services.create_column(modified_at)

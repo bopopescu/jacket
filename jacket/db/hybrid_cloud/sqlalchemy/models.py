@@ -73,7 +73,7 @@ class ImagesMapper(BASE, JacketBase, models.SoftDeleteMixin):
     id = Column(Integer, primary_key=True)
     image_id = Column(String(36), nullable=False)
     project_id = Column(String(255))
-    key = Column(String(255), nullable=False)
+    key = Column(String(255))
     value = Column(String(255))
 
 
@@ -88,9 +88,9 @@ class FlavorsMapper(BASE, JacketBase, models.SoftDeleteMixin):
     )
 
     id = Column(Integer, primary_key=True)
-    flavor_id = Column(Integer)
+    flavor_id = Column(String(255), nullable=False)
     project_id = Column(String(255))
-    key = Column(String(255), nullable=False)
+    key = Column(String(255))
     value = Column(String(255))
 
 
@@ -105,5 +105,5 @@ class ProjectsMapper(BASE, JacketBase, models.SoftDeleteMixin):
 
     id = Column(Integer, primary_key=True)
     project_id = Column(String(255), nullable=False)
-    key = Column(String(255), nullable=False)
+    key = Column(String(255))
     value = Column(String(255))

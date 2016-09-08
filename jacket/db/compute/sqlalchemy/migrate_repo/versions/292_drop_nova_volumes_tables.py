@@ -49,8 +49,8 @@ def upgrade(engine):
     # Drop the `iscsi_targets` and `volumes` tables They were used with
     # compute-volumes, which is deprecated and removed, but the related
     # tables are still created.
-    table_names = ('iscsi_targets', 'shadow_iscsi_targets',
-                   'volumes', 'shadow_volumes')
+    table_names = ('compute_iscsi_targets', 'shadow_compute_iscsi_targets',
+                   'compute_volumes', 'shadow_compute_volumes')
 
     for table_name in table_names:
         _remove_foreign_key_constraints(engine, meta, table_name)

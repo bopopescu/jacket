@@ -658,7 +658,7 @@ def upgrade(migrate_engine):
         mysql_charset='utf8',
     )
 
-    iscsi_targets = Table('iscsi_targets', meta,
+    iscsi_targets = Table('compute_iscsi_targets', meta,
         Column('created_at', DateTime),
         Column('updated_at', DateTime),
         Column('deleted_at', DateTime),
@@ -1019,7 +1019,7 @@ def upgrade(migrate_engine):
         mysql_charset='utf8'
     )
 
-    volumes = Table('volumes', meta,
+    volumes = Table('compute_volumes', meta,
         Column('created_at', DateTime),
         Column('updated_at', DateTime),
         Column('deleted_at', DateTime),

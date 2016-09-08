@@ -26,7 +26,7 @@ def upgrade(migrate_engine):
     meta = MetaData()
     meta.bind = migrate_engine
 
-    reservations = Table('reservations', meta, autoload=True)
+    reservations = Table('storage_reservations', meta, autoload=True)
     if _get_deleted_expire_index(reservations):
         return
 

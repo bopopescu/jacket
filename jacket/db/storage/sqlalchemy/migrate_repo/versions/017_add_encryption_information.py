@@ -26,7 +26,7 @@ def upgrade(migrate_engine):
     volumes.create_column(encryption_key)
 
     # encryption key UUID and volume type id -- must be stored per snapshot
-    snapshots = Table('snapshots', meta, autoload=True)
+    snapshots = Table('storage_snapshots', meta, autoload=True)
     encryption_key = Column('encryption_key_id', String(36))
     snapshots.create_column(encryption_key)
     volume_type = Column('volume_type_id', String(36))

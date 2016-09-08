@@ -46,9 +46,6 @@ class WorkerManager(manager.Manager):
             for backend in CONF.enabled_backends:
                 break
 
-        # backend_host = getattr(CONF, backend).backend_host
-        # host = "%s@%s" % (backend_host or CONF.host, backend)
-
         self.storage_manager = vol_manager.VolumeManager(service_name=backend)
         self.additional_endpoints.append(self.compute_manager)
         self.additional_endpoints.append(self.storage_manager)

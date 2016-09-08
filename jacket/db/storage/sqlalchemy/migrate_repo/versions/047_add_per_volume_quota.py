@@ -24,7 +24,7 @@ def upgrade(migrate_engine):
     """Add default "per_volume_gigabytes" row into DB."""
     meta = MetaData()
     meta.bind = migrate_engine
-    quota_classes = Table('quota_classes', meta, autoload=True)
+    quota_classes = Table('storage_quota_classes', meta, autoload=True)
     row = quota_classes.count().\
         where(quota_classes.c.resource == 'per_volume_gigabytes').\
         execute().scalar()

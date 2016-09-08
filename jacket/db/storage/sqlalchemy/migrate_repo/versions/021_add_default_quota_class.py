@@ -35,7 +35,7 @@ def upgrade(migrate_engine):
     meta = MetaData()
     meta.bind = migrate_engine
 
-    quota_classes = Table('quota_classes', meta, autoload=True)
+    quota_classes = Table('storage_quota_classes', meta, autoload=True)
 
     rows = quota_classes.count().\
         where(quota_classes.c.class_name == 'default').execute().scalar()

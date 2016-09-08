@@ -35,7 +35,8 @@ class APIRouter(jacket.api.openstack.APIRouter):
         self.resources['versions'] = versions.create_resource()
         mapper.connect("versions", "/",
                        controller=self.resources['versions'],
-                       action='index')
+                       action='show',
+                       conditions={"method": ['GET']})
 
         mapper.redirect("", "/")
 
