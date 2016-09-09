@@ -25,26 +25,31 @@ import time
 import traceback
 import uuid
 
-from eventlet import greenthread
 import mock
+import six
+import testtools
+from eventlet import greenthread
 from mox3 import mox
 from neutronclient.common import exceptions as neutron_exceptions
 from oslo_log import log as logging
-import oslo_messaging as messaging
 from oslo_serialization import jsonutils
 from oslo_utils import fixture as utils_fixture
 from oslo_utils import importutils
 from oslo_utils import timeutils
 from oslo_utils import units
 from oslo_utils import uuidutils
-import six
-import testtools
 from testtools import matchers as testtools_matchers
 
-from jacket import compute
+import oslo_messaging as messaging
+from jacket import context
 from jacket.compute import availability_zones
 from jacket.compute import block_device
 from jacket.compute import cloud
+from jacket.compute import exception
+from jacket.compute import policy
+from jacket.compute import quota
+from jacket.compute import test
+from jacket.compute import utils
 from jacket.compute.cloud import api as compute_api
 from jacket.compute.cloud import arch
 from jacket.compute.cloud import flavors
@@ -55,46 +60,37 @@ from jacket.compute.cloud import task_states
 from jacket.compute.cloud import utils as compute_utils
 from jacket.compute.cloud import vm_states
 from jacket.compute.conductor import manager as conductor_manager
-import jacket.compute.conf
 from jacket.compute.console import type as ctype
-from jacket import context
-from jacket.db import compute
-from jacket.compute import exception
 from jacket.compute.image import api as image_api
 from jacket.compute.image import glance
 from jacket.compute.network import api as network_api
 from jacket.compute.network import model as network_model
 from jacket.compute.network.security_group import openstack_driver
-from jacket.objects import compute
+from jacket.compute.scheduler import client as scheduler_client
+from jacket.compute.virt import block_device as driver_block_device
+from jacket.compute.virt import event
+from jacket.compute.virt import fake
+from jacket.compute.virt import hardware
+from jacket.compute.volume import cinder
 from jacket.objects.compute import block_device as block_device_obj
 from jacket.objects.compute import instance as instance_obj
 from jacket.objects.compute import migrate_data as migrate_data_obj
-from jacket.compute import policy
-from jacket.compute import quota
-from jacket.compute.scheduler import client as scheduler_client
-from jacket.compute import test
 from jacket.tests.compute import fixtures
-from jacket.tests.compute.unit.compute import eventlet_utils
-from jacket.tests.compute.unit.compute import fake_resource_tracker
+from jacket.tests.compute import uuidsentinel as uuids
 from jacket.tests.compute.unit import fake_block_device
 from jacket.tests.compute.unit import fake_instance
 from jacket.tests.compute.unit import fake_network
 from jacket.tests.compute.unit import fake_network_cache_model
 from jacket.tests.compute.unit import fake_notifier
 from jacket.tests.compute.unit import fake_server_actions
-from jacket.tests.compute.unit.image import fake as fake_image
 from jacket.tests.compute.unit import matchers
+from jacket.tests.compute.unit import utils as test_utils
+from jacket.tests.compute.unit.compute import eventlet_utils
+from jacket.tests.compute.unit.compute import fake_resource_tracker
+from jacket.tests.compute.unit.image import fake as fake_image
 from jacket.tests.compute.unit.objects import test_flavor
 from jacket.tests.compute.unit.objects import test_instance_numa_topology
 from jacket.tests.compute.unit.objects import test_migration
-from jacket.tests.compute.unit import utils as test_utils
-from jacket.tests.compute import uuidsentinel as uuids
-from jacket.compute import utils
-from jacket.compute.virt import block_device as driver_block_device
-from jacket.compute.virt import event
-from jacket.compute.virt import fake
-from jacket.compute.virt import hardware
-from jacket.compute.volume import cinder
 
 QUOTAS = quota.QUOTAS
 LOG = logging.getLogger(__name__)

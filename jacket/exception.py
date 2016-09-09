@@ -228,3 +228,86 @@ class NotFound(JacketException):
 class NotAuthorized(JacketException):
     message = _("Not authorized.")
     code = 403
+
+
+class FsCinderVersionNotSupport(JacketException):
+    msg_fmt = _("fs cinder version%(version)s not support.")
+
+
+class FsCinderNotUserOrPass(JacketException):
+    msg_fmt = _("fs cinder username or password is illegal.")
+
+
+class FsCinderConnectFailed(JacketException):
+    msg_fmt = _("connect fs cinder failed!")
+
+
+class FsVolumeNotFound(NotFound):
+    msg_fmt = _("Fs Volume %(volume_id)s could not be found.")
+
+
+class FsSnapshotNotFound(NotFound):
+    msg_fmt = _("Fs Snapshot %(snapshot_id)s could not be found.")
+
+
+class FsInvalidVolume(Invalid):
+    msg_fmt = _("Invalid volume: %(reason)s")
+
+
+class FsVolumeUnattached(Invalid):
+    msg_fmt = _("Volume %(volume_id)s is not attached to anything")
+
+
+class FsOverQuota(JacketException):
+    msg_fmt = _("Quota exceeded for resources: %(overs)s")
+
+
+class FsNovaVersionNotSupport(JacketException):
+    msg_fmt = _("fs nova version%(version)s not support.")
+
+
+class FsNovaNotUserOrPass(JacketException):
+    msg_fmt = _("fs nova username or password is illegal.")
+
+
+class FsNovaConnectFailed(JacketException):
+    msg_fmt = _("connect fs nova failed!")
+
+
+class FsInvalidServiceVersion(JacketException):
+    msg_fmt = _("Invalid service %(service)s version %(version)s")
+
+
+class EntityNotFound(JacketException):
+    msg_fmt = _("The %(entity)s (%(name)s) could not be found.")
+
+    def __init__(self, entity=None, name=None, **kwargs):
+        self.entity = entity
+        self.name = name
+        super(EntityNotFound, self).__init__(entity=entity, name=name,
+                                             **kwargs)
+
+
+class ResourceInError(JacketException):
+    msg_fmt = _('Went to status %(resource_status)s '
+                'due to "%(status_reason)s"')
+
+    def __init__(self, status_reason=_('Unknown'), **kwargs):
+        super(ResourceInError, self).__init__(status_reason=status_reason,
+                                              **kwargs)
+
+class ResourceUnknownStatus(JacketException):
+    msg_fmt = _('%(result)s - Unknown status %(resource_status)s due to '
+                '"%(status_reason)s"')
+
+    def __init__(self, result=_('Resource failed'),
+                 status_reason=_('Unknown'), **kwargs):
+        super(ResourceUnknownStatus, self).__init__(
+            result=result, status_reason=status_reason, **kwargs)
+
+
+class Error(JacketException):
+    msg_fmt = "%(message)s"
+
+    def __init__(self, msg):
+        super(Error, self).__init__(message=msg)

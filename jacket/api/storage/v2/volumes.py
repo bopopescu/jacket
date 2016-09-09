@@ -15,25 +15,24 @@
 
 """The volumes api."""
 
-
-from oslo_config import cfg
+import webob
 from oslo_log import log as logging
 from oslo_utils import uuidutils
-import webob
 from webob import exc
 
 from jacket.api.storage import common
+from jacket.api.storage import xmlutil
 from jacket.api.storage.openstack import wsgi
 from jacket.api.storage.v2.views import volumes as volume_views
-from jacket.api.storage import xmlutil
 from jacket.storage import consistencygroup as consistencygroupAPI
 from jacket.storage import exception
-from jacket.storage.i18n import _, _LI
-from jacket.storage.image import glance
 from jacket.storage import utils
 from jacket.storage import volume as cinder_volume
+from jacket.storage.i18n import _, _LI
+from jacket.storage.image import glance
 from jacket.storage.volume import utils as volume_utils
 from jacket.storage.volume import volume_types
+from oslo_config import cfg
 
 CONF = cfg.CONF
 

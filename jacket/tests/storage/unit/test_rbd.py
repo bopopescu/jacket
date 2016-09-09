@@ -15,29 +15,28 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import ddt
 import math
 import os
 import tempfile
 
+import ddt
 import mock
 from oslo_utils import units
 
-from jacket import context
-from jacket.storage import exception
-from jacket.storage.i18n import _
 import jacket.storage.image.glance
-from jacket.storage.image import image_utils
+import jacket.storage.volume.drivers.rbd as driver
+from jacket import context
 from jacket.objects import storage
+from jacket.storage import exception
 from jacket.storage import test
+from jacket.storage.i18n import _
+from jacket.storage.image import image_utils
+from jacket.storage.volume import configuration as conf
+from jacket.storage.volume.flows.manager import create_volume
 from jacket.tests.storage.unit import fake_snapshot
 from jacket.tests.storage.unit import fake_volume
 from jacket.tests.storage.unit import test_volume
 from jacket.tests.storage.unit import utils
-from jacket.storage.volume import configuration as conf
-import jacket.storage.volume.drivers.rbd as driver
-from jacket.storage.volume.flows.manager import create_volume
-
 
 # This is used to collect raised exceptions so that tests may check what was
 # raised.

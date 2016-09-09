@@ -13,27 +13,27 @@
 #   under the License.
 
 import datetime
-import iso8601
 import uuid
 
+import iso8601
 import mock
-import oslo_messaging as messaging
-from oslo_serialization import jsonutils
 import webob
-
 from jacket.api.storage.storage.contrib import volume_actions
+from oslo_serialization import jsonutils
+
+import oslo_messaging as messaging
 from jacket import context
-from jacket.storage import exception
-from jacket.storage.image import glance
 from jacket.objects import storage
+from jacket.storage import exception
 from jacket.storage import test
-from jacket.tests.storage.unit.api import fakes
-from jacket.tests.storage.unit.api.v2 import stubs
-from jacket.tests.storage.unit import fake_constants as fake
-from jacket.tests.storage.unit import fake_volume
 from jacket.storage import volume
+from jacket.storage.image import glance
 from jacket.storage.volume import api as volume_api
 from jacket.storage.volume import rpcapi as volume_rpcapi
+from jacket.tests.storage.unit import fake_constants as fake
+from jacket.tests.storage.unit import fake_volume
+from jacket.tests.storage.unit.api import fakes
+from jacket.tests.storage.unit.api.v2 import stubs
 
 
 class VolumeActionsTest(test.TestCase):

@@ -12,11 +12,11 @@
 
 import itertools
 
-import jacket.compute.baserpc
-import jacket.compute.cloudpipe.pipelib
 import jacket.cmd.compute.novnc
 import jacket.cmd.compute.serialproxy
 import jacket.cmd.compute.spicehtml5proxy
+import jacket.compute.baserpc
+import jacket.compute.cloudpipe.pipelib
 import jacket.compute.conductor.rpcapi
 import jacket.compute.conductor.tasks.live_migrate
 import jacket.compute.conf
@@ -28,9 +28,6 @@ import jacket.compute.consoleauth
 import jacket.compute.consoleauth.manager
 import jacket.compute.consoleauth.rpcapi
 import jacket.compute.crypto
-import jacket.db.compute.api
-import jacket.db.base
-import jacket.db.compute.sqlalchemy.api
 import jacket.compute.exception
 import jacket.compute.image.download.file
 import jacket.compute.image.glance
@@ -40,16 +37,18 @@ import jacket.compute.keymgr.barbican
 import jacket.compute.keymgr.conf_key_mgr
 import jacket.compute.netconf
 import jacket.compute.notifications
-import jacket.objects.compute.network
 import jacket.compute.paths
 import jacket.compute.quota
 import jacket.compute.rdp
-# import jacket.compute.service
 import jacket.compute.servicegroup.api
 import jacket.compute.spice
 import jacket.compute.utils
 import jacket.compute.volume
 import jacket.compute.volume.cinder
+import jacket.db.base
+import jacket.db.compute.api
+import jacket.db.compute.sqlalchemy.api
+import jacket.objects.compute.network
 
 
 def list_opts():

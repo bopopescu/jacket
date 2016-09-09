@@ -13,7 +13,7 @@
 from sqlalchemy import MetaData, Table
 
 
-TABLE_NAME = 'migrations'
+TABLE_NAME = 'storage_migrations'
 
 
 def upgrade(migrate_engine):

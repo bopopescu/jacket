@@ -16,12 +16,11 @@
 from oslo_log import log as logging
 from oslo_utils import uuidutils
 
-from jacket.storage.compute import nova
 from jacket.storage import exception
+from jacket.storage.compute import nova
 from jacket.storage.i18n import _, _LW
 from jacket.storage.scheduler import filters
 from jacket.storage.volume import utils as volume_utils
-
 
 LOG = logging.getLogger(__name__)
 

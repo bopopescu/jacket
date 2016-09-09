@@ -36,12 +36,10 @@ intact.
 
 """
 
-import requests
 import time
 
-from oslo_config import cfg
+import requests
 from oslo_log import log as logging
-import oslo_messaging as messaging
 from oslo_serialization import jsonutils
 from oslo_service import periodic_task
 from oslo_utils import excutils
@@ -49,6 +47,10 @@ from oslo_utils import importutils
 from oslo_utils import timeutils
 from oslo_utils import units
 from oslo_utils import uuidutils
+
+import oslo_messaging as messaging
+from oslo_config import cfg
+
 profiler = importutils.try_import('osprofiler.profiler')
 import six
 from taskflow import exceptions as tfe
@@ -58,7 +60,7 @@ from jacket import context
 from jacket.storage import exception
 from jacket.storage import flow_utils
 from jacket.storage.i18n import _, _LE, _LI, _LW
-from jacket.storage.image import cache as image_cache
+from jacket.storage.image import cache as image_cache, glance
 from jacket.storage.image import glance
 from jacket import manager
 from jacket import objects

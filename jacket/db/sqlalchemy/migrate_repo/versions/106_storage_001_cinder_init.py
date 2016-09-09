@@ -240,7 +240,7 @@ def upgrade(migrate_engine):
                   "volumes",
                   "iscsi_targets",
                   "migrate_version",
-                  "migrations",
+                  "storage_migrations",
                   "storage_quotas",
                   "storage_services",
                   "sm_volume",

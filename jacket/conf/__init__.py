@@ -4,6 +4,7 @@
 
 from jacket.compute import conf
 from jacket.conf import api
+from jacket.conf import fs_cinder
 from jacket.conf import netconf
 from jacket.conf import quota
 
@@ -11,5 +12,6 @@ from jacket.conf import quota
 CONF = conf.CONF
 
 api.register_opts(CONF)
+fs_cinder.register_opts(CONF)
 quota.register_opts(CONF)
 netconf.register_opts(CONF)

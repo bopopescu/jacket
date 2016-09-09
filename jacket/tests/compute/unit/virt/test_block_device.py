@@ -13,22 +13,22 @@
 #    under the License.
 
 import mock
-from oslo_serialization import jsonutils
 import six
+from oslo_serialization import jsonutils
 
-from jacket.compute import block_device
 from jacket import context
+from jacket.clients import cinder
+from jacket.compute import block_device
 from jacket.compute import exception
+from jacket.compute import test
+from jacket.compute.virt import block_device as driver_block_device
+from jacket.compute.virt import driver
+from jacket.compute.volume import encryptors, cinder
 from jacket.objects import compute
 from jacket.objects.compute import fields
-from jacket.compute import test
 from jacket.tests.compute.unit import fake_block_device
 from jacket.tests.compute.unit import fake_instance
 from jacket.tests.compute.unit import matchers
-from jacket.compute.virt import block_device as driver_block_device
-from jacket.compute.virt import driver
-from jacket.compute.volume import cinder
-from jacket.compute.volume import encryptors
 
 
 class TestDriverBlockDevice(test.NoDBTestCase):

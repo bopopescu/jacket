@@ -13,25 +13,24 @@
 import math
 import traceback
 
+import taskflow.engines
 from oslo_concurrency import processutils
-from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import timeutils
 from oslo_utils import units
-import taskflow.engines
 from taskflow.patterns import linear_flow
 from taskflow.types import failure as ft
 
 from jacket import context as cinder_context
+from jacket.objects import storage
 from jacket.storage import exception
 from jacket.storage import flow_utils
-from jacket.storage.i18n import _, _LE, _LI, _LW
-from jacket.storage.image import glance
-from jacket.storage.image import image_utils
-from jacket.objects import storage
 from jacket.storage import utils
-from jacket.storage.volume.flows import common
+from jacket.storage.i18n import _, _LE, _LI, _LW
+from jacket.storage.image import image_utils, glance
 from jacket.storage.volume import utils as volume_utils
+from jacket.storage.volume.flows import common
+from oslo_config import cfg
 
 LOG = logging.getLogger(__name__)
 
