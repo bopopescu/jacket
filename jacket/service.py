@@ -38,6 +38,9 @@ service_opts = [
     cfg.StrOpt('worker_manager',
                default='jacket.worker.manager.WorkerManager',
                help='DEPRECATED: Full class name for the Manager for worker'),
+    cfg.StrOpt('controller_manager',
+               default='jacket.controller.manager.ControllerManager',
+               help='DEPRECATED: Full class name for the Manager for controller'),
     cfg.IntOpt('report_interval',
                default=10,
                help='Seconds between nodes reporting state to datastore'),
@@ -135,6 +138,9 @@ service_opts = [
                 default=9774,
                 help='Port on which OpenStack jacket API listens'),
     cfg.IntOpt('osapi_jacket_workers',
+               help='Number of workers for OpenStack Jacket API service. '
+                    'The default is equal to the number of CPUs available.'),
+    cfg.IntOpt('jacket_controller_workers',
                help='Number of workers for OpenStack Jacket API service. '
                     'The default is equal to the number of CPUs available.'),
     ]
@@ -330,7 +336,7 @@ class Service(service.Service):
             manager_cls = ('%s_manager' %
                            binary.rpartition('jacket-')[2])
             manager = CONF.get(manager_cls, None)
-        LOG.debug("+++hw, manager_cls = %s, manager = %s, topic = %s", manager_cls,manager, topic)
+        LOG.debug("+++hw, manager_cls = %s, manager = %s, topic = %s", manager_cls, manager, topic)
         if report_interval is None:
             report_interval = CONF.report_interval
         if periodic_enable is None:
