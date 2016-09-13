@@ -4,21 +4,21 @@ import socket
 import traceback
 import base64
 
-from oslo.config import cfg
-from oslo_serialization import jsonutils
+from oslo_config import cfg
 from oslo_log import log as logging
+from oslo_serialization import jsonutils
 
-from jacket.compute.cloud import power_state
-from jacket.compute.cloud import vm_states
-from jacket.compute.network import neutronv2
 from jacket.compute.virt import driver
-from jacket.drivers.fs import exception_ex
-from jacket.drivers.fs import hyper_agent_api
-from jacket.drivers.fs.fs_service import OpenstackService
+from jacket.compute.cloud import power_state
+from jacket.compute.virt.fs.fs_service import OpenstackService
+from jacket.compute.network.neutronv2 import api as network_api
+from jacket.compute.virt.fs import hyper_agent_api
+from jacket.compute.cloud import vm_states
+from jacket.compute.virt import hardware
+from jacket.compute.virt.fs import exception_ex
 
 
 LOG = logging.getLogger(__name__)
-
 
 provider_opts = [
     cfg.StrOpt('availability_zone', default='us-east-1a', help='the availability_zone for connection to fs'),
@@ -398,10 +398,15 @@ class FsComputeDriver(driver.ComputeDriver):
                                                              '"vendor": ["Huawei Technologies Co., Ltd."], '
                                                              '"topology": {"cores": 16, "threads": 32}}',
                 'supported_instances': jsonutils.dumps(
-                    [["i686", "fs", "fusionsphere"], ["x86_64", "fs", "fusionsphere"]]), 'numa_topology': None, }
+                    [["i686", "xen", "uml"], ["x86_64", "xen", "uml"]]), 'numa_topology': None, }
 
     def get_available_resource(self, nodename):
         host_stats = self._get_host_stats(nodename)
+
+        supported_instances = list()
+        for one in jsonutils.loads(host_stats['supported_instances']):
+            LOG.debug("+++hw, one = %s", one)
+            supported_instances.append((one[0], one[1], one[2]))
 
         return {'vcpus': host_stats['vcpus'], 'memory_mb': host_stats['host_memory_total'],
                 'local_gb': host_stats['disk_total'], 'vcpus_used': 0,
@@ -410,7 +415,7 @@ class FsComputeDriver(driver.ComputeDriver):
                 'hypervisor_version': host_stats['hypervisor_version'],
                 'hypervisor_hostname': host_stats['hypervisor_hostname'],
                 'cpu_info': jsonutils.dumps(host_stats['cpu_info']),
-                'supported_instances': jsonutils.dumps(host_stats['supported_instances']), 'numa_topology': None, }
+                'supported_instances': supported_instances, 'numa_topology': None, }
 
     def get_info(self, instance):
         LOG.debug('get_info: %s' % instance)
@@ -421,6 +426,13 @@ class FsComputeDriver(driver.ComputeDriver):
             instance_power_state = getattr(server, 'OS-EXT-STS:power_state')
             STATUS = FS_POWER_STATE[instance_power_state]
         LOG.debug('end to get_info: %s' % STATUS)
+
+        return hardware.InstanceInfo(
+            state=STATUS,
+            max_mem_kb=0,
+            mem_kb=0,
+            num_cpu=1)
+
         return {'state': STATUS,
                 'max_mem': 0,
                 'mem': 0,
@@ -706,6 +718,8 @@ class FsComputeDriver(driver.ComputeDriver):
             sub_bdm = self._transfer_to_sub_block_device_mapping_v2(block_device_info, openstack_service)
             LOG.debug('sub_bdm: %s' % sub_bdm)
 
+            LOG.debug("+++hw, security_groups = %s", self.PROVIDER_SECURITY_GROUPS)
+
             provider_server = server_client.create_server(name, image_ref, flavor.flavorid, meta=metadata,
                                         files=agent_inject_files, reservation_id=instance.reservation_id,
                                         security_groups=self.PROVIDER_SECURITY_GROUPS, nics=self.PROVIDER_NICS,
@@ -751,7 +765,8 @@ class FsComputeDriver(driver.ComputeDriver):
 
         return added_meta
 
-    def _transfer_to_sub_block_device_mapping_v2(self, block_device_mapping, openstack=OpenstackService()):
+    def _transfer_to_sub_block_device_mapping_v2(self, block_device_mapping,
+                                                 openstack=None):
         """
 
         :param block_device_mapping:
@@ -880,7 +895,7 @@ class FsComputeDriver(driver.ComputeDriver):
 
     @staticmethod
     def _binding_host(context, network_info, host_id):
-        neutron = neutronv2.get_client(context, admin=True)
+        neutron = network_api.get_client(context, admin=True)
         port_req_body = {'port': {'binding:host_id': host_id}}
         for vif in network_info:
             neutron.update_port(vif.get('id'), port_req_body)

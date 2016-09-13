@@ -76,6 +76,7 @@ az_cache_time_opt = cfg.IntOpt('az_cache_duration',
                                     'memory for the provided duration in '
                                     'seconds')
 
+
 CONF = cfg.CONF
 CONF.register_opt(allow_force_upload_opt)
 CONF.register_opt(volume_host_opt)
@@ -341,39 +342,11 @@ class API(base.Base):
                force=False,
                unmanage_only=False,
                cascade=False):
+
         if context.is_admin and context.project_id != volume.project_id:
             project_id = volume.project_id
         else:
             project_id = context.project_id
-
-        if not volume.host:
-            volume_utils.notify_about_volume_usage(context,
-                                                   volume, "delete.start")
-            # NOTE(vish): scheduling failed, so delete it
-            # Note(zhiteng): update volume quota reservation
-            try:
-                reserve_opts = {'volumes': -1, 'gigabytes': -volume.size}
-                QUOTAS.add_volume_type_opts(context,
-                                            reserve_opts,
-                                            volume.volume_type_id)
-                reservations = QUOTAS.reserve(context,
-                                              project_id=project_id,
-                                              **reserve_opts)
-            except Exception:
-                reservations = None
-                LOG.exception(_LE("Failed to update quota while "
-                                  "deleting volume."))
-            volume.destroy()
-
-            if reservations:
-                QUOTAS.commit(context, reservations, project_id=project_id)
-
-            volume_utils.notify_about_volume_usage(context,
-                                                   volume, "delete.end")
-            LOG.info(_LI("Delete volume request issued successfully."),
-                     resource={'type': 'volume',
-                               'id': volume.id})
-            return
 
         # Build required conditions for conditional update
         expected = {'attach_status': db.Not('attached'),
@@ -525,8 +498,6 @@ class API(base.Base):
                 context, context.project_id, marker, limit,
                 sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
                 offset=offset)
-
-        self.volume_rpcapi.storage_test(context, host="yibo")
 
         LOG.info(_LI("Get all volumes completed successfully."))
         return volumes

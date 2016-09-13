@@ -665,9 +665,6 @@ class VolumeManager(manager.Manager):
         LOG.info(_LI("Created volume successfully."), resource=vol_ref)
         return vol_ref.id
 
-    def storage_test(self, ctxt, host):
-        LOG.debug("+++hw, storage_test--------------------")
-
     @locked_volume_operation
     def delete_volume(self, context, volume_id,
                       unmanage_only=False,
@@ -706,9 +703,9 @@ class VolumeManager(manager.Manager):
         if volume['attach_status'] == "attached":
             # Volume is still attached, need to detach first
             raise exception.VolumeAttached(volume_id=volume_id)
-        if vol_utils.extract_host(volume.host) != self.host:
-            raise exception.InvalidVolume(
-                reason=_("volume is not local to this node"))
+        #if vol_utils.extract_host(volume.host) != self.host:
+        #    raise exception.InvalidVolume(
+        #        reason=_("volume is not local to this node"))
 
         if unmanage_only and cascade:
             # This could be done, but is ruled out for now just
@@ -3487,8 +3484,6 @@ class VolumeManager(manager.Manager):
         secure_enabled = self.storage_driver.secure_file_operations_enabled()
         return secure_enabled
 
-    def storage_test(self, ctxt, host):
-        LOG.debug("+++hw, storage_test success!")
 
 # TODO(dulek): This goes away immediately in Newton and is just present in
 # Mitaka so that we can receive v1.x and v2.0 messages

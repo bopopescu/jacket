@@ -12,36 +12,41 @@
 #    under the License.
 
 import collections
-import email
-from email.mime import multipart
-from email.mime import text
-import os
-import pkgutil
-import string
+import time
 
 from novaclient import client as nc
 from novaclient import exceptions
-from oslo_config import cfg
 from oslo_log import log as logging
 from retrying import retry
 import six
 
-from  jacket import conf
+from jacket import conf
+from jacket.drivers.fs import exception_ex
+from jacket.drivers.fs.clients import client_plugin
 from jacket import exception
 from jacket.i18n import _
 from jacket.i18n import _LI
 from jacket.i18n import _LW
-from jacket.drivers.fs.clients import client_plugin
+
 
 LOG = logging.getLogger(__name__)
 
-
-NOVA_API_VERSION = "2.1"
-CLIENT_NAME = 'nova'
-
 CONF = conf.CONF
+CLIENT_RETRY_LIMIT = CONF.fs_clients.client_retry_limit
+REBOOT_SOFT, REBOOT_HARD = 'SOFT', 'HARD'
+
 
 class NovaClientPlugin(client_plugin.ClientPlugin):
+    CLIENT_NAME = 'fs_nova'
+    DEFAULT_API_VERSION = "2"
+    DEFAULT_REGION_NAME = "RegionOne"
+    DEFAULT_CATALOG_INFO = {
+        "2": {"service_type": "compute",
+              "service_name": "nova",
+              "interface": "publicURL"},
+    }
+
+    SUPPORTED_VERSION = ["2"]
 
     deferred_server_statuses = ['BUILD',
                                 'HARD_REBOOT',
@@ -56,25 +61,26 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
     exceptions_module = exceptions
 
-    service_types = [COMPUTE] = ['compute']
+    def _create(self, version=None):
+        version = self.fs_context.version
 
-    def _create(self):
-        version = NOVA_API_VERSION
-        extensions = nc.discover_extensions(NOVA_API_VERSION)
+        extensions = nc.discover_extensions(version)
 
-        args = self.context.to_dict()
-        args.update(
+        kwargs = self.fs_context.to_dict()
+        kwargs.update(
             {
                 'extensions': extensions,
-                'http_log_debug': self._get_client_option(CLIENT_NAME,
+                'http_log_debug': self._get_client_option(self.CLIENT_NAME,
                                                           'http_log_debug')
             }
         )
+        kwargs.pop('version')
 
-        if args.get('version', None):
-            version = args.pop('version')
+        kwargs['api_key'] = kwargs.pop("password")
 
-        client = nc.Client(version, **args)
+        LOG.debug("+++hw, kwargs = %s", kwargs)
+
+        client = nc.Client(version, **kwargs)
         return client
 
     def is_not_found(self, ex):
@@ -95,7 +101,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         return (isinstance(ex, exceptions.ClientException) and
                 http_status == 422)
 
-    @retry(stop_max_attempt_number=max(CONF.client_retry_limit + 1, 0),
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            retry_on_exception=client_plugin.retry_if_connection_err)
     def get_server(self, server):
         """Return fresh server object.
@@ -107,6 +113,22 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
             return self.client().servers.get(server)
         except exceptions.NotFound:
             raise exception.EntityNotFound(entity='Server', name=server)
+
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_connection_err)
+    def get_server_by_name(self, server_name):
+        """Return fresh server object.
+
+        Substitutes Nova's NotFound for Heat's EntityNotFound,
+        to be returned to user as HTTP error.
+        """
+        server_list = self.client().servers.list(search_opts={'name': server_name})
+        if server_list and len(server_list) > 0:
+            server = server_list[0]
+        else:
+            server = None
+
+        return server
 
     def fetch_server(self, server_id):
         """Fetch fresh server object from Nova.
@@ -215,7 +237,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         :param flavor: the name of the flavor to find
         :returns: the id of :flavor:
         """
-        return self._find_flavor_id(self.context.tenant_id,
+        return self._find_flavor_id(self.fs_context.tenant_id,
                                     flavor)
 
     def _find_flavor_id(self, tenant_id, flavor):
@@ -375,7 +397,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                 if len(server.networks[n]) > 0:
                     return server.networks[n][0]
 
-    @retry(stop_max_attempt_number=max(CONF.client_retry_limit + 1, 0),
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            retry_on_exception=client_plugin.retry_if_connection_err)
     def absolute_limits(self):
         """Return the absolute limits as a dictionary."""
@@ -483,7 +505,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         else:
             return False
 
-    @retry(stop_max_attempt_number=CONF.max_interface_check_attempts,
+    @retry(stop_max_attempt_number=60,
            wait_fixed=500,
            retry_on_result=client_plugin.retry_if_result_is_false)
     def check_interface_detach(self, server_id, port_id):
@@ -495,7 +517,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                     return False
         return True
 
-    @retry(stop_max_attempt_number=CONF.max_interface_check_attempts,
+    @retry(stop_max_attempt_number=60,
            wait_fixed=500,
            retry_on_result=client_plugin.retry_if_result_is_false)
     def check_interface_attach(self, server_id, port_id):
@@ -514,3 +536,141 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
     def has_extension(self, alias):
         """Check if specific extension is present."""
         return alias in self._list_extensions()
+
+    def wait_for_delete_server_complete(self, server, timeout):
+        start = int(time.time())
+        while True:
+            time.sleep(2)
+            server_list = self.list(search_opts={'name':server.name})
+            if server_list and len(server_list) > 0:
+                cost_time = int(time.time()) - start
+                if cost_time >= timeout:
+                    LOG.warning('Time out for delete server: %s over %s seconds' % (server.name, timeout))
+                    raise exception_ex.ServerDeleteException(server_id=server.id, timeout=timeout)
+                else:
+                    LOG.debug('server %s is exist, still not be deleted. cost time: %s' % (server.name, str(cost_time)))
+                    continue
+            else:
+                cost_time = int(time.time()) - start
+                LOG.debug('server %s is delete success. cost time: %s' % (server.name, str(cost_time)))
+                break
+
+    def stop(self, server):
+        return self.client().servers.stop(server)
+
+    def start(self, server):
+        return self.client().servers.start(server)
+
+    def reboot(self, server, reboot_type=REBOOT_SOFT):
+        """
+        Reboot a server.
+
+        :param server: The :class:`Server` (or its ID) to share onto.
+        :param reboot_type: either :data:`REBOOT_SOFT` for a software-level
+                reboot, or `REBOOT_HARD` for a virtual power cycle hard reboot.
+        """
+        self.client().servers.reboot(server, reboot_type)
+
+    def create_server(self, name, image, flavor, meta=None, files=None,
+               reservation_id=None, min_count=None,
+               max_count=None, security_groups=None, userdata=None,
+               key_name=None, availability_zone=None,
+               block_device_mapping=None, block_device_mapping_v2=None,
+               nics=None, scheduler_hints=None,
+               config_drive=None, disk_config=None, **kwargs):
+        """
+        Create (boot) a new server.
+
+        :param name: Something to name the server.
+        :param image: The :class:`Image` to boot with.
+        :param flavor: The :class:`Flavor` to boot onto.
+        :param meta: A dict of arbitrary key/value metadata to store for this
+                     server. A maximum of five entries is allowed, and both
+                     keys and values must be 255 characters or less.
+        :param files: A dict of files to overrwrite on the server upon boot.
+                      Keys are file names (i.e. ``/etc/passwd``) and values
+                      are the file contents (either as a string or as a
+                      file-like object). A maximum of five entries is allowed,
+                      and each file must be 10k or less.
+        :param userdata: user data to pass to be exposed by the metadata
+                      server this can be a file type object as well or a
+                      string.
+        :param reservation_id: a UUID for the set of servers being requested.
+        :param key_name: (optional extension) name of previously created
+                      keypair to inject into the instance.
+        :param availability_zone: Name of the availability zone for instance
+                                  placement.
+        :param block_device_mapping: (optional extension) A dict of block
+                      device mappings for this server.
+        :param block_device_mapping_v2: (optional extension) A dict of block
+                      device mappings for this server.
+        :param nics:  (optional extension) an ordered list of nics to be
+                      added to this server, with information about
+                      connected networks, fixed ips, port etc.
+        :param scheduler_hints: (optional extension) arbitrary key-value pairs
+                            specified by the client to help boot an instance
+        :param config_drive: (optional extension) value for config drive
+                            either boolean, or volume-id
+        :param disk_config: (optional extension) control how the disk is
+                            partitioned when the server is created.  possible
+                            values are 'AUTO' or 'MANUAL'.
+        """
+        return self.client().servers.create(name, image, flavor, meta, files,
+               reservation_id, min_count,
+               max_count, security_groups, userdata,
+               key_name, availability_zone,
+               block_device_mapping, block_device_mapping_v2,
+               nics, scheduler_hints,
+               config_drive, disk_config)
+
+    def wait_for_server_in_specified_status(self, server, status, timeout):
+        """
+        :param server, type Server
+        :param status, string, nova.compute.vm_states, e.g. nova.compute.vm_states.ACTIVE
+        :param timeout, int, e.g. 30
+        """
+        LOG.debug('start to wait for server %s in status: %s' % (server.id, status))
+        server = self.get_server(server)
+        status_of_server = server.status
+        start = int(time.time())
+        while status_of_server != status:
+            time.sleep(2)
+            server = self.get_server(server)
+            status_of_server = server.status
+            cost_time = int(time.time()) - start
+            LOG.debug('server: %s status is: %s, cost time: %s' % (server.id, status_of_server, str(cost_time)))
+            if status_of_server == "ERROR":
+                raise exception_ex.ServerStatusException(status=status_of_server)
+            if int(time.time()) - start >= timeout:
+                raise exception_ex.ServerStatusTimeoutException(server_id=server.id,
+                                                                status=status_of_server,
+                                                                timeout=timeout)
+        cost_time = int(time.time()) - start
+        LOG.debug('end to wait for server in specified state, state is: %s, cost time: %s' %
+                  (status_of_server, str(cost_time)))
+
+    def delete(self, server):
+        """
+
+        :param server: type Server
+        :return:
+        """
+        return self.client().servers.delete(server)
+
+    def wait_for_delete_server_complete(self, server, timeout):
+        start = int(time.time())
+        while True:
+            time.sleep(2)
+            server_list = self.get_server(server)
+            if server_list and len(server_list) > 0:
+                cost_time = int(time.time()) - start
+                if cost_time >= timeout:
+                    LOG.warning('Time out for delete server: %s over %s seconds' % (server.name, timeout))
+                    raise exception_ex.ServerDeleteException(server_id=server.id, timeout=timeout)
+                else:
+                    LOG.debug('server %s is exist, still not be deleted. cost time: %s' % (server.name, str(cost_time)))
+                    continue
+            else:
+                cost_time = int(time.time()) - start
+                LOG.debug('server %s is delete success. cost time: %s' % (server.name, str(cost_time)))
+                break

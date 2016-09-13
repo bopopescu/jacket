@@ -225,6 +225,11 @@ class NotFound(JacketException):
     code = 404
 
 
+class NoUniqueMatch(JacketException):
+    """Multiple entities found instead of one."""
+    pass
+
+
 class NotAuthorized(JacketException):
     message = _("Not authorized.")
     code = 403
@@ -276,6 +281,10 @@ class FsNovaConnectFailed(JacketException):
 
 class FsInvalidServiceVersion(JacketException):
     msg_fmt = _("Invalid service %(service)s version %(version)s")
+
+
+class FsProjectNotConf(JacketException):
+    msg_fmt = _("fs project info not config.")
 
 
 class EntityNotFound(JacketException):

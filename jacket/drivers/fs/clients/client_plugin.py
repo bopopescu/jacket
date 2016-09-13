@@ -18,7 +18,7 @@ from keystoneauth1 import exceptions
 from keystoneauth1.identity import generic
 from keystoneauth1 import plugin
 from oslo_config import cfg
-from oslo_utils import excutils
+from oslo_log import log as logging
 
 import requests
 import six
@@ -27,6 +27,7 @@ from jacket import conf
 from jacket import exception as jacket_exception
 
 CONF = conf.CONF
+LOG = logging.getLogger(__name__)
 
 
 def get_client_option(client, option):
@@ -34,14 +35,14 @@ def get_client_option(client, option):
     # unknown options raise cfg.NoSuchOptError
     try:
         group_name = 'clients_' + client
-        v = getattr(getattr(CONF, group_name), option)
-        if v is not None:
-            return v
+        LOG.debug("+++hw, client = %s, group_name = %s, option = %s", client,
+                  group_name, option)
+        return getattr(getattr(CONF, group_name), option)
     except cfg.NoSuchGroupError:
         pass  # do not error if the client is unknown
     # look for the option in the generic [clients] section
 
-    return getattr(CONF.clients, option)
+    return getattr(CONF.fs_clients, option)
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -51,29 +52,26 @@ class ClientPlugin(object):
     # may emit
     exceptions_module = None
 
+    CLIENT_NAME = ''
+
     # supported service types, service like cinder support multiple service
     # types, so its used in list format
-    service_types = []
+    DEFAULT_CATALOG_INFO = {}
 
     # To make the backward compatibility with existing resource plugins
-    default_version = None
+    DEFAULT_API_VERSION = None
 
-    supported_versions = []
+    SUPPORTED_VERSION = []
 
-    def __init__(self, context):
-        self._context = weakref.ref(context)
-        self._clients = weakref.ref(context.clients)
+    def __init__(self, fs_context):
+        self._fs_context = fs_context
         self.invalidate()
 
     @property
-    def context(self):
-        ctxt = self._context()
+    def fs_context(self):
+        ctxt = self._fs_context
         assert ctxt is not None, "Need a reference to the context"
         return ctxt
-
-    @property
-    def clients(self):
-        return self._clients()
 
     _get_client_option = staticmethod(get_client_option)
 
@@ -81,20 +79,50 @@ class ClientPlugin(object):
         """Invalidate/clear any cached client."""
         self._client_instances = {}
 
+        if not self.fs_context.version:
+            self.fs_context.version = self.DEFAULT_API_VERSION
+
+        version = self.fs_context.version
+
+        if self.fs_context.version not in self.DEFAULT_CATALOG_INFO.keys():
+            raise jacket_exception.FsNovaVersionNotSupport(
+                version=version)
+
+        if not self.fs_context.service_name:
+            self.fs_context.service_name = \
+                self.DEFAULT_CATALOG_INFO[version]['service_name']
+
+        if not self.fs_context.service_type:
+            self.fs_context.service_type = \
+                self.DEFAULT_CATALOG_INFO[version]['service_type']
+
+        if not self.fs_context.interface:
+            self.fs_context.interface = \
+                self.DEFAULT_CATALOG_INFO[version]['interface']
+        if not self.fs_context.insecure:
+            self.fs_context.insecure = self._get_client_option(
+                self.CLIENT_NAME, 'insecure')
+
+        if not self.fs_context.cacert:
+            self.fs_context.cacert = self._get_client_option(
+                self.CLIENT_NAME, 'ca_file')
+        if not self.fs_context.timeout:
+            self.fs_context.timeout = self._get_client_option(
+                self.CLIENT_NAME, 'timeout')
+
     def client(self, version=None):
         if not version:
-            version = self.default_version
+            version = self.DEFAULT_API_VERSION
 
         if (version in self._client_instances
-                and not self.context.auth_needs_refresh()):
+                and not self.fs_context.auth_needs_refresh()):
             return self._client_instances[version]
 
         # Back-ward compatibility
         if version is None:
-
             self._client_instances[version] = self._create()
         else:
-            if version not in self.supported_versions:
+            if version not in self.SUPPORTED_VERSION:
                 raise jacket_exception.FsInvalidServiceVersion(
                     version=version,
                     service=self._get_service_name())
@@ -109,7 +137,7 @@ class ClientPlugin(object):
         pass
 
     def url_for(self, **kwargs):
-        keystone_session = self.context.keystone_session
+        keystone_session = self.fs_context.keystone_session
 
         def get_endpoint():
             return keystone_session.get_endpoint(**kwargs)
@@ -122,7 +150,7 @@ class ClientPlugin(object):
         except KeyError:
             pass
 
-        reg = self.context.region_name or cfg.CONF.region_name_for_services
+        reg = self.fs_context.region_name or cfg.CONF.region_name_for_services
         kwargs.setdefault('region_name', reg)
         url = None
         try:
@@ -134,7 +162,7 @@ class ClientPlugin(object):
             token_obj = generic.Token(endpoint, token)
             auth_ref = token_obj.get_access(keystone_session)
             if auth_ref.has_service_catalog():
-                self.context.reload_auth_plugin()
+                self.fs_context.reload_auth_plugin()
                 url = get_endpoint()
 
         # NOTE(jamielennox): raising exception maintains compatibility with
@@ -168,12 +196,10 @@ class ClientPlugin(object):
         """Returns True if the exception is a conflict."""
         return False
 
-    @excutils.exception_filter
     def ignore_not_found(self, ex):
         """Raises the exception unless it is a not-found."""
         return self.is_not_found(ex)
 
-    @excutils.exception_filter
     def ignore_conflict_and_not_found(self, ex):
         """Raises the exception unless it is a conflict or not-found."""
         return self.is_conflict(ex) or self.is_not_found(ex)

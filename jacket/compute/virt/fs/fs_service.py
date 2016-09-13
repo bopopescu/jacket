@@ -6,8 +6,8 @@ import traceback
 from oslo_log import log as logging
 
 from jacket.compute.cloud import vm_states
-from jacket.drivers.fs import exception_ex
-from jacket.drivers.fs import Clients
+from jacket.compute.virt.fs import exception_ex
+from jacket.compute.virt.fs import Clients
 
 LOG = logging.getLogger(__name__)
 REBOOT_SOFT, REBOOT_HARD = 'SOFT', 'HARD'
