@@ -157,7 +157,7 @@ class FsVolumeDriver(driver.VolumeDriver):
         """Create a clone of the specified volume."""
         pass
 
-    def create_export(self, context, volume):
+    def create_export(self, context, volume, connector):
         """Export the volume."""
         pass
 

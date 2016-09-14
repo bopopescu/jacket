@@ -156,6 +156,15 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                 raise
         return server
 
+    def list(self, detailed=True, search_opts=None, marker=None, limit=None,
+             sort_keys=None, sort_dirs=None):
+        return self.client().servers.list(detailed=detailed,
+                                          search_opts=search_opts,
+                                          marker=marker,
+                                          limit=limit,
+                                          sort_keys=sort_keys,
+                                          sort_dirs=sort_dirs)
+
     def refresh_server(self, server):
         """Refresh server's attributes.
 

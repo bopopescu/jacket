@@ -250,4 +250,8 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
                 LOG.debug('exception: %s' % traceback.format_exc(e))
                 break
             if int(time.time()) - start >= timeout:
-                raise exception_ex.VolumeDeleteTimeoutException(volume_id=volume.id)
+                raise exception_ex.VolumeDeleteTimeoutException(
+                    volume_id=volume.id)
+
+    def detach(self, volume, attachment_uuid):
+        return self.cinder_client.volumes.detach(volume, attachment_uuid)

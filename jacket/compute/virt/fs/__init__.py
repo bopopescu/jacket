@@ -19,6 +19,10 @@ from cinderclient import client as cinderclient
 
 logger = logging.getLogger(__name__)
 
+from jacket.drivers.fs import compute_driver
+FsComputeDriver = compute_driver.FsComputeDriver
+
+
 class ClientsManager(object):
     def __init__(self, context):
         """

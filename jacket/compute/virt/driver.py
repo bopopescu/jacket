@@ -1617,7 +1617,7 @@ def load_compute_driver(virtapi, compute_driver=None):
 
     LOG.info(_LI("Loading compute driver '%s'"), compute_driver)
     try:
-        driver = importutils.import_object_ns('jacket.drivers',
+        driver = importutils.import_object_ns('jacket.compute.virt',
                                               compute_driver,
                                               virtapi)
         return utils.check_isinstance(driver, ComputeDriver)

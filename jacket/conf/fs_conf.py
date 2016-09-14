@@ -28,7 +28,7 @@ default_clients_opts = [
 
 clients_opts = [
     cfg.IntOpt('wait_retries',
-               default=1800,
+               default=300,
                help='Number of times to retry when waiting.'),
     cfg.IntOpt('wait_retries_interval',
                default=2,
@@ -51,7 +51,7 @@ clients_opts = [
 
 client_http_log_debug_opts = [
     cfg.BoolOpt('http_log_debug',
-                default=False,
+                default=True,
                 help=_("Allow client's debug log output."))]
 
 

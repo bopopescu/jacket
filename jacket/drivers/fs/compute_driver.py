@@ -135,7 +135,6 @@ class FsComputeDriver(driver.ComputeDriver):
                       encryption=None):
         """
 
-
         :param context:
             ['auth_token',
             'elevated',
@@ -294,27 +293,39 @@ class FsComputeDriver(driver.ComputeDriver):
 
         cascading_volume_id = connection_info['data']['volume_id']
         cascading_volume_name = connection_info['data']['display_name']
-        su_volume_name = self._get_sub_fs_volume_name(cascading_volume_name, cascading_volume_id)
+        su_volume_name = self._get_sub_fs_volume_name(cascading_volume_name,
+                                                      cascading_volume_id)
 
-        sub_volume = self.fs_cinderclient(context).get_volume_by_name(su_volume_name)
+        LOG.debug("+++hw, su_volume_name = %s", su_volume_name)
+
+        sub_volume = self.fs_cinderclient(context).get_volume_by_name(
+            su_volume_name)
         if not sub_volume:
-            LOG.error('Can not find volume in provider fs, volume: %s ' % cascading_volume_id)
+            LOG.error('Can not find volume in provider fs,'
+                      'volume: %s ' % cascading_volume_id)
             raise exception_ex.VolumeNotFoundAtProvider()
 
         sub_server = self._get_sub_fs_instance(context, instance)
         if not sub_server:
-            LOG.error('Can not find server in provider fs, server: %s' % instance.uuid)
-            raise exception_ex.ServerNotExistException(server_name=instance.display_name)
+            LOG.error('Can not find server in provider fs, '
+                      'server: %s' % instance.uuid)
+            raise exception_ex.ServerNotExistException(
+                server_name=instance.display_name)
 
         if sub_volume.status == 'available':
-            self.fs_cinderclient(context).attach(sub_volume, sub_server.id, mountpoint)
-            self.fs_cinderclient(context).wait_for_volume_in_specified_status(sub_volume.id, 'in-use')
+            self.fs_novaclient(context).attach_volume(sub_server.id,
+                                                      sub_volume.id,
+                                                      mountpoint)
+            self.fs_cinderclient(context).wait_for_volume_in_specified_status(
+                sub_volume.id, 'in-use')
         else:
             raise Exception('sub volume %s of volume: %s is not available, status is %s' %
                             (sub_volume.id, cascading_volume_id, sub_volume.status))
         LOG.debug('attach volume : %s success.' % cascading_volume_id)
 
     def _get_sub_fs_volume_name(self, volume_name, volume_id):
+        if not volume_name:
+            volume_name = 'hybrid'
         return '@'.join([volume_name, volume_id])
 
     def destroy(self, context, instance, network_info, block_device_info=None, destroy_disks=True, migrate_data=None):
@@ -337,7 +348,7 @@ class FsComputeDriver(driver.ComputeDriver):
 
         LOG.debug('success to delete instance: %s' % instance.uuid)
 
-    def detach_volume(self, context, connection_info, instance, mountpoint,
+    def detach_volume(self, connection_info, instance, mountpoint,
                       encryption=None):
         LOG.debug('start to detach volume.')
         LOG.debug('instance: %s' % instance)
@@ -348,41 +359,41 @@ class FsComputeDriver(driver.ComputeDriver):
         sub_volume_name = self._get_sub_fs_volume_name(cascading_volume_name,
                                                        cascading_volume_id)
 
-        sub_volume = self.fs_cinderclient(context).get_volume_by_name(
+        sub_volume = self.fs_cinderclient().get_volume_by_name(
             sub_volume_name)
         if not sub_volume:
             LOG.error('Can not find volume in provider fs, '
                       'volume: %s ' % cascading_volume_id)
             raise exception_ex.VolumeNotFoundAtProvider()
 
-        LOG.debug('sub_volume: %s' % sub_volume)
-        LOG.debug('sub_volume.attachments: %s' % sub_volume.attachments)
-        attachment_uuid = self._get_attachment_id_for_volume(sub_volume)
+        attachment_id, server_id = self._get_attachment_id_for_volume(sub_volume)
 
-        LOG.debug('attachment_uuid: %s' % attachment_uuid)
+        LOG.debug('server_id: %s' % server_id)
         LOG.debug('submit detach task')
-        self.fs_cinderclient(context).detach(sub_volume, attachment_uuid)
+        self.fs_novaclient().detach_volume(server_id, sub_volume.id)
 
         LOG.debug('wait for volume in available status.')
-        self.fs_cinderclient(context).wait_for_volume_in_specified_status(
+        self.fs_cinderclient().wait_for_volume_in_specified_status(
             sub_volume.id, 'available')
 
     def _get_attachment_id_for_volume(self, sub_volume):
         LOG.debug('start to _get_attachment_id_for_volume: %s' % sub_volume)
         attachment_id = None
+        server_id = None
         attachments = sub_volume.attachments
         LOG.debug('attachments: %s' % attachments)
         for attachment in attachments:
             volume_id = attachment.get('volume_id')
             tmp_attachment_id = attachment.get('attachment_id')
+            tmp_server_id = attachment.get('server_id')
             if volume_id == sub_volume.id:
                 attachment_id = tmp_attachment_id
+                server_id = tmp_server_id
                 break
             else:
                 continue
 
-        LOG.debug('get attachment id: %s' % attachment_id)
-        return attachment_id
+        return attachment_id, server_id
 
     def get_available_nodes(self, refresh=False):
         """Returns nodenames of all nodes managed by the compute service.
@@ -447,7 +458,9 @@ class FsComputeDriver(driver.ComputeDriver):
         pass
 
     def get_volume_connector(self, instance):
-        pass
+        return {'ip': CONF.my_block_storage_ip,
+                'initiator': 'fake',
+                'host': 'fakehost'}
 
     def init_host(self, host):
         pass
@@ -458,8 +471,7 @@ class FsComputeDriver(driver.ComputeDriver):
         """
 
         instances = []
-        servers = self.fs_novaclient(context=None).list()
-        LOG.debug('servers: %s' % servers)
+        servers = self.fs_novaclient().list()
         for server in servers:
             server_id = server.id
             instances.append(server_id)
