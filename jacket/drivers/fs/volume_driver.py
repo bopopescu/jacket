@@ -169,9 +169,6 @@ class FsVolumeDriver(driver.VolumeDriver):
         LOG.debug('volume glance image metadata: %s' %
                   volume.volume_glance_metadata)
 
-        LOG.debug("+++hw, volume = %s", volume)
-        LOG.debug("+++hw, volume = %s", dir(volume))
-
         volume_args = {}
         volume_args['size'] = volume.size
         volume_args['display_description'] = volume.display_description
@@ -206,8 +203,6 @@ class FsVolumeDriver(driver.VolumeDriver):
 
         volume_args.update((prop, getattr(volume, prop)) for prop in optionals
                          if getattr(volume, prop, None))
-
-        LOG.debug("+++hw, volume_args = %s", volume_args)
 
         sub_volume = self.fs_cinderlient().volume_create(**volume_args)
         LOG.debug('submit create-volume task to sub fs. '

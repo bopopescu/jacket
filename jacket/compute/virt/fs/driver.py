@@ -405,7 +405,6 @@ class FsComputeDriver(driver.ComputeDriver):
 
         supported_instances = list()
         for one in jsonutils.loads(host_stats['supported_instances']):
-            LOG.debug("+++hw, one = %s", one)
             supported_instances.append((one[0], one[1], one[2]))
 
         return {'vcpus': host_stats['vcpus'], 'memory_mb': host_stats['host_memory_total'],
@@ -717,8 +716,6 @@ class FsComputeDriver(driver.ComputeDriver):
 
             sub_bdm = self._transfer_to_sub_block_device_mapping_v2(block_device_info, openstack_service)
             LOG.debug('sub_bdm: %s' % sub_bdm)
-
-            LOG.debug("+++hw, security_groups = %s", self.PROVIDER_SECURITY_GROUPS)
 
             provider_server = server_client.create_server(name, image_ref, flavor.flavorid, meta=metadata,
                                         files=agent_inject_files, reservation_id=instance.reservation_id,

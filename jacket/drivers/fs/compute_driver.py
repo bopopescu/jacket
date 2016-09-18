@@ -296,8 +296,6 @@ class FsComputeDriver(driver.ComputeDriver):
         su_volume_name = self._get_sub_fs_volume_name(cascading_volume_name,
                                                       cascading_volume_id)
 
-        LOG.debug("+++hw, su_volume_name = %s", su_volume_name)
-
         sub_volume = self.fs_cinderclient(context).get_volume_by_name(
             su_volume_name)
         if not sub_volume:
@@ -421,7 +419,6 @@ class FsComputeDriver(driver.ComputeDriver):
 
         supported_instances = list()
         for one in jsonutils.loads(host_stats['supported_instances']):
-            LOG.debug("+++hw, one = %s", one)
             supported_instances.append((one[0], one[1], one[2]))
 
         return {'vcpus': host_stats['vcpus'], 'memory_mb': host_stats['host_memory_total'],
@@ -727,7 +724,6 @@ class FsComputeDriver(driver.ComputeDriver):
                     LOG.warning('exception occur when get image for %s, use default base image instead.' %
                                 instance.image_ref)
                     image_id = CONF.provider_opts.base_linux_image
-                    LOG.debug("+++hw, 1111 = %s", self.fs_glanceclient(context))
                     image_ref = self.fs_glanceclient(context).get_image(image_id)
                     LOG.debug('No sub image exit mapping for image: %s, so use default: %s instead' %
                               (instance.image_ref, image_ref))

@@ -1047,9 +1047,8 @@ class Resource(wsgi.Application):
 
         # Identify the action, its arguments, and the requested
         # content type
-        LOG.debug("+++hw, request.environ = %s", request.environ)
+
         action_args = self.get_action_args(request.environ)
-        LOG.debug("+++hw, action_args = %s", action_args)
         action = action_args.pop('action', None)
         content_type, body = self.get_body(request)
         accept = request.best_match_content_type()
@@ -1194,7 +1193,6 @@ class Resource(wsgi.Application):
                 meth = getattr(self.controller, action)
         except AttributeError as e:
             with excutils.save_and_reraise_exception(e) as ctxt:
-                LOG.debug("+++hw, self.wsgi_actions = %s, action = %s", self.wsgi_actions, action)
                 if (not self.wsgi_actions or action not in ['action',
                                                             'create',
                                                             'delete',

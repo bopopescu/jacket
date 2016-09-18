@@ -60,7 +60,7 @@ NOTIFICATION_TRANSPORT = None
 NOTIFIER = None
 
 ALLOWED_EXMODS = [
-    jacket.compute.exception.__name__,
+    jacket.exception.__name__,
 ]
 EXTRA_EXMODS = []
 
@@ -375,7 +375,6 @@ class RPCAPI(object):
         serializer = base.JacketObjectSerializer()
 
         rpc_version_cap = self._determine_rpc_version_cap()
-        LOG.debug("+++hw, -----target = %s, rpc_version_cap = %s", target, rpc_version_cap)
         self.client = get_client(target, version_cap=rpc_version_cap,
                                  serializer=serializer)
 
@@ -404,7 +403,6 @@ class RPCAPI(object):
         global LAST_OBJ_VERSIONS
         if self.BINARY in LAST_OBJ_VERSIONS:
             return LAST_OBJ_VERSIONS[self.BINARY]
-        LOG.debug("+++hw, dir = %s", dir(objects))
         version_cap = objects.Service.get_minimum_obj_version(
             jacket.context.get_admin_context(), self.BINARY)
         # If there is no service we assume they will come up later and will

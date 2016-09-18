@@ -35,8 +35,6 @@ def get_client_option(client, option):
     # unknown options raise cfg.NoSuchOptError
     try:
         group_name = 'clients_' + client
-        LOG.debug("+++hw, client = %s, group_name = %s, option = %s", client,
-                  group_name, option)
         return getattr(getattr(CONF, group_name), option)
     except cfg.NoSuchGroupError:
         pass  # do not error if the client is unknown
@@ -47,7 +45,6 @@ def get_client_option(client, option):
 
 @six.add_metaclass(abc.ABCMeta)
 class ClientPlugin(object):
-
     # Module which contains all exceptions classes which the client
     # may emit
     exceptions_module = None
@@ -115,7 +112,7 @@ class ClientPlugin(object):
             version = self.DEFAULT_API_VERSION
 
         if (version in self._client_instances
-                and not self.fs_context.auth_needs_refresh()):
+            and not self.fs_context.auth_needs_refresh()):
             return self._client_instances[version]
 
         # Back-ward compatibility

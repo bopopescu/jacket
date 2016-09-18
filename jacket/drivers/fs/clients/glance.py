@@ -30,14 +30,12 @@ from jacket.i18n import _
 from jacket.drivers.fs.clients import client_plugin
 from argparse import Namespace
 
-
 CONF = conf.CONF
 
 LOG = logging.getLogger(__name__)
 
 
 class GlanceClientPlugin(client_plugin.ClientPlugin):
-
     exceptions_module = [exceptions, exc]
     CLIENT_NAME = 'fs_glance'
 
@@ -45,11 +43,11 @@ class GlanceClientPlugin(client_plugin.ClientPlugin):
     DEFAULT_API_VERSION = V2
     DEFAULT_CATALOG_INFO = {
         V1: {"service_type": "image",
-          "service_name": "glance",
-          "interface": "publicURL"},
+             "service_name": "glance",
+             "interface": "publicURL"},
         V2: {"service_type": "image",
-              "service_name": "glance",
-              "interface": "publicURL"},
+             "service_name": "glance",
+             "interface": "publicURL"},
     }
 
     def _create(self, version=None):
@@ -64,8 +62,6 @@ class GlanceClientPlugin(client_plugin.ClientPlugin):
         )
         args.pop('version')
 
-        LOG.debug("+++hw, glance args = %s", args)
-
         namespace = Namespace()
 
         key_values = {'ca_file': 'os_cacert', 'cert_file': 'os_cert',
@@ -77,8 +73,6 @@ class GlanceClientPlugin(client_plugin.ClientPlugin):
                                                           key)))
 
         setattr(namespace, 'timeout', None)
-
-        LOG.debug("+++hw, glance args = %s", args)
 
         ks_session = loading.load_session_from_argparse_arguments(
             namespace)
@@ -109,7 +103,7 @@ class GlanceClientPlugin(client_plugin.ClientPlugin):
             'tenant_name': kwargs.get("tenant_name"),
             'tenant_id': kwargs.get("tenant_id"),
             'project_name': kwargs.get("project_id"),
-            #'project_id': kwargs.get("project_id"),
+            # 'project_id': kwargs.get("project_id"),
             'project_domain_name': kwargs.get("project_domain_name"),
             'project_domain_id': kwargs.get("project_domain_id"),
         }
@@ -192,8 +186,6 @@ class GlanceClientPlugin(client_plugin.ClientPlugin):
             url_parts = urlparse.urlparse(auth_url)
             (scheme, netloc, path, params, query, fragment) = url_parts
 
-            LOG.debug("+++hw, url_parts = %s", url_parts)
-
             path = path.lower()
             if '/v3' in path:
                 v3_auth_url = auth_url
@@ -264,8 +256,6 @@ class GlanceClientPlugin(client_plugin.ClientPlugin):
         :returns: an image object with name/id :image_identifier:
         """
         try:
-            LOG.debug("+++hw, image_identifier = %s", image_identifier)
             return self.client().images.get(image_identifier)
         except exc.HTTPNotFound:
-            LOG.exception("+++++++++++++++++++++++++++++++++++++++++++++++++")
             return self._find_with_attr('images', name=image_identifier)

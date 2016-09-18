@@ -155,12 +155,8 @@ class API(base.Base):
         if refresh_cache or not enable_cache:
             topic = CONF.volume_topic
             ctxt = context.get_admin_context()
-            LOG.debug("+++hw, ctxt = %s", ctxt)
             # services = storage.ServiceList.get_all_by_topic(ctxt, topic)
             services = objects.ServiceList.get_by_topic(ctxt, topic)
-            LOG.debug("+++hw, services = %s", services)
-            for s in services:
-                LOG.debug("+++hw, -------s = %s", s)
             az_data = [(s.availability_zone, s.disabled)
                        for s in services]
             disabled_map = {}

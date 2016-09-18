@@ -63,8 +63,6 @@ def db_sync(version=None, init_version=INIT_VERSION, engine=None):
     if engine is None:
         engine = db_api.get_engine()
 
-    LOG.debug("+++hw, MIGRATE_REPO_PATH = %s", MIGRATE_REPO_PATH)
-
     current_db_version = get_backend().db_version(engine,
                                                   MIGRATE_REPO_PATH,
                                                   init_version)

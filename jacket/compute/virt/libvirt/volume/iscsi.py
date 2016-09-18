@@ -84,8 +84,6 @@ class LibvirtISCSIVolumeDriver(libvirt_volume.LibvirtBaseVolumeDriver):
         """Attach the volume to instance_name."""
 
         LOG.debug("Calling os-brick to attach iSCSI Volume")
-        LOG.debug("+++hw, connector = %s", self.connector)
-        LOG.debug("+++hw, connection_info['data'] = %s", connection_info['data'])
         device_info = self.connector.connect_volume(connection_info['data'])
         LOG.debug("Attached iSCSI volume %s", device_info)
 

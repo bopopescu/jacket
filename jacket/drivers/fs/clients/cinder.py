@@ -27,25 +27,23 @@ from jacket.i18n import _
 from jacket.i18n import _LI
 from jacket.i18n import _LW
 
-
 LOG = logging.getLogger(__name__)
 
 CONF = conf.CONF
 
 
 class CinderClientPlugin(client_plugin.ClientPlugin):
-
     exceptions_module = exceptions
     CLIENT_NAME = 'fs_cinder'
     SUPPORTED_VERSION = [V2, V3] = ['2', '3']
     DEFAULT_API_VERSION = V2
     DEFAULT_CATALOG_INFO = {
         V2: {"service_type": "volumev2",
-          "service_name": "cinderv2",
-          "interface": "publicURL"},
+             "service_name": "cinderv2",
+             "interface": "publicURL"},
         V3: {"service_type": "volumev3",
-              "service_name": "cinderv3",
-              "interface": "publicURL"},
+             "service_name": "cinderv3",
+             "interface": "publicURL"},
     }
 
     def _create(self, version=None):
@@ -198,7 +196,6 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
         if retries >= 1:
             attempts = retries + 1
         for attempt in range(1, attempts + 1):
-            LOG.debug("+++hw, attempt = %d", attempt)
             volume = self.client().volumes.get(vol_id)
             status_of_volume = volume.status
             if volume.status == status:
@@ -213,7 +210,8 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
 
         raise exception_ex.VolumeStatusTimeoutException(volume_id=volume.id,
                                                         status=status_of_volume,
-                                                        timeout=int(time.time() - start))
+                                                        timeout=int(
+                                                            time.time() - start))
 
     def volume_create(self, size=None, snapshot_id=None, source_volid=None,
                       display_name=None, display_description=None,
@@ -244,7 +242,7 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
                 status_of_volume = volume.status
                 cost_time = int(time.time()) - start
                 LOG.debug('volume: %s status is: %s, cost time: %s' % (
-                volume.id, status_of_volume, str(cost_time)))
+                    volume.id, status_of_volume, str(cost_time)))
             except Exception as e:
                 LOG.debug('volume: %s is deleted' % volume.id)
                 LOG.debug('exception: %s' % traceback.format_exc(e))
