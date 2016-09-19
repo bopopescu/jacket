@@ -7005,18 +7005,6 @@ class ComputeManager(manager.Manager):
 
         return bdm
 
-
-    def _wait_container_ok(self, instance, jacketdriver):
-        container_status = 0
-        count = 60
-        while container_status <= 2:
-            if count <= 0:
-                raise exception.RetryException
-            container_status = jacketdriver.status(instance)
-            count = count - 1
-            time.sleep(10)
-
-
     def _create_hybrid_vm_data(self, context, instance, image,
                                injected_files, admin_password,
                                network_info, block_device_info):

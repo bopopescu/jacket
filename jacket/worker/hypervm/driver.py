@@ -58,11 +58,11 @@ class JacketHypervmDriver():
         LOG.debug('start to stop container')
         wormhole = self._create_wormhole(instance)
         try:
-            docker_version = wormhole.get_version()
+            version = wormhole.get_version()
         except Exception, e:
             LOG.debug('hyper service is not online, stop base vm directlly.')
-            docker_version = None
-        if docker_version:
+            version = None
+        if version:
             stop_result = wormhole.stop_container()
         LOG.info('Stop Server: %s, result is: %s' % (instance.display_name, stop_result))
 
@@ -70,12 +70,12 @@ class JacketHypervmDriver():
         wormhole = self._create_wormhole(instance)
         LOG.debug('start to start container')
         try:
-            docker_version = wormhole.get_version()
+            version = wormhole.get_version()
         except Exception, e:
             LOG.error('hyper service is not online, no need to start container')
-            docker_version = None
+            version = None
 
-        if docker_version:
+        if version:
             start_result = wormhole.start_container(network_info, block_device_info)
 
         LOG.info('Start Server: %s, result is: %s' % (instance.display_name, start_result))
@@ -84,11 +84,11 @@ class JacketHypervmDriver():
         LOG.debug('start to pause instance: %s' % instance)
         wormhole = self._create_wormhole(instance)
         try:
-            docker_version = wormhole.get_version()
+            version = wormhole.get_version()
         except Exception, e:
             LOG.error('hyper service is not online')
-            docker_version = None
-        if docker_version:
+            version = None
+        if version:
             pause_result = wormhole.pause()
         LOG.info('Pause Server: %s, result is: %s' % (instance.display_name, pause_result))
 
@@ -96,11 +96,11 @@ class JacketHypervmDriver():
         LOG.debug('start to unpause instance: %s' % instance)
         wormhole = self._create_wormhole(instance)
         try:
-            docker_version = wormhole.get_version()
+            version = wormhole.get_version()
         except Exception, e:
             LOG.error('hyper service is not online')
-            docker_version = None
-        if docker_version:
+            version = None
+        if version:
             unpause_result = wormhole.unpause()
         LOG.info('Unpause Server: %s, result is: %s' % (instance.display_name, unpause_result))
 
@@ -108,11 +108,11 @@ class JacketHypervmDriver():
         LOG.debug('start to attach interface: %s' % vif)
         wormhole = self._create_wormhole(instance)
         try:
-            docker_version = wormhole.get_version()
+            version = wormhole.get_version()
         except Exception, e:
             LOG.error('hyper service is not online')
-            docker_version = None
-        if docker_version:
+            version = None
+        if version:
             attach_result = wormhole.attach_interface(vif)
         LOG.info('Attach interface result is: %s' % attach_result)
 
@@ -120,11 +120,11 @@ class JacketHypervmDriver():
         LOG.debug('start to detach interface: %s' % vif)
         wormhole = self._create_wormhole(instance)
         try:
-            docker_version = wormhole.get_version()
+            version = wormhole.get_version()
         except Exception, e:
             LOG.error('hyper service is not online')
-            docker_version = None
-        if docker_version:
+            version = None
+        if version:
             detach_result = wormhole.detach_interface(vif)
         LOG.info('Detach interface result is: %s' % detach_result)
 
@@ -132,11 +132,11 @@ class JacketHypervmDriver():
         LOG.debug('start to attach volume: %s' % volume_id)
         wormhole = self._create_wormhole(instance)
         try:
-            docker_version = wormhole.get_version()
+            version = wormhole.get_version()
         except Exception, e:
             LOG.error('hyper service is not online')
-            docker_version = None
-        if docker_version:
+            version = None
+        if version:
             attach_result = wormhole.attach_volume(volume_id, device, mount_device)
         LOG.info('Attach Volume result is: %s' % attach_result)
 
@@ -144,11 +144,11 @@ class JacketHypervmDriver():
         LOG.debug('start to detach volume: %s' % volume_id)
         wormhole = self._create_wormhole(instance)
         try:
-            docker_version = wormhole.get_version()
+            version = wormhole.get_version()
         except Exception, e:
             LOG.error('hyper service is not online')
-            docker_version = None
-        if docker_version:
+            version = None
+        if version:
             detach_result = wormhole.detach_volume(volume_id)
         LOG.info('Detach Volume result is: %s' % detach_result)
 
@@ -156,11 +156,11 @@ class JacketHypervmDriver():
         LOG.debug('List volumes')
         wormhole = self._create_wormhole(instance)
         try:
-            docker_version = wormhole.get_version()
+            version = wormhole.get_version()
         except Exception, e:
             LOG.error('hyper service is not online')
-            docker_version = None
-        if docker_version:
+            version = None
+        if version:
             list_result = wormhole.list_volume()
         LOG.info('List Volume result is: %s' % list_result)
         return list_result
@@ -169,11 +169,11 @@ class JacketHypervmDriver():
         LOG.debug('start to get container status')
         wormhole = self._create_wormhole(instance)
         try:
-            docker_version = wormhole.get_version()
+            version = wormhole.get_version()
         except Exception, e:
             LOG.error('hyper service is not online')
-            docker_version = None
-        if docker_version:
+            version = None
+        if version:
             status_result = wormhole.status()
         LOG.info('Get container status result is: %s' % status_result)
         return status_result
