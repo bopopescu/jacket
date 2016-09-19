@@ -62,6 +62,7 @@ provider_opts = [
     cfg.StrOpt('flavor_map', help=''), cfg.StrOpt('security_groups', help=''),
     cfg.StrOpt('user', help=''), cfg.StrOpt('tenant', help=''), cfg.StrOpt('pwd', help=''),
     cfg.StrOpt('auth_url', help=''), cfg.StrOpt('region', help=''),
+    cfg.StrOpt('volume_type', help=''),
 ]
 
 hybrid_cloud_agent_opts = [

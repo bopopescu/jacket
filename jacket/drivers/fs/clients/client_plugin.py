@@ -55,7 +55,6 @@ class ClientPlugin(object):
     # types, so its used in list format
     DEFAULT_CATALOG_INFO = {}
 
-    # To make the backward compatibility with existing resource plugins
     DEFAULT_API_VERSION = None
 
     SUPPORTED_VERSION = []

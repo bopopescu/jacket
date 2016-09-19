@@ -3573,7 +3573,7 @@ class API(base.Base):
         if instance.host:
             try:
                 service = [service for service in instance.services if
-                           service.binary == 'jacket-worker'][0]
+                           service.binary == 'nova-compute'][0]
                 if service.forced_down:
                     host_status = fields_obj.HostStatus.DOWN
                 elif service.disabled:

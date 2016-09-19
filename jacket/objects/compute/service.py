@@ -202,7 +202,7 @@ class Service(base.NovaPersistentObject, base.NovaObject,
             raise exception.ObjectActionError(
                 action='obj_load_attr',
                 reason='attribute %s not lazy-loadable' % attrname)
-        if self.binary == 'jacket-worker' or self.binary == 'nova-compute':
+        if self.binary == 'nova-compute':
             # Only n-cpu services have attached compute_node(s)
             compute_nodes = objects.ComputeNodeList.get_all_by_host(
                 self._context, self.host)
@@ -337,11 +337,11 @@ class Service(base.NovaPersistentObject, base.NovaObject,
 
     @base.remotable_classmethod
     def get_minimum_version(cls, context, binary, use_slave=False):
-        #if not binary.startswith('jacket-'):
-        #    LOG.warning(_LW('get_minimum_version called with likely-incorrect '
-        #                    'binary `%s\''), binary)
-        #    raise exception.ObjectActionError(action='get_minimum_version',
-        #                                      reason='Invalid binary prefix')
+        if not binary.startswith('jacket-'):
+            LOG.warning(_LW('get_minimum_version called with likely-incorrect '
+                            'binary `%s\''), binary)
+            raise exception.ObjectActionError(action='get_minimum_version',
+                                              reason='Invalid binary prefix')
 
         if cls._SERVICE_VERSION_CACHING:
             cached_version = cls._MIN_VERSION_CACHE.get(binary)

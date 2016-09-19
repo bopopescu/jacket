@@ -256,7 +256,7 @@ class CellStateManager(base.Base):
         def _get_compute_hosts():
             service_refs = {service.host: service
                             for service in objects.ServiceList.get_by_binary(
-                                ctxt, 'jacket-worker')}
+                                ctxt, 'nova-compute')}
 
             compute_nodes = objects.ComputeNodeList.get_all(ctxt)
             for compute in compute_nodes:
