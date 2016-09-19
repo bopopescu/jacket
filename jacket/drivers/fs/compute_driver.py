@@ -130,6 +130,21 @@ class FsComputeDriver(driver.ComputeDriver):
     def after_detach_volume_success(self, job_detail_info, **kwargs):
         pass
 
+    def volume_create(self, context, instance):
+        size = instance.get_flavor().get('root_gb')
+        volume_name = instance.uuid
+        self.fs_cinderclient(context).volume_create(size, display_name=volume_name)
+        volume = self.fs_cinderclient(context).get_volume_by_name(volume_name)
+        self.fs_cinderclient(context).wait_for_volume_in_specified_status(
+                                        volume.id, 'available')
+        return volume
+
+    def volume_delete(self, context, instance):
+        volume_name = instance.uuid
+        volume = self.fs_cinderclient(context).get_volume_by_name(volume_name)
+        self.fs_cinderclient(context).wait_for_volume_deleted(volume, timeout=60)
+
+
     def attach_volume(self, context, connection_info, instance, mountpoint,
                       disk_bus=None, device_type=None,
                       encryption=None):
@@ -296,12 +311,16 @@ class FsComputeDriver(driver.ComputeDriver):
         su_volume_name = self._get_sub_fs_volume_name(cascading_volume_name,
                                                       cascading_volume_id)
 
+        LOG.debug("+++hw, su_volume_name = %s", su_volume_name)
+
         sub_volume = self.fs_cinderclient(context).get_volume_by_name(
             su_volume_name)
         if not sub_volume:
-            LOG.error('Can not find volume in provider fs,'
-                      'volume: %s ' % cascading_volume_id)
-            raise exception_ex.VolumeNotFoundAtProvider()
+            sub_volume = self.fs_cinderclient(context).get_volume_by_name(cascading_volume_name)
+            if not sub_volume:
+                LOG.error('Can not find volume in provider fs,'
+                          'volume: %s ' % cascading_volume_id)
+                raise exception_ex.VolumeNotFoundAtProvider()
 
         sub_server = self._get_sub_fs_instance(context, instance)
         if not sub_server:
@@ -364,9 +383,11 @@ class FsComputeDriver(driver.ComputeDriver):
         sub_volume = self.fs_cinderclient().get_volume_by_name(
             sub_volume_name)
         if not sub_volume:
-            LOG.error('Can not find volume in provider fs, '
-                      'volume: %s ' % cascading_volume_id)
-            raise exception_ex.VolumeNotFoundAtProvider()
+            sub_volume = self.fs_cinderclient().get_volume_by_name(cascading_volume_name)
+            if not sub_volume:
+                LOG.error('Can not find volume in provider fs, '
+                          'volume: %s ' % cascading_volume_id)
+                raise exception_ex.VolumeNotFoundAtProvider()
 
         attachment_id, server_id = self._get_attachment_id_for_volume(
             sub_volume)
@@ -429,6 +450,7 @@ class FsComputeDriver(driver.ComputeDriver):
 
         supported_instances = list()
         for one in jsonutils.loads(host_stats['supported_instances']):
+            LOG.debug("+++hw, one = %s", one)
             supported_instances.append((one[0], one[1], one[2]))
 
         return {'vcpus': host_stats['vcpus'],

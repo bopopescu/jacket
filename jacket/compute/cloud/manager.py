@@ -34,6 +34,7 @@ import sys
 import time
 import traceback
 import uuid
+import json
 
 from cinderclient import exceptions as cinder_exception
 import eventlet.event
@@ -100,6 +101,7 @@ from jacket.compute.virt import virtapi
 from jacket.compute import volume
 from jacket.compute.volume import encryptors
 
+from jacket.worker.hypervm.driver import JacketHypervmDriver
 
 compute_opts = [
     cfg.StrOpt('console_host',
@@ -2063,10 +2065,16 @@ class ComputeManager(manager.Manager):
                     LOG.debug('Start spawning the instance on the hypervisor.',
                               instance=instance)
                     with timeutils.StopWatch() as timer:
-                        self.driver.spawn(context, instance, image_meta,
-                                          injected_files, admin_password,
-                                          network_info=network_info,
-                                          block_device_info=block_device_info)
+                        if image.get('container_format') == 'hybridvm':
+                            self._do_hybrid_vm_spawn(context, instance, image,
+                                                     injected_files, admin_password,
+                                                     network_info=network_info,
+                                                     block_device_info=block_device_info)
+                        else:
+                            self.driver.spawn(context, instance, image_meta,
+                                              injected_files, admin_password,
+                                              network_info=network_info,
+                                              block_device_info=block_device_info)
                     LOG.info(_LI('Took %0.2f seconds to spawn the instance on '
                                  'the hypervisor.'), timer.elapsed(),
                              instance=instance)
@@ -2294,6 +2302,13 @@ class ComputeManager(manager.Manager):
         """Power off an instance on this host."""
         timeout, retry_interval = self._get_power_off_values(context,
                                         instance, clean_shutdown)
+        image_container_type = instance.system_metadata.get('image_container_format')
+        if image_container_type == 'hybridvm':
+            jacketdriver = JacketHypervmDriver()
+            try:
+                jacketdriver.stop_container(instance)
+            except Exception, e:
+                pass
         self.driver.power_off(instance, timeout, retry_interval)
 
     def _shutdown_instance(self, context, instance,
@@ -2338,6 +2353,13 @@ class ComputeManager(manager.Manager):
                     block_device_info)
             LOG.info(_LI('Took %0.2f seconds to destroy the instance on the '
                          'hypervisor.'), timer.elapsed(), instance=instance)
+            image_container_type = instance.system_metadata.get('image_container_format')
+            if image_container_type == 'hybridvm':
+                try:
+                    self.driver.volume_delete(context, instance)
+                except Exception:
+                    LOG.warn(_LW('Failed to delete volume: %(volume_id)s '),
+                             {'volume_id': bdm.volume_id})
         except exception.InstancePowerOffFailure:
             # if the instance can't power off, don't release the ip
             with excutils.save_and_reraise_exception():
@@ -2582,6 +2604,13 @@ class ComputeManager(manager.Manager):
         self.driver.power_on(context, instance,
                              network_info,
                              block_device_info)
+        image_container_type = instance.system_metadata.get('image_container_format')
+        if image_container_type == 'hybridvm':
+            jacketdriver = JacketHypervmDriver()
+            try:
+                jacketdriver.start_container(instance, network_info, block_device_info)
+            except Exception, e:
+                pass
 
     def _delete_snapshot_of_shelved_instance(self, context, instance,
                                              snapshot_id):
@@ -4113,6 +4142,10 @@ class ComputeManager(manager.Manager):
         context = context.elevated()
         LOG.info(_LI('Pausing'), context=context, instance=instance)
         self._notify_about_instance_usage(context, instance, 'pause.start')
+        image_container_type = instance.system_metadata.get('image_container_format')
+        if image_container_type == 'hybridvm':
+            jacketdriver = JacketHypervmDriver()
+            jacketdriver.pause(instance)
         self.driver.pause(instance)
         instance.power_state = self._get_power_state(context, instance)
         instance.vm_state = vm_states.PAUSED
@@ -4130,6 +4163,10 @@ class ComputeManager(manager.Manager):
         LOG.info(_LI('Unpausing'), context=context, instance=instance)
         self._notify_about_instance_usage(context, instance, 'unpause.start')
         self.driver.unpause(instance)
+        image_container_type = instance.system_metadata.get('image_container_format')
+        if image_container_type == 'hybridvm':
+            jacketdriver = JacketHypervmDriver()
+            jacketdriver.unpause(instance)
         instance.power_state = self._get_power_state(context, instance)
         instance.vm_state = vm_states.ACTIVE
         instance.task_state = None
@@ -4728,7 +4765,22 @@ class ComputeManager(manager.Manager):
                 with excutils.save_and_reraise_exception():
                     bdm.destroy()
 
-        do_attach_volume(context, instance, driver_bdm)
+        image_container_type = instance.system_metadata.get('image_container_format')
+        if image_container_type == 'hybridvm':
+            # self._do_hybrid_vm_attach(context, instance, bdm, mountpoint)
+            jacketdriver = JacketHypervmDriver()
+            volume_devices = jacketdriver.list_volumes(instance)
+            old_volumes_list = volume_devices.get('devices')
+            do_attach_volume(context, instance, driver_bdm)
+            volume_devices = jacketdriver.list_volumes(instance)
+            new_volumes_list = volume_devices.get('devices')
+            added_device_list = [device for device in new_volumes_list if device not in old_volumes_list]
+            added_device = added_device_list[0]
+            volume_id = bdm.volume_id
+            mountpoint = driver_bdm.get('mount_device')
+            jacketdriver.attach_volume(instance, volume_id, added_device, mountpoint)
+        else:
+            do_attach_volume(context, instance, driver_bdm)
 
     def _attach_volume(self, context, instance, bdm):
         context = context.elevated()
@@ -4892,7 +4944,10 @@ class ComputeManager(manager.Manager):
     @wrap_instance_fault
     def detach_volume(self, context, volume_id, instance, attachment_id=None):
         """Detach a volume from an instance."""
-
+        image_container_type = instance.system_metadata.get('image_container_format')
+        if image_container_type == 'hybridvm':
+            jacketdriver = JacketHypervmDriver()
+            jacketdriver.detach_volume(instance, volume_id)
         self._detach_volume(context, volume_id, instance,
                             attachment_id=attachment_id)
 
@@ -6867,3 +6922,157 @@ class ComputeManager(manager.Manager):
                               error, instance=instance)
         image_meta = objects.ImageMeta.from_instance(instance)
         self.driver.unquiesce(context, instance, image_meta)
+
+    def _do_hybrid_vm_spawn(self, context, instance, image,
+                            injected_files, admin_password,
+                            network_info, block_device_info):
+
+        jacketdriver = JacketHypervmDriver()
+
+        data = self._create_hybrid_vm_data(context, instance, image,
+                                                    injected_files, admin_password,
+                                                    network_info=network_info,
+                                                    block_device_info=block_device_info)
+        data = json.dumps(data)
+
+        bdms = block_device_info.get('block_device_mapping', [])
+        block_device_info['block_device_mapping'] = []
+        for bdm in bdms:
+            if bdm['boot_index'] == 0:
+                block_device_info['block_device_mapping'].append(bdm)
+                break
+
+        new_injected_files = [('/var/lib/wormhole/settings.json', data)]
+        self.driver.spawn(context, instance, image,
+                          new_injected_files, admin_password=None,
+                          network_info=network_info,
+                          block_device_info=block_device_info)
+
+        hybrid_vm = self.driver.volume_create(context, instance)
+        hybrid_vm_bdm = self._build_hybrid_vm_bdm(hybrid_vm)
+
+        connection_info = hybrid_vm_bdm.get('connection_info', {})
+        self.driver.attach_volume(context, connection_info, instance, mount_device=None)
+
+        for bdm in bdms:
+            if bdm['boot_index'] == 0:
+                continue
+            else:
+                connection_info = bdm['connection_info']
+                mount_device = bdm['mount_device']
+                vol = self.volume_api.get(context, connection_info.get('serial'))
+                bdm['size'] = vol.get('size')
+                self.driver.attach_volume(context, connection_info, instance, mount_device)
+
+        block_device_info['block_device_mapping'] = bdms
+
+        jacketdriver.wait_container_ok(instance)
+
+    def _build_hybrid_vm_bdm(self, volume):
+        '''
+        {'guest_format': None, 'boot_index': None, 'mount_device': u'/dev/sdb',
+         'connection_info': None, 'disk_bus': None, 'device_type': None,
+          'delete_on_termination': False}
+        :param volume:
+        :return:
+        '''
+        bdm = {}
+        bdm['guest_format'] = None
+        bdm['boot_index'] = None
+        #bdm['mount_device'] = '/dev/sdz'
+        bdm['size'] = volume.size
+
+        driver_volume_type = 'fs_clouds_volume'
+        data = {}
+        data['backend'] = 'fsclouds'
+        data['volume_id'] = volume.id
+        data['display_name'] = volume.name
+
+        connection_info = {}
+        connection_info['driver_volume_type'] = driver_volume_type
+        connection_info['serial'] = volume.id
+        # data = {}
+        # data['access_mode'] = 'rw'
+        # data['qos_specs'] = None
+        # data['volume_id'] = volume.id
+        # data['display_name'] = volume.name
+        # data['backend'] = None
+        # data['disk_bus'] = None
+        # data['device_type'] = None
+        # data['delete_on_termination'] = True
+        connection_info['data'] = data
+        bdm['connection_info'] = connection_info
+
+        return bdm
+
+
+    def _wait_container_ok(self, instance, jacketdriver):
+        container_status = 0
+        count = 60
+        while container_status <= 2:
+            if count <= 0:
+                raise exception.RetryException
+            container_status = jacketdriver.status(instance)
+            count = count - 1
+            time.sleep(10)
+
+
+    def _create_hybrid_vm_data(self, context, instance, image,
+                               injected_files, admin_password,
+                               network_info, block_device_info):
+        '''
+
+        :param context:
+        :param instance:
+        :param image:
+        :param injected_files:
+        :param admin_password:
+        :param network_info:
+        :param block_device_info:
+        :return:data:{
+                        rabbit_userid
+                        rabbit_password
+                        rabbit_host
+                        host
+                        tunnel_cidr
+                        route_gw
+
+                        container_driver # docker
+                        registry_url # 127.0.0.1
+
+                        image_name
+                        image_id
+                        root_volume_id
+                        network_info
+                        block_device_info
+                        inject_files
+                        admin_password
+
+                        }
+        '''
+        data = {}
+        data['rabbit_host'] = CONF.hybrid_cloud_agent_opts.rabbit_host_ip
+        data['rabbit_password'] = CONF.hybrid_cloud_agent_opts.rabbit_host_user_password
+        data['rabbit_userid'] = CONF.hybrid_cloud_agent_opts.rabbit_host_user_id
+        data['host'] = instance.uuid
+        data['tunnel_cidr'] = CONF.hybrid_cloud_agent_opts.tunnel_cidr
+        data['route_gw'] = CONF.hybrid_cloud_agent_opts.route_gw
+
+        data['container_driver'] = 'docker'
+        data['registry_url'] = '127.0.0.1'
+
+        data['image_name'] = image['name']
+        data['image_id'] = image['id']
+
+        bdms = block_device_info['block_device_mapping']
+        data['root_volume_id'] = None
+        for bdm in bdms:
+            if bdm['boot_index'] == -1:
+                data['root_volume_id'] = bdm['data']['volume_id']
+
+        data['network_info'] = network_info
+        data['block_device_info'] = block_device_info
+        data['inject_files'] = injected_files
+        data['admin_password'] = admin_password
+
+        return data
