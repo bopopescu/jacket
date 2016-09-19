@@ -13,7 +13,6 @@
 
 from eventlet import greenthread
 import time
-import traceback
 
 from cinderclient import client as cc
 from cinderclient import exceptions
@@ -245,7 +244,6 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
                     volume.id, status_of_volume, str(cost_time)))
             except Exception as e:
                 LOG.debug('volume: %s is deleted' % volume.id)
-                LOG.debug('exception: %s' % traceback.format_exc(e))
                 break
             if int(time.time()) - start >= timeout:
                 raise exception_ex.VolumeDeleteTimeoutException(

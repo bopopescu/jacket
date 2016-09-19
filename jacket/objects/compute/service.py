@@ -202,7 +202,7 @@ class Service(base.NovaPersistentObject, base.NovaObject,
             raise exception.ObjectActionError(
                 action='obj_load_attr',
                 reason='attribute %s not lazy-loadable' % attrname)
-        if self.binary == 'jacket-worker':
+        if self.binary == 'nova-compute':
             # Only n-cpu services have attached compute_node(s)
             compute_nodes = objects.ComputeNodeList.get_all_by_host(
                 self._context, self.host)

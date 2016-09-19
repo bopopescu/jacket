@@ -11,6 +11,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from eventlet import greenthread
 import collections
 import time
 
@@ -630,31 +631,42 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                nics, scheduler_hints,
                config_drive, disk_config)
 
-    def wait_for_server_in_specified_status(self, server, status, timeout):
-        """
-        :param server, type Server
-        :param status, string, nova.compute.vm_states, e.g. nova.compute.vm_states.ACTIVE
-        :param timeout, int, e.g. 30
-        """
-        LOG.debug('start to wait for server %s in status: %s' % (server.id, status))
-        server = self.get_server(server)
-        status_of_server = server.status
-        start = int(time.time())
-        while status_of_server != status:
-            time.sleep(2)
+    def wait_for_server_in_specified_status(self, server, status):
+
+        start = time.time()
+        retries = self._get_client_option(self.CLIENT_NAME, "wait_retries")
+        wait_retries_interval = self._get_client_option(
+            self.CLIENT_NAME, "wait_retries_interval")
+        if retries < 0:
+            LOG.warning(_LW("Treating negative config value (%(retries)s) for "
+                            "'block_device_retries' as 0."),
+                        {'retries': retries})
+        # (1) treat  negative config value as 0
+        # (2) the configured value is 0, one attempt should be made
+        # (3) the configured value is > 0, then the total number attempts
+        #      is (retries + 1)
+        attempts = 1
+        if retries >= 1:
+            attempts = retries + 1
+        for attempt in range(1, attempts + 1):
             server = self.get_server(server)
             status_of_server = server.status
-            cost_time = int(time.time()) - start
-            LOG.debug('server: %s status is: %s, cost time: %s' % (server.id, status_of_server, str(cost_time)))
+            if status_of_server == status:
+                LOG.info(_LI("fs compute wait status(%(status)s) "
+                             "successfully."),
+                         status=status)
+                return
+
             if status_of_server == "ERROR":
-                raise exception_ex.ServerStatusException(status=status_of_server)
-            if int(time.time()) - start >= timeout:
-                raise exception_ex.ServerStatusTimeoutException(server_id=server.id,
-                                                                status=status_of_server,
-                                                                timeout=timeout)
-        cost_time = int(time.time()) - start
-        LOG.debug('end to wait for server in specified state, state is: %s, cost time: %s' %
-                  (status_of_server, str(cost_time)))
+                raise exception_ex.ServerStatusException(
+                    status=status_of_server)
+
+            greenthread.sleep(wait_retries_interval)
+
+        raise exception_ex.ServerStatusTimeoutException(server_id=server.id,
+                                                        status=status_of_server,
+                                                        timeout=int(
+                                                            time.time() - start))
 
     def delete(self, server):
         """

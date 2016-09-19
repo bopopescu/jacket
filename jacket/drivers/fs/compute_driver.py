@@ -4,7 +4,6 @@ import socket
 import traceback
 import base64
 
-from oslo_config import cfg
 from oslo_serialization import jsonutils
 from oslo_log import log as logging
 
@@ -15,17 +14,16 @@ from jacket.compute.network.neutronv2 import api as network_api
 from jacket.compute.virt.fs import hyper_agent_api
 from jacket.compute.cloud import vm_states
 from jacket.compute.virt import driver
-from jacket.drivers.fs import exception_ex
 from jacket.compute.virt import hardware
 from jacket.db.hybrid_cloud import api as db_api
+from jacket.drivers.fs import exception_ex
 from jacket.drivers.fs.clients import fs_context
 from jacket.drivers.fs.clients import nova as novaclient
 from jacket.drivers.fs.clients import cinder as cinderclient
 from jacket.drivers.fs.clients import glance as glanceclient
-
+from jacket.i18n import _LE
 
 LOG = logging.getLogger(__name__)
-
 
 CONF = conf.CONF
 
@@ -52,6 +50,8 @@ FS_POWER_STATE = {
 enable_logger_help = True
 logger_header = 'start to %s, args: %s, kwargs: %s'
 logger_end = 'end to %s, return: %s'
+
+
 def logger_helper():
     def _wrapper(func):
         def __wrapper(self, *args, **kwargs):
@@ -66,13 +66,13 @@ def logger_helper():
                 LOG.error('exception occur when execute %s, exception: %s' %
                           (func.func_name, traceback.format_exc(e)))
                 raise e
+
         return __wrapper
 
     return _wrapper
 
 
 class FsComputeDriver(driver.ComputeDriver):
-
     def __init__(self, virtapi):
         super(FsComputeDriver, self).__init__(virtapi)
 
@@ -336,16 +336,19 @@ class FsComputeDriver(driver.ComputeDriver):
             self.fs_cinderclient(context).wait_for_volume_in_specified_status(
                 sub_volume.id, 'in-use')
         else:
-            raise Exception('sub volume %s of volume: %s is not available, status is %s' %
-                            (sub_volume.id, cascading_volume_id, sub_volume.status))
+            raise Exception('sub volume %s of volume: %s is not available, '
+                            'status is %s' %
+                            (sub_volume.id, cascading_volume_id,
+                             sub_volume.status))
         LOG.debug('attach volume : %s success.' % cascading_volume_id)
 
     def _get_sub_fs_volume_name(self, volume_name, volume_id):
         if not volume_name:
-            volume_name = 'hybrid'
+            volume_name = 'volume'
         return '@'.join([volume_name, volume_id])
 
-    def destroy(self, context, instance, network_info, block_device_info=None, destroy_disks=True, migrate_data=None):
+    def destroy(self, context, instance, network_info, block_device_info=None,
+                destroy_disks=True, migrate_data=None):
         """
         :param instance:
         :param network_info:
@@ -358,7 +361,8 @@ class FsComputeDriver(driver.ComputeDriver):
         sub_fs_server = self._get_sub_fs_instance(context, instance)
         if sub_fs_server:
             self.fs_novaclient(context).delete(sub_fs_server)
-            self.fs_novaclient(context).wait_for_delete_server_complete(sub_fs_server, 600)
+            self.fs_novaclient(context).wait_for_delete_server_complete(
+                sub_fs_server, 600)
         else:
             LOG.error('Can not found server to delete.')
             # raise exception_ex.ServerNotExistException(server_name=instance.display_name)
@@ -385,7 +389,8 @@ class FsComputeDriver(driver.ComputeDriver):
                           'volume: %s ' % cascading_volume_id)
                 raise exception_ex.VolumeNotFoundAtProvider()
 
-        attachment_id, server_id = self._get_attachment_id_for_volume(sub_volume)
+        attachment_id, server_id = self._get_attachment_id_for_volume(
+            sub_volume)
 
         LOG.debug('server_id: %s' % server_id)
         LOG.debug('submit detach task')
@@ -426,14 +431,19 @@ class FsComputeDriver(driver.ComputeDriver):
         return [hostname]
 
     def _get_host_stats(self, hostname):
-        return {'vcpus': 999999, 'vcpus_used': 0, 'memory_mb': 999999, 'memory_mb_used': 0, 'local_gb': 99999999,
-                'local_gb_used': 0, 'host_memory_total': 99999999, 'disk_total': 99999999, 'host_memory_free': 99999999,
-                'disk_used': 0, 'hypervisor_type': 'fusionsphere', 'hypervisor_version': '5005000',
-                'hypervisor_hostname': hostname, 'cpu_info': '{"model": ["Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz"],'
-                                                             '"vendor": ["Huawei Technologies Co., Ltd."], '
-                                                             '"topology": {"cores": 16, "threads": 32}}',
+        return {'vcpus': 999999, 'vcpus_used': 0, 'memory_mb': 999999,
+                'memory_mb_used': 0, 'local_gb': 99999999,
+                'local_gb_used': 0, 'host_memory_total': 99999999,
+                'disk_total': 99999999, 'host_memory_free': 99999999,
+                'disk_used': 0, 'hypervisor_type': 'fusionsphere',
+                'hypervisor_version': '5005000',
+                'hypervisor_hostname': hostname,
+                'cpu_info': '{"model": ["Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz"],'
+                            '"vendor": ["Huawei Technologies Co., Ltd."], '
+                            '"topology": {"cores": 16, "threads": 32}}',
                 'supported_instances': jsonutils.dumps(
-                    [["i686", "xen", "uml"], ["x86_64", "xen", "uml"]]), 'numa_topology': None, }
+                    [["i686", "xen", "uml"], ["x86_64", "xen", "uml"]]),
+                'numa_topology': None,}
 
     def get_available_resource(self, nodename):
         host_stats = self._get_host_stats(nodename)
@@ -443,14 +453,18 @@ class FsComputeDriver(driver.ComputeDriver):
             LOG.debug("+++hw, one = %s", one)
             supported_instances.append((one[0], one[1], one[2]))
 
-        return {'vcpus': host_stats['vcpus'], 'memory_mb': host_stats['host_memory_total'],
+        return {'vcpus': host_stats['vcpus'],
+                'memory_mb': host_stats['host_memory_total'],
                 'local_gb': host_stats['disk_total'], 'vcpus_used': 0,
-                'memory_mb_used': host_stats['host_memory_total'] - host_stats['host_memory_free'],
-                'local_gb_used': host_stats['disk_used'], 'hypervisor_type': host_stats['hypervisor_type'],
+                'memory_mb_used': host_stats['host_memory_total'] - host_stats[
+                    'host_memory_free'],
+                'local_gb_used': host_stats['disk_used'],
+                'hypervisor_type': host_stats['hypervisor_type'],
                 'hypervisor_version': host_stats['hypervisor_version'],
                 'hypervisor_hostname': host_stats['hypervisor_hostname'],
                 'cpu_info': jsonutils.dumps(host_stats['cpu_info']),
-                'supported_instances': supported_instances, 'numa_topology': None, }
+                'supported_instances': supported_instances,
+                'numa_topology': None,}
 
     def get_info(self, instance):
         LOG.debug('get_info: %s' % instance)
@@ -514,8 +528,8 @@ class FsComputeDriver(driver.ComputeDriver):
             self.fs_novaclient().stop(server)
             LOG.debug('submit stop task')
             self.fs_novaclient().wait_for_server_in_specified_status(server,
-                                                                     'SHUTOFF',
-                                                                     300)
+                                                                     'SHUTOFF'
+                                                                     )
             LOG.debug('stop server: %s success' % instance.uuid)
         elif server.status == 'SHUTOFF':
             LOG.debug('sub instance status is already STOPPED.')
@@ -542,7 +556,7 @@ class FsComputeDriver(driver.ComputeDriver):
             self.fs_novaclient(context).start(server)
             LOG.debug('submit start task')
             self.fs_novaclient(context).wait_for_server_in_specified_status(
-                server, vm_states.ACTIVE.upper(), 300)
+                server, vm_states.ACTIVE.upper())
             LOG.debug('stop server: %s success' % instance.uuid)
         elif server.status == vm_states.ACTIVE.upper():
             LOG.debug('sub instance status is already ACTIVE.')
@@ -569,14 +583,14 @@ class FsComputeDriver(driver.ComputeDriver):
             self.fs_novaclient(context).reboot(server)
             LOG.debug('submit reboot task')
             self.fs_novaclient(context).wait_for_server_in_specified_status(
-                server, vm_states.ACTIVE.upper(), 300)
+                server, vm_states.ACTIVE.upper())
             LOG.debug('reboot server: %s success' % instance.uuid)
         elif server.status == 'SHUTOFF':
             LOG.debug('start to add reboot task')
             self.fs_novaclient(context).start(server)
             LOG.debug('submit reboot task')
             self.fs_novaclient(context).wait_for_server_in_specified_status(
-                server, vm_states.ACTIVE.upper(), 300)
+                server, vm_states.ACTIVE.upper())
             LOG.debug('reboot server: %s success' % instance.uuid)
         else:
             LOG.warning('server status is not in ACTIVE OR STOPPED,'
@@ -714,11 +728,11 @@ class FsComputeDriver(driver.ComputeDriver):
 
         self._binding_host(context, network_info, instance.uuid)
         self._spawn(context, instance, image_meta, injected_files,
-              admin_password, network_info, block_device_info)
+                    admin_password, network_info, block_device_info)
         self._binding_host(context, network_info, instance.uuid)
 
     def _spawn(self, context, instance, image_meta, injected_files,
-              admin_password, network_info=None, block_device_info=None):
+               admin_password, network_info=None, block_device_info=None):
         try:
             LOG.debug('instance: %s' % instance)
             LOG.debug('block device info: %s' % block_device_info)
@@ -726,63 +740,59 @@ class FsComputeDriver(driver.ComputeDriver):
             flavor = instance.get_flavor()
             LOG.debug('flavor: %s' % flavor)
 
-            name = self._generate_sub_fs_instance_name(instance.display_name, instance.uuid)
+            sub_flavor_id = self._get_sub_flavor_id(context, flavor.flavorid)
+
+            name = self._generate_sub_fs_instance_name(instance.display_name,
+                                                       instance.uuid)
             LOG.debug('name: %s' % name)
 
             if instance.image_ref:
-                sub_image_name = self._get_sub_image_name(instance.image_ref)
+                sub_image_id = self._get_sub_image_id(instance.image_ref)
                 try:
-                    sub_image = self.fs_glanceclient(context).get_image(
-                        sub_image_name)
-                    if sub_image:
-                        image_ref = sub_image
-                        LOG.debug('sub image is: %s' % image_ref)
-                    else:
-                        image_id = CONF.provider_opts.base_linux_image
-                        image_ref = self.fs_glanceclient(context).get_image(image_id)
-                        LOG.debug('No sub image exit mapping for image: %s, so use default: %s instead' %
-                                  (instance.image_ref, image_ref))
-                except exception.NotFound:
-                    LOG.warning('exception occur when get image for %s, use default base image instead.' %
-                                instance.image_ref)
-                    image_id = CONF.provider_opts.base_linux_image
-                    LOG.debug("+++hw, 1111 = %s", self.fs_glanceclient(context))
-                    image_ref = self.fs_glanceclient(context).get_image(image_id)
-                    LOG.debug('No sub image exit mapping for image: %s, so use default: %s instead' %
-                              (instance.image_ref, image_ref))
+                    image_ref = self.fs_glanceclient(context).get_image(
+                        sub_image_id)
+                except Exception as ex:
+                    LOG.exception(_LE("get image(%(image_id)s) failed, "
+                                      "ex = %(ex)s"), image_id=sub_image_id,
+                                  ex=ex)
                 LOG.debug('image_ref: %s' % image_ref)
             else:
                 image_ref = None
 
             metadata = self._add_agent_conf_to_metadata(instance)
             LOG.debug('metadata: %s' % metadata)
+
             app_security_groups = instance.security_groups
             LOG.debug('app_security_groups: %s' % app_security_groups)
-            LOG.debug('injected files: %s' % injected_files)
 
+            LOG.debug('injected files: %s' % injected_files)
             agent_inject_files = self._get_agent_inject_file(instance,
                                                              injected_files)
 
-            sub_bdm = self._transfer_to_sub_block_device_mapping_v2(context,
-                                                                    block_device_info)
+            sub_bdm = self._transfer_to_sub_block_device_mapping_v2(
+                context, block_device_info)
             LOG.debug('sub_bdm: %s' % sub_bdm)
 
             provider_server = self.fs_novaclient(context).create_server(
-                name, image_ref, flavor.flavorid, meta=metadata,
-                files=agent_inject_files, reservation_id=instance.reservation_id,
-                security_groups=self.PROVIDER_SECURITY_GROUPS, nics=self.PROVIDER_NICS,
+                name, image_ref, sub_flavor_id, meta=metadata,
+                files=agent_inject_files,
+                reservation_id=instance.reservation_id,
+                security_groups=self.PROVIDER_SECURITY_GROUPS,
+                nics=self.PROVIDER_NICS,
                 availability_zone=self.PROVIDER_AVAILABILITY_ZONE,
                 block_device_mapping_v2=sub_bdm)
 
             LOG.debug('create server job created.')
             LOG.debug('wait for server active')
             self.fs_novaclient(context).wait_for_server_in_specified_status(
-                provider_server,vm_states.ACTIVE.upper(), timeout=600)
+                provider_server, vm_states.ACTIVE.upper())
             LOG.debug('create server success.............!!!')
 
         except Exception as e:
-            LOG.error('Exception when spawn, exception: %s' % traceback.format_exc(e))
-            raise Exception('Exception when spawn, exception: %s' % traceback.format_exc(e))
+            LOG.error(
+                'Exception when spawn, exception: %s' % traceback.format_exc(e))
+            raise Exception(
+                'Exception when spawn, exception: %s' % traceback.format_exc(e))
 
     def _add_agent_conf_to_metadata(self, instance):
         metadata = instance.metadata
@@ -792,13 +802,13 @@ class FsComputeDriver(driver.ComputeDriver):
         route_gw = CONF.hybrid_cloud_agent_opts.route_gw
         if personality_path and tunnel_cidr and route_gw:
             neutron_agent_conf = {
-                    "rabbit_userid": CONF.hybrid_cloud_agent_opts.rabbit_host_user_id,
-                    "rabbit_password": CONF.hybrid_cloud_agent_opts.rabbit_host_user_password,
-                    "rabbit_host": CONF.hybrid_cloud_agent_opts.rabbit_host_ip,
-                    "host": instance.uuid,
-                    "tunnel_cidr": tunnel_cidr,
-                    "route_gw": route_gw
-                    }
+                "rabbit_userid": CONF.hybrid_cloud_agent_opts.rabbit_host_user_id,
+                "rabbit_password": CONF.hybrid_cloud_agent_opts.rabbit_host_user_password,
+                "rabbit_host": CONF.hybrid_cloud_agent_opts.rabbit_host_ip,
+                "host": instance.uuid,
+                "tunnel_cidr": tunnel_cidr,
+                "route_gw": route_gw
+            }
         else:
             neutron_agent_conf = {}
 
@@ -815,7 +825,8 @@ class FsComputeDriver(driver.ComputeDriver):
 
         return added_meta
 
-    def _transfer_to_sub_block_device_mapping_v2(self, context, block_device_mapping):
+    def _transfer_to_sub_block_device_mapping_v2(self, context,
+                                                 block_device_mapping):
         """
 
         :param block_device_mapping:
@@ -860,20 +871,25 @@ class FsComputeDriver(driver.ComputeDriver):
                 device_name = bdm.get('mount_device')
                 delete_on_termination = bdm.get('delete_on_termination')
                 boot_index = bdm.get('boot_index')
-                volume_id = bdm.get('connection_info').get('data').get('volume_id')
+                volume_id = bdm.get('connection_info').get('data').get(
+                    'volume_id')
                 if volume_id:
-                    volume_display_name = bdm.get('connection_info').get('data').get('display_name')
-                    sub_volume_name = self._get_sub_fs_volume_name(volume_display_name, volume_id)
-                    sub_volume = self.fs_cinderclient(context).get_volume_by_name(sub_volume_name)
+                    volume_display_name = bdm.get('connection_info').get(
+                        'data').get('display_name')
+                    sub_volume_name = self._get_sub_fs_volume_name(
+                        volume_display_name, volume_id)
+                    sub_volume = self.fs_cinderclient(
+                        context).get_volume_by_name(sub_volume_name)
                     bdm_info_dict['boot_index'] = boot_index
                     bdm_info_dict['uuid'] = sub_volume.id
                     bdm_info_dict['volume_size'] = str(sub_volume.size)
                     bdm_info_dict['device_name'] = device_name
                     bdm_info_dict['source_type'] = 'volume'
                     bdm_info_dict['destination_type'] = 'volume'
-                    bdm_info_dict['delete_on_termination'] = str(delete_on_termination)
+                    bdm_info_dict['delete_on_termination'] = str(
+                        delete_on_termination)
                 else:
-                    #TODO: need to support snapshot id
+                    # TODO: need to support snapshot id
                     continue
                 sub_bdms.append(bdm_info_dict)
         else:
@@ -893,7 +909,7 @@ class FsComputeDriver(driver.ComputeDriver):
         provider_net_api = CONF.provider_opts.net_api
         nics = [{
             'net-id': provider_net_data
-        },{
+        }, {
             'net-id': provider_net_api
         }]
 
@@ -917,17 +933,21 @@ class FsComputeDriver(driver.ComputeDriver):
                 "host": instance.uuid,
                 "tunnel_cidr": tunnel_cidr,
                 "route_gw": route_gw
-                }
+            }
             file_content = self._make_personality_content(user_data)
-            #file_content = self._add_base64(file_content)
+            # file_content = self._add_base64(file_content)
         else:
-            LOG.info('personality setting incorrect, path: %s, tunnel_cidr: %s, route_gw: %s' %
-                     (personality_path, tunnel_cidr, route_gw))
+            LOG.info(
+                'personality setting incorrect, path: %s, '
+                'tunnel_cidr: %s, route_gw: %s' %
+                (personality_path, tunnel_cidr, route_gw))
             personality_path = None
             file_content = None
 
-        LOG.info('success to get personality setting, path: %s, tunnel_cidr: %s, route_gw: %s' %
-                     (personality_path, tunnel_cidr, route_gw))
+        LOG.info(
+            'success to get personality setting, path: %s, '
+            'tunnel_cidr: %s, route_gw: %s' %
+            (personality_path, tunnel_cidr, route_gw))
 
         return personality_path, file_content
 
@@ -965,7 +985,7 @@ class FsComputeDriver(driver.ComputeDriver):
         return inject_files
 
     @logger_helper()
-    def _get_agent_inject_file(self, instance,  driver_param_inject_files):
+    def _get_agent_inject_file(self, instance, driver_param_inject_files):
         """
         1. transfer format of inject file from [('file_path', 'file_contents')] to {'file_path': 'file_contents'}
         2. add hybrid agent config file to inject file.
@@ -997,26 +1017,38 @@ class FsComputeDriver(driver.ComputeDriver):
         """
         return '@'.join([instance_name, instance_id])
 
-    def _get_hybrid_instance_id(self, sub_fs_instance_name):
-        """
-
-        :param sub_fs_instance_name: type string, e.g. 'my_vm@97988012-4f48-4463-a150-d7e6b0a321d9'
-        :return: type string, e.g. '97988012-4f48-4463-a150-d7e6b0a321d9'
-        """
-        hybrid_instance_id = None
-        if '@' in sub_fs_instance_name and len(sub_fs_instance_name) > 36 and sub_fs_instance_name[-37] == '@':
-            hybrid_instance_id = sub_fs_instance_name[-36:]
-
-        return hybrid_instance_id
-
     @logger_helper()
     def _get_sub_fs_instance(self, context=None, hybrid_instance=None):
         server = None
         sub_instance_name = self._generate_sub_fs_instance_name(
             hybrid_instance.display_name, hybrid_instance.uuid)
-        server = self.fs_novaclient(context).get_server_by_name(sub_instance_name)
+        server = self.fs_novaclient(context).get_server_by_name(
+            sub_instance_name)
 
         return server
 
-    def _get_sub_image_name(self, image_id):
-        return '@'.join(['image', image_id])
+    def _get_sub_image_id(self, context, image_id):
+
+        try:
+            image_mapper = self.db_api.image_mapper_get(context, image_id,
+                                                        context.project_id)
+            sub_image_id = image_mapper["dest_image_id"]
+        except Exception as ex:
+            LOG.exception(_LE("get image(%(image_id)s) mapper image failed! "
+                              "ex = %(ex)s"), image_id=image_id, ex=ex)
+            sub_image_id = CONF.provider_opts.base_linux_image
+        return sub_image_id
+
+    def _get_sub_flavor_id(self, context, flavor_id):
+
+        # get dest flavor id
+        try:
+            flavor_mapper = self.db_api.flavor_mapper_get(context,
+                                                          flavor_id,
+                                                          context.project_id)
+            dest_flavor_id = flavor_mapper["dest_flavor_id"]
+        except Exception as ex:
+            LOG.exception(_LE("get dest flavor failed! ex = %s"), ex)
+            dest_flavor_id = flavor_id
+
+        return dest_flavor_id
