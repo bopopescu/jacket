@@ -435,15 +435,3 @@ class VolumeAPI(rpc.RPCAPI):
         cctxt = self._get_cctxt(volume.host, version)
         return cctxt.call(ctxt, 'secure_file_operations_enabled',
                           volume=volume)
-
-    def storage_test(self, ctxt, host):
-        if (not self.client.can_send_version('1.38') and
-                not self.client.can_send_version('2.0')):
-            msg = _('One of storage-volume services is too old to accept such '
-                    'request. Are you running mixed Liberty-Mitaka '
-                    'storage-volumes?')
-            raise exception.ServiceTooOld(msg)
-        version = self._compat_ver('2.0', '1.38')
-        cctxt = self.client.prepare(version='2.0')
-        return cctxt.cast(ctxt, 'storage_test',
-                          host=host)

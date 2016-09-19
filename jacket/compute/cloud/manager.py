@@ -2673,11 +2673,6 @@ class ComputeManager(manager.Manager):
         self._notify_about_instance_usage(context, instance,
                                           "trigger_crash_dump.end")
 
-    def compute_test(self, context, host):
-        """Trigger crash dump in an instance."""
-        LOG.info("+++hw, success connect! compute test!")
-        LOG.debug("+++hw, success connect! compute test!")
-
     @wrap_exception()
     @reverts_task_state
     @wrap_instance_event

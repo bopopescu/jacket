@@ -78,8 +78,6 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
         kwargs['api_key'] = kwargs.pop("password")
 
-        LOG.debug("+++hw, kwargs = %s", kwargs)
-
         client = nc.Client(version, **kwargs)
         return client
 

@@ -336,7 +336,7 @@ class Service(service.Service):
             manager_cls = ('%s_manager' %
                            binary.rpartition('jacket-')[2])
             manager = CONF.get(manager_cls, None)
-        LOG.debug("+++hw, manager_cls = %s, manager = %s, topic = %s", manager_cls, manager, topic)
+
         if report_interval is None:
             report_interval = CONF.report_interval
         if periodic_enable is None:

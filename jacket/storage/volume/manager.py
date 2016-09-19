@@ -36,12 +36,10 @@ intact.
 
 """
 
-import requests
 import time
 
-from oslo_config import cfg
+import requests
 from oslo_log import log as logging
-import oslo_messaging as messaging
 from oslo_serialization import jsonutils
 from oslo_service import periodic_task
 from oslo_utils import excutils
@@ -49,6 +47,10 @@ from oslo_utils import importutils
 from oslo_utils import timeutils
 from oslo_utils import units
 from oslo_utils import uuidutils
+
+import oslo_messaging as messaging
+from oslo_config import cfg
+
 profiler = importutils.try_import('osprofiler.profiler')
 import six
 from taskflow import exceptions as tfe
@@ -58,7 +60,7 @@ from jacket import context
 from jacket.storage import exception
 from jacket.storage import flow_utils
 from jacket.storage.i18n import _, _LE, _LI, _LW
-from jacket.storage.image import cache as image_cache
+from jacket.storage.image import cache as image_cache, glance
 from jacket.storage.image import glance
 from jacket import manager
 from jacket import objects
@@ -560,15 +562,10 @@ class VolumeManager(manager.Manager):
                       volume=None):
         """Creates the volume."""
         # FIXME(thangp): Remove this in v2.0 of RPC API.
-        LOG.debug("+++hw, volume = %s", volume)
         if volume is None:
             # For older clients, mimic the old behavior and look up the volume
             # by its volume_id.
             volume = storage.Volume.get_by_id(context, volume_id)
-
-        LOG.debug("+++hw, volume = %s", volume)
-        LOG.debug("+++hw, volume.volume_type_id = %s", volume.volume_type_id)
-        LOG.debug("+++hw, volume.id = %s", volume.id)
 
         context_elevated = context.elevated()
         if filter_properties is None:
@@ -663,9 +660,6 @@ class VolumeManager(manager.Manager):
         LOG.info(_LI("Created volume successfully."), resource=vol_ref)
         return vol_ref.id
 
-    def storage_test(self, ctxt, host):
-        LOG.debug("+++hw, storage_test--------------------")
-
     @locked_volume_operation
     def delete_volume(self, context, volume_id,
                       unmanage_only=False,
@@ -704,9 +698,9 @@ class VolumeManager(manager.Manager):
         if volume['attach_status'] == "attached":
             # Volume is still attached, need to detach first
             raise exception.VolumeAttached(volume_id=volume_id)
-        if vol_utils.extract_host(volume.host) != self.host:
-            raise exception.InvalidVolume(
-                reason=_("volume is not local to this node"))
+        #if vol_utils.extract_host(volume.host) != self.host:
+        #    raise exception.InvalidVolume(
+        #        reason=_("volume is not local to this node"))
 
         if unmanage_only and cascade:
             # This could be done, but is ruled out for now just
@@ -3485,8 +3479,6 @@ class VolumeManager(manager.Manager):
         secure_enabled = self.storage_driver.secure_file_operations_enabled()
         return secure_enabled
 
-    def storage_test(self, ctxt, host):
-        LOG.debug("+++hw, storage_test success!")
 
 # TODO(dulek): This goes away immediately in Newton and is just present in
 # Mitaka so that we can receive v1.x and v2.0 messages

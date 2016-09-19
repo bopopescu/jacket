@@ -24,7 +24,6 @@ from jacket.compute import exception
 from jacket.compute import test
 from jacket.compute.volume import cinder
 
-
 _image_metadata = {
     'kernel_id': 'fake',
     'ramdisk_id': 'fake'

@@ -79,8 +79,6 @@ class FsClientContext(object):
             project_info = db_api.project_mapper_get(context,
                                                      "default")
 
-        LOG.debug("+++hw, project_info = %s", project_info)
-
         if project_info == None:
             raise exception.FsProjectNotConf()
 

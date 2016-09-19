@@ -18,11 +18,12 @@
 
 import copy
 import datetime
-import mock
 import uuid
 
-from jacket.storage import exception
+import mock
+
 import jacket.storage.image.glance
+from jacket.storage import exception
 
 
 class _FakeImageService(object):

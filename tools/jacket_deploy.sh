@@ -26,6 +26,7 @@ endpointsregion="RegionOne"
 jacketuser="jacket"
 jacketpass="P@ssw0rd"
 
+# rabbit
 messagebrokerhost="${HOST_IP}"
 brokerflavor="rabbitmq"
 brokeruser="openstack"
@@ -44,6 +45,9 @@ virt_type="qemu"
 #instances_path="/root/mnt/sdb/instances"
 instances_path="/var/lib/jacket/instances"
 
+# glance
+glance_host="${HOST_IP}"
+glance_port=9292
 #log
 log_dir="/var/log/jacket"
 
@@ -111,7 +115,7 @@ crudini --set /etc/jacket/jacket.conf api_database max_pool_size 10
 crudini --set /etc/jacket/jacket.conf api_database max_retries 100
 crudini --set /etc/jacket/jacket.conf api_database pool_timeout 10
 
-
+# keystone
 crudini --set /etc/jacket/jacket.conf keystone_authtoken auth_uri http://$keystonehost:5000
 crudini --set /etc/jacket/jacket.conf keystone_authtoken auth_url http://$keystonehost:35357
 crudini --set /etc/jacket/jacket.conf keystone_authtoken auth_type password
@@ -122,7 +126,7 @@ crudini --set /etc/jacket/jacket.conf keystone_authtoken username $jacketuser
 crudini --set /etc/jacket/jacket.conf keystone_authtoken password $jacketpass
 crudini --set /etc/jacket/jacket.conf keystone_authtoken memcached_servers $keystonehost:11211
 
-
+# rabbit
 crudini --set /etc/jacket/jacket.conf DEFAULT rpc_backend rabbit
 crudini --set /etc/jacket/jacket.conf oslo_messaging_rabbit rabbit_host $messagebrokerhost
 crudini --set /etc/jacket/jacket.conf oslo_messaging_rabbit rabbit_password $brokerpass
@@ -172,3 +176,7 @@ crudini --set /etc/jacket/jacket.conf neutron service_metadata_proxy True
 crudini --set /etc/jacket/jacket.conf neutron metadata_proxy_shared_secret $metadata_shared_secret
 crudini --set /etc/jacket/jacket.conf DEFAULT linuxnet_ovs_integration_bridge $integration_bridge
 crudini --set /etc/jacket/jacket.conf neutron ovs_bridge $integration_bridge
+
+#glance
+crudini --set /etc/jacket/jacket.conf glance host "${glance_host}"
+crudini --set /etc/jacket/jacket.conf glance port "${glance_port}"

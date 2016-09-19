@@ -1025,7 +1025,6 @@ class API(base.Base):
         # In the case of any exceptions, attempt DB cleanup and rollback the
         # quota reservations.
         except Exception:
-            LOG.exception("+++hw, -------------")
             with excutils.save_and_reraise_exception():
                 try:
                     for instance in instances:

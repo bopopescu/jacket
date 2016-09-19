@@ -19,13 +19,19 @@ import datetime
 import iso8601
 import mock
 from mox3 import mox
-from oslo_messaging import exceptions as oslo_exceptions
 from oslo_policy import policy as oslo_policy
 from oslo_serialization import jsonutils
 from oslo_utils import fixture as utils_fixture
 from oslo_utils import timeutils
 from oslo_utils import uuidutils
 
+from jacket import context
+from jacket.compute import conductor
+from jacket.compute import exception
+from jacket.compute import policy
+from jacket.compute import quota
+from jacket.compute import test
+from jacket.compute import utils
 from jacket.compute.cloud import api as compute_api
 from jacket.compute.cloud import arch
 from jacket.compute.cloud import cells_api as compute_cells_api
@@ -36,29 +42,22 @@ from jacket.compute.cloud import task_states
 from jacket.compute.cloud import utils as compute_utils
 from jacket.compute.cloud import vm_mode
 from jacket.compute.cloud import vm_states
-from jacket.compute import conductor
-from jacket import context
+from jacket.compute.volume import cinder
 from jacket.db import compute
-from jacket.compute import exception
 from jacket.objects import compute
 from jacket.objects.compute import base as obj_base
 from jacket.objects.compute import fields as fields_obj
 from jacket.objects.compute import quotas as quotas_obj
-from jacket.compute import policy
-from jacket.compute import quota
-from jacket.compute import test
+from jacket.tests.compute import uuidsentinel as uuids
 from jacket.tests.compute.unit import fake_block_device
 from jacket.tests.compute.unit import fake_instance
 from jacket.tests.compute.unit import fake_volume
-from jacket.tests.compute.unit.image import fake as fake_image
 from jacket.tests.compute.unit import matchers
+from jacket.tests.compute.unit.image import fake as fake_image
 from jacket.tests.compute.unit.objects import test_flavor
 from jacket.tests.compute.unit.objects import test_migration
 from jacket.tests.compute.unit.objects import test_service
-from jacket.tests.compute import uuidsentinel as uuids
-from jacket.compute import utils
-from jacket.compute.volume import cinder
-
+from oslo_messaging import exceptions as oslo_exceptions
 
 FAKE_IMAGE_REF = 'fake-image-ref'
 NODENAME = 'fakenode1'
@@ -2828,7 +2827,7 @@ class _ComputeAPIUnitTestMixIn(object):
                           volume_id, new_volume_id)
 
     @mock.patch.object(cinder.API, 'get',
-             side_effect=exception.CinderConnectionFailed(reason='error'))
+                       side_effect=exception.CinderConnectionFailed(reason='error'))
     def test_get_bdm_image_metadata_with_cinder_down(self, mock_get):
         bdms = [compute.BlockDeviceMapping(
                 **fake_block_device.FakeDbBlockDeviceDict(
@@ -2878,9 +2877,9 @@ class _ComputeAPIUnitTestMixIn(object):
             self.context, volume_info, instance=instance)
 
     @mock.patch.object(cinder.API, 'get_snapshot',
-             side_effect=exception.CinderConnectionFailed(reason='error'))
+                       side_effect=exception.CinderConnectionFailed(reason='error'))
     @mock.patch.object(cinder.API, 'get',
-             side_effect=exception.CinderConnectionFailed(reason='error'))
+                       side_effect=exception.CinderConnectionFailed(reason='error'))
     def test_validate_bdm_with_cinder_down(self, mock_get, mock_get_snapshot):
         instance = self._create_instance_obj()
         instance_type = self._create_flavor()
@@ -2962,7 +2961,7 @@ class _ComputeAPIUnitTestMixIn(object):
         do_test(self)
 
     @mock.patch.object(cinder.API, 'get',
-             side_effect=exception.CinderConnectionFailed(reason='error'))
+                       side_effect=exception.CinderConnectionFailed(reason='error'))
     def test_create_db_entry_for_new_instancewith_cinder_down(self, mock_get):
         self._test_create_db_entry_for_new_instance_with_cinder_error(
             expected_exception=exception.CinderConnectionFailed)

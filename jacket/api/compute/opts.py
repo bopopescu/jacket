@@ -12,7 +12,6 @@
 
 import itertools
 
-#import jacket.api.compute.auth
 import jacket.api.compute.metadata.base
 import jacket.api.compute.metadata.handler
 import jacket.api.compute.metadata.vendordata_json
@@ -25,6 +24,10 @@ import jacket.api.compute.openstack.compute.legacy_v2.contrib.fping
 import jacket.api.compute.openstack.compute.legacy_v2.contrib.os_tenant_networks
 import jacket.api.compute.openstack.compute.legacy_v2.extensions
 import jacket.api.compute.openstack.compute.legacy_v2.servers
+import jacket.cmd.compute.novnc
+import jacket.cmd.compute.novncproxy
+import jacket.cmd.compute.serialproxy
+import jacket.cmd.compute.spicehtml5proxy
 import jacket.compute.availability_zones
 import jacket.compute.baserpc
 import jacket.compute.cells.manager
@@ -38,17 +41,13 @@ import jacket.compute.cells.weights.mute_child
 import jacket.compute.cells.weights.ram_by_instance_type
 import jacket.compute.cells.weights.weight_offset
 import jacket.compute.cert.rpcapi
-import jacket.compute.cloudpipe.pipelib
-import jacket.cmd.compute.novnc
-import jacket.cmd.compute.novncproxy
-import jacket.cmd.compute.serialproxy
-import jacket.cmd.compute.spicehtml5proxy
 import jacket.compute.cloud.api
 import jacket.compute.cloud.flavors
 import jacket.compute.cloud.manager
 import jacket.compute.cloud.monitors
 import jacket.compute.cloud.resource_tracker
 import jacket.compute.cloud.rpcapi
+import jacket.compute.cloudpipe.pipelib
 import jacket.compute.conductor.api
 import jacket.compute.conductor.rpcapi
 import jacket.compute.conductor.tasks.live_migrate
@@ -60,9 +59,6 @@ import jacket.compute.consoleauth
 import jacket.compute.consoleauth.manager
 import jacket.compute.consoleauth.rpcapi
 import jacket.compute.crypto
-import jacket.db.compute.api
-import jacket.db.base
-import jacket.db.compute.sqlalchemy.api
 import jacket.compute.exception
 import jacket.compute.image.download.file
 import jacket.compute.image.glance
@@ -81,7 +77,6 @@ import jacket.compute.network.neutronv2.api
 import jacket.compute.network.rpcapi
 import jacket.compute.network.security_group.openstack_driver
 import jacket.compute.notifications
-import jacket.objects.compute.network
 import jacket.compute.paths
 import jacket.compute.pci.request
 import jacket.compute.pci.whitelist
@@ -106,7 +101,6 @@ import jacket.compute.scheduler.utils
 import jacket.compute.scheduler.weights.io_ops
 import jacket.compute.scheduler.weights.metrics
 import jacket.compute.scheduler.weights.ram
-# import jacket.compute.service
 import jacket.compute.servicegroup.api
 import jacket.compute.spice
 import jacket.compute.utils
@@ -114,6 +108,10 @@ import jacket.compute.vnc
 import jacket.compute.vnc.xvp_proxy
 import jacket.compute.volume
 import jacket.compute.volume.cinder
+import jacket.db.base
+import jacket.db.compute.api
+import jacket.db.compute.sqlalchemy.api
+import jacket.objects.compute.network
 import jacket.wsgi.compute
 
 

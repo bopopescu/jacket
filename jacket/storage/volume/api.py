@@ -21,41 +21,39 @@ import collections
 import datetime
 import functools
 
-from oslo_config import cfg
+import six
 from oslo_log import log as logging
 from oslo_utils import excutils
 from oslo_utils import strutils
 from oslo_utils import timeutils
 from oslo_utils import uuidutils
-import six
 
-from jacket.api.storage import common
+import jacket.storage.policy
 from jacket import context
-from jacket.db import storage as db
-from jacket.db import base
-from jacket.storage import exception
-from jacket.storage import flow_utils
-from jacket.storage.i18n import _, _LE, _LI, _LW
-from jacket.storage.image import cache as image_cache
-from jacket.storage.image import glance
-from jacket.storage import keymgr
-from jacket.objects import storage
 from jacket import objects
+from jacket.api.storage import common
+from jacket.storage.image import glance
+from jacket.db import base
+from jacket.db import storage as db
+from jacket.objects import storage
 from jacket.objects.storage import base as objects_base
 from jacket.objects.storage import fields
-import jacket.storage.policy
+from jacket.storage import exception
+from jacket.storage import flow_utils
+from jacket.storage import keymgr
 from jacket.storage import quota
 from jacket.storage import quota_utils
-from jacket.storage.scheduler import rpcapi as scheduler_rpcapi
 from jacket.storage import utils
-from jacket.storage.volume.flows.api import create_volume
-from jacket.storage.volume.flows.api import manage_existing
+from jacket.storage.i18n import _, _LE, _LI, _LW
+from jacket.storage.image import cache as image_cache, glance
+from jacket.storage.scheduler import rpcapi as scheduler_rpcapi
 from jacket.storage.volume import qos_specs
-# from jacket.worker import rpcapi as compute_rpcapi
 from jacket.storage.volume import rpcapi as volume_rpcapi
 from jacket.storage.volume import utils as volume_utils
 from jacket.storage.volume import volume_types
-
+from jacket.storage.volume.flows.api import create_volume
+from jacket.storage.volume.flows.api import manage_existing
+from oslo_config import cfg
 
 allow_force_upload_opt = cfg.BoolOpt('enable_force_upload',
                                      default=False,
@@ -77,6 +75,7 @@ az_cache_time_opt = cfg.IntOpt('az_cache_duration',
                                help='Cache volume availability zones in '
                                     'memory for the provided duration in '
                                     'seconds')
+
 
 CONF = cfg.CONF
 CONF.register_opt(allow_force_upload_opt)
@@ -156,12 +155,8 @@ class API(base.Base):
         if refresh_cache or not enable_cache:
             topic = CONF.volume_topic
             ctxt = context.get_admin_context()
-            LOG.debug("+++hw, ctxt = %s", ctxt)
             # services = storage.ServiceList.get_all_by_topic(ctxt, topic)
             services = objects.ServiceList.get_by_topic(ctxt, topic)
-            LOG.debug("+++hw, services = %s", services)
-            for s in services:
-                LOG.debug("+++hw, -------s = %s", s)
             az_data = [(s.availability_zone, s.disabled)
                        for s in services]
             disabled_map = {}
@@ -343,39 +338,11 @@ class API(base.Base):
                force=False,
                unmanage_only=False,
                cascade=False):
+
         if context.is_admin and context.project_id != volume.project_id:
             project_id = volume.project_id
         else:
             project_id = context.project_id
-
-        if not volume.host:
-            volume_utils.notify_about_volume_usage(context,
-                                                   volume, "delete.start")
-            # NOTE(vish): scheduling failed, so delete it
-            # Note(zhiteng): update volume quota reservation
-            try:
-                reserve_opts = {'volumes': -1, 'gigabytes': -volume.size}
-                QUOTAS.add_volume_type_opts(context,
-                                            reserve_opts,
-                                            volume.volume_type_id)
-                reservations = QUOTAS.reserve(context,
-                                              project_id=project_id,
-                                              **reserve_opts)
-            except Exception:
-                reservations = None
-                LOG.exception(_LE("Failed to update quota while "
-                                  "deleting volume."))
-            volume.destroy()
-
-            if reservations:
-                QUOTAS.commit(context, reservations, project_id=project_id)
-
-            volume_utils.notify_about_volume_usage(context,
-                                                   volume, "delete.end")
-            LOG.info(_LI("Delete volume request issued successfully."),
-                     resource={'type': 'volume',
-                               'id': volume.id})
-            return
 
         # Build required conditions for conditional update
         expected = {'attach_status': db.Not('attached'),
@@ -527,8 +494,6 @@ class API(base.Base):
                 context, context.project_id, marker, limit,
                 sort_keys=sort_keys, sort_dirs=sort_dirs, filters=filters,
                 offset=offset)
-
-        self.volume_rpcapi.storage_test(context, host="yibo")
 
         LOG.info(_LI("Get all volumes completed successfully."))
         return volumes

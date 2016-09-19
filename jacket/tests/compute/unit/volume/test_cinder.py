@@ -13,16 +13,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
 from cinderclient import exceptions as cinder_exception
 from keystoneclient import exceptions as keystone_exception
-import mock
 
 from jacket import context
 from jacket.compute import exception
 from jacket.compute import test
-from jacket.tests.compute.unit.fake_instance import fake_instance_obj
-from jacket.tests.compute import uuidsentinel as uuids
 from jacket.compute.volume import cinder
+from jacket.tests.compute import uuidsentinel as uuids
+from jacket.tests.compute.unit.fake_instance import fake_instance_obj
 
 
 class FakeCinderClient(object):
@@ -404,9 +404,9 @@ class CinderApiTestCase(test.NoDBTestCase):
     def test_get_all_snapshots(self):
         cinder.cinderclient(self.ctx).AndReturn(self.cinderclient)
         cinder._untranslate_snapshot_summary_view(self.ctx,
-                                                {'id': 'id1'}).AndReturn('id1')
+                                                  {'id': 'id1'}).AndReturn('id1')
         cinder._untranslate_snapshot_summary_view(self.ctx,
-                                                {'id': 'id2'}).AndReturn('id2')
+                                                  {'id': 'id2'}).AndReturn('id2')
         self.mox.ReplayAll()
 
         self.assertEqual(['id1', 'id2'], self.api.get_all_snapshots(self.ctx))

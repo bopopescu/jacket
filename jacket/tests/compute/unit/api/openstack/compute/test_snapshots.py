@@ -16,12 +16,12 @@
 import mock
 import webob
 
-from jacket.api.compute.openstack.compute.legacy_v2.contrib import volumes as volumes_v2
 from jacket.api.compute.openstack.compute import volumes as volumes_v21
+from jacket.api.compute.openstack.compute.legacy_v2.contrib import volumes as volumes_v2
 from jacket.compute import exception
 from jacket.compute import test
-from jacket.tests.compute.unit.api.openstack import fakes
 from jacket.compute.volume import cinder
+from jacket.tests.compute.unit.api.openstack import fakes
 
 FAKE_UUID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 
@@ -86,7 +86,7 @@ class SnapshotApiTestV21(test.NoDBTestCase):
         self.assertEqual(202, status_int)
 
     @mock.patch.object(cinder.API, 'delete_snapshot',
-        side_effect=exception.SnapshotNotFound(snapshot_id=FAKE_UUID))
+                       side_effect=exception.SnapshotNotFound(snapshot_id=FAKE_UUID))
     def test_delete_snapshot_not_exists(self, mock_mr):
         self.assertRaises(webob.exc.HTTPNotFound, self.controller.delete,
                 self.req, FAKE_UUID)

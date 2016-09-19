@@ -14,9 +14,9 @@
 
 import mock
 
-from jacket.storage.compute import nova
 from jacket import context
 from jacket.storage import test
+from jacket.storage.compute import nova
 
 
 class NovaClientTestCase(test.TestCase):

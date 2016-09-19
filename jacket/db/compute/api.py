@@ -57,7 +57,6 @@ IMPL = concurrency.TpoolDbapiWrapper(CONF, backend_mapping=_BACKEND_MAPPING)
 
 LOG = logging.getLogger(__name__)
 
-LOG.info("+++hw, dir = %s", dir(IMPL))
 
 # The maximum value a signed INT type may have
 MAX_INT = 0x7FFFFFFF

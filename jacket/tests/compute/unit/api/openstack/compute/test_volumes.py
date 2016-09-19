@@ -17,31 +17,31 @@
 import datetime
 
 import mock
-from oslo_config import cfg
+import webob
 from oslo_serialization import jsonutils
 from six.moves import urllib
-import webob
 from webob import exc
 
+from jacket import context
 from jacket.api.compute.openstack import common
+from jacket.api.compute.openstack import extensions
 from jacket.api.compute.openstack.compute import assisted_volume_snapshots \
         as assisted_snaps_v21
+from jacket.api.compute.openstack.compute import volumes as volumes_v21
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import \
         assisted_volume_snapshots as assisted_snaps_v2
 from jacket.api.compute.openstack.compute.legacy_v2.contrib import volumes
-from jacket.api.compute.openstack.compute import volumes as volumes_v21
-from jacket.api.compute.openstack import extensions
+from jacket.compute import exception
+from jacket.compute import test
 from jacket.compute.cloud import api as compute_api
 from jacket.compute.cloud import flavors
 from jacket.compute.cloud import vm_states
-from jacket import context
-from jacket.compute import exception
+from jacket.compute.volume import cinder
 from jacket.objects import compute
-from jacket.compute import test
-from jacket.tests.compute.unit.api.openstack import fakes
 from jacket.tests.compute.unit import fake_block_device
 from jacket.tests.compute.unit import fake_instance
-from jacket.compute.volume import cinder
+from jacket.tests.compute.unit.api.openstack import fakes
+from oslo_config import cfg
 
 CONF = cfg.CONF
 CONF.import_opt('password_length', 'compute.utils')

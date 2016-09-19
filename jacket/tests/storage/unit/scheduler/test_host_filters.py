@@ -19,15 +19,14 @@ import mock
 from oslo_serialization import jsonutils
 from requests import exceptions as request_exceptions
 
-from jacket.storage.compute import nova
 from jacket import context
-from jacket import db
 from jacket.storage import exception
-from jacket.storage.scheduler import filters
 from jacket.storage import test
+from jacket.storage.compute import nova
+from jacket.storage.scheduler import filters
 from jacket.tests.storage.unit import fake_constants as fake
-from jacket.tests.storage.unit.scheduler import fakes
 from jacket.tests.storage.unit import utils
+from jacket.tests.storage.unit.scheduler import fakes
 
 
 class HostFiltersTestCase(test.TestCase):

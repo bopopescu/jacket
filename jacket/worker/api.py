@@ -12,28 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
-import base64
-import copy
 import functools
-import re
-import string
-import uuid
 
 from oslo_config import cfg
 from oslo_log import log as logging
-from oslo_messaging import exceptions as oslo_exceptions
-from oslo_serialization import jsonutils
-from oslo_utils import excutils
-from oslo_utils import strutils
-from oslo_utils import timeutils
-from oslo_utils import units
-from oslo_utils import uuidutils
-import six
-from six.moves import range
 
-
-from jacket import exception
 import jacket.policy
 from jacket import rpc
 from jacket.db import base

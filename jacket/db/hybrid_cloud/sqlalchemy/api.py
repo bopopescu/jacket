@@ -375,10 +375,7 @@ def flavor_mapper_update(context, flavor_id, project_id, values, delete=True):
         already_existing_keys.append(one.key)
         one.update({"value": values[one.key]})
 
-    LOG.debug("+++hw, all_keys = %s, already_existing_keys = %s", all_keys, already_existing_keys)
-
     new_keys = set(all_keys) - set(already_existing_keys)
-    LOG.debug("+++hw, new_keys = %s", new_keys)
     for key in new_keys:
         update_ref = models.FlavorsMapper()
         update_ref.flavor_id = flavor_id
