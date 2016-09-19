@@ -2118,3 +2118,6 @@ class OsInfoNotFound(NotFound):
 
 class BuildRequestNotFound(NotFound):
     msg_fmt = _("BuildRequest not found for instance %(uuid)s")
+
+class RetryException(NovaException):
+    msg_fmt = _('Need to retry, error info: %(error_info)s')
