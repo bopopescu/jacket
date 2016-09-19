@@ -15,7 +15,7 @@
 """
 Driver base-classes:
 
-    (Beginning of) the contract that compute drivers must follow, and shared
+    (Beginning of) the contract that volume drivers must follow, and shared
     types that support that contract
 """
 
@@ -24,12 +24,12 @@ from oslo_log import log as logging
 from jacket import conf
 from jacket import context as req_context
 from jacket import exception
-from jacket.storage.volume import driver
 from jacket.db.hybrid_cloud import api as hybrid_db_api
 from jacket.db.storage import api as storage_db_api
 from jacket.drivers.fs.clients import fs_context
 from jacket.drivers.fs.clients import cinder as cinderclient
 from jacket.drivers.fs.clients import glance as glanceclient
+from jacket.storage.volume import driver
 
 LOG = logging.getLogger(__name__)
 
@@ -99,7 +99,6 @@ class FsVolumeDriver(driver.VolumeDriver):
             if exist_volume:
                 exist_volume.force_delete()
         except Exception:
-            LOG.exception("++++++++++++++++++++++++++++++++delete")
             pass
 
         try:

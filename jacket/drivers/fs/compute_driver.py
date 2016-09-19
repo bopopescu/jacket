@@ -1,20 +1,38 @@
-__author__ = 'Administrator'
+# All Rights Reserved.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
+"""
+Driver base-classes:
+
+    (Beginning of) the contract that compute drivers must follow, and shared
+    types that support that contract
+"""
 
 import socket
 import traceback
 import base64
 
-from oslo_serialization import jsonutils
 from oslo_log import log as logging
+from oslo_serialization import jsonutils
 
-from jacket import conf
-from jacket import exception
 from jacket.compute.cloud import power_state
 from jacket.compute.network.neutronv2 import api as network_api
 from jacket.compute.virt.fs import hyper_agent_api
 from jacket.compute.cloud import vm_states
 from jacket.compute.virt import driver
 from jacket.compute.virt import hardware
+from jacket import conf
 from jacket.db.hybrid_cloud import api as db_api
 from jacket.drivers.fs import exception_ex
 from jacket.drivers.fs.clients import fs_context

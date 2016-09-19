@@ -18,8 +18,8 @@ profiler_opts = importutils.try_import('osprofiler.opts')
 
 from jacket.compute import baserpc
 from jacket.compute import conductor
-from jacket import context
 from jacket.compute import debugger
+from jacket import context
 from jacket import exception
 from jacket.i18n import _, _LE, _LI, _LW
 from jacket import objects
