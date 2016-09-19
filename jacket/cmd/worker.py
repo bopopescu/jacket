@@ -54,7 +54,8 @@ def main():
         LOG.warning(_LW('Conductor local mode is deprecated and will '
                         'be removed in a subsequent release'))
 
-    server = service.Service.create(binary='jacket-worker',
+    #server = service.Service.create(binary='jacket-worker',
+    server = service.Service.create(binary='nova-compute',
                                     topic=CONF.jacket_topic,
                                     db_allowed=CONF.conductor.use_local)
     service.serve(server)
