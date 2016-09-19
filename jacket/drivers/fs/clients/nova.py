@@ -545,24 +545,6 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         """Check if specific extension is present."""
         return alias in self._list_extensions()
 
-    def wait_for_delete_server_complete(self, server, timeout):
-        start = int(time.time())
-        while True:
-            time.sleep(2)
-            server_list = self.list(search_opts={'name':server.name})
-            if server_list and len(server_list) > 0:
-                cost_time = int(time.time()) - start
-                if cost_time >= timeout:
-                    LOG.warning('Time out for delete server: %s over %s seconds' % (server.name, timeout))
-                    raise exception_ex.ServerDeleteException(server_id=server.id, timeout=timeout)
-                else:
-                    LOG.debug('server %s is exist, still not be deleted. cost time: %s' % (server.name, str(cost_time)))
-                    continue
-            else:
-                cost_time = int(time.time()) - start
-                LOG.debug('server %s is delete success. cost time: %s' % (server.name, str(cost_time)))
-                break
-
     def stop(self, server):
         return self.client().servers.stop(server)
 
@@ -684,12 +666,16 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
             if server_list and len(server_list) > 0:
                 cost_time = int(time.time()) - start
                 if cost_time >= timeout:
-                    LOG.warning('Time out for delete server: %s over %s seconds' % (server.name, timeout))
-                    raise exception_ex.ServerDeleteException(server_id=server.id, timeout=timeout)
+                    LOG.warning('Time out for delete server: %s '
+                                'over %s seconds' % (server.name, timeout))
+                    raise exception_ex.ServerDeleteException(
+                        server_id=server.id, timeout=timeout)
                 else:
-                    LOG.debug('server %s is exist, still not be deleted. cost time: %s' % (server.name, str(cost_time)))
+                    LOG.debug('server %s is exist, still not be deleted. '
+                              'cost time: %s' % (server.name, str(cost_time)))
                     continue
             else:
                 cost_time = int(time.time()) - start
-                LOG.debug('server %s is delete success. cost time: %s' % (server.name, str(cost_time)))
+                LOG.debug('server %s is delete success. '
+                          'cost time: %s' % (server.name, str(cost_time)))
                 break

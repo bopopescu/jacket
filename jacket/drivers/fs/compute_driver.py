@@ -151,17 +151,18 @@ class FsComputeDriver(driver.ComputeDriver):
     def volume_create(self, context, instance):
         size = instance.get_flavor().get('root_gb')
         volume_name = instance.uuid
-        self.fs_cinderclient(context).volume_create(size, display_name=volume_name)
+        self.fs_cinderclient(context).volume_create(size,
+                                                    display_name=volume_name)
         volume = self.fs_cinderclient(context).get_volume_by_name(volume_name)
         self.fs_cinderclient(context).wait_for_volume_in_specified_status(
-                                        volume.id, 'available')
+            volume.id, 'available')
         return volume
 
     def volume_delete(self, context, instance):
         volume_name = instance.uuid
         volume = self.fs_cinderclient(context).get_volume_by_name(volume_name)
-        self.fs_cinderclient(context).wait_for_volume_deleted(volume, timeout=60)
-
+        self.fs_cinderclient(context).wait_for_volume_deleted(volume,
+                                                              timeout=60)
 
     def attach_volume(self, context, connection_info, instance, mountpoint,
                       disk_bus=None, device_type=None,
@@ -334,7 +335,8 @@ class FsComputeDriver(driver.ComputeDriver):
         sub_volume = self.fs_cinderclient(context).get_volume_by_name(
             su_volume_name)
         if not sub_volume:
-            sub_volume = self.fs_cinderclient(context).get_volume_by_name(cascading_volume_name)
+            sub_volume = self.fs_cinderclient(context).get_volume_by_name(
+                cascading_volume_name)
             if not sub_volume:
                 LOG.error('Can not find volume in provider fs,'
                           'volume: %s ' % cascading_volume_id)
@@ -401,7 +403,8 @@ class FsComputeDriver(driver.ComputeDriver):
         sub_volume = self.fs_cinderclient().get_volume_by_name(
             sub_volume_name)
         if not sub_volume:
-            sub_volume = self.fs_cinderclient().get_volume_by_name(cascading_volume_name)
+            sub_volume = self.fs_cinderclient().get_volume_by_name(
+                cascading_volume_name)
             if not sub_volume:
                 LOG.error('Can not find volume in provider fs, '
                           'volume: %s ' % cascading_volume_id)
@@ -765,7 +768,8 @@ class FsComputeDriver(driver.ComputeDriver):
             LOG.debug('name: %s' % name)
 
             if instance.image_ref:
-                sub_image_id = self._get_sub_image_id(instance.image_ref)
+                sub_image_id = self._get_sub_image_id(context,
+                                                      instance.image_ref)
                 try:
                     image_ref = self.fs_glanceclient(context).get_image(
                         sub_image_id)
@@ -1047,26 +1051,20 @@ class FsComputeDriver(driver.ComputeDriver):
 
     def _get_sub_image_id(self, context, image_id):
 
-        try:
-            image_mapper = self.db_api.image_mapper_get(context, image_id,
-                                                        context.project_id)
-            sub_image_id = image_mapper["dest_image_id"]
-        except Exception as ex:
-            LOG.exception(_LE("get image(%(image_id)s) mapper image failed! "
-                              "ex = %(ex)s"), image_id=image_id, ex=ex)
-            sub_image_id = CONF.provider_opts.base_linux_image
+        image_mapper = self.db_api.image_mapper_get(context, image_id,
+                                                    context.project_id)
+        sub_image_id = image_mapper.get("dest_image_id",
+                                        CONF.provider_opts.base_linux_image)
+
         return sub_image_id
 
     def _get_sub_flavor_id(self, context, flavor_id):
 
         # get dest flavor id
-        try:
-            flavor_mapper = self.db_api.flavor_mapper_get(context,
-                                                          flavor_id,
-                                                          context.project_id)
-            dest_flavor_id = flavor_mapper["dest_flavor_id"]
-        except Exception as ex:
-            LOG.exception(_LE("get dest flavor failed! ex = %s"), ex)
-            dest_flavor_id = flavor_id
+        flavor_mapper = self.db_api.flavor_mapper_get(context,
+                                                      flavor_id,
+                                                      context.project_id)
+
+        dest_flavor_id = flavor_mapper.get("dest_flavor_id", flavor_id)
 
         return dest_flavor_id
