@@ -26,6 +26,7 @@ from jacket.api.storage import xmlutil
 from jacket.storage import exception
 from jacket.storage.i18n import _
 from jacket.objects import storage
+from jacket import objects
 from jacket.storage import utils
 from jacket.storage import volume
 
@@ -103,7 +104,7 @@ class ServiceController(wsgi.Controller):
                 "Query by service parameter is deprecated. "
                 "Please use binary parameter instead."))
 
-        services = storage.ServiceList.get_all(context, filters)
+        services = objects.ServiceList.get_all(context, filters)
 
         svcs = []
         for svc in services:
@@ -215,7 +216,7 @@ class ServiceController(wsgi.Controller):
             raise webob.exc.HTTPBadRequest()
 
         try:
-            svc = storage.Service.get_by_args(context, host, binary_key)
+            svc = objects.Service.get_by_args(context, host, binary_key)
             if not svc:
                 raise webob.exc.HTTPNotFound(explanation=_('Unknown service'))
 

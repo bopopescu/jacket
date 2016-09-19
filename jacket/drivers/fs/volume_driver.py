@@ -19,32 +19,31 @@ Driver base-classes:
     types that support that contract
 """
 
-
 from oslo_log import log as logging
 
 from jacket import conf
+from jacket import context as req_context
 from jacket import exception
 from jacket.storage.volume import driver
-from jacket.db.hybrid_cloud import api as db_api
+from jacket.db.hybrid_cloud import api as hybrid_db_api
+from jacket.db.storage import api as storage_db_api
 from jacket.drivers.fs.clients import fs_context
 from jacket.drivers.fs.clients import cinder as cinderclient
 from jacket.drivers.fs.clients import glance as glanceclient
 
-
 LOG = logging.getLogger(__name__)
-
 
 CONF = conf.CONF
 
 
 class FsVolumeDriver(driver.VolumeDriver):
-
     def __init__(self, *args, **kwargs):
         super(FsVolumeDriver, self).__init__(*args, **kwargs)
 
         self._fs_cinderclient = None
         self._fs_glanceclient = None
-        self.db_api = db_api
+        self.storage_db = storage_db_api
+        self.bybrid_db = hybrid_db_api
         self.PROVIDER_AVAILABILITY_ZONE = CONF.provider_opts.availability_zone
 
     def fs_cinderlient(self, context=None):
@@ -78,7 +77,7 @@ class FsVolumeDriver(driver.VolumeDriver):
 
     def _get_sub_fs_volume_name(self, volume_name, volume_id):
         if not volume_name:
-            volume_name = "hybrid"
+            volume_name = "volume"
         return '@'.join([volume_name, volume_id])
 
     def _get_sub_image_name(self, image_id):
@@ -123,7 +122,8 @@ class FsVolumeDriver(driver.VolumeDriver):
         volume_type_id = volume.volume_type_id
         LOG.debug('volume type id %s ' % volume_type_id)
         if volume_type_id:
-            volume_type_obj = self.fs_cinderlient(context).get_volume_type_by_id(
+            volume_type_obj = self.fs_cinderlient(
+                context).get_volume_type_by_id(
                 volume_type_id)
             LOG.debug('dir volume_type: %s, '
                       'volume_type: %s' % (volume_type_obj, volume_type_obj))
@@ -135,10 +135,10 @@ class FsVolumeDriver(driver.VolumeDriver):
             volume_args['volume_type'] = volume_type_name
 
         optionals = ('snapshot_id', 'source_volid',
-                    'multiattach')
+                     'multiattach')
 
         volume_args.update((prop, getattr(volume, prop)) for prop in optionals
-                         if getattr(volume, prop, None))
+                           if getattr(volume, prop, None))
         sub_volume = self.fs_cinderlient(context).volume_create(**volume_args)
         LOG.debug('submit create-volume task to sub fs. '
                   'sub volume id: %s' % sub_volume.id)
@@ -164,6 +164,22 @@ class FsVolumeDriver(driver.VolumeDriver):
     def create_snapshot(self, snapshot):
         pass
 
+    def _get_typename(self, context, type_id):
+        found = False
+        typename = None
+        volume_type_list = self.storage_db.volume_type_get_all(context)
+        for vt in volume_type_list.values():
+            if type_id == vt.get('id'):
+                found = True
+                typename = vt.get('name')
+                break
+
+        if not found:
+            raise exception.EntityNotFound(entity='VolumeType',
+                                           name=type_id)
+
+        return typename
+
     def create_volume(self, volume):
         LOG.debug('start to create volume')
         LOG.debug('volume glance image metadata: %s' %
@@ -175,7 +191,7 @@ class FsVolumeDriver(driver.VolumeDriver):
         volume_args['display_name'] = self._get_sub_fs_volume_name(
             volume.display_name, volume.id)
 
-        #if volume.image_id:
+        # if volume.image_id:
         #    sub_image = self.fs_glanceclient().get_image(
         #        self._get_sub_image_name(volume.image_id))
         #    LOG.debug('sub_image: %s' % sub_image)
@@ -187,13 +203,17 @@ class FsVolumeDriver(driver.VolumeDriver):
         volume_type_id = volume.volume_type_id
         LOG.debug('volume type id %s ' % volume_type_id)
         if volume_type_id:
-            volume_type_obj = self.fs_cinderlient().get_volume_type_by_id(
-                volume_type_id)
-            LOG.debug('dir volume_type: %s, '
-                      'volume_type: %s' % (volume_type_obj, volume_type_obj))
-            volume_type_name = volume_type_obj.name
+            type_name = self._get_typename(req_context.get_admin_context(),
+                                           volume_type_id)
+            try:
+                volume_type_obj = self.fs_cinderlient().get_volume_type(type_name)
+                LOG.debug('dir volume_type: %s, '
+                          'volume_type: %s' % (volume_type_obj, volume_type_obj))
+                volume_type_name = volume_type_obj.name
+            except exception.EntityNotFound:
+                volume_type_name = CONF.provider_opts.volume_type
         else:
-            volume_type_name = None
+            volume_type_name = CONF.provider_opts.volume_type
 
         if volume_type_name:
             volume_args['volume_type'] = volume_type_name
@@ -202,7 +222,7 @@ class FsVolumeDriver(driver.VolumeDriver):
                      'metadata', 'multiattach')
 
         volume_args.update((prop, getattr(volume, prop)) for prop in optionals
-                         if getattr(volume, prop, None))
+                           if getattr(volume, prop, None))
 
         sub_volume = self.fs_cinderlient().volume_create(**volume_args)
         LOG.debug('submit create-volume task to sub fs. '
@@ -258,7 +278,7 @@ class FsVolumeDriver(driver.VolumeDriver):
         # pdb.set_trace()
         if not self._stats:
             backend_name = self.configuration.safe_get('volume_backend_name')
-            LOG.debug('*******backend_name is %s' %backend_name)
+            LOG.debug('*******backend_name is %s' % backend_name)
             if not backend_name:
                 backend_name = 'FS'
             data = {'volume_backend_name': backend_name,
@@ -282,7 +302,7 @@ class FsVolumeDriver(driver.VolumeDriver):
         data['display_name'] = volume['display_name']
 
         return {'driver_volume_type': driver_volume_type,
-                 'data': data}
+                'data': data}
 
     def remove_export(self, context, volume):
         """Remove an export for a volume."""

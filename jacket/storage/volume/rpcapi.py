@@ -104,7 +104,7 @@ class VolumeAPI(rpc.RPCAPI):
     RPC_API_VERSION = '1.40'
     TOPIC = CONF.volume_topic
     # BINARY = 'storage-volume'
-    BINARY = 'jacket-worker'
+    BINARY = 'nova-compute'
 
     def __init__(self):
         self.TOPIC = CONF.volume_topic

@@ -551,7 +551,7 @@ class HostManager(object):
 
         service_refs = {service.host: service
                         for service in objects.ServiceList.get_by_binary(
-                            context, 'jacket-worker', include_disabled=True)}
+                            context, 'nova-compute', include_disabled=True)}
         # Get resource usage across the available compute nodes:
         compute_nodes = objects.ComputeNodeList.get_all(context)
         seen_nodes = set()
