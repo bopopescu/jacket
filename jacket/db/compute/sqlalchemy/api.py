@@ -582,7 +582,7 @@ def service_get_all_by_host(context, host):
 def service_get_by_compute_host(context, host):
     result = model_query(context, models.Service, read_deleted="no").\
                 filter_by(host=host).\
-                filter_by(binary='jacket-worker').\
+                filter_by(binary='nova-compute').\
                 first()
 
     if not result:
@@ -922,7 +922,7 @@ def compute_node_statistics(context):
                              func.sum(models.ComputeNode.disk_available_least),
                          ), read_deleted="no").\
                          filter(models.Service.disabled == false()).\
-                         filter(models.Service.binary == "jacket-worker").\
+                         filter(models.Service.binary == "nova-compute").\
                          filter(_filter).\
                          first()
 

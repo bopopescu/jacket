@@ -335,6 +335,8 @@ class Service(service.Service):
         if not manager:
             manager_cls = ('%s_manager' %
                            binary.rpartition('jacket-')[2])
+            if binary == 'nova-compute':
+                manager_cls = 'worker_manager'
             manager = CONF.get(manager_cls, None)
 
         if report_interval is None:
