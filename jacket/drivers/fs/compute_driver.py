@@ -471,7 +471,6 @@ class FsComputeDriver(driver.ComputeDriver):
 
         supported_instances = list()
         for one in jsonutils.loads(host_stats['supported_instances']):
-            LOG.debug("+++hw, one = %s", one)
             supported_instances.append((one[0], one[1], one[2]))
 
         return {'vcpus': host_stats['vcpus'],
