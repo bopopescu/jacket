@@ -2,7 +2,7 @@
 
 source /root/adminrc
 
-HOST_IP=`ip addr |grep inet|grep -v 127.0.0.1|grep -v inet6|grep ens|awk '{print $2}'|tr -d "addr:" | awk -F '/' '{print $1}'`
+HOST_IP=`ip addr |grep inet|grep -v 127.0.0.1|grep -v inet6|grep -E "ens|eth"|awk '{print $2}'|tr -d "addr:" | awk -F '/' '{print $1}'`
 
 mysqldbadm="root"
 mysqldbpassword="P@ssw0rd"

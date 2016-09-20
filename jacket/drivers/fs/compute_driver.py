@@ -923,6 +923,8 @@ class FsComputeDriver(driver.ComputeDriver):
 
     def _get_provider_security_groups_list(self):
         provider_sg = CONF.provider_opts.security_groups
+        if provider_sg is None:
+            return []
         return [item.strip() for item in provider_sg.split(',')]
 
     def _get_provider_nics(self):
