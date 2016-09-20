@@ -200,6 +200,7 @@ class FsVolumeDriver(driver.VolumeDriver):
         #        volume_args['imageRef'] = CONF.provider_opts.base_linux_image
 
         volume_type_id = volume.volume_type_id
+        volume_type_name = None
         LOG.debug('volume type id %s ' % volume_type_id)
         if volume_type_id:
             type_name = self._get_typename(req_context.get_admin_context(),
@@ -211,8 +212,6 @@ class FsVolumeDriver(driver.VolumeDriver):
                 volume_type_name = volume_type_obj.name
             except exception.EntityNotFound:
                 volume_type_name = CONF.provider_opts.volume_type
-        else:
-            volume_type_name = CONF.provider_opts.volume_type
 
         if volume_type_name:
             volume_args['volume_type'] = volume_type_name
