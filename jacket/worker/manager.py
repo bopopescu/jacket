@@ -65,8 +65,8 @@ class WorkerManager(manager.Manager):
     def cleanup_host(self):
         # super(WorkerManager, self).cleanup_host()
         # jacket cleanup host TODO
-        self.compute_manager.init_host()
-        self.storage_manager.init_host()
+        self.compute_manager.cleanup_host()
+        self.storage_manager.cleanup_host()
 
     def pre_start_hook(self):
         # super(WorkerManager, self).pre_start_hook()

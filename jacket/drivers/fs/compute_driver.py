@@ -164,7 +164,7 @@ class FsComputeDriver(driver.ComputeDriver):
         self.fs_cinderclient(context).wait_for_volume_deleted(volume,
                                                               timeout=60)
 
-    def attach_volume(self, context, connection_info, instance, mountpoint,
+    def attach_volume(self, context, connection_info, instance, mountpoint=None,
                       disk_bus=None, device_type=None,
                       encryption=None):
         """
