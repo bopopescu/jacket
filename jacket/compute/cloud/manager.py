@@ -6962,9 +6962,15 @@ class ComputeManager(manager.Manager):
                 mount_device = bdm['mount_device']
                 vol = self.volume_api.get(context, connection_info.get('serial'))
                 bdm['size'] = vol.get('size')
-                self.driver.attach_volume(context, connection_info, instance, mount_device)
-
-        block_device_info['block_device_mapping'] = bdms
+                volume_devices = jacketdriver.list_volumes(instance)
+                old_volumes_list = volume_devices.get('devices')
+                self.driver.attach_volume(context, connection_info, instance, mount_device=None)
+                volume_devices = jacketdriver.list_volumes(instance)
+                new_volumes_list = volume_devices.get('devices')
+                added_device_list = [device for device in new_volumes_list if device not in old_volumes_list]
+                added_device = added_device_list[0]
+                volume_id = bdm['volume_id']
+                jacketdriver.attach_volume(instance, volume_id, added_device, mount_device)
 
         jacketdriver.wait_container_ok(instance)
 
