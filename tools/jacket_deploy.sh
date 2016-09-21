@@ -288,3 +288,47 @@ crudini --set /etc/jacket/jacket.conf hybrid_cloud_agent_opts rabbit_host_user_p
 crudini --set /etc/jacket/jacket.conf hybrid_cloud_agent_opts rabbit_host_user_id "${rabbit_host_user_id}"
 crudini --set /etc/jacket/jacket.conf hybrid_cloud_agent_opts rabbit_host_ip "${rabbit_host_ip}"
 
+#生成jacket用户
+getent group jacket >/dev/null || groupadd -r jacket --gid 1066
+if ! getent passwd jacket >/dev/null; then
+  # Id reservation request: https://bugzilla.redhat.com/923891
+  useradd -u 1066 -r -g jacket -G jacket,nobody -d /var/lib/jacket/ -s /sbin/nologin -c "OpenStack jacket Daemons" jacket
+fi
+
+#生成jacket-worker jacket-api.service
+cat << EOF >/usr/lib/systemd/system/jacket-api.service
+[Unit]
+Deacription=Jacket API Server
+After=syslog.target network.target
+
+[Service]
+Type=notify
+NotifyAccess=all
+TimeoutStartSec=0
+Restart=always
+ExecStart=/usr/bin/jacket-api --config-file /etc/jacket/jacket.conf
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+cat << EOF >/usr/lib/systemd/system/jacket-worker.service
+[Unit]
+Deacription=Jacket Worker Server
+After=syslog.target network.target
+
+[Service]
+Type=notify
+NotifyAccess=all
+TimeoutStartSec=0
+Restart=always
+ExecStart=/usr/bin/jacket-worker --config-file /etc/jacket/jacket.conf
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable jacket-api.service
+systemctl enable jacket-worker.service
+
