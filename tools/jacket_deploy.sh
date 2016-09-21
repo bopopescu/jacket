@@ -306,6 +306,7 @@ Type=notify
 NotifyAccess=all
 TimeoutStartSec=0
 Restart=always
+User=jacket
 ExecStart=/usr/bin/jacket-api --config-file /etc/jacket/jacket.conf
 
 [Install]
@@ -322,6 +323,7 @@ Type=notify
 NotifyAccess=all
 TimeoutStartSec=0
 Restart=always
+User=jacket
 ExecStart=/usr/bin/jacket-worker --config-file /etc/jacket/jacket.conf
 
 [Install]
