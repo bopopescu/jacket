@@ -7073,14 +7073,16 @@ class ComputeManager(manager.Manager):
             new_vif['address'] = vif['address']
             network = {}
             network['bridge'] = vif['network']['bridge']
-            subnets = {}
-            subnets['gateway'] = vif['network']['subnets']['gateway']
-            subnets['cidr'] = vif['network']['subnets']['cidr']
-            subnets['ips'] = vif['network']['subnets']['ips']
-            network['subnets'] = subnets
+            new_subnets = []
+            for subnet in vif['network']['subnets']:
+                new_subnet = {}
+                new_subnet['gateway'] = subnet['gateway']
+                new_subnet['cidr'] = subnet['cidr']
+                new_subnet['ips'] = subnet['ips']
+                new_subnets.append(new_subnet)
+            network['subnets'] = new_subnets
             new_vif['network'] = network
             vifs.append(new_vif)
-
 
         data['network_info'] = vifs
         data['block_device_info'] = block_device_info
