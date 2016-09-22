@@ -55,16 +55,6 @@ client_http_log_debug_opts = [
                 help=_("Allow client's debug log output."))]
 
 
-provider_opts = [
-    cfg.StrOpt('availability_zone', default='us-east-1a', help='the availability_zone for connection to fs'),
-    cfg.StrOpt('base_linux_image', default='ami-68d8e93a', help='use for create a base ec2 instance'),
-    cfg.StrOpt('net_api', help='api net'), cfg.StrOpt('net_data', help='data subnet'),
-    cfg.StrOpt('flavor_map', help=''), cfg.StrOpt('security_groups', help=''),
-    cfg.StrOpt('user', help=''), cfg.StrOpt('tenant', help=''), cfg.StrOpt('pwd', help=''),
-    cfg.StrOpt('auth_url', help=''), cfg.StrOpt('region', help=''),
-    cfg.StrOpt('volume_type', help=''),
-]
-
 hybrid_cloud_agent_opts = [
     cfg.StrOpt('tunnel_cidr', help='tunnel_cidr', default='172.28.48.0/24'),
     cfg.StrOpt('route_gw', help='route_gw', default='172.28.48.254'),
@@ -87,7 +77,6 @@ def register_opts(conf):
     conf.register_opts(default_clients_opts,
                        group='fs_clients')
 
-    conf.register_opts(provider_opts, 'provider_opts')
     conf.register_opts(hybrid_cloud_agent_opts, 'hybrid_cloud_agent_opts')
 
 
@@ -98,5 +87,4 @@ def list_opts():
         yield client_specific_group, client_http_log_debug_opts
 
     yield 'fs_clients', default_clients_opts
-    yield  'provider_opts', provider_opts
     yield  'hybrid_cloud_agent_opts', hybrid_cloud_agent_opts

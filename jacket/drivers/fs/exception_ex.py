@@ -10,63 +10,67 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from jacket.compute.exception import *
+from jacket.compute.exception import * # noqu
 from jacket.i18n import _
+from jacket.exception import JacketException
 
-
-class MultiInstanceConfusion(NovaException):
+class MultiInstanceConfusion(JacketException):
     msg_fmt = _("More than one instance are found")
 
 
-class MultiVolumeConfusion(NovaException):
+class MultiVolumeConfusion(JacketException):
     msg_fmt = _("More than one volume are found")
 
 
-class MultiImageConfusion(NovaException):
+class MultiImageConfusion(JacketException):
     msg_fmt = _("More than one Image are found")
 
 
-class UploadVolumeFailure(NovaException):
+class UploadVolumeFailure(JacketException):
     msg_fmt = _("upload volume to provider cloud failure")
 
 
-class VolumeNotFoundAtProvider(NovaException):
+class VolumeNotFoundAtProvider(JacketException):
     msg_fmt = _("can not find this volume at provider cloud")
 
 
-class ProviderRequestTimeOut(NovaException):
+class ProviderRequestTimeOut(JacketException):
     msg_fmt = _("Time out when connect to provider cloud")
 
 
-class RetryException(NovaException):
+class RetryException(JacketException):
     msg_fmt = _('Need to retry, error info: %(error_info)s')
 
 
-class ServerStatusException(NovaException):
+class ServerStatusException(JacketException):
     msg_fmt = _('Server status is error, status: %(status)s')
 
 
-class ServerStatusTimeoutException(NovaException):
+class ServerStatusTimeoutException(JacketException):
     msg_fmt = _(
         'Server %(server_id)s status is in %(status)s over %(timeout)s seconds')
 
 
-class ServerNotExistException(NovaException):
+class ServerNotExistException(JacketException):
     msg_fmt = _('server named  %(server_name)s is not exist')
 
 
-class ServerDeleteException(NovaException):
+class ServerDeleteException(JacketException):
     msg_fmt = _('delete server %(server_id)s timeout over %(timeout)s seconds')
 
 
-class VolumeCreateException(NovaException):
+class VolumeCreateException(JacketException):
     msg_fmt = _('create volume %(volume_id)s error')
 
 
-class VolumeStatusTimeoutException(NovaException):
+class VolumeStatusTimeoutException(JacketException):
     msg_fmt = _(
         'Volume %(volume_id)s status is in %(status)s over %(timeout)s seconds')
 
 
-class VolumeDeleteTimeoutException(NovaException):
+class VolumeDeleteTimeoutException(JacketException):
     msg_fmt = _('delete volume %(volume_id)s timeout')
+
+
+class AccountNotConfig(JacketException):
+    msg_fmt = _('fs account info not config')

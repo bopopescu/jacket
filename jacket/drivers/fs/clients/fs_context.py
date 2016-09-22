@@ -15,6 +15,7 @@ import copy
 from oslo_log import log as logging
 
 from jacket import exception
+from jacket.drivers.fs import exception_ex
 from jacket.db.hybrid_cloud import api as db_api
 from jacket.i18n import _LE
 
@@ -29,28 +30,19 @@ class FsClientContext(object):
 
     """
 
-    def __init__(self, context, version=None, username=None, password=None,
-                 project_id=None, auth_url='', service_type=None,
-                 service_name=None, interface=None,
-                 region_name=None, **kwargs):
+    def __init__(self, context, version=None, service_type=None,
+                 service_name=None, interface=None, **kwargs):
 
-        try:
-            self.init_fs_context(context)
-        except Exception:
-            self.context = context
-            self.version = version
-            self.username = username
-            self.password = password
-            self.project_id = project_id
-            self.auth_url = auth_url
-            self.service_type = service_type
-            self.service_name = service_name
-            self.interface = interface
-            self.region_name = region_name
-            self.insecure = kwargs.pop('insecure', None)
-            self.cacert = kwargs.pop('cacert', None)
-            self.timeout = kwargs.pop('timeout', None)
-            self.kwargs = kwargs
+        self.init_fs_context(context)
+        self.context = context
+        self.version = version
+        self.service_type = service_type
+        self.service_name = service_name
+        self.interface = interface
+        self.insecure = kwargs.pop('insecure', None)
+        self.cacert = kwargs.pop('cacert', None)
+        self.timeout = kwargs.pop('timeout', None)
+        self.kwargs = kwargs
 
     def to_dict(self):
         values = {}
@@ -83,32 +75,29 @@ class FsClientContext(object):
         return "<FsContext %s>" % self.to_dict()
 
     def init_fs_context(self, context):
-        try:
-            project_info = db_api.project_mapper_get(context, context.project_id)
-        except Exception as ex:
-            LOG.exception(_LE("get project info failed, ex = %s"), ex)
+        project_info = db_api.project_mapper_get(context, context.project_id)
+        if not project_info:
             project_info = db_api.project_mapper_get(context,
                                                      "default")
 
-        if project_info == None:
-            raise exception.FsProjectNotConf()
+        if not project_info:
+            raise exception_ex.AccountNotConfig()
 
-        self.version = project_info.pop('version', None)
-        self.username = project_info.pop('username', None)
-        self.password = project_info.pop("password", None)
-        self.project_id = project_info.pop("project_id", None)
+        LOG.debug("+++hw, project_info = %s", project_info)
+
+        self.username = project_info.pop('user', None)
+        self.password = project_info.pop("pwd", None)
+        self.project_id = project_info.pop("tenant", None)
         self.auth_url = project_info.pop("auth_url", None)
-        self.region_name = project_info.pop("region_name", None)
+        self.region_name = project_info.pop("region", None)
+
+        LOG.debug("+++hw, project_info = %s", project_info)
 
         if not self.username or not self.password or not self.project_id or \
             not self.auth_url:
-            raise exception.FsProjectNotConf()
+            raise exception_ex.AccountNotConfig()
 
-        self.service_type = project_info.pop("service_type", None)
-        self.service_name = project_info.pop("service_name", None)
-        self.interface = project_info.pop("interface", None)
-
-        self.kwargs = project_info
+        #self.kwargs = project_info
 
     def auth_needs_refresh(self):
         return False

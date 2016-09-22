@@ -75,7 +75,7 @@ def image_mapper_all(context):
     return IMPL.image_mapper_all(context)
 
 
-def image_mapper_get(context, image_id, project_id):
+def image_mapper_get(context, image_id, project_id=None):
     return IMPL.image_mapper_get(context, image_id, project_id)
 
 

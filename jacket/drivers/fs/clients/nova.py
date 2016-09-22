@@ -121,7 +121,9 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         Substitutes Nova's NotFound for Heat's EntityNotFound,
         to be returned to user as HTTP error.
         """
-        server_list = self.client().servers.list(search_opts={'name': server_name})
+        server_list = self.client().servers.list(
+            search_opts={'name': server_name})
+
         if server_list and len(server_list) > 0:
             server = server_list[0]
         else:
@@ -281,6 +283,9 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
         raise exception.EntityNotFound(entity='Host', name=host_name)
 
+    @retry(stop_max_attempt_number=60,
+           wait_fixed=1000,
+           retry_on_result=client_plugin.retry_if_result_is_false)
     def check_delete_server_complete(self, server_id):
         """Wait for server to disappear from Nova."""
         try:
@@ -660,25 +665,3 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         :return:
         """
         return self.client().servers.delete(server)
-
-    def wait_for_delete_server_complete(self, server, timeout):
-        start = int(time.time())
-        while True:
-            time.sleep(2)
-            server_list = self.get_server(server)
-            if server_list and len(server_list) > 0:
-                cost_time = int(time.time()) - start
-                if cost_time >= timeout:
-                    LOG.warning('Time out for delete server: %s '
-                                'over %s seconds' % (server.name, timeout))
-                    raise exception_ex.ServerDeleteException(
-                        server_id=server.id, timeout=timeout)
-                else:
-                    LOG.debug('server %s is exist, still not be deleted. '
-                              'cost time: %s' % (server.name, str(cost_time)))
-                    continue
-            else:
-                cost_time = int(time.time()) - start
-                LOG.debug('server %s is delete success. '
-                          'cost time: %s' % (server.name, str(cost_time)))
-                break

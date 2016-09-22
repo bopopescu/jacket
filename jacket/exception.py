@@ -283,10 +283,6 @@ class FsInvalidServiceVersion(JacketException):
     msg_fmt = _("Invalid service %(service)s version %(version)s")
 
 
-class FsProjectNotConf(JacketException):
-    msg_fmt = _("fs project info not config.")
-
-
 class EntityNotFound(JacketException):
     msg_fmt = _("The %(entity)s (%(name)s) could not be found.")
 

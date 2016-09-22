@@ -29,6 +29,8 @@ from jacket.db.storage import api as storage_db_api
 from jacket.drivers.fs.clients import fs_context
 from jacket.drivers.fs.clients import cinder as cinderclient
 from jacket.drivers.fs.clients import glance as glanceclient
+from jacket.drivers.fs import exception_ex
+from jacket.i18n import _LE
 from jacket.storage.volume import driver
 
 LOG = logging.getLogger(__name__)
@@ -44,17 +46,11 @@ class FsVolumeDriver(driver.VolumeDriver):
         self._fs_glanceclient = None
         self.storage_db = storage_db_api
         self.bybrid_db = hybrid_db_api
-        self.PROVIDER_AVAILABILITY_ZONE = CONF.provider_opts.availability_zone
 
     def fs_cinderlient(self, context=None):
         if self._fs_cinderclient is None:
             fscontext = fs_context.FsClientContext(
-                context, version='2', username=CONF.provider_opts.user,
-                password=CONF.provider_opts.pwd,
-                project_id=CONF.provider_opts.tenant,
-                auth_url=CONF.provider_opts.auth_url,
-                region_name=CONF.provider_opts.region
-            )
+                context, version='2')
             self._fs_cinderclient = cinderclient.CinderClientPlugin(fscontext)
 
         return self._fs_cinderclient
@@ -62,12 +58,7 @@ class FsVolumeDriver(driver.VolumeDriver):
     def fs_glanceclient(self, context=None):
         if self._fs_glanceclient is None:
             fscontext = fs_context.FsClientContext(
-                context, version='1', username=CONF.provider_opts.user,
-                password=CONF.provider_opts.pwd,
-                project_id=CONF.provider_opts.tenant,
-                auth_url=CONF.provider_opts.auth_url,
-                region_name=CONF.provider_opts.region
-            )
+                context, version='1')
             self._fs_glanceclient = glanceclient.GlanceClientPlugin(fscontext)
 
         return self._fs_glanceclient
@@ -80,8 +71,30 @@ class FsVolumeDriver(driver.VolumeDriver):
             volume_name = "volume"
         return '@'.join([volume_name, volume_id])
 
-    def _get_sub_image_name(self, image_id):
-        return '@'.join(['image', image_id])
+    def _get_project_mapper(self, context, project_id=None):
+        if project_id is None:
+            project_id = 'default'
+
+        project_mapper = hybrid_db_api.project_mapper_get(context, project_id)
+        if not project_mapper:
+            project_mapper = hybrid_db_api.project_mapper_get(context,
+                                                              'default')
+
+        if not project_mapper:
+            raise exception_ex.AccountNotConfig()
+
+        return project_mapper
+
+    def _get_sub_image_id(self, context, image_id):
+
+        project_mapper = self._get_project_mapper(context, context.project_id)
+        base_linux_image = project_mapper.get("base_linux_image", None)
+
+        image_mapper = hybrid_db_api.image_mapper_get(context, image_id)
+        LOG.debug("+++hw, image_mapper = %s", image_mapper)
+        sub_image_id = image_mapper.get("dest_image_id", base_linux_image)
+
+        return sub_image_id
 
     def copy_image_to_volume(self, context, volume, image_service, image_id):
         LOG.debug('dir volume: %s' % dir(volume))
@@ -103,32 +116,33 @@ class FsVolumeDriver(driver.VolumeDriver):
 
         try:
             sub_image = self.fs_glanceclient(context).get_image(
-                self._get_sub_image_name(image_id))
-            if sub_image:
-                image_ref = sub_image
-                LOG.debug('sub image is: %s' % image_ref)
-            else:
-                image_id = CONF.provider_opts.base_linux_image
-                image_ref = self.fs_glanceclient(context).get_image(image_id)
-        except exception.NotFound:
-            image_id = CONF.provider_opts.base_linux_image
-            image_ref = self.fs_glanceclient(context).get_image(image_id)
+                self._get_sub_image_id(context, image_id))
+        except Exception as ex:
+            LOG.exception(_LE("get image(%(image_id)s) failed, "
+                              "ex = %(ex)s"), image_id=image_id,
+                          ex=ex)
+            raise
 
-        LOG.debug('image_ref: %s' % image_ref)
+        LOG.debug('image_ref: %s' % sub_image)
+        volume_args['imageRef'] = sub_image.id
 
-        volume_args['imageRef'] = image_ref.id
-
+        volume_type_name = None
         volume_type_id = volume.volume_type_id
         LOG.debug('volume type id %s ' % volume_type_id)
         if volume_type_id:
-            volume_type_obj = self.fs_cinderlient(
-                context).get_volume_type_by_id(
-                volume_type_id)
-            LOG.debug('dir volume_type: %s, '
-                      'volume_type: %s' % (volume_type_obj, volume_type_obj))
-            volume_type_name = volume_type_obj.name
-        else:
-            volume_type_name = None
+            type_name = self._get_typename(req_context.get_admin_context(),
+                                           volume_type_id)
+            try:
+                volume_type_obj = self.fs_cinderlient(context).get_volume_type(
+                    type_name)
+                LOG.debug('dir volume_type: %s, '
+                          'volume_type: %s' % (
+                              volume_type_obj, volume_type_obj))
+                volume_type_name = volume_type_obj.name
+            except exception.EntityNotFound:
+                project_mapper = self._get_project_mapper(context,
+                                                          context.project_id)
+                volume_type_name = project_mapper.get('volume_type', None)
 
         if volume_type_name:
             volume_args['volume_type'] = volume_type_name
@@ -190,15 +204,7 @@ class FsVolumeDriver(driver.VolumeDriver):
         volume_args['display_name'] = self._get_sub_fs_volume_name(
             volume.display_name, volume.id)
 
-        # if volume.image_id:
-        #    sub_image = self.fs_glanceclient().get_image(
-        #        self._get_sub_image_name(volume.image_id))
-        #    LOG.debug('sub_image: %s' % sub_image)
-        #    if sub_image:
-        #        volume_args['imageRef'] = sub_image.id
-        #    else:
-        #        volume_args['imageRef'] = CONF.provider_opts.base_linux_image
-
+        context = req_context.RequestContext(project_id=volume.project_id)
         volume_type_id = volume.volume_type_id
         volume_type_name = None
         LOG.debug('volume type id %s ' % volume_type_id)
@@ -206,12 +212,16 @@ class FsVolumeDriver(driver.VolumeDriver):
             type_name = self._get_typename(req_context.get_admin_context(),
                                            volume_type_id)
             try:
-                volume_type_obj = self.fs_cinderlient().get_volume_type(type_name)
+                volume_type_obj = self.fs_cinderlient(context).get_volume_type(
+                    type_name)
                 LOG.debug('dir volume_type: %s, '
-                          'volume_type: %s' % (volume_type_obj, volume_type_obj))
+                          'volume_type: %s' % (
+                              volume_type_obj, volume_type_obj))
                 volume_type_name = volume_type_obj.name
             except exception.EntityNotFound:
-                volume_type_name = CONF.provider_opts.volume_type
+                project_mapper = self._get_project_mapper(context,
+                                                          context.project_id)
+                volume_type_name = project_mapper.get('volume_type', None)
 
         if volume_type_name:
             volume_args['volume_type'] = volume_type_name
@@ -222,13 +232,13 @@ class FsVolumeDriver(driver.VolumeDriver):
         volume_args.update((prop, getattr(volume, prop)) for prop in optionals
                            if getattr(volume, prop, None))
 
-        sub_volume = self.fs_cinderlient().volume_create(**volume_args)
+        sub_volume = self.fs_cinderlient(context).volume_create(**volume_args)
         LOG.debug('submit create-volume task to sub fs. '
                   'sub volume id: %s' % sub_volume.id)
 
         LOG.debug('start to wait for volume %s in status '
                   'available' % sub_volume.id)
-        self.fs_cinderlient().wait_for_volume_in_specified_status(
+        self.fs_cinderlient(context).wait_for_volume_in_specified_status(
             sub_volume.id, 'available')
 
         LOG.debug('create volume %s success.' % volume.id)
@@ -249,12 +259,16 @@ class FsVolumeDriver(driver.VolumeDriver):
                                                        volume.id)
         LOG.debug('sub_volume_name: %s' % sub_volume_name)
 
-        sub_volume = self.fs_cinderlient().get_volume_by_name(sub_volume_name)
+        context = req_context.RequestContext(project_id=volume.project_id)
+
+        sub_volume = self.fs_cinderlient(context).get_volume_by_name(
+            sub_volume_name)
         if sub_volume:
             LOG.debug('submit delete-volume task')
-            self.fs_cinderlient().volume_delete(sub_volume)
+            self.fs_cinderlient(context).volume_delete(sub_volume)
             LOG.debug('wait for volume delete')
-            self.fs_cinderlient().wait_for_volume_deleted(sub_volume, 600)
+            self.fs_cinderlient(context).wait_for_volume_deleted(sub_volume,
+                                                                 600)
         else:
             LOG.debug('no sub-volume exist, '
                       'no need to delete sub volume: %s' % sub_volume_name)
