@@ -6929,18 +6929,19 @@ class ComputeManager(manager.Manager):
 
         jacketdriver = JacketHypervmDriver()
 
-        data = self._create_hybrid_vm_data(context, instance, image,
-                                                    injected_files, admin_password,
-                                                    network_info=network_info,
-                                                    block_device_info=block_device_info)
-        data = json.dumps(data)
-
         bdms = block_device_info.get('block_device_mapping', [])
         block_device_info['block_device_mapping'] = []
         for bdm in bdms:
             if bdm['boot_index'] == 0:
                 block_device_info['block_device_mapping'].append(bdm)
                 break
+
+        data = self._create_hybrid_vm_data(context, instance, image,
+                                                   injected_files, admin_password,
+                                                   network_info=network_info,
+                                                   block_device_info=block_device_info)
+
+        data = json.dumps(data)
 
         new_injected_files = [('/var/lib/wormhole/settings.json', data)]
         self.driver.spawn(context, instance, image,
@@ -6952,7 +6953,7 @@ class ComputeManager(manager.Manager):
         hybrid_vm_bdm = self._build_hybrid_vm_bdm(hybrid_vm)
 
         connection_info = hybrid_vm_bdm.get('connection_info', {})
-        self.driver.attach_volume(context, connection_info, instance, mount_device=None)
+        self.driver.attach_volume(context, connection_info, instance)
 
         for bdm in bdms:
             if bdm['boot_index'] == 0:
@@ -6962,9 +6963,15 @@ class ComputeManager(manager.Manager):
                 mount_device = bdm['mount_device']
                 vol = self.volume_api.get(context, connection_info.get('serial'))
                 bdm['size'] = vol.get('size')
-                self.driver.attach_volume(context, connection_info, instance, mount_device)
-
-        block_device_info['block_device_mapping'] = bdms
+                volume_devices = jacketdriver.list_volumes(instance)
+                old_volumes_list = volume_devices.get('devices')
+                self.driver.attach_volume(context, connection_info, instance)
+                volume_devices = jacketdriver.list_volumes(instance)
+                new_volumes_list = volume_devices.get('devices')
+                added_device_list = [device for device in new_volumes_list if device not in old_volumes_list]
+                added_device = added_device_list[0]
+                volume_id = bdm['volume_id']
+                jacketdriver.attach_volume(instance, volume_id, added_device, mount_device)
 
         jacketdriver.wait_container_ok(instance)
 
@@ -7055,10 +7062,29 @@ class ComputeManager(manager.Manager):
         bdms = block_device_info['block_device_mapping']
         data['root_volume_id'] = None
         for bdm in bdms:
-            if bdm['boot_index'] == -1:
+            if bdm['boot_index'] == 0:
                 data['root_volume_id'] = bdm['data']['volume_id']
 
-        data['network_info'] = network_info
+        vifs = []
+        for vif in network_info:
+            new_vif = {}
+            new_vif['id'] = vif['id']
+            new_vif['type'] = vif['type']
+            new_vif['address'] = vif['address']
+            network = {}
+            network['bridge'] = vif['network']['bridge']
+            new_subnets = []
+            for subnet in vif['network']['subnets']:
+                new_subnet = {}
+                new_subnet['gateway'] = subnet['gateway']
+                new_subnet['cidr'] = subnet['cidr']
+                new_subnet['ips'] = subnet['ips']
+                new_subnets.append(new_subnet)
+            network['subnets'] = new_subnets
+            new_vif['network'] = network
+            vifs.append(new_vif)
+
+        data['network_info'] = vifs
         data['block_device_info'] = block_device_info
         data['inject_files'] = injected_files
         data['admin_password'] = admin_password

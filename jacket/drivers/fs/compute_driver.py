@@ -150,7 +150,7 @@ class FsComputeDriver(driver.ComputeDriver):
         self.fs_cinderclient(context).wait_for_volume_deleted(volume,
                                                               timeout=60)
 
-    def attach_volume(self, context, connection_info, instance, mountpoint,
+    def attach_volume(self, context, connection_info, instance, mountpoint=None,
                       disk_bus=None, device_type=None,
                       encryption=None):
         """
@@ -804,6 +804,17 @@ class FsComputeDriver(driver.ComputeDriver):
             self.fs_novaclient(context).wait_for_server_in_specified_status(
                 provider_server, vm_states.ACTIVE.upper())
             LOG.debug('create server success.............!!!')
+
+            interface_list = self.fs_novaclient(context).interface_list(provider_server)
+            ips = []
+            for interface in interface_list:
+                ip = interface.fixed_ips[0].get('ip_address')
+                ips.append(ip)
+            instance_ips = ','.join(ips)
+            LOG.debug('luorui debug instance_ips %s' % instance_ips)
+            instance.system_metadata['instance_ips'] = instance_ips
+            instance.system_metadata['instance_id'] = provider_server.id
+            instance.save()
 
         except Exception as e:
             LOG.error(

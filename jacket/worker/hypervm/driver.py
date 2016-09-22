@@ -12,34 +12,13 @@ LOG = logging.getLogger(__name__)
 
 
 hybrid_cloud_agent_opts = [
-    #cfg.StrOpt('tunnel_cidr', help='tunnel_cidr', default='172.28.48.0/24'),
-    #cfg.StrOpt('route_gw', help='route_gw', default='172.28.48.254'),
-    #cfg.StrOpt('personality_path', help='personality_path', default='/home/neutron_agent_conf.txt'),
     cfg.StrOpt('hybrid_service_port',
                default='7127',
                help='The route gw of the provider network.'),
-    #cfg.StrOpt('rabbit_host_ip', help='rabbit_host_ip', default='172.28.0.12')
     ]
-
-provider_opts = [
-    cfg.StrOpt('availability_zone', default='us-east-1a', help='the availability_zone for connection to fs'),
-    cfg.StrOpt('base_linux_image', default='ami-68d8e93a', help='use for create a base ec2 instance'),
-    cfg.StrOpt('net_api', help='api net'), 
-    cfg.StrOpt('net_data', help='data subnet'),
-    cfg.StrOpt('flavor_map', help=''), 
-    cfg.StrOpt('security_groups', help=''),
-    cfg.StrOpt('user', help=''), 
-    cfg.StrOpt('tenant', help=''), 
-    cfg.StrOpt('pwd', help=''),
-    cfg.StrOpt('auth_url', help=''), 
-    cfg.StrOpt('region', help='')
-    ]
-
-
 
 
 CONF = cfg.CONF
-CONF.register_opts(provider_opts, 'provider_opts')
 CONF.register_opts(hybrid_cloud_agent_opts, 'hybrid_cloud_agent_opts')
 
 

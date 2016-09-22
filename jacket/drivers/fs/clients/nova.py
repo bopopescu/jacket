@@ -510,6 +510,9 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         else:
             return False
 
+    def interface_list(self, server):
+        return self.client().servers.interface_list(server)
+
     def interface_attach(self, server_id, port_id=None, net_id=None, fip=None):
         server = self.fetch_server(server_id)
         if server:
