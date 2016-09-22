@@ -17,6 +17,7 @@ jacketsvce="jacket"
 
 jacket_host="${HOST_IP}"
 
+#keystone
 keystonehost="${HOST_IP}"
 keystonedomain="default"
 keystoneservicestenant="services"
@@ -127,22 +128,19 @@ mkdir -p "${instances_path}"
 mkdir -p "${log_dir}"
 
 #keystone中设置jacket
-#openstack user show $jacketuser | openstack user create --domain
-# $keystonedomain --password $jacketpass --email "root@email" $jacketuser
-#openstack role add --project $keystoneservicestenant --user $jacketuser
-# $keystoneadminuser
 
-#openstack service show $jacketsvce | openstack service create --name
-# $jacketsvce --description "OpenStack jacket service" jacket
+#keystone user-get $jacketuser | keystone user-create --name $jacketuser \
+#--tenant $keystoneservicestenant --pass $jacketpass --email "jacket@email"
 
-#openstack endpoint create --region $endpointsregion \
-#        jacket public http://$jacket_host:9774/v1/%\(tenant_id\)s
+#keystone user-role-add --user $jacketuser --role admin --tenant $keystoneservicestenant
 
-#openstack endpoint create --region $endpointsregion \
-#        jacket internal http://$jacket_host:9774/v1/%\(tenant_id\)s
+#keystone service-get $jacketsvce | keystone service-create --name $jacketsvce --description "OpenStack jacket service" --type jacket
 
-#openstack endpoint create --region $endpointsregion \
-#        jacket admin http://$jacket_host:9774/v1/%\(tenant_id\)s
+#keystone endpoint-get --service $jacketsvce | keystone endpoint-create --region $endpointsregion --service $jacketsvce \
+#--publicurl "http://$jacket_host:9774/v1/%\(tenant_id\)s" \
+#--adminurl "http://$jacket_host:9774/v1/%\(tenant_id\)s" \
+#--internalurl "http://$jacket_host:9774/v1/%\(tenant_id\)s"
+
 
 #  数据库部署
 mysqlcommand="mysql --port=$mysqldbport --password=$mysqldbpassword --user=$mysqldbadm --host=$dbbackendhost"
@@ -268,17 +266,25 @@ crudini --set /etc/jacket/jacket.conf glance protocol "${glance_protocol}"
 crudini --set /etc/jacket/jacket.conf glance api_insecure "${glance_api_insecure}"
 
 #provider_opts
-crudini --set /etc/jacket/jacket.conf provider_opts net_data "${net_data}"
-crudini --set /etc/jacket/jacket.conf provider_opts availability_zone "${availability_zone}"
-crudini --set /etc/jacket/jacket.conf provider_opts region "${region}"
-crudini --set /etc/jacket/jacket.conf provider_opts pwd "${pwd}"
-crudini --set /etc/jacket/jacket.conf provider_opts base_linux_image "${base_linux_image}"
-crudini --set /etc/jacket/jacket.conf provider_opts auth_url "${pro_auth_url}"
-crudini --set /etc/jacket/jacket.conf provider_opts net_api "${net_api}"
-crudini --set /etc/jacket/jacket.conf provider_opts flavor_map "${flavor_map}"
-crudini --set /etc/jacket/jacket.conf provider_opts tenant "${tenant}"
-crudini --set /etc/jacket/jacket.conf provider_opts user "${user}"
-crudini --set /etc/jacket/jacket.conf provider_opts volume_type "${volume_type}"
+if [ "$use_mysql" -eq "1" ]; then
+	jacket --insecure project-mapper-create "default" "${tenant}" --property net_data="$net_data" \
+	--property availability_zone="$availability_zone" --property region="$region" \
+	--property pwd="$pwd" --property base_linux_image="$base_linux_image" \
+	--property auth_url="$auth_url" --property net_api="$net_api" \
+	--property tenant="$tenant" --property net_api="$net_api" \
+	--property user="$user" --property volume_type="$volume_type"
+else
+	crudini --set /etc/jacket/jacket.conf provider_opts net_data "${net_data}"
+	crudini --set /etc/jacket/jacket.conf provider_opts availability_zone "${availability_zone}"
+	crudini --set /etc/jacket/jacket.conf provider_opts region "${region}"
+	crudini --set /etc/jacket/jacket.conf provider_opts pwd "${pwd}"
+	crudini --set /etc/jacket/jacket.conf provider_opts base_linux_image "${base_linux_image}"
+	crudini --set /etc/jacket/jacket.conf provider_opts auth_url "${pro_auth_url}"
+	crudini --set /etc/jacket/jacket.conf provider_opts net_api "${net_api}"
+	crudini --set /etc/jacket/jacket.conf provider_opts tenant "${tenant}"
+	crudini --set /etc/jacket/jacket.conf provider_opts user "${user}"
+	crudini --set /etc/jacket/jacket.conf provider_opts volume_type "${volume_type}"
+fi
 
 #hybrid_cloud_agent_opts
 crudini --set /etc/jacket/jacket.conf hybrid_cloud_agent_opts tunnel_cidr "${tunnel_cidr}"
@@ -334,3 +340,7 @@ systemctl daemon-reload
 systemctl enable jacket-api.service
 systemctl enable jacket-worker.service
 
+
+
+# 创建image对应关系
+#jacket --insecure --debug image-mapper-create 66ecc1c0-8367-477b-92c5-1bb09b0bfa89 fc84fa2c-dafd-498a-8246-0692702532c3

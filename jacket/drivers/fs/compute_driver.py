@@ -33,6 +33,7 @@ from jacket.compute.cloud import vm_states
 from jacket.compute.virt import driver
 from jacket.compute.virt import hardware
 from jacket import conf
+from jacket import context as req_context
 from jacket.db.hybrid_cloud import api as db_api
 from jacket.drivers.fs import exception_ex
 from jacket.drivers.fs.clients import fs_context
@@ -98,19 +99,12 @@ class FsComputeDriver(driver.ComputeDriver):
         self._fs_cinderclient = None
         self._fs_glanceclient = None
         self.db_api = db_api
-        self.PROVIDER_AVAILABILITY_ZONE = CONF.provider_opts.availability_zone
-        self.PROVIDER_SECURITY_GROUPS = self._get_provider_security_groups_list()
-        self.PROVIDER_NICS = self._get_provider_nics()
         self.hyper_agent_api = hyper_agent_api.HyperAgentAPI()
 
     def fs_novaclient(self, context=None):
         if self._fs_novaclient is None:
             fscontext = fs_context.FsClientContext(
-                context, version='2', username=CONF.provider_opts.user,
-                password=CONF.provider_opts.pwd,
-                project_id=CONF.provider_opts.tenant,
-                auth_url=CONF.provider_opts.auth_url,
-                region_name=CONF.provider_opts.region
+                context, version='2'
             )
             self._fs_novaclient = novaclient.NovaClientPlugin(fscontext)
 
@@ -119,11 +113,7 @@ class FsComputeDriver(driver.ComputeDriver):
     def fs_cinderclient(self, context=None):
         if self._fs_cinderclient is None:
             fscontext = fs_context.FsClientContext(
-                context, version='2', username=CONF.provider_opts.user,
-                password=CONF.provider_opts.pwd,
-                project_id=CONF.provider_opts.tenant,
-                auth_url=CONF.provider_opts.auth_url,
-                region_name=CONF.provider_opts.region
+                context, version='2'
             )
             self._fs_cinderclient = cinderclient.CinderClientPlugin(fscontext)
 
@@ -132,11 +122,7 @@ class FsComputeDriver(driver.ComputeDriver):
     def fs_glanceclient(self, context=None):
         if self._fs_glanceclient is None:
             fscontext = fs_context.FsClientContext(
-                context, version='1', username=CONF.provider_opts.user,
-                password=CONF.provider_opts.pwd,
-                project_id=CONF.provider_opts.tenant,
-                auth_url=CONF.provider_opts.auth_url,
-                region_name=CONF.provider_opts.region
+                context, version='1'
             )
             self._fs_glanceclient = glanceclient.GlanceClientPlugin(fscontext)
 
@@ -381,8 +367,8 @@ class FsComputeDriver(driver.ComputeDriver):
         sub_fs_server = self._get_sub_fs_instance(context, instance)
         if sub_fs_server:
             self.fs_novaclient(context).delete(sub_fs_server)
-            self.fs_novaclient(context).wait_for_delete_server_complete(
-                sub_fs_server, 600)
+            self.fs_novaclient(context).check_delete_server_complete(
+                sub_fs_server.id)
         else:
             LOG.error('Can not found server to delete.')
             # raise exception_ex.ServerNotExistException(server_name=instance.display_name)
@@ -542,14 +528,15 @@ class FsComputeDriver(driver.ComputeDriver):
             raise exception_ex.ServerNotExistException(
                 server_name=instance.display_name)
 
+        context = req_context.RequestContext(project_id=instance.project_id)
+
         LOG.debug('server: %s status is: %s' % (server.id, server.status))
         if server.status == vm_states.ACTIVE.upper():
             LOG.debug('start to add stop task')
             self.fs_novaclient().stop(server)
             LOG.debug('submit stop task')
-            self.fs_novaclient().wait_for_server_in_specified_status(server,
-                                                                     'SHUTOFF'
-                                                                     )
+            self.fs_novaclient(context).wait_for_server_in_specified_status(
+                server, 'SHUTOFF')
             LOG.debug('stop server: %s success' % instance.uuid)
         elif server.status == 'SHUTOFF':
             LOG.debug('sub instance status is already STOPPED.')
@@ -766,6 +753,8 @@ class FsComputeDriver(driver.ComputeDriver):
                                                        instance.uuid)
             LOG.debug('name: %s' % name)
 
+            image_ref = None
+
             if instance.image_ref:
                 sub_image_id = self._get_sub_image_id(context,
                                                       instance.image_ref)
@@ -776,7 +765,7 @@ class FsComputeDriver(driver.ComputeDriver):
                     LOG.exception(_LE("get image(%(image_id)s) failed, "
                                       "ex = %(ex)s"), image_id=sub_image_id,
                                   ex=ex)
-                LOG.debug('image_ref: %s' % image_ref)
+                    raise
             else:
                 image_ref = None
 
@@ -794,13 +783,20 @@ class FsComputeDriver(driver.ComputeDriver):
                 context, block_device_info)
             LOG.debug('sub_bdm: %s' % sub_bdm)
 
+            project_mapper = self._get_project_mapper(context,
+                                                      context.project_id)
+            LOG.debug("+++hw, get project mapper is %s", project_mapper)
+            security_groups = self._get_provider_security_groups_list(
+                context, project_mapper)
+            nics = self._get_provider_nics(context, project_mapper)
+
             provider_server = self.fs_novaclient(context).create_server(
                 name, image_ref, sub_flavor_id, meta=metadata,
                 files=agent_inject_files,
                 reservation_id=instance.reservation_id,
-                security_groups=self.PROVIDER_SECURITY_GROUPS,
-                nics=self.PROVIDER_NICS,
-                availability_zone=self.PROVIDER_AVAILABILITY_ZONE,
+                security_groups=security_groups,
+                nics=nics,
+                availability_zone=project_mapper.get("availability_zone", None),
                 block_device_mapping_v2=sub_bdm)
 
             LOG.debug('create server job created.')
@@ -921,15 +917,21 @@ class FsComputeDriver(driver.ComputeDriver):
 
         return sub_bdms
 
-    def _get_provider_security_groups_list(self):
-        provider_sg = CONF.provider_opts.security_groups
-        if provider_sg is None:
-            return []
+    def _get_provider_security_groups_list(self, context, project_mapper=None):
+        if project_mapper is None:
+            project_mapper = self._get_project_mapper(context,
+                                                      context.project_id)
+
+        provider_sg = project_mapper.get('security_groups', '')
         return [item.strip() for item in provider_sg.split(',')]
 
-    def _get_provider_nics(self):
-        provider_net_data = CONF.provider_opts.net_data
-        provider_net_api = CONF.provider_opts.net_api
+    def _get_provider_nics(self, context, project_mapper=None):
+        if project_mapper is None:
+            project_mapper = self._get_project_mapper(context,
+                                                      context.project_id)
+        provider_net_data = project_mapper.get('net_data', None)
+        provider_net_api = project_mapper.get('net_api', None)
+
         nics = [{
             'net-id': provider_net_data
         }, {
@@ -1042,6 +1044,8 @@ class FsComputeDriver(driver.ComputeDriver):
 
     @logger_helper()
     def _get_sub_fs_instance(self, context=None, hybrid_instance=None):
+        if not context:
+            context = req_context.RequestContext(hybrid_instance.project_id)
         server = None
         sub_instance_name = self._generate_sub_fs_instance_name(
             hybrid_instance.display_name, hybrid_instance.uuid)
@@ -1052,10 +1056,12 @@ class FsComputeDriver(driver.ComputeDriver):
 
     def _get_sub_image_id(self, context, image_id):
 
-        image_mapper = self.db_api.image_mapper_get(context, image_id,
-                                                    context.project_id)
-        sub_image_id = image_mapper.get("dest_image_id",
-                                        CONF.provider_opts.base_linux_image)
+        project_mapper = self._get_project_mapper(context, context.project_id)
+        base_linux_image = project_mapper.get("base_linux_image", None)
+
+        image_mapper = self.db_api.image_mapper_get(context, image_id)
+        LOG.debug("+++hw, image_mapper = %s", image_mapper)
+        sub_image_id = image_mapper.get("dest_image_id", base_linux_image)
 
         return sub_image_id
 
@@ -1069,3 +1075,16 @@ class FsComputeDriver(driver.ComputeDriver):
         dest_flavor_id = flavor_mapper.get("dest_flavor_id", flavor_id)
 
         return dest_flavor_id
+
+    def _get_project_mapper(self, context, project_id=None):
+        if project_id is None:
+            project_id = 'default'
+
+        project_mapper = self.db_api.project_mapper_get(context, project_id)
+        if not project_mapper:
+            project_mapper = self.db_api.project_mapper_get(context, 'default')
+
+        if not project_mapper:
+            raise exception_ex.AccountNotConfig()
+
+        return project_mapper
