@@ -7053,7 +7053,7 @@ class ComputeManager(manager.Manager):
         data['tunnel_cidr'] = CONF.hybrid_cloud_agent_opts.tunnel_cidr
         data['route_gw'] = CONF.hybrid_cloud_agent_opts.route_gw
 
-        data['container_driver'] = 'docker'
+        data['container_driver'] = 'lxc'
         data['registry_url'] = '127.0.0.1'
 
         data['image_name'] = image['name']
