@@ -703,6 +703,7 @@ class ComputeManager(manager.Manager):
             openstack_driver.is_neutron_security_groups())
         self.consoleauth_rpcapi = consoleauth.rpcapi.ConsoleAuthAPI()
         self.cells_rpcapi = cells_rpcapi.CellsAPI()
+        self.jacketdriver = JacketHypervmDriver()
         # self.scheduler_client = scheduler_client.SchedulerClient()
         self._resource_tracker_dict = {}
         self.instance_events = InstanceEvents()
@@ -2304,9 +2305,8 @@ class ComputeManager(manager.Manager):
                                         instance, clean_shutdown)
         image_container_type = instance.system_metadata.get('image_container_format')
         if image_container_type == 'hybridvm':
-            jacketdriver = JacketHypervmDriver()
             try:
-                jacketdriver.stop_container(instance)
+                self.jacketdriver.stop_container(instance)
             except Exception, e:
                 pass
         self.driver.power_off(instance, timeout, retry_interval)
@@ -2606,9 +2606,8 @@ class ComputeManager(manager.Manager):
                              block_device_info)
         image_container_type = instance.system_metadata.get('image_container_format')
         if image_container_type == 'hybridvm':
-            jacketdriver = JacketHypervmDriver()
             try:
-                jacketdriver.start_container(instance, network_info, block_device_info)
+                self.jacketdriver.start_container(instance, network_info, block_device_info)
             except Exception, e:
                 pass
 
@@ -3101,6 +3100,9 @@ class ComputeManager(manager.Manager):
                 instance.task_state = task_states.REBOOT_STARTED_HARD
                 expected_state = task_states.REBOOT_PENDING_HARD
             instance.save(expected_task_state=expected_state)
+            image_container_type = instance.system_metadata.get('image_container_format')
+            if image_container_type == 'hybridvm':
+                self.jacketdriver.restart_container(instance, network_info, block_device_info)
             self.driver.reboot(context, instance,
                                network_info,
                                reboot_type,
@@ -4144,8 +4146,7 @@ class ComputeManager(manager.Manager):
         self._notify_about_instance_usage(context, instance, 'pause.start')
         image_container_type = instance.system_metadata.get('image_container_format')
         if image_container_type == 'hybridvm':
-            jacketdriver = JacketHypervmDriver()
-            jacketdriver.pause(instance)
+            self.jacketdriver.pause(instance)
         self.driver.pause(instance)
         instance.power_state = self._get_power_state(context, instance)
         instance.vm_state = vm_states.PAUSED
@@ -4165,8 +4166,7 @@ class ComputeManager(manager.Manager):
         self.driver.unpause(instance)
         image_container_type = instance.system_metadata.get('image_container_format')
         if image_container_type == 'hybridvm':
-            jacketdriver = JacketHypervmDriver()
-            jacketdriver.unpause(instance)
+            self.jacketdriver.unpause(instance)
         instance.power_state = self._get_power_state(context, instance)
         instance.vm_state = vm_states.ACTIVE
         instance.task_state = None
@@ -4768,17 +4768,16 @@ class ComputeManager(manager.Manager):
         image_container_type = instance.system_metadata.get('image_container_format')
         if image_container_type == 'hybridvm':
             # self._do_hybrid_vm_attach(context, instance, bdm, mountpoint)
-            jacketdriver = JacketHypervmDriver()
-            volume_devices = jacketdriver.list_volumes(instance)
+            volume_devices = self.jacketdriver.list_volumes(instance)
             old_volumes_list = volume_devices.get('devices')
             do_attach_volume(context, instance, driver_bdm)
-            volume_devices = jacketdriver.list_volumes(instance)
+            volume_devices = self.jacketdriver.list_volumes(instance)
             new_volumes_list = volume_devices.get('devices')
             added_device_list = [device for device in new_volumes_list if device not in old_volumes_list]
             added_device = added_device_list[0]
             volume_id = bdm.volume_id
             mountpoint = driver_bdm.get('mount_device')
-            jacketdriver.attach_volume(instance, volume_id, added_device, mountpoint)
+            self.jacketdriver.attach_volume(instance, volume_id, added_device, mountpoint)
         else:
             do_attach_volume(context, instance, driver_bdm)
 
@@ -4946,8 +4945,7 @@ class ComputeManager(manager.Manager):
         """Detach a volume from an instance."""
         image_container_type = instance.system_metadata.get('image_container_format')
         if image_container_type == 'hybridvm':
-            jacketdriver = JacketHypervmDriver()
-            jacketdriver.detach_volume(instance, volume_id)
+            self.jacketdriver.detach_volume(instance, volume_id)
         self._detach_volume(context, volume_id, instance,
                             attachment_id=attachment_id)
 
@@ -6927,8 +6925,6 @@ class ComputeManager(manager.Manager):
                             injected_files, admin_password,
                             network_info, block_device_info):
 
-        jacketdriver = JacketHypervmDriver()
-
         bdms = block_device_info.get('block_device_mapping', [])
         block_device_info['block_device_mapping'] = []
         for bdm in bdms:
@@ -6963,17 +6959,17 @@ class ComputeManager(manager.Manager):
                 mount_device = bdm['mount_device']
                 vol = self.volume_api.get(context, connection_info.get('serial'))
                 bdm['size'] = vol.get('size')
-                volume_devices = jacketdriver.list_volumes(instance)
+                volume_devices = self.jacketdriver.list_volumes(instance)
                 old_volumes_list = volume_devices.get('devices')
                 self.driver.attach_volume(context, connection_info, instance)
-                volume_devices = jacketdriver.list_volumes(instance)
+                volume_devices = self.jacketdriver.list_volumes(instance)
                 new_volumes_list = volume_devices.get('devices')
                 added_device_list = [device for device in new_volumes_list if device not in old_volumes_list]
                 added_device = added_device_list[0]
                 volume_id = bdm['volume_id']
-                jacketdriver.attach_volume(instance, volume_id, added_device, mount_device)
+                self.jacketdriver.attach_volume(instance, volume_id, added_device, mount_device)
 
-        jacketdriver.wait_container_ok(instance)
+        self.jacketdriver.wait_container_ok(instance)
 
     def _build_hybrid_vm_bdm(self, volume):
         '''
