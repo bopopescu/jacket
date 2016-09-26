@@ -3,7 +3,6 @@
 source /root/adminrc
 
 HOST_IP=`ip addr |grep inet|grep -v 127.0.0.1|grep -v inet6|grep -E "ens|eth"|awk '{print $2}'|tr -d "addr:" | awk -F '/' '{print $1}'`
-provider_opts_use_mysql="0"
 
 ATTRS="mysqldbadm mysqldbpassword mysqldbport dbbackendhost jacketdbname \
 jacketapidbname jacketdbuser jacketdbpass jacket_host messagebrokerhost \
@@ -256,25 +255,13 @@ conf_init()
     crudini --set /etc/jacket/jacket.conf glance api_insecure "${glance_api_insecure}"
 
     #provider_opts
-    if [ "$provider_opts_use_mysql" -eq "1" ]; then
-        jacket --insecure project-mapper-create "default" "${tenant}" --property net_data="$net_data" \
-        --property availability_zone="$availability_zone" --property region="$region" \
-        --property pwd="$pwd" --property base_linux_image="$base_linux_image" \
-        --property auth_url="$auth_url" --property net_api="$net_api" \
-        --property tenant="$tenant" --property net_api="$net_api" \
-        --property user="$user" --property volume_type="$volume_type"
-    else
-        crudini --set /etc/jacket/jacket.conf provider_opts net_data "${net_data}"
-        crudini --set /etc/jacket/jacket.conf provider_opts availability_zone "${availability_zone}"
-        crudini --set /etc/jacket/jacket.conf provider_opts region "${region}"
-        crudini --set /etc/jacket/jacket.conf provider_opts pwd "${pwd}"
-        crudini --set /etc/jacket/jacket.conf provider_opts base_linux_image "${base_linux_image}"
-        crudini --set /etc/jacket/jacket.conf provider_opts auth_url "${pro_auth_url}"
-        crudini --set /etc/jacket/jacket.conf provider_opts net_api "${net_api}"
-        crudini --set /etc/jacket/jacket.conf provider_opts tenant "${tenant}"
-        crudini --set /etc/jacket/jacket.conf provider_opts user "${user}"
-        crudini --set /etc/jacket/jacket.conf provider_opts volume_type "${volume_type}"
-    fi
+
+    jacket --insecure project-mapper-create "default" "${tenant}" --property net_data="$net_data" \
+    --property availability_zone="$availability_zone" --property region="$region" \
+    --property pwd="$pwd" --property base_linux_image="$base_linux_image" \
+    --property auth_url="$auth_url" --property net_api="$net_api" \
+    --property tenant="$tenant" --property net_api="$net_api" \
+    --property user="$user" --property volume_type="$volume_type"
 
     #hybrid_cloud_agent_opts
     crudini --set /etc/jacket/jacket.conf hybrid_cloud_agent_opts tunnel_cidr "${tunnel_cidr}"
@@ -307,10 +294,12 @@ main()
         usage
     fi
 
+    attrs_init
+
     mkdir -p "${instances_path}"
     mkdir -p "${log_dir}"
-
-    attrs_init
+    chown jacket:jacket "${instances_path}"
+    chown jacket:jacket "${log_dir}"
     conf_init
     db_init
     jacket_user_init
