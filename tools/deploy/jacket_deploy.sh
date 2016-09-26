@@ -7,7 +7,7 @@ HOST_IP=`ip addr |grep inet|grep -v 127.0.0.1|grep -v inet6|grep -E "ens|eth"|aw
 ATTRS="mysqldbadm mysqldbpassword mysqldbport dbbackendhost jacketdbname \
 jacketapidbname jacketdbuser jacketdbpass jacket_host messagebrokerhost \
 brokerflavor brokerflavor brokeruser brokerpass brokervhost \
-virt_type instances_path default_schedule_zone default_availability_zone \
+virt_type state_path default_schedule_zone default_availability_zone \
 storage_availability_zone compute_topic volume_topic \
 linuxnet_ovs_integration_bridge use_neutron image_service compute_driver \
 firewall_driver rootwrap_config use_local enabled_backends log_dir \
@@ -163,7 +163,7 @@ conf_init()
     crudini --set /etc/jacket/jacket.conf DEFAULT compute_topic "${compute_topic}"
     crudini --set /etc/jacket/jacket.conf DEFAULT volume_topic "${volume_topic}"
     crudini --set /etc/jacket/jacket.conf DEFAULT use_local "${use_local}"
-    crudini --set /etc/jacket/jacket.conf DEFAULT instances_path "${instances_path}"
+    crudini --set /etc/jacket/jacket.conf DEFAULT state_path "${state_path}"
     crudini --set /etc/jacket/jacket.conf DEFAULT enabled_backends "${enabled_backends}"
     crudini --set /etc/jacket/jacket.conf DEFAULT rpc_backend rabbit
     crudini --set /etc/jacket/jacket.conf DEFAULT use_neutron "${use_neutron}"
@@ -307,9 +307,11 @@ main()
 
     attrs_init
 
-    mkdir -p "${instances_path}"
+    state_path=
+
+    mkdir -p "${state_path}"
     mkdir -p "${log_dir}"
-    chown jacket:jacket "${instances_path}"
+    chown jacket:jacket "${state_path}"
     chown jacket:jacket "${log_dir}"
     conf_init
     db_init

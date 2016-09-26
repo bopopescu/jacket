@@ -337,7 +337,7 @@ class Service(base.NovaPersistentObject, base.NovaObject,
 
     @base.remotable_classmethod
     def get_minimum_version(cls, context, binary, use_slave=False):
-        if not binary.startswith('nova-'):
+        if not binary.startswith('nova-') and not binary.startswith('jacket-'):
             LOG.warning(_LW('get_minimum_version called with likely-incorrect '
                             'binary `%s\''), binary)
             raise exception.ObjectActionError(action='get_minimum_version',
