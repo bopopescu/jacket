@@ -219,11 +219,22 @@ conf_init()
     crudini --set /etc/jacket/jacket.conf libvirt virt_type ${virt_type}
 
     # storage
-    crudini --set /etc/jacket/jacket.conf ${enabled_backends} lvm_type "${lvm_type}"
-    crudini --set /etc/jacket/jacket.conf ${enabled_backends} iscsi_helper "${iscsi_helper}"
+    if [ "${lvm_type}" != "" ] ; then
+        crudini --set /etc/jacket/jacket.conf ${enabled_backends} lvm_type "${lvm_type}"
+    fi
+    if [ "${iscsi_helper}" != "" ] ; then
+        crudini --set /etc/jacket/jacket.conf ${enabled_backends} iscsi_helper "${iscsi_helper}"
+    fi
+
+    if [ "${volume_group}" != "" ] ; then
+        crudini --set /etc/jacket/jacket.conf ${enabled_backends} volume_group "${volume_group}"
+    fi
+
+    if [ "${volumes_dir}" != "" ] ; then
+        crudini --set /etc/jacket/jacket.conf ${enabled_backends} volumes_dir "${volumes_dir}"
+    fi
+
     crudini --set /etc/jacket/jacket.conf ${enabled_backends} volume_driver "${volume_driver}"
-    crudini --set /etc/jacket/jacket.conf ${enabled_backends} volume_group "${volume_group}"
-    crudini --set /etc/jacket/jacket.conf ${enabled_backends} volumes_dir "${volumes_dir}"
     crudini --set /etc/jacket/jacket.conf ${enabled_backends} volume_backend_name "${volume_backend_name}"
 
     # cinder
