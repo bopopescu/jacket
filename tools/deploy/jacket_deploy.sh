@@ -272,6 +272,8 @@ conf_init()
     crudini --set /etc/jacket/jacket.conf hybrid_cloud_agent_opts rabbit_host_user_password "${rabbit_host_user_password}"
     crudini --set /etc/jacket/jacket.conf hybrid_cloud_agent_opts rabbit_host_user_id "${rabbit_host_user_id}"
     crudini --set /etc/jacket/jacket.conf hybrid_cloud_agent_opts rabbit_host_ip "${rabbit_host_ip}"
+
+    crudini --set /etc/jacket/jacket.conf oslo_concurrency lock_path "${state_path}"
 }
 
 jacket_user_init()
@@ -286,6 +288,7 @@ jacket_user_init()
 
 main()
 {
+    script_dir=`dirname $0`
     param_parse $*
     if [ "x$CONF_FILE" = "x" ]; then
         script_dir=`dirname $0`
@@ -297,15 +300,14 @@ main()
     fi
 
     attrs_init
-
     mkdir -p "${state_path}"
     mkdir -p "${log_dir}"
     mkdir -p /etc/jacket
-    chown jacket:jacket "${state_path}"
-    chown jacket:jacket "${log_dir}"
     conf_init
     db_init
     jacket_user_init
+    chown jacket:jacket "${state_path}"
+    chown jacket:jacket "${log_dir}"
     system_service
 
     #keystone中设置jacket
@@ -324,6 +326,11 @@ main()
 
     # 创建image对应关系
     #jacket --insecure --debug image-mapper-create 66ecc1c0-8367-477b-92c5-1bb09b0bfa89 fc84fa2c-dafd-498a-8246-0692702532c3
+
+    jacket_conf_path="${script_dir}/../etc/jacket"
+    if [ -e jacket_conf_path ]; then
+        cp ${jacket_conf_path}/* /etc/jacket/
+    fi
 
     service jacket-api start
     service jacket-worker start
