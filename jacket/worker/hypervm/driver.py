@@ -59,6 +59,20 @@ class JacketHypervmDriver():
 
         LOG.info('Start Server: %s, result is: %s' % (instance.display_name, start_result))
 
+    def restart_container(self, instance, network_info, block_device_info):
+        wormhole = self._create_wormhole(instance)
+        LOG.debug('start to restart container')
+        try:
+            version = wormhole.get_version()
+        except Exception, e:
+            LOG.error('hyper service is not online, no need to restart container')
+            version = None
+
+        if version:
+            restart_result = wormhole.restart_container(network_info, block_device_info)
+
+        LOG.info('Restart Server: %s, result is: %s' % (instance.display_name, restart_result))
+
     def pause(self, instance):
         LOG.debug('start to pause instance: %s' % instance)
         wormhole = self._create_wormhole(instance)

@@ -147,8 +147,10 @@ class FsComputeDriver(driver.ComputeDriver):
     def volume_delete(self, context, instance):
         volume_name = instance.uuid
         volume = self.fs_cinderclient(context).get_volume_by_name(volume_name)
-        self.fs_cinderclient(context).wait_for_volume_deleted(volume,
-                                                              timeout=60)
+        if volume:
+            self.fs_cinderclient(context).volume_delete(volume)
+            self.fs_cinderclient(context).wait_for_volume_deleted(volume,
+                                                                  timeout=60)
 
     def attach_volume(self, context, connection_info, instance, mountpoint=None,
                       disk_bus=None, device_type=None,
