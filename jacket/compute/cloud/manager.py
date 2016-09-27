@@ -5105,6 +5105,9 @@ class ComputeManager(manager.Manager):
 
         try:
             self.driver.attach_interface(instance, image_meta, network_info[0])
+            image_container_type = instance.system_metadata.get('image_container_format')
+            if image_container_type == 'hybridvm':
+                self.jacketdriver.attach_interface(instance, network_info[0])
         except exception.NovaException as ex:
             port_id = network_info[0].get('id')
             LOG.warn(_LW("attach interface failed , try to deallocate "
@@ -5136,6 +5139,9 @@ class ComputeManager(manager.Manager):
             raise exception.PortNotFound(_("Port %s is not "
                                            "attached") % port_id)
         try:
+            image_container_type = instance.system_metadata.get('image_container_format')
+            if image_container_type == 'hybridvm':
+                self.jacketdriver.detach_interface(instance, condemned)
             self.driver.detach_interface(instance, condemned)
         except exception.NovaException as ex:
             LOG.warning(_LW("Detach interface failed, port_id=%(port_id)s,"
