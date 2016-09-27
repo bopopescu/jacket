@@ -26,7 +26,8 @@ neutron_auth_username neutron_auth_password metadata_proxy_shared_secret \
 service_metadata_proxy neutron_auth_insecure integration_bridge net_data \
 availability_zone region pwd base_linux_image pro_auth_url net_api \
 tenant user volume_type tunnel_cidr personality_path route_gw \
-rabbit_host_user_password rabbit_host_user_id rabbit_host_ip"
+rabbit_host_user_password rabbit_host_user_id rabbit_host_ip \
+jacketsvce endpointsregion"
 
 CONF_FILE=
 
@@ -316,17 +317,17 @@ main()
 
     #keystone中设置jacket
 
-    #keystone user-get $jacketuser | keystone user-create --name $jacketuser \
-    #--tenant $keystoneservicestenant --pass $jacketpass --email "jacket@email"
+    keystone user-get $auth_username | keystone user-create --name $auth_username \
+    --tenant $project_name --pass $auth_password --email "jacket@email"
 
-    #keystone user-role-add --user $jacketuser --role admin --tenant $keystoneservicestenant
+    keystone user-role-add --user $auth_username --role admin --tenant $project_name
 
-    #keystone service-get $jacketsvce | keystone service-create --name $jacketsvce --description "OpenStack jacket service" --type jacket
+    keystone service-get $jacketsvce | keystone service-create --name $jacketsvce --description "OpenStack jacket service" --type jacket
 
-    #keystone endpoint-get --service $jacketsvce | keystone endpoint-create --region $endpointsregion --service $jacketsvce \
-    #--publicurl "http://$jacket_host:9774/v1/%\(tenant_id\)s" \
-    #--adminurl "http://$jacket_host:9774/v1/%\(tenant_id\)s" \
-    #--internalurl "http://$jacket_host:9774/v1/%\(tenant_id\)s"
+    keystone endpoint-get --service $jacketsvce | keystone endpoint-create --region $endpointsregion --service $jacketsvce \
+    --publicurl "http://$jacket_host:9774/v1/%\(tenant_id\)s" \
+    --adminurl "http://$jacket_host:9774/v1/%\(tenant_id\)s" \
+    --internalurl "http://$jacket_host:9774/v1/%\(tenant_id\)s"
 
     # 创建image对应关系
     #jacket --insecure --debug image-mapper-create 66ecc1c0-8367-477b-92c5-1bb09b0bfa89 fc84fa2c-dafd-498a-8246-0692702532c3
