@@ -243,7 +243,7 @@ conf_init()
     crudini --set /etc/jacket/jacket.conf cinder endpoint_template "${endpoint_template}"
 
     #neutron
-    crudini --set /etc/jacket/jacket.conf neutron url "${neutron_auth_url}"
+    crudini --set /etc/jacket/jacket.conf neutron url "${neutron_url}"
     crudini --set /etc/jacket/jacket.conf neutron neutron_default_tenant_id "${neutron_default_tenant_id}"
     crudini --set /etc/jacket/jacket.conf neutron auth_type "${neutron_auth_type}"
     crudini --set /etc/jacket/jacket.conf neutron auth_section "${neutron_auth_section}"
@@ -264,15 +264,6 @@ conf_init()
     crudini --set /etc/jacket/jacket.conf glance port "${glance_port}"
     crudini --set /etc/jacket/jacket.conf glance protocol "${glance_protocol}"
     crudini --set /etc/jacket/jacket.conf glance api_insecure "${glance_api_insecure}"
-
-    #provider_opts
-
-    jacket --insecure project-mapper-create "default" "${tenant}" --property net_data="$net_data" \
-    --property availability_zone="$availability_zone" --property region="$region" \
-    --property pwd="$pwd" --property base_linux_image="$base_linux_image" \
-    --property auth_url="$auth_url" --property net_api="$net_api" \
-    --property tenant="$tenant" --property net_api="$net_api" \
-    --property user="$user" --property volume_type="$volume_type"
 
     #hybrid_cloud_agent_opts
     crudini --set /etc/jacket/jacket.conf hybrid_cloud_agent_opts tunnel_cidr "${tunnel_cidr}"
@@ -307,10 +298,9 @@ main()
 
     attrs_init
 
-    state_path=
-
     mkdir -p "${state_path}"
     mkdir -p "${log_dir}"
+    mkdir -p /etc/jacket
     chown jacket:jacket "${state_path}"
     chown jacket:jacket "${log_dir}"
     conf_init
@@ -334,6 +324,18 @@ main()
 
     # 创建image对应关系
     #jacket --insecure --debug image-mapper-create 66ecc1c0-8367-477b-92c5-1bb09b0bfa89 fc84fa2c-dafd-498a-8246-0692702532c3
+
+    service jacket-api start
+    service jacket-worker start
+
+    #provider_opts
+    jacket --insecure project-mapper-create "default" "${tenant}" --property net_data="$net_data" \
+    --property availability_zone="$availability_zone" --property region="$region" \
+    --property pwd="$pwd" --property base_linux_image="$base_linux_image" \
+    --property auth_url="$pro_auth_url" --property net_api="$net_api" \
+    --property tenant="$tenant" --property net_api="$net_api" \
+    --property user="$user" --property volume_type="$volume_type"
+
 }
 
 main $*
