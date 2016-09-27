@@ -27,7 +27,7 @@ service_metadata_proxy neutron_auth_insecure integration_bridge net_data \
 availability_zone region pwd base_linux_image pro_auth_url net_api \
 tenant user volume_type tunnel_cidr personality_path route_gw \
 rabbit_host_user_password rabbit_host_user_id rabbit_host_ip \
-jacketsvce endpointsregion"
+jacketsvce endpointsregion publicurl adminurl internalurl"
 
 CONF_FILE=
 
@@ -306,28 +306,29 @@ main()
 
     attrs_init
     mkdir -p "${state_path}"
+    mkdir -p "${state_path}/instances"
     mkdir -p "${log_dir}"
     mkdir -p /etc/jacket
     conf_init
     db_init
     jacket_user_init
-    chown jacket:jacket "${state_path}"
+    chown jacket:jacket "${state_path}" -R
     chown jacket:jacket "${log_dir}"
     system_service
 
     #keystone中设置jacket
 
-    keystone user-get $auth_username | keystone user-create --name $auth_username \
+    keystone user-get $auth_username || keystone user-create --name $auth_username \
     --tenant $project_name --pass $auth_password --email "jacket@email"
 
     keystone user-role-add --user $auth_username --role admin --tenant $project_name
 
-    keystone service-get $jacketsvce | keystone service-create --name $jacketsvce --description "OpenStack jacket service" --type jacket
+    keystone service-get $jacketsvce || keystone service-create --name $jacketsvce --description "OpenStack jacket service" --type jacket
 
-    keystone endpoint-get --service $jacketsvce | keystone endpoint-create --region $endpointsregion --service $jacketsvce \
-    --publicurl "http://$jacket_host:9774/v1/%\(tenant_id\)s" \
-    --adminurl "http://$jacket_host:9774/v1/%\(tenant_id\)s" \
-    --internalurl "http://$jacket_host:9774/v1/%\(tenant_id\)s"
+    keystone endpoint-get --service $jacketsvce || keystone endpoint-create --region $endpointsregion --service $jacketsvce \
+    --publicurl "${publicurl}" \
+    --adminurl "${adminurl}" \
+    --internalurl "${internalurl}"
 
     # 创建image对应关系
     #jacket --insecure --debug image-mapper-create 66ecc1c0-8367-477b-92c5-1bb09b0bfa89 fc84fa2c-dafd-498a-8246-0692702532c3
