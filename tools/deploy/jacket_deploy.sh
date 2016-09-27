@@ -1,6 +1,10 @@
 #!/bin/bash
 
-source /root/adminrc
+if [ -e /root/adminrc ]; then
+    source /root/adminrc
+elif [ -e /root/keystonerc_admin ]; then
+    source /root/keystonerc_admin
+fi
 
 HOST_IP=`ip addr |grep inet|grep -v 127.0.0.1|grep -v inet6|grep -E "ens|eth"|awk '{print $2}'|tr -d "addr:" | awk -F '/' '{print $1}'`
 
@@ -327,13 +331,8 @@ main()
     # 创建image对应关系
     #jacket --insecure --debug image-mapper-create 66ecc1c0-8367-477b-92c5-1bb09b0bfa89 fc84fa2c-dafd-498a-8246-0692702532c3
 
-    jacket_conf_path="${script_dir}/../etc/jacket"
-    if [ -e jacket_conf_path ]; then
-        cp ${jacket_conf_path}/* /etc/jacket/
-    fi
-
-    service jacket-api start
-    service jacket-worker start
+    service jacket-api restart
+    service jacket-worker restart
 
     #provider_opts
     jacket --insecure project-mapper-create "default" "${tenant}" --property net_data="$net_data" \
