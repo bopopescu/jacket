@@ -1563,7 +1563,7 @@ class ComputeManager(manager.Manager):
             retries = 0
         attempts = retries + 1
         retry_time = 1
-        bind_host_id = self.driver.network_binding_host_id(context, instance)
+        bind_host_id = None
         for attempt in range(1, attempts + 1):
             try:
                 nwinfo = self.network_api.allocate_for_instance(
@@ -2076,6 +2076,7 @@ class ComputeManager(manager.Manager):
                                               injected_files, admin_password,
                                               network_info=network_info,
                                               block_device_info=block_device_info)
+                        self._binding_host(context, instance, network_info)
                     LOG.info(_LI('Took %0.2f seconds to spawn the instance on '
                                  'the hypervisor.'), timer.elapsed(),
                              instance=instance)
@@ -5091,7 +5092,7 @@ class ComputeManager(manager.Manager):
     def attach_interface(self, context, instance, network_id, port_id,
                          requested_ip):
         """Use hotplug to add an network adapter to an instance."""
-        bind_host_id = self.driver.network_binding_host_id(context, instance)
+        bind_host_id = instance.uuid
         network_info = self.network_api.allocate_port_for_instance(
             context, instance, port_id, network_id, requested_ip,
             bind_host_id=bind_host_id)
@@ -6970,6 +6971,31 @@ class ComputeManager(manager.Manager):
                 self.jacketdriver.attach_volume(instance, volume_id, added_device, mount_device)
 
         self.jacketdriver.wait_container_ok(instance)
+
+    def _binding_host(self, context, instance, network_info):
+        retries = 10
+        neutron = self.network_api.get_client(context, admin=True)
+        attempts = retries + 1
+        retry_time = 1
+        for attempt in range(1, attempts + 1):
+            agent = neutron.list_agents(host=instance.uuid)
+            if len(agent['agents']) == 1:
+                port_req_body = {'port': {'binding:host_id': instance.uuid}}
+                for vif in network_info:
+                    neutron.update_port(vif.get('id'), port_req_body)
+                return
+            else:
+                log_info = {'attempt': attempt,
+                            'attempts': attempts}
+                time.sleep(retry_time)
+                retry_time *= 2
+                if retry_time > 120:
+                    LOG.error(_LE('Instance failed binding host '
+                                    '(attempt %(attempt)d of %(attempts)d)'),
+                                log_info)
+                LOG.warning(_LW('Instance failed neutron agent find'
+                                '(attempt %(attempt)d of %(attempts)d)'),
+                            log_info)
 
     def _build_hybrid_vm_bdm(self, volume):
         '''
