@@ -289,6 +289,13 @@ jacket_user_init()
       # Id reservation request: https://bugzilla.redhat.com/923891
       useradd -u 1066 -r -g jacket -G jacket,nobody -d /var/lib/jacket/ -s /sbin/nologin -c "OpenStack jacket Daemons" jacket
     fi
+
+    #加入到sudo中
+    cat <<EOF >/etc/sudoers.d/jacket
+Defaults:jacket !requiretty
+jacket ALL = (root) NOPASSWD: /usr/bin/jacket-rootwrap /etc/jacket/rootwrap.conf *
+EOF
+
 }
 
 main()
