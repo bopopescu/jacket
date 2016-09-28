@@ -78,8 +78,8 @@ class WormHoleBusiness(object):
         self.clients = clients
 
     def get_version(self):
-        docker_version = self._run_function_of_clients('get_version')
-        return docker_version
+        version = self._run_function_of_clients('get_version')
+        return version
 
     def restart_container(self, network_info, block_device_info):
         return self._run_function_of_clients('restart_container', network_info=network_info,
@@ -154,6 +154,8 @@ class WormHoleBusiness(object):
                 try:
                     result = func(*args, **kwargs)
                     #LOG.debug('Finish to execute %s' % function_name)
+                    self.clients = []
+                    self.clients.append(client)
                     break
                 except Exception, e:
                     tmp_except = e

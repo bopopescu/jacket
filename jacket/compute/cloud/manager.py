@@ -102,6 +102,7 @@ from jacket.compute import volume
 from jacket.compute.volume import encryptors
 
 from jacket.worker.hypervm.driver import JacketHypervmDriver
+from wormholeclient import constants
 
 compute_opts = [
     cfg.StrOpt('console_host',
@@ -1563,7 +1564,11 @@ class ComputeManager(manager.Manager):
             retries = 0
         attempts = retries + 1
         retry_time = 1
-        bind_host_id = None
+        image_container_type = instance.system_metadata.get('image_container_format')
+        if image_container_type == 'hybridvm':
+            bind_host_id = None
+        else:
+            bind_host_id = self.driver.network_binding_host_id(context, instance)
         for attempt in range(1, attempts + 1):
             try:
                 nwinfo = self.network_api.allocate_for_instance(
@@ -2071,12 +2076,12 @@ class ComputeManager(manager.Manager):
                                                      injected_files, admin_password,
                                                      network_info=network_info,
                                                      block_device_info=block_device_info)
+                            self._binding_host(context, instance, network_info)
                         else:
                             self.driver.spawn(context, instance, image_meta,
                                               injected_files, admin_password,
                                               network_info=network_info,
                                               block_device_info=block_device_info)
-                        self._binding_host(context, instance, network_info)
                     LOG.info(_LI('Took %0.2f seconds to spawn the instance on '
                                  'the hypervisor.'), timer.elapsed(),
                              instance=instance)
@@ -2308,6 +2313,7 @@ class ComputeManager(manager.Manager):
         if image_container_type == 'hybridvm':
             try:
                 self.jacketdriver.stop_container(instance)
+                self.jacketdriver.wait_container_in_specified_status(instance, constants.STOPPED)
             except Exception, e:
                 pass
         self.driver.power_off(instance, timeout, retry_interval)
@@ -2609,6 +2615,7 @@ class ComputeManager(manager.Manager):
         if image_container_type == 'hybridvm':
             try:
                 self.jacketdriver.start_container(instance, network_info, block_device_info)
+                self.jacketdriver.wait_container_in_specified_status(instance, constants.RUNNING)
             except Exception, e:
                 pass
 
@@ -4148,6 +4155,7 @@ class ComputeManager(manager.Manager):
         image_container_type = instance.system_metadata.get('image_container_format')
         if image_container_type == 'hybridvm':
             self.jacketdriver.pause(instance)
+            self.jacketdriver.wait_container_in_specified_status(instance, constants.FROZEN)
         self.driver.pause(instance)
         instance.power_state = self._get_power_state(context, instance)
         instance.vm_state = vm_states.PAUSED
@@ -4168,6 +4176,7 @@ class ComputeManager(manager.Manager):
         image_container_type = instance.system_metadata.get('image_container_format')
         if image_container_type == 'hybridvm':
             self.jacketdriver.unpause(instance)
+            self.jacketdriver.wait_container_in_specified_status(instance, constants.RUNNING)
         instance.power_state = self._get_power_state(context, instance)
         instance.vm_state = vm_states.ACTIVE
         instance.task_state = None
@@ -6978,7 +6987,7 @@ class ComputeManager(manager.Manager):
                 volume_id = bdm['volume_id']
                 self.jacketdriver.attach_volume(instance, volume_id, added_device, mount_device)
 
-        self.jacketdriver.wait_container_ok(instance)
+        self.jacketdriver.wait_container_in_specified_status(instance, constants.RUNNING)
 
     def _binding_host(self, context, instance, network_info):
         retries = 10
