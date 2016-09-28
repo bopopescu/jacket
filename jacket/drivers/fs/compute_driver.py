@@ -388,10 +388,12 @@ class FsComputeDriver(driver.ComputeDriver):
         sub_volume_name = self._get_sub_fs_volume_name(cascading_volume_name,
                                                        cascading_volume_id)
 
-        sub_volume = self.fs_cinderclient().get_volume_by_name(
+        context = req_context.RequestContext(instance.project_id)
+
+        sub_volume = self.fs_cinderclient(context).get_volume_by_name(
             sub_volume_name)
         if not sub_volume:
-            sub_volume = self.fs_cinderclient().get_volume_by_name(
+            sub_volume = self.fs_cinderclient(context).get_volume_by_name(
                 cascading_volume_name)
             if not sub_volume:
                 LOG.error('Can not find volume in provider fs, '
@@ -403,10 +405,10 @@ class FsComputeDriver(driver.ComputeDriver):
 
         LOG.debug('server_id: %s' % server_id)
         LOG.debug('submit detach task')
-        self.fs_novaclient().detach_volume(server_id, sub_volume.id)
+        self.fs_novaclient(context).detach_volume(server_id, sub_volume.id)
 
         LOG.debug('wait for volume in available status.')
-        self.fs_cinderclient().wait_for_volume_in_specified_status(
+        self.fs_cinderclient(context).wait_for_volume_in_specified_status(
             sub_volume.id, 'available')
 
     def _get_attachment_id_for_volume(self, sub_volume):
@@ -512,7 +514,8 @@ class FsComputeDriver(driver.ComputeDriver):
         """
 
         instances = []
-        servers = self.fs_novaclient().list()
+        context = req_context.RequestContext(project_id='default')
+        servers = self.fs_novaclient(context).list()
         for server in servers:
             server_id = server.id
             instances.append(server_id)
@@ -535,7 +538,7 @@ class FsComputeDriver(driver.ComputeDriver):
         LOG.debug('server: %s status is: %s' % (server.id, server.status))
         if server.status == vm_states.ACTIVE.upper():
             LOG.debug('start to add stop task')
-            self.fs_novaclient().stop(server)
+            self.fs_novaclient(context).stop(server)
             LOG.debug('submit stop task')
             self.fs_novaclient(context).check_stop_server_complete(server.id)
             LOG.debug('stop server: %s success' % instance.uuid)
