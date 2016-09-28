@@ -105,10 +105,11 @@ class ImageMapperController(wsgi.Controller):
         image_mapper = body['image_mapper']
         project_id = image_mapper.pop('project_id', None)
         try:
-            image = self.config_api.image_mapper_update(context, id, project_id, image_mapper)
+            image = self.config_api.image_mapper_update(context, id, project_id,
+                                                        image_mapper)
         except Exception as ex:
-            LOG.error(_LE("update image(%(image_id)s) mapper failed, ex = %(ex)s"),
-                      image_id=id, ex=ex)
+            LOG.exception(_LE("update image(%(image_id)s) mapper failed, "
+                          "ex = %(ex)s"), image_id=id, ex=ex)
             raise exc.HTTPBadRequest(explanation=ex)
         return {'image_mapper': image}
 
