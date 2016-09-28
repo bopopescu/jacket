@@ -96,6 +96,22 @@ class FsVolumeDriver(driver.VolumeDriver):
 
         return sub_image_id
 
+    def _get_typename(self, context, type_id):
+        found = False
+        typename = None
+        volume_type_list = self.storage_db.volume_type_get_all(context)
+        for vt in volume_type_list.values():
+            if type_id == vt.get('id'):
+                found = True
+                typename = vt.get('name')
+                break
+
+        if not found:
+            raise exception.EntityNotFound(entity='VolumeType',
+                                           name=type_id)
+
+        return typename
+
     def copy_image_to_volume(self, context, volume, image_service, image_id):
         LOG.debug('dir volume: %s' % dir(volume))
         LOG.debug('volume: %s' % volume)
@@ -174,25 +190,6 @@ class FsVolumeDriver(driver.VolumeDriver):
         """Export the volume."""
         pass
 
-    def create_snapshot(self, snapshot):
-        pass
-
-    def _get_typename(self, context, type_id):
-        found = False
-        typename = None
-        volume_type_list = self.storage_db.volume_type_get_all(context)
-        for vt in volume_type_list.values():
-            if type_id == vt.get('id'):
-                found = True
-                typename = vt.get('name')
-                break
-
-        if not found:
-            raise exception.EntityNotFound(entity='VolumeType',
-                                           name=type_id)
-
-        return typename
-
     def create_volume(self, volume):
         LOG.debug('start to create volume')
         LOG.debug('volume glance image metadata: %s' %
@@ -246,14 +243,6 @@ class FsVolumeDriver(driver.VolumeDriver):
         LOG.debug('end to create volume')
         return {'provider_location': 'SUB-FusionSphere'}
 
-    def create_volume_from_snapshot(self, volume, snapshot):
-        """Create a volume from a snapshot."""
-        pass
-
-    def delete_snapshot(self, snapshot):
-        """Delete a snapshot."""
-        pass
-
     def delete_volume(self, volume):
         sub_volume_name = self._get_sub_fs_volume_name(volume.display_name,
                                                        volume.id)
@@ -272,6 +261,18 @@ class FsVolumeDriver(driver.VolumeDriver):
         else:
             LOG.debug('no sub-volume exist, '
                       'no need to delete sub volume: %s' % sub_volume_name)
+
+    def create_volume_from_snapshot(self, volume, snapshot):
+        """Create a volume from a snapshot."""
+        pass
+
+    def create_snapshot(self, snapshot):
+
+        pass
+
+    def delete_snapshot(self, snapshot):
+        """Delete a snapshot."""
+        pass
 
     def do_setup(self, context):
         """Instantiate common class and log in storage system."""

@@ -154,7 +154,8 @@ def require_context(f):
 def model_query(context, model,
                 args=None,
                 read_deleted=None,
-                project_only=False):
+                project_only=False,
+                session=None):
     """Query helper that accounts for context's `read_deleted` field.
 
     :param context:     NovaContext of the query.
@@ -185,7 +186,7 @@ def model_query(context, model,
                            % read_deleted)
 
     query = sqlalchemyutils.model_query(
-        model, get_session(), args, **query_kwargs)
+        model, session or get_session(), args, **query_kwargs)
 
     # We can't use oslo.db model_query's project_id here, as it doesn't allow
     # us to return both our projects and unowned projects.
@@ -269,8 +270,10 @@ def image_mapper_create(context, image_id, project_id, values):
 
 @require_context
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-def image_mapper_update(context, image_id, project_id, values, delete=True):
-    query = model_query(context, models.ImagesMapper, read_deleted="no").\
+def image_mapper_update(context, image_id, project_id, values, delete=False):
+    session = get_session()
+    query = model_query(context, models.ImagesMapper, read_deleted="no",
+                        session=session).\
         filter_by(image_id=image_id, project_id=project_id)
     all_keys = values.keys()
 
@@ -290,6 +293,7 @@ def image_mapper_update(context, image_id, project_id, values, delete=True):
     for one in mod_refs:
         already_existing_keys.append(one.key)
         one.update({"value": values[one.key]})
+        one.save(session)
 
     new_keys = set(all_keys) - set(already_existing_keys)
     for key in new_keys:
@@ -298,7 +302,7 @@ def image_mapper_update(context, image_id, project_id, values, delete=True):
                            "project_id": cur_project_id,
                            "key": key,
                            "value": values[key]})
-        update_ref.save(get_session())
+        update_ref.save(session)
 
     return image_mapper_get(context, image_id, project_id)
 
@@ -353,8 +357,10 @@ def flavor_mapper_create(context, flavor_id, project_id, values):
 
 @require_context
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-def flavor_mapper_update(context, flavor_id, project_id, values, delete=True):
-    query = model_query(context, models.FlavorsMapper, read_deleted="no").\
+def flavor_mapper_update(context, flavor_id, project_id, values, delete=False):
+    session = get_session()
+    query = model_query(context, models.FlavorsMapper, read_deleted="no",
+                        session=session).\
         filter_by(flavor_id=flavor_id, project_id=project_id)
     all_keys = values.keys()
 
@@ -374,6 +380,7 @@ def flavor_mapper_update(context, flavor_id, project_id, values, delete=True):
     for one in mod_refs:
         already_existing_keys.append(one.key)
         one.update({"value": values[one.key]})
+        one.save(session)
 
     new_keys = set(all_keys) - set(already_existing_keys)
     for key in new_keys:
@@ -382,7 +389,7 @@ def flavor_mapper_update(context, flavor_id, project_id, values, delete=True):
         update_ref.project_id = cur_project_id
         update_ref['key'] = key
         update_ref['value'] = values[key]
-        update_ref.save(get_session())
+        update_ref.save(session)
 
     return flavor_mapper_get(context, flavor_id, project_id)
 
@@ -435,8 +442,11 @@ def project_mapper_create(context, project_id, values):
 
 @require_context
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-def project_mapper_update(context, project_id, values, delete=True):
-    query = model_query(context, models.ProjectsMapper, read_deleted="no").filter_by(project_id=project_id)
+def project_mapper_update(context, project_id, values, delete=False):
+    session = get_session()
+    query = model_query(context, models.ProjectsMapper, read_deleted="no",
+                        session=session).\
+        filter_by(project_id=project_id)
     all_keys = values.keys()
     if delete:
         query.filter(~models.ProjectsMapper.key.in_(all_keys)).\
@@ -447,6 +457,7 @@ def project_mapper_update(context, project_id, values, delete=True):
     for one in mod_refs:
         already_existing_keys.append(one.key)
         one.update({"value": values[one.key]})
+        one.save(session)
 
     new_keys = set(all_keys) - set(already_existing_keys)
     for key in new_keys:
@@ -454,7 +465,7 @@ def project_mapper_update(context, project_id, values, delete=True):
         update_ref.update({"project_id": project_id,
                            "key": key,
                            "value": values[key]})
-        update_ref.save(get_session())
+        update_ref.save(session)
 
     return project_mapper_get(context, project_id)
 
