@@ -335,6 +335,6 @@ class FsVolumeDriver(driver.VolumeDriver):
         """Callback for volume attached to instance or host."""
         pass
 
-    def detach_volume(self, context, volume):
+    def detach_volume(self, context, volume, mountpoint):
         """Callback for volume detached."""
         pass
