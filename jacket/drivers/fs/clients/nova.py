@@ -268,25 +268,8 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
         return flavor
 
-    def get_host(self, host_name):
-        """Get the host id specified by name.
-
-        :param host_name: the name of host to find
-        :returns: the list of match hosts
-        :raises: exception.EntityNotFound
-        """
-
-        host_list = self.client().hosts.list()
-        for host in host_list:
-            if host.host_name == host_name and host.service == self.COMPUTE:
-                return host
-
-        raise exception.EntityNotFound(entity='Host', name=host_name)
-
-    @retry(stop_max_attempt_number=60,
-           wait_fixed=1000,
-           retry_on_result=client_plugin.retry_if_result_is_false)
-    def check_delete_server_complete(self, server_id):
+    def check_opt_server_complete(self, server_id, opt, task_states,
+                                  wait_statuses):
         """Wait for server to disappear from Nova."""
         try:
             server = self.fetch_server(server_id)
@@ -297,23 +280,95 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
             return False
         task_state_in_nova = getattr(server, 'OS-EXT-STS:task_state', None)
         # the status of server won't change until the delete task has done
-        if task_state_in_nova == 'deleting':
+        if task_state_in_nova in task_states:
             return False
 
         status = self.get_status(server)
-        if status in ("DELETED", "SOFT_DELETED"):
+
+        LOG.debug("+++hw, wait current status = %s", status)
+
+        if status in wait_statuses:
             return True
         if status == 'ERROR':
             fault = getattr(server, 'fault', {})
             message = fault.get('message', 'Unknown')
             code = fault.get('code')
-            errmsg = _("Server %(name)s delete failed: (%(code)s) "
+            errmsg = _("Server %(name)s %(opt)s failed: (%(code)s) "
                        "%(message)s") % dict(name=server.name,
+                                             opt=opt,
                                              code=code,
                                              message=message)
             raise exception.ResourceInError(resource_status=status,
                                             status_reason=errmsg)
         return False
+
+    @retry(stop_max_attempt_number=1800,
+           wait_fixed=1000,
+           retry_on_result=client_plugin.retry_if_result_is_false)
+    def check_create_server_complete(self, server_id):
+        """Wait for server to create success from Nova."""
+
+        opt = "create"
+        task_states = ["scheduling", "block_device_mapping", "networking",
+                       "spawning"]
+        wait_statuses = ["ACTIVE"]
+
+        return self.check_opt_server_complete(server_id, opt, task_states,
+                                              wait_statuses)
+
+    @retry(stop_max_attempt_number=300,
+           wait_fixed=1000,
+           retry_on_result=client_plugin.retry_if_result_is_false)
+    def check_delete_server_complete(self, server_id):
+        """Wait for server to disappear from Nova."""
+
+        opt = "delete"
+        task_states = ["deleting", "soft-deleting"]
+        wait_statuses = ["DELETED", "SOFT_DELETED"]
+
+        return self.check_opt_server_complete(server_id, opt, task_states,
+                                              wait_statuses)
+
+    @retry(stop_max_attempt_number=600,
+           wait_fixed=1000,
+           retry_on_result=client_plugin.retry_if_result_is_false)
+    def check_reboot_server_complete(self, server_id):
+        """Wait for server to disappear from Nova."""
+
+        opt = "reboot"
+        task_states = ["rebooting", "reboot_pending", "reboot_started",
+                       "rebooting_hard", "reboot_pending_hard",
+                       "reboot_started_hard"]
+        wait_statuses = ["ACTIVE"]
+
+        return self.check_opt_server_complete(server_id, opt, task_states,
+                                              wait_statuses)
+
+    @retry(stop_max_attempt_number=300,
+           wait_fixed=1000,
+           retry_on_result=client_plugin.retry_if_result_is_false)
+    def check_start_server_complete(self, server_id):
+        """Wait for server to disappear from Nova."""
+
+        opt = "start"
+        task_states = ["powering-on"]
+        wait_statuses = ["ACTIVE"]
+
+        return self.check_opt_server_complete(server_id, opt, task_states,
+                                              wait_statuses)
+
+    @retry(stop_max_attempt_number=300,
+           wait_fixed=1000,
+           retry_on_result=client_plugin.retry_if_result_is_false)
+    def check_stop_server_complete(self, server_id):
+        """Wait for server to disappear from Nova."""
+
+        opt = "stop"
+        task_states = ["powering-off"]
+        wait_statuses = ["SHUTOFF"]
+
+        return self.check_opt_server_complete(server_id, opt, task_states,
+                                              wait_statuses)
 
     def rename(self, server, name):
         """Update the name for a server."""

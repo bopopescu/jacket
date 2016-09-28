@@ -537,8 +537,7 @@ class FsComputeDriver(driver.ComputeDriver):
             LOG.debug('start to add stop task')
             self.fs_novaclient().stop(server)
             LOG.debug('submit stop task')
-            self.fs_novaclient(context).wait_for_server_in_specified_status(
-                server, 'SHUTOFF')
+            self.fs_novaclient(context).check_stop_server_complete(server.id)
             LOG.debug('stop server: %s success' % instance.uuid)
         elif server.status == 'SHUTOFF':
             LOG.debug('sub instance status is already STOPPED.')
@@ -564,8 +563,7 @@ class FsComputeDriver(driver.ComputeDriver):
             LOG.debug('start to add start task')
             self.fs_novaclient(context).start(server)
             LOG.debug('submit start task')
-            self.fs_novaclient(context).wait_for_server_in_specified_status(
-                server, vm_states.ACTIVE.upper())
+            self.fs_novaclient(context).check_start_server_complete(server.id)
             LOG.debug('stop server: %s success' % instance.uuid)
         elif server.status == vm_states.ACTIVE.upper():
             LOG.debug('sub instance status is already ACTIVE.')
@@ -588,18 +586,12 @@ class FsComputeDriver(driver.ComputeDriver):
 
         LOG.debug('server: %s status is: %s' % (server.id, server.status))
         if server.status == vm_states.ACTIVE.upper():
-            LOG.debug('start to add reboot task')
-            self.fs_novaclient(context).reboot(server)
-            LOG.debug('submit reboot task')
-            self.fs_novaclient(context).wait_for_server_in_specified_status(
-                server, vm_states.ACTIVE.upper())
+            server.reboot(reboot_type)
+            self.fs_novaclient(context).check_reboot_server_complete(server.id)
             LOG.debug('reboot server: %s success' % instance.uuid)
         elif server.status == 'SHUTOFF':
-            LOG.debug('start to add reboot task')
-            self.fs_novaclient(context).start(server)
-            LOG.debug('submit reboot task')
-            self.fs_novaclient(context).wait_for_server_in_specified_status(
-                server, vm_states.ACTIVE.upper())
+            server.start()
+            self.fs_novaclient(context).check_start_server_complete(server.id)
             LOG.debug('reboot server: %s success' % instance.uuid)
         else:
             LOG.warning('server status is not in ACTIVE OR STOPPED,'
@@ -787,7 +779,7 @@ class FsComputeDriver(driver.ComputeDriver):
 
             project_mapper = self._get_project_mapper(context,
                                                       context.project_id)
-            LOG.debug("+++hw, get project mapper is %s", project_mapper)
+
             security_groups = self._get_provider_security_groups_list(
                 context, project_mapper)
             nics = self._get_provider_nics(context, project_mapper)
@@ -801,13 +793,13 @@ class FsComputeDriver(driver.ComputeDriver):
                 availability_zone=project_mapper.get("availability_zone", None),
                 block_device_mapping_v2=sub_bdm)
 
-            LOG.debug('create server job created.')
             LOG.debug('wait for server active')
-            self.fs_novaclient(context).wait_for_server_in_specified_status(
-                provider_server, vm_states.ACTIVE.upper())
+            self.fs_novaclient(context).check_create_server_complete(
+                provider_server.id)
             LOG.debug('create server success.............!!!')
 
-            interface_list = self.fs_novaclient(context).interface_list(provider_server)
+            interface_list = self.fs_novaclient(context).interface_list(
+                provider_server)
             ips = []
             for interface in interface_list:
                 ip = interface.fixed_ips[0].get('ip_address')

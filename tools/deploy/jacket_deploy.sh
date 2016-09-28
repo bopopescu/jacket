@@ -1,6 +1,10 @@
 #!/bin/bash
 
-source /root/adminrc
+if [ -e /root/adminrc ]; then
+    source /root/adminrc
+elif [ -e /root/keystonerc_admin ]; then
+    source /root/keystonerc_admin
+fi
 
 HOST_IP=`ip addr |grep inet|grep -v 127.0.0.1|grep -v inet6|grep -E "ens|eth"|awk '{print $2}'|tr -d "addr:" | awk -F '/' '{print $1}'`
 
@@ -22,7 +26,8 @@ neutron_auth_username neutron_auth_password metadata_proxy_shared_secret \
 service_metadata_proxy neutron_auth_insecure integration_bridge net_data \
 availability_zone region pwd base_linux_image pro_auth_url net_api \
 tenant user volume_type tunnel_cidr personality_path route_gw \
-rabbit_host_user_password rabbit_host_user_id rabbit_host_ip"
+rabbit_host_user_password rabbit_host_user_id rabbit_host_ip \
+jacketsvce endpointsregion publicurl adminurl internalurl"
 
 CONF_FILE=
 
@@ -243,7 +248,7 @@ conf_init()
     crudini --set /etc/jacket/jacket.conf cinder endpoint_template "${endpoint_template}"
 
     #neutron
-    crudini --set /etc/jacket/jacket.conf neutron url "${neutron_auth_url}"
+    crudini --set /etc/jacket/jacket.conf neutron url "${neutron_url}"
     crudini --set /etc/jacket/jacket.conf neutron neutron_default_tenant_id "${neutron_default_tenant_id}"
     crudini --set /etc/jacket/jacket.conf neutron auth_type "${neutron_auth_type}"
     crudini --set /etc/jacket/jacket.conf neutron auth_section "${neutron_auth_section}"
@@ -265,15 +270,6 @@ conf_init()
     crudini --set /etc/jacket/jacket.conf glance protocol "${glance_protocol}"
     crudini --set /etc/jacket/jacket.conf glance api_insecure "${glance_api_insecure}"
 
-    #provider_opts
-
-    jacket --insecure project-mapper-create "default" "${tenant}" --property net_data="$net_data" \
-    --property availability_zone="$availability_zone" --property region="$region" \
-    --property pwd="$pwd" --property base_linux_image="$base_linux_image" \
-    --property auth_url="$auth_url" --property net_api="$net_api" \
-    --property tenant="$tenant" --property net_api="$net_api" \
-    --property user="$user" --property volume_type="$volume_type"
-
     #hybrid_cloud_agent_opts
     crudini --set /etc/jacket/jacket.conf hybrid_cloud_agent_opts tunnel_cidr "${tunnel_cidr}"
     crudini --set /etc/jacket/jacket.conf hybrid_cloud_agent_opts personality_path "${personality_path}"
@@ -281,6 +277,8 @@ conf_init()
     crudini --set /etc/jacket/jacket.conf hybrid_cloud_agent_opts rabbit_host_user_password "${rabbit_host_user_password}"
     crudini --set /etc/jacket/jacket.conf hybrid_cloud_agent_opts rabbit_host_user_id "${rabbit_host_user_id}"
     crudini --set /etc/jacket/jacket.conf hybrid_cloud_agent_opts rabbit_host_ip "${rabbit_host_ip}"
+
+    crudini --set /etc/jacket/jacket.conf oslo_concurrency lock_path "${state_path}"
 }
 
 jacket_user_init()
@@ -295,6 +293,7 @@ jacket_user_init()
 
 main()
 {
+    script_dir=`dirname $0`
     param_parse $*
     if [ "x$CONF_FILE" = "x" ]; then
         script_dir=`dirname $0`
@@ -306,34 +305,45 @@ main()
     fi
 
     attrs_init
-
-    state_path=
-
     mkdir -p "${state_path}"
+    mkdir -p "${state_path}/instances"
     mkdir -p "${log_dir}"
-    chown jacket:jacket "${state_path}"
-    chown jacket:jacket "${log_dir}"
+    mkdir -p /etc/jacket
     conf_init
     db_init
     jacket_user_init
+    chown jacket:jacket "${state_path}" -R
+    chown jacket:jacket "${log_dir}"
     system_service
 
     #keystone中设置jacket
 
-    #keystone user-get $jacketuser | keystone user-create --name $jacketuser \
-    #--tenant $keystoneservicestenant --pass $jacketpass --email "jacket@email"
+    keystone user-get $auth_username || keystone user-create --name $auth_username \
+    --tenant $project_name --pass $auth_password --email "jacket@email"
 
-    #keystone user-role-add --user $jacketuser --role admin --tenant $keystoneservicestenant
+    keystone user-role-add --user $auth_username --role admin --tenant $project_name
 
-    #keystone service-get $jacketsvce | keystone service-create --name $jacketsvce --description "OpenStack jacket service" --type jacket
+    keystone service-get $jacketsvce || keystone service-create --name $jacketsvce --description "OpenStack jacket service" --type jacket
 
-    #keystone endpoint-get --service $jacketsvce | keystone endpoint-create --region $endpointsregion --service $jacketsvce \
-    #--publicurl "http://$jacket_host:9774/v1/%\(tenant_id\)s" \
-    #--adminurl "http://$jacket_host:9774/v1/%\(tenant_id\)s" \
-    #--internalurl "http://$jacket_host:9774/v1/%\(tenant_id\)s"
+    keystone endpoint-get --service $jacketsvce || keystone endpoint-create --region $endpointsregion --service $jacketsvce \
+    --publicurl "${publicurl}" \
+    --adminurl "${adminurl}" \
+    --internalurl "${internalurl}"
 
     # 创建image对应关系
     #jacket --insecure --debug image-mapper-create 66ecc1c0-8367-477b-92c5-1bb09b0bfa89 fc84fa2c-dafd-498a-8246-0692702532c3
+
+    service jacket-api restart
+    service jacket-worker restart
+
+    #provider_opts
+    jacket --insecure project-mapper-create "default" "${tenant}" --property net_data="$net_data" \
+    --property availability_zone="$availability_zone" --property region="$region" \
+    --property pwd="$pwd" --property base_linux_image="$base_linux_image" \
+    --property auth_url="$pro_auth_url" --property net_api="$net_api" \
+    --property tenant="$tenant" --property net_api="$net_api" \
+    --property user="$user" --property volume_type="$volume_type"
+
 }
 
 main $*
