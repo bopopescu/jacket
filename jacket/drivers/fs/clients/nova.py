@@ -457,8 +457,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         try:
             va = self.client().volumes.create_server_volume(
                 server_id=server_id,
-                volume_id=volume_id,
-                device=device)
+                volume_id=volume_id)
         except Exception as ex:
             if self.is_client_exception(ex):
                 raise exception.Error(_(

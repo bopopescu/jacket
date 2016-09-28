@@ -5104,10 +5104,11 @@ class ComputeManager(manager.Manager):
         image_meta = objects.ImageMeta.from_instance(instance)
 
         try:
-            self.driver.attach_interface(instance, image_meta, network_info[0])
             image_container_type = instance.system_metadata.get('image_container_format')
             if image_container_type == 'hybridvm':
                 self.jacketdriver.attach_interface(instance, network_info[0])
+            else:
+                self.driver.attach_interface(instance, image_meta, network_info[0])
         except exception.NovaException as ex:
             port_id = network_info[0].get('id')
             LOG.warn(_LW("attach interface failed , try to deallocate "
@@ -5142,7 +5143,8 @@ class ComputeManager(manager.Manager):
             image_container_type = instance.system_metadata.get('image_container_format')
             if image_container_type == 'hybridvm':
                 self.jacketdriver.detach_interface(instance, condemned)
-            self.driver.detach_interface(instance, condemned)
+            else:
+                self.driver.detach_interface(instance, condemned)
         except exception.NovaException as ex:
             LOG.warning(_LW("Detach interface failed, port_id=%(port_id)s,"
                             " reason: %(msg)s"),
@@ -6980,28 +6982,26 @@ class ComputeManager(manager.Manager):
 
     def _binding_host(self, context, instance, network_info):
         retries = 10
-        neutron = self.network_api.get_client(context, admin=True)
         attempts = retries + 1
-        retry_time = 1
+        retry_time = 30
         for attempt in range(1, attempts + 1):
-            agent = neutron.list_agents(host=instance.uuid)
-            if len(agent['agents']) == 1:
+            log_info = {'attempt': attempt,
+                        'attempts': attempts}
+            agent = self.network_api.list_agents(context, host=instance.uuid)
+            if len(agent['agents']) >= 1:
                 port_req_body = {'port': {'binding:host_id': instance.uuid}}
                 for vif in network_info:
-                    neutron.update_port(vif.get('id'), port_req_body)
-                return
+                    self.network_api.update_port(context, vif.get('id'), port_req_body)
+                break
             else:
-                log_info = {'attempt': attempt,
-                            'attempts': attempts}
                 time.sleep(retry_time)
-                retry_time *= 2
-                if retry_time > 120:
-                    LOG.error(_LE('Instance failed binding host '
-                                    '(attempt %(attempt)d of %(attempts)d)'),
-                                log_info)
-                LOG.warning(_LW('Instance failed neutron agent find'
+                LOG.info(_LI('Instance failed neutron agent find'
                                 '(attempt %(attempt)d of %(attempts)d)'),
                             log_info)
+
+            LOG.error(_LE('Instance failed binding host '
+                          '(attempt %(attempt)d of %(attempts)d)'),
+                      log_info)
 
     def _build_hybrid_vm_bdm(self, volume):
         '''
@@ -7100,7 +7100,8 @@ class ComputeManager(manager.Manager):
             new_vif['type'] = vif['type']
             new_vif['address'] = vif['address']
             network = {}
-            network['bridge'] = vif['network']['bridge']
+            #network['bridge'] = vif['network']['bridge']
+            network['bridge'] = 'br-int'
             new_subnets = []
             for subnet in vif['network']['subnets']:
                 new_subnet = {}
