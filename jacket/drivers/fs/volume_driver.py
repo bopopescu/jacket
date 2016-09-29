@@ -361,3 +361,13 @@ class FsVolumeDriver(driver.VolumeDriver):
     def detach_volume(self, context, volume, mountpoint):
         """Callback for volume detached."""
         pass
+
+    def sub_vol_type_detail(self, context):
+        """get volume type detail"""
+
+        ret = []
+        sub_vol_types = self.fs_cinderlient(context).get_volume_type_detail()
+        for sub_vol_type in sub_vol_types:
+            ret.append(sub_vol_type._info)
+
+        return ret

@@ -105,3 +105,8 @@ class WorkerManager(manager.Manager):
     def sub_flavor_detail(self, context):
         self._require_driver_support(self.compute_driver, 'sub_flavor_detail')
         return self.compute_driver.sub_flavor_detail(context)
+
+    @wrap_exception()
+    def sub_vol_type_detail(self, context):
+        self._require_driver_support(self.storage_driver, 'sub_vol_type_detail')
+        return self.storage_driver.sub_vol_type_detail(context)

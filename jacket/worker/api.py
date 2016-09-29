@@ -124,3 +124,6 @@ class API(base.Base):
 
     def sub_flavor_detail(self, context):
         return self.worker_rpcapi.sub_flavor_detail(context)
+
+    def sub_vol_type_detail(self, context):
+        return self.worker_rpcapi.sub_vol_type_detail(context)

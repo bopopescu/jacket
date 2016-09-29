@@ -117,6 +117,10 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
         volume_type = self.client().volume_types.get(volume_type_id)
         return volume_type
 
+    def get_volume_type_detail(self):
+        volume_types = self.client().volume_types.list()
+        return volume_types
+
     def get_qos_specs(self, qos_specs):
         try:
             qos = self.client().qos_specs.get(qos_specs)

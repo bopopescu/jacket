@@ -83,3 +83,7 @@ class JacketAPI(object):
     def sub_flavor_detail(self, ctxt):
         version = "1.0"
         return self.client.call(ctxt, 'sub_flavor_detail')
+
+    def sub_vol_type_detail(self, ctxt):
+        version = "1.0"
+        return self.client.call(ctxt, 'sub_vol_type_detail')

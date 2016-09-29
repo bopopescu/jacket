@@ -14,36 +14,40 @@
 
 """The flavor mapper api."""
 
-import webob
 from oslo_log import log as logging
 from webob import exc
 
-from jacket import worker
 from jacket.api.openstack import wsgi
-from jacket.i18n import _LE, _LI
+from jacket import exception
+from jacket.i18n import _LE
+from jacket import worker
 
 LOG = logging.getLogger(__name__)
 
 
-class SubFlavorController(wsgi.Controller):
+class SubVolumeTypeController(wsgi.Controller):
     """The flavors API controller for the OpenStack API."""
 
     def __init__(self, ext_mgr):
         self.ext_mgr = ext_mgr
         self.worker_api = worker.API()
-        super(SubFlavorController, self).__init__()
+        super(SubVolumeTypeController, self).__init__()
 
     def detail(self, req):
         """Returns a detailed list of flavors mapper."""
         context = req.environ['jacket.context']
 
         try:
-            flavors = self.worker_api.sub_flavor_detail(context)
+            volume_types = self.worker_api.sub_vol_type_detail(context)
+        except exception.DriverNotSupported as ex:
+            LOG.exception(_LE("get sub volume types failed, ex = %(ex)s"),
+                          ex=ex.format_message())
+            raise exc.HTTPBadRequest(explanation=ex.format_message())
         except Exception as ex:
-            LOG.exception(_LE("get sub flavors failed, ex = %(ex)s"),
-                          ex=ex)
-            raise exc.HTTPBadRequest(explanation=ex)
-        return {'sub_flavors': flavors}
+            LOG.exception(_LE("get sub volume types failed, ex = %(ex)s"),
+                          ex=ex.format_message())
+            raise exc.HTTPBadRequest(explanation=ex.message)
+        return {'sub_volume_types': volume_types}
 
 def create_resource(ext_mgr):
-    return wsgi.Resource(SubFlavorController(ext_mgr))
+    return wsgi.Resource(SubVolumeTypeController(ext_mgr))

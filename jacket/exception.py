@@ -220,6 +220,10 @@ class QuotaError(JacketException):
     safe = True
 
 
+class MalformedRequestBody(JacketException):
+    msg_fmt = _("Malformed message body: %(reason)s")
+
+
 class NotFound(JacketException):
     msg_fmt = _("Resource could not be found.")
     code = 404

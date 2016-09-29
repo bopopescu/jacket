@@ -336,17 +336,7 @@ class ActionDispatcher(object):
         raise NotImplementedError()
 
 
-class TextDeserializer(ActionDispatcher):
-    """Default request body deserialization."""
-
-    def deserialize(self, datastring, action='default'):
-        return self.dispatch(datastring, action=action)
-
-    def default(self, datastring):
-        return {}
-
-
-class JSONDeserializer(TextDeserializer):
+class JSONDeserializer(ActionDispatcher):
 
     def _from_json(self, datastring):
         try:
@@ -354,6 +344,9 @@ class JSONDeserializer(TextDeserializer):
         except ValueError:
             msg = _("cannot understand JSON")
             raise exception.MalformedRequestBody(reason=msg)
+
+    def deserialize(self, datastring, action='default'):
+        return self.dispatch(datastring, action=action)
 
     def default(self, datastring):
         return {'body': self._from_json(datastring)}
@@ -369,11 +362,14 @@ class DictSerializer(ActionDispatcher):
         return ""
 
 
-class JSONDictSerializer(DictSerializer):
+class JSONDictSerializer(ActionDispatcher):
     """Default JSON request body serialization."""
 
+    def serialize(self, data, action='default'):
+        return self.dispatch(data, action=action)
+
     def default(self, data):
-        return jsonutils.dump_as_bytes(data)
+        return six.text_type(jsonutils.dumps(data))
 
 
 def serializers(**serializers):
@@ -1370,6 +1366,9 @@ class Fault(webob.exc.HTTPException):
                 req.api_version_request.get_string()
             self.wrapped_exc.headers['Vary'] = \
               API_VERSION_REQUEST_HEADER
+
+        LOG.debug("+++hw, type text = %s, %s", type(self.wrapped_exc.text),
+                  JSONDictSerializer().serialize(fault_data))
 
         self.wrapped_exc.content_type = 'application/json'
         self.wrapped_exc.charset = 'UTF-8'
