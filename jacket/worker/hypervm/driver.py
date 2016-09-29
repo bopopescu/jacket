@@ -171,29 +171,28 @@ class JacketHypervmDriver():
         LOG.info('Get container status result is: %s' % status_result)
         return status_result
 
-    @RetryDecorator(max_retry_count=50, inc_sleep_time=10, max_sleep_time=60, exceptions=(RetryException))
-    def wait_container_ok(self, instance):
-        LOG.debug('Wait container status')
+    @RetryDecorator(max_retry_count=50, inc_sleep_time=5, max_sleep_time=30, exceptions=(RetryException))
+    def wait_container_in_specified_status(self, instance, specified_status):
+        LOG.debug('Wait container in specified status')
         wormhole = self._create_wormhole(instance)
         try:
             status_result = wormhole.status()
-            if status_result['status']['code'] > 2:
+            if status_result['status']['code'] == specified_status:
                 return
         except Exception, e:
-            LOG.error('hyper service is not online')
+            LOG.warning('hyper service is not online')
+        LOG.warning('hyper service is not in specified status')
         raise RetryException
 
     def _get_clients(self, ips, port):
-        return self._get_hybrid_service_client(ips, port)
+        clients = []
+        for ip in ips:
+            clients.append(Client(ip, port, timeout=10))
+
+        return clients
 
     def _get_private_ips(self, instance):
         instance_ips = instance.system_metadata.get('instance_ips')
         ips = instance_ips.split(',')
         return ips
 
-    def _get_hybrid_service_client(self, ips, port):
-        clients = []
-        for ip in ips:
-            clients.append(Client(ip, port))
-
-        return clients

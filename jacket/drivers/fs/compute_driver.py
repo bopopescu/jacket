@@ -730,10 +730,10 @@ class FsComputeDriver(driver.ComputeDriver):
                                   attached to the instance.
         """
 
-        self._binding_host(context, network_info, instance.uuid)
+        #self._binding_host(context, network_info, instance.uuid)
         self._spawn(context, instance, image_meta, injected_files,
                     admin_password, network_info, block_device_info)
-        self._binding_host(context, network_info, instance.uuid)
+        #self._binding_host(context, network_info, instance.uuid)
 
     def _spawn(self, context, instance, image_meta, injected_files,
                admin_password, network_info=None, block_device_info=None):
