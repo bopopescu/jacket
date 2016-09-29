@@ -247,7 +247,7 @@ def get_root_helper():
     if CONF.workarounds.disable_rootwrap:
         cmd = 'sudo'
     else:
-        cmd = 'sudo compute-rootwrap %s' % CONF.rootwrap_config
+        cmd = 'sudo jacket-rootwrap %s' % CONF.rootwrap_config
     return cmd
 
 
@@ -278,7 +278,7 @@ class RootwrapDaemonHelper(RootwrapProcessHelper):
         except KeyError:
             from oslo_rootwrap import client
             new_client = client.Client([
-                "sudo", "compute-rootwrap-daemon", rootwrap_config])
+                "sudo", "jacket-rootwrap-daemon", rootwrap_config])
             cls._clients[rootwrap_config] = new_client
             return new_client
 

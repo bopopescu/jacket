@@ -13,4 +13,5 @@
 #    under the License.
 from jacket.drivers.fs import compute_driver
 
-FsComputeDriver = compute_driver.LibvirtDriver
+
+FsComputeDriver = compute_driver.FsComputeDriver

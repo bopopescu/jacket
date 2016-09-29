@@ -28,7 +28,6 @@ from oslo_serialization import jsonutils
 
 from jacket.compute.cloud import power_state
 from jacket.compute.network.neutronv2 import api as network_api
-from jacket.compute.virt.fs import hyper_agent_api
 from jacket.compute.cloud import vm_states
 from jacket.compute.virt import driver
 from jacket.compute.virt import hardware
@@ -40,6 +39,7 @@ from jacket.drivers.fs.clients import fs_context
 from jacket.drivers.fs.clients import nova as novaclient
 from jacket.drivers.fs.clients import cinder as cinderclient
 from jacket.drivers.fs.clients import glance as glanceclient
+from jacket.drivers.fs import hyper_agent_api
 from jacket.i18n import _LE
 
 LOG = logging.getLogger(__name__)
@@ -137,7 +137,7 @@ class FsComputeDriver(driver.ComputeDriver):
     def volume_create(self, context, instance):
         size = instance.get_flavor().get('root_gb')
         volume_name = instance.uuid
-        self.fs_cinderclient(context).volume_create(size,
+        self.fs_cinderclient(context).create_volume(size,
                                                     display_name=volume_name)
         volume = self.fs_cinderclient(context).get_volume_by_name(volume_name)
         self.fs_cinderclient(context).wait_for_volume_in_specified_status(
@@ -148,7 +148,7 @@ class FsComputeDriver(driver.ComputeDriver):
         volume_name = instance.uuid
         volume = self.fs_cinderclient(context).get_volume_by_name(volume_name)
         if volume:
-            self.fs_cinderclient(context).volume_delete(volume)
+            self.fs_cinderclient(context).delete_volume(volume)
             self.fs_cinderclient(context).wait_for_volume_deleted(volume,
                                                                   timeout=60)
 

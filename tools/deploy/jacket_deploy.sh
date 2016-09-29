@@ -350,7 +350,6 @@ main()
     --property auth_url="$pro_auth_url" --property net_api="$net_api" \
     --property tenant="$tenant" --property net_api="$net_api" \
     --property user="$user" --property volume_type="$volume_type"
-
 }
 
 main $*

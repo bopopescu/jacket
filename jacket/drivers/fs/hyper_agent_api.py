@@ -10,8 +10,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo.config import cfg
-from oslo import messaging
+from oslo_config import cfg
+import oslo_messaging as messaging
 from oslo_log import log as logging
 
 from jacket.compute.cloud import utils as compute_utils
@@ -77,7 +77,7 @@ class HyperAgentAPI(object):
         target = messaging.Target(topic='hyper-agent-vif-update',
                                   version='1.0',
                                   exchange='hyperagent')
-        serializer = objects_base.NovaObjectSerializer()
+        serializer = objects_base.JacketObjectSerializer()
         self.client = rpc.get_client(target, serializer=serializer)
         self.client.timeout = HyperAgentAPI.plug_retry_timeout
         self.context = nova_context.get_admin_context()

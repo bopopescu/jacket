@@ -71,6 +71,13 @@ class FsVolumeDriver(driver.VolumeDriver):
             volume_name = "volume"
         return '@'.join([volume_name, volume_id])
 
+    def _get_sub_fs_volume(self, context, volume_name, volume_id):
+        sub_volume_name = self._get_sub_fs_volume_name(volume_name,
+                                                       volume_id)
+        LOG.debug('sub_volume_name: %s' % sub_volume_name)
+
+        return self.fs_cinderlient(context).get_volume_by_name(sub_volume_name)
+
     def _get_project_mapper(self, context, project_id=None):
         if project_id is None:
             project_id = 'default'
@@ -111,6 +118,11 @@ class FsVolumeDriver(driver.VolumeDriver):
                                            name=type_id)
 
         return typename
+
+    def _get_sub_snapshot_name(self, snap_id, snap_name=None):
+        if not snap_name:
+            snap_name = 'snapshot'
+        return "@".join([snap_name, snap_id])
 
     def copy_image_to_volume(self, context, volume, image_service, image_id):
         LOG.debug('dir volume: %s' % dir(volume))
@@ -168,7 +180,7 @@ class FsVolumeDriver(driver.VolumeDriver):
 
         volume_args.update((prop, getattr(volume, prop)) for prop in optionals
                            if getattr(volume, prop, None))
-        sub_volume = self.fs_cinderlient(context).volume_create(**volume_args)
+        sub_volume = self.fs_cinderlient(context).create_volume(**volume_args)
         LOG.debug('submit create-volume task to sub fs. '
                   'sub volume id: %s' % sub_volume.id)
 
@@ -229,7 +241,7 @@ class FsVolumeDriver(driver.VolumeDriver):
         volume_args.update((prop, getattr(volume, prop)) for prop in optionals
                            if getattr(volume, prop, None))
 
-        sub_volume = self.fs_cinderlient(context).volume_create(**volume_args)
+        sub_volume = self.fs_cinderlient(context).create_volume(**volume_args)
         LOG.debug('submit create-volume task to sub fs. '
                   'sub volume id: %s' % sub_volume.id)
 
@@ -244,31 +256,41 @@ class FsVolumeDriver(driver.VolumeDriver):
         return {'provider_location': 'SUB-FusionSphere'}
 
     def delete_volume(self, volume):
-        sub_volume_name = self._get_sub_fs_volume_name(volume.display_name,
-                                                       volume.id)
-        LOG.debug('sub_volume_name: %s' % sub_volume_name)
-
         context = req_context.RequestContext(project_id=volume.project_id)
 
-        sub_volume = self.fs_cinderlient(context).get_volume_by_name(
-            sub_volume_name)
+        sub_volume = self._get_sub_fs_volume(context, volume.display_name,
+                                             volume.id)
         if sub_volume:
             LOG.debug('submit delete-volume task')
-            self.fs_cinderlient(context).volume_delete(sub_volume)
+            self.fs_cinderlient(context).delete_volume(sub_volume)
             LOG.debug('wait for volume delete')
             self.fs_cinderlient(context).wait_for_volume_deleted(sub_volume,
                                                                  600)
         else:
             LOG.debug('no sub-volume exist, '
-                      'no need to delete sub volume: %s' % sub_volume_name)
+                      'no need to delete sub volume')
 
     def create_volume_from_snapshot(self, volume, snapshot):
         """Create a volume from a snapshot."""
         pass
 
     def create_snapshot(self, snapshot):
+        volume_id = snapshot.volume.id
+        volume_name = snapshot.volume_name
+        context = snapshot.context
 
-        pass
+        sub_volume = self._get_sub_fs_volume(context, volume_name, volume_id)
+        if sub_volume is None:
+            raise exception_ex.VolumeNotExistException(volume_id=volume_id)
+
+        sub_sn_name = self._get_sub_snapshot_name(snapshot.id,
+                                                  snapshot.display_name)
+
+        self.fs_cinderlient(context).snapshot_create(
+            sub_volume.id, force=True, name=sub_sn_name,
+            description=snapshot.display_description,
+            metadata=snapshot.metadata)
+
 
     def delete_snapshot(self, snapshot):
         """Delete a snapshot."""

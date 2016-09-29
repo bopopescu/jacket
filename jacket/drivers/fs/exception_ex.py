@@ -72,5 +72,9 @@ class VolumeDeleteTimeoutException(JacketException):
     msg_fmt = _('delete volume %(volume_id)s timeout')
 
 
+class VolumeNotExistException(JacketException):
+    msg_fmt = _('sub volume of %(volume_id)s is not exist')
+
+
 class AccountNotConfig(JacketException):
     msg_fmt = _('fs account info not config')

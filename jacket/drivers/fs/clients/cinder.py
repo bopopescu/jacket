@@ -212,7 +212,7 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
                                                         timeout=int(
                                                             time.time() - start))
 
-    def volume_create(self, size=None, snapshot_id=None, source_volid=None,
+    def create_volume(self, size=None, snapshot_id=None, source_volid=None,
                       display_name=None, display_description=None,
                       volume_type=None, user_id=None,
                       project_id=None, availability_zone=None,
@@ -225,7 +225,7 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
             project_id=project_id, availability_zone=availability_zone,
             metadata=metadata, imageRef=imageRef)
 
-    def volume_delete(self, volume):
+    def delete_volume(self, volume):
         """Delete a volume.
 
         :param volume: The :class:`Volume` to delete.
@@ -250,4 +250,30 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
                     volume_id=volume.id)
 
     def detach(self, volume, attachment_uuid):
-        return self.cinder_client.volumes.detach(volume, attachment_uuid)
+        return self.client().volumes.detach(volume, attachment_uuid)
+
+    def create_snapshot(self, volume_id, force=False, name=None,
+                        description=None, metadata=None):
+        return self.client().volume_snapshots.create(volume_id, force=force,
+                                                     name=name,
+                                                     description=description,
+                                                     metadata=metadata)
+
+    def check_create_snapshot_complete(self, snap_is):
+        snap = self.client().volume_snapshots.get(snap_is)
+        if snap.status in ('creating', 'attaching'):
+            LOG.debug("Volume %(id)s is being attached - "
+                      "volume status: %(status)s" % {'id': vol_id,
+                                                     'status': vol.status})
+            return False
+
+        if vol.status != 'in-use':
+            LOG.debug("Attachment failed - volume %(vol)s is "
+                      "in %(status)s status" % {"vol": vol_id,
+                                                "status": vol.status})
+            raise exception.ResourceUnknownStatus(
+                resource_status=vol.status,
+                result=_('Volume attachment failed'))
+
+        LOG.info(_LI('Attaching volume %(id)s complete'), {'id': vol_id})
+        return True

@@ -269,13 +269,15 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         return flavor
 
     def check_opt_server_complete(self, server_id, opt, task_states,
-                                  wait_statuses):
+                                  wait_statuses, is_ignore_not_found=False):
         """Wait for server to disappear from Nova."""
         try:
             server = self.fetch_server(server_id)
         except Exception as exc:
-            self.ignore_not_found(exc)
-            return True
+            if is_ignore_not_found:
+                return self.ignore_not_found(exc)
+            else:
+                return False
         if not server:
             return False
         task_state_in_nova = getattr(server, 'OS-EXT-STS:task_state', None)
