@@ -306,7 +306,8 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
     @retry(stop_max_attempt_number=1800,
            wait_fixed=1000,
-           retry_on_result=client_plugin.retry_if_result_is_false)
+           retry_on_result=client_plugin.retry_if_result_is_false,
+           retry_on_exception=lambda exc: False)
     def check_create_server_complete(self, server_id):
         """Wait for server to create success from Nova."""
 
@@ -320,7 +321,8 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
     @retry(stop_max_attempt_number=300,
            wait_fixed=1000,
-           retry_on_result=client_plugin.retry_if_result_is_false)
+           retry_on_result=client_plugin.retry_if_result_is_false,
+           retry_on_exception=lambda exc: False)
     def check_delete_server_complete(self, server_id):
         """Wait for server to disappear from Nova."""
 
@@ -333,7 +335,8 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
     @retry(stop_max_attempt_number=600,
            wait_fixed=1000,
-           retry_on_result=client_plugin.retry_if_result_is_false)
+           retry_on_result=client_plugin.retry_if_result_is_false,
+           retry_on_exception=lambda exc: False)
     def check_reboot_server_complete(self, server_id):
         """Wait for server to disappear from Nova."""
 
@@ -348,7 +351,8 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
     @retry(stop_max_attempt_number=300,
            wait_fixed=1000,
-           retry_on_result=client_plugin.retry_if_result_is_false)
+           retry_on_result=client_plugin.retry_if_result_is_false,
+           retry_on_exception=lambda exc: False)
     def check_start_server_complete(self, server_id):
         """Wait for server to disappear from Nova."""
 
@@ -361,7 +365,8 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
     @retry(stop_max_attempt_number=300,
            wait_fixed=1000,
-           retry_on_result=client_plugin.retry_if_result_is_false)
+           retry_on_result=client_plugin.retry_if_result_is_false,
+           retry_on_exception=lambda exc: False)
     def check_stop_server_complete(self, server_id):
         """Wait for server to disappear from Nova."""
 

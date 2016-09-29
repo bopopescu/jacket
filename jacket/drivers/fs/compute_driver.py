@@ -930,8 +930,13 @@ class FsComputeDriver(driver.ComputeDriver):
             project_mapper = self._get_project_mapper(context,
                                                       context.project_id)
 
-        provider_sg = project_mapper.get('security_groups', '')
-        return [item.strip() for item in provider_sg.split(',')]
+        provider_sg = project_mapper.get('security_groups', None)
+        if provider_sg:
+            security_groups = provider_sg.split(',')
+        else:
+            security_groups = None
+
+        return security_groups
 
     def _get_provider_nics(self, context, project_mapper=None):
         if project_mapper is None:
