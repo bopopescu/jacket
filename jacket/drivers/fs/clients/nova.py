@@ -268,6 +268,9 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
         return flavor
 
+    def get_flavor_detail(self):
+        return self.client().flavors.list()
+
     def check_opt_server_complete(self, server_id, opt, task_states,
                                   wait_statuses, is_ignore_not_found=False):
         """Wait for server to disappear from Nova."""
@@ -282,12 +285,13 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
             return False
         task_state_in_nova = getattr(server, 'OS-EXT-STS:task_state', None)
         # the status of server won't change until the delete task has done
-        if task_state_in_nova in task_states:
-            return False
 
         status = self.get_status(server)
+        LOG.debug("+++hw, wait task_state = %s, current status = %s",
+                  task_state_in_nova, status)
 
-        LOG.debug("+++hw, wait current status = %s", status)
+        if task_state_in_nova in task_states:
+            return False
 
         if status in wait_statuses:
             return True
@@ -305,7 +309,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         return False
 
     @retry(stop_max_attempt_number=1800,
-           wait_fixed=1000,
+           wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=lambda exc: False)
     def check_create_server_complete(self, server_id):
@@ -320,7 +324,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                                               wait_statuses)
 
     @retry(stop_max_attempt_number=300,
-           wait_fixed=1000,
+           wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=lambda exc: False)
     def check_delete_server_complete(self, server_id):
@@ -331,10 +335,10 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         wait_statuses = ["DELETED", "SOFT_DELETED"]
 
         return self.check_opt_server_complete(server_id, opt, task_states,
-                                              wait_statuses)
+                                              wait_statuses, True)
 
     @retry(stop_max_attempt_number=600,
-           wait_fixed=1000,
+           wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=lambda exc: False)
     def check_reboot_server_complete(self, server_id):
@@ -350,7 +354,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                                               wait_statuses)
 
     @retry(stop_max_attempt_number=300,
-           wait_fixed=1000,
+           wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=lambda exc: False)
     def check_start_server_complete(self, server_id):
@@ -364,7 +368,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                                               wait_statuses)
 
     @retry(stop_max_attempt_number=300,
-           wait_fixed=1000,
+           wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=lambda exc: False)
     def check_stop_server_complete(self, server_id):

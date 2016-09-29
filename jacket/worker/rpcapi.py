@@ -79,3 +79,7 @@ class JacketAPI(object):
         return rpc.get_client(target,
                               version_cap=version_cap,
                               serializer=serializer)
+
+    def sub_flavor_detail(self, ctxt):
+        version = "1.0"
+        return self.client.call(ctxt, 'sub_flavor_detail')

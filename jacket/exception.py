@@ -231,56 +231,12 @@ class NoUniqueMatch(JacketException):
 
 
 class NotAuthorized(JacketException):
-    message = _("Not authorized.")
+    msg_fmt = _("Not authorized.")
     code = 403
 
 
-class FsCinderVersionNotSupport(JacketException):
-    msg_fmt = _("fs cinder version%(version)s not support.")
-
-
-class FsCinderNotUserOrPass(JacketException):
-    msg_fmt = _("fs cinder username or password is illegal.")
-
-
-class FsCinderConnectFailed(JacketException):
-    msg_fmt = _("connect fs cinder failed!")
-
-
-class FsVolumeNotFound(NotFound):
-    msg_fmt = _("Fs Volume %(volume_id)s could not be found.")
-
-
-class FsSnapshotNotFound(NotFound):
-    msg_fmt = _("Fs Snapshot %(snapshot_id)s could not be found.")
-
-
-class FsInvalidVolume(Invalid):
-    msg_fmt = _("Invalid volume: %(reason)s")
-
-
-class FsVolumeUnattached(Invalid):
-    msg_fmt = _("Volume %(volume_id)s is not attached to anything")
-
-
-class FsOverQuota(JacketException):
-    msg_fmt = _("Quota exceeded for resources: %(overs)s")
-
-
-class FsNovaVersionNotSupport(JacketException):
-    msg_fmt = _("fs nova version%(version)s not support.")
-
-
-class FsNovaNotUserOrPass(JacketException):
-    msg_fmt = _("fs nova username or password is illegal.")
-
-
-class FsNovaConnectFailed(JacketException):
-    msg_fmt = _("connect fs nova failed!")
-
-
-class FsInvalidServiceVersion(JacketException):
-    msg_fmt = _("Invalid service %(service)s version %(version)s")
+class DriverNotSupported(JacketException):
+    msg_fmt = _("driver is not supported.")
 
 
 class EntityNotFound(JacketException):

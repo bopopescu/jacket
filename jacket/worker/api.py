@@ -121,3 +121,6 @@ class API(base.Base):
 
     def project_mapper_delete(self, context, project_id):
         return self.db_api.project_mapper_delete(context, project_id)
+
+    def sub_flavor_detail(self, context):
+        return self.worker_rpcapi.sub_flavor_detail(context)

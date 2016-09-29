@@ -134,691 +134,6 @@ class FsComputeDriver(driver.ComputeDriver):
     def after_detach_volume_success(self, job_detail_info, **kwargs):
         pass
 
-    def volume_create(self, context, instance):
-        size = instance.get_flavor().get('root_gb')
-        volume_name = instance.uuid
-        self.fs_cinderclient(context).create_volume(size,
-                                                    display_name=volume_name)
-        volume = self.fs_cinderclient(context).get_volume_by_name(volume_name)
-        self.fs_cinderclient(context).wait_for_volume_in_specified_status(
-            volume.id, 'available')
-        return volume
-
-    def volume_delete(self, context, instance):
-        volume_name = instance.uuid
-        volume = self.fs_cinderclient(context).get_volume_by_name(volume_name)
-        if volume:
-            self.fs_cinderclient(context).delete_volume(volume)
-            self.fs_cinderclient(context).wait_for_volume_deleted(volume,
-                                                                  timeout=60)
-
-    def attach_volume(self, context, connection_info, instance, mountpoint=None,
-                      disk_bus=None, device_type=None,
-                      encryption=None):
-        """
-
-        :param context:
-            ['auth_token',
-            'elevated',
-            'from_dict',
-            'instance_lock_checked',
-            'is_admin',
-            'project_id',
-            'project_name',
-            'quota_class',
-            'read_deleted',
-            'remote_address',
-            'request_id',
-            'roles',
-            'service_catalog',
-            'tenant',
-            'timestamp',
-            'to_dict',
-            'update_store',
-            'user',
-            'user_id',
-            'user_name']
-        :param connection_info:
-            {
-                u'driver_volume_type': u'vcloud_volume',
-                'serial': u'824d397e-4138-48e4-b00b-064cf9ef4ed8',
-                u'data': {
-                    u'access_mode': u'rw',
-                    u'qos_specs': None,
-                    u'display_name': u'volume_02',
-                    u'volume_id': u'824d397e-4138-48e4-b00b-064cf9ef4ed8',
-                    u'backend': u'vcloud'
-                }
-            }
-        :param instance:
-        Instance(
-            access_ip_v4=None,
-            access_ip_v6=None,
-            architecture=None,
-            auto_disk_config=False,
-            availability_zone='az01.hws--fusionsphere',
-            cell_name=None,
-            cleaned=False,
-            config_drive='',
-            created_at=2016-01-14T07: 17: 40Z,
-            default_ephemeral_device=None,
-            default_swap_device=None,
-            deleted=False,
-            deleted_at=None,
-            disable_terminate=False,
-            display_description='volume_backend_01',
-            display_name='volume_backend_01',
-            ephemeral_gb=0,
-            ephemeral_key_uuid=None,
-            fault=<?>,
-            host='420824B8-AC4B-7A64-6B8D-D5ACB90E136A',
-            hostname='volume-backend-01',
-            id=57,
-            image_ref='',
-            info_cache=InstanceInfoCache,
-            instance_type_id=2,
-            kernel_id='',
-            key_data=None,
-            key_name=None,
-            launch_index=0,
-            launched_at=2016-01-14T07: 17: 43Z,
-            launched_on='420824B8-AC4B-7A64-6B8D-D5ACB90E136A',
-            locked=False,
-            locked_by=None,
-            memory_mb=512,
-            metadata={
-
-            },
-            node='420824B8-AC4B-7A64-6B8D-D5ACB90E136A',
-            numa_topology=<?>,
-            os_type=None,
-            pci_devices=<?>,
-            power_state=0,
-            progress=0,
-            project_id='e178f1b9539b4a02a9c849dd7ea3ea9e',
-            ramdisk_id='',
-            reservation_id='r-marvoq8g',
-            root_device_name='/dev/sda',
-            root_gb=1,
-            scheduled_at=None,
-            security_groups=SecurityGroupList,
-            shutdown_terminate=False,
-            system_metadata={
-                image_base_image_ref='',
-                image_checksum='d972013792949d0d3ba628fbe8685bce',
-                image_container_format='bare',
-                image_disk_format='qcow2',
-                image_image_id='617e72df-41ba-4e0d-ac88-cfff935a7dc3',
-                image_image_name='cirros',
-                image_min_disk='0',
-                image_min_ram='0',
-                image_size='13147648',
-                instance_type_ephemeral_gb='0',
-                instance_type_flavorid='1',
-                instance_type_id='2',
-                instance_type_memory_mb='512',
-                instance_type_name='m1.tiny',
-                instance_type_root_gb='1',
-                instance_type_rxtx_factor='1.0',
-                instance_type_swap='0',
-                instance_type_vcpu_weight=None,
-                instance_type_vcpus='1'
-            },
-            task_state=None,
-            terminated_at=None,
-            updated_at=2016-01-14T07: 17: 43Z,
-            user_data=u'<SANITIZED>,
-            user_id='d38732b0a8ff451eb044015e80bbaa65',
-            uuid=9eef20f0-5ebf-4793-b4a2-5a667b0acad0,
-            vcpus=1,
-            vm_mode=None,
-            vm_state='active')
-
-        Volume object:
-        {
-            'status': u'attaching',
-            'volume_type_id': u'type01',
-            'volume_image_metadata': {
-                u'container_format': u'bare',
-                u'min_ram': u'0',
-                u'disk_format': u'qcow2',
-                u'image_name': u'cirros',
-                u'image_id': u'617e72df-41ba-4e0d-ac88-cfff935a7dc3',
-                u'checksum': u'd972013792949d0d3ba628fbe8685bce',
-                u'min_disk': u'0',
-                u'size': u'13147648'
-            },
-            'display_name': u'volume_02',
-            'attachments': [],
-            'attach_time': '',
-            'availability_zone': u'az01.hws--fusionsphere',
-            'bootable': True,
-            'created_at': u'2016-01-18T07: 03: 57.822386',
-            'attach_status': 'detached',
-            'display_description': None,
-            'volume_metadata': {
-                u'readonly': u'False'
-            },
-            'shareable': u'false',
-            'snapshot_id': None,
-            'mountpoint': '',
-            'id': u'824d397e-4138-48e4-b00b-064cf9ef4ed8',
-            'size': 120
-        }
-        :param mountpoint: string. e.g. "/dev/sdb"
-        :param disk_bus:
-        :param device_type:
-        :param encryption:
-        :return:
-        """
-        LOG.debug('start to attach volume.')
-
-        cascading_volume_id = connection_info['data']['volume_id']
-        cascading_volume_name = connection_info['data']['display_name']
-        su_volume_name = self._get_sub_fs_volume_name(cascading_volume_name,
-                                                      cascading_volume_id)
-
-        LOG.debug("+++hw, su_volume_name = %s", su_volume_name)
-
-        sub_volume = self.fs_cinderclient(context).get_volume_by_name(
-            su_volume_name)
-        if not sub_volume:
-            sub_volume = self.fs_cinderclient(context).get_volume_by_name(
-                cascading_volume_name)
-            if not sub_volume:
-                LOG.error('Can not find volume in provider fs,'
-                          'volume: %s ' % cascading_volume_id)
-                raise exception_ex.VolumeNotFoundAtProvider()
-
-        sub_server = self._get_sub_fs_instance(context, instance)
-        if not sub_server:
-            LOG.error('Can not find server in provider fs, '
-                      'server: %s' % instance.uuid)
-            raise exception_ex.ServerNotExistException(
-                server_name=instance.display_name)
-
-        if sub_volume.status == 'available':
-            self.fs_novaclient(context).attach_volume(sub_server.id,
-                                                      sub_volume.id,
-                                                      mountpoint)
-            self.fs_cinderclient(context).wait_for_volume_in_specified_status(
-                sub_volume.id, 'in-use')
-        else:
-            raise Exception('sub volume %s of volume: %s is not available, '
-                            'status is %s' %
-                            (sub_volume.id, cascading_volume_id,
-                             sub_volume.status))
-        LOG.debug('attach volume : %s success.' % cascading_volume_id)
-
-    def _get_sub_fs_volume_name(self, volume_name, volume_id):
-        if not volume_name:
-            volume_name = 'volume'
-        return '@'.join([volume_name, volume_id])
-
-    def destroy(self, context, instance, network_info, block_device_info=None,
-                destroy_disks=True, migrate_data=None):
-        """
-        :param instance:
-        :param network_info:
-        :param block_device_info:
-        :param destroy_disks:
-        :param migrate_data:
-        :return:
-        """
-
-        sub_fs_server = self._get_sub_fs_instance(context, instance)
-        if sub_fs_server:
-            self.fs_novaclient(context).delete(sub_fs_server)
-            self.fs_novaclient(context).check_delete_server_complete(
-                sub_fs_server.id)
-        else:
-            LOG.error('Can not found server to delete.')
-            # raise exception_ex.ServerNotExistException(server_name=instance.display_name)
-
-        LOG.debug('success to delete instance: %s' % instance.uuid)
-
-    def detach_volume(self, connection_info, instance, mountpoint,
-                      encryption=None):
-        LOG.debug('start to detach volume.')
-        LOG.debug('instance: %s' % instance)
-        LOG.debug('connection_info: %s' % connection_info)
-
-        cascading_volume_id = connection_info['data']['volume_id']
-        cascading_volume_name = connection_info['data']['display_name']
-        sub_volume_name = self._get_sub_fs_volume_name(cascading_volume_name,
-                                                       cascading_volume_id)
-
-        context = req_context.RequestContext(instance.project_id)
-
-        sub_volume = self.fs_cinderclient(context).get_volume_by_name(
-            sub_volume_name)
-        if not sub_volume:
-            sub_volume = self.fs_cinderclient(context).get_volume_by_name(
-                cascading_volume_name)
-            if not sub_volume:
-                LOG.error('Can not find volume in provider fs, '
-                          'volume: %s ' % cascading_volume_id)
-                raise exception_ex.VolumeNotFoundAtProvider()
-
-        attachment_id, server_id = self._get_attachment_id_for_volume(
-            sub_volume)
-
-        LOG.debug('server_id: %s' % server_id)
-        LOG.debug('submit detach task')
-        self.fs_novaclient(context).detach_volume(server_id, sub_volume.id)
-
-        LOG.debug('wait for volume in available status.')
-        self.fs_cinderclient(context).wait_for_volume_in_specified_status(
-            sub_volume.id, 'available')
-
-    def _get_attachment_id_for_volume(self, sub_volume):
-        LOG.debug('start to _get_attachment_id_for_volume: %s' % sub_volume)
-        attachment_id = None
-        server_id = None
-        attachments = sub_volume.attachments
-        LOG.debug('attachments: %s' % attachments)
-        for attachment in attachments:
-            volume_id = attachment.get('volume_id')
-            tmp_attachment_id = attachment.get('attachment_id')
-            tmp_server_id = attachment.get('server_id')
-            if volume_id == sub_volume.id:
-                attachment_id = tmp_attachment_id
-                server_id = tmp_server_id
-                break
-            else:
-                continue
-
-        return attachment_id, server_id
-
-    def get_available_nodes(self, refresh=False):
-        """Returns nodenames of all nodes managed by the compute service.
-
-        This method is for multi compute-nodes support. If a driver supports
-        multi compute-nodes, this method returns a list of nodenames managed
-        by the service. Otherwise, this method should return
-        [hypervisor_hostname].
-        """
-        hostname = socket.gethostname()
-        return [hostname]
-
-    def _get_host_stats(self, hostname):
-        return {'vcpus': 999999, 'vcpus_used': 0, 'memory_mb': 999999,
-                'memory_mb_used': 0, 'local_gb': 99999999,
-                'local_gb_used': 0, 'host_memory_total': 99999999,
-                'disk_total': 99999999, 'host_memory_free': 99999999,
-                'disk_used': 0, 'hypervisor_type': 'fusionsphere',
-                'hypervisor_version': '5005000',
-                'hypervisor_hostname': hostname,
-                'cpu_info': '{"model": ["Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz"],'
-                            '"vendor": ["Huawei Technologies Co., Ltd."], '
-                            '"topology": {"cores": 16, "threads": 32}}',
-                'supported_instances': jsonutils.dumps(
-                    [["i686", "xen", "uml"], ["x86_64", "xen", "uml"]]),
-                'numa_topology': None,}
-
-    def get_available_resource(self, nodename):
-        host_stats = self._get_host_stats(nodename)
-
-        supported_instances = list()
-        for one in jsonutils.loads(host_stats['supported_instances']):
-            supported_instances.append((one[0], one[1], one[2]))
-
-        return {'vcpus': host_stats['vcpus'],
-                'memory_mb': host_stats['host_memory_total'],
-                'local_gb': host_stats['disk_total'], 'vcpus_used': 0,
-                'memory_mb_used': host_stats['host_memory_total'] - host_stats[
-                    'host_memory_free'],
-                'local_gb_used': host_stats['disk_used'],
-                'hypervisor_type': host_stats['hypervisor_type'],
-                'hypervisor_version': host_stats['hypervisor_version'],
-                'hypervisor_hostname': host_stats['hypervisor_hostname'],
-                'cpu_info': jsonutils.dumps(host_stats['cpu_info']),
-                'supported_instances': supported_instances,
-                'numa_topology': None,}
-
-    def get_info(self, instance):
-        LOG.debug('get_info: %s' % instance)
-        STATUS = power_state.NOSTATE
-        server = self._get_sub_fs_instance(None, instance)
-        LOG.debug('server: %s' % server)
-        if server:
-            instance_power_state = getattr(server, 'OS-EXT-STS:power_state')
-            STATUS = FS_POWER_STATE[instance_power_state]
-        LOG.debug('end to get_info: %s' % STATUS)
-
-        return hardware.InstanceInfo(
-            state=STATUS,
-            max_mem_kb=0,
-            mem_kb=0,
-            num_cpu=1)
-
-    def get_instance_macs(self, instance):
-        """
-        No need to implement.
-        :param instance:
-        :return:
-        """
-        pass
-
-    def get_volume_connector(self, instance):
-        return {'ip': CONF.my_block_storage_ip,
-                'initiator': 'fake',
-                'host': 'fakehost'}
-
-    def init_host(self, host):
-        pass
-
-    def list_instances(self):
-        """List VM instances from all nodes.
-        :return: list of instance id. e.g.['id_001', 'id_002', ...]
-        """
-
-        instances = []
-        context = req_context.RequestContext(project_id='default')
-        servers = self.fs_novaclient(context).list()
-        for server in servers:
-            server_id = server.id
-            instances.append(server_id)
-
-        LOG.debug('list_instance: %s' % instances)
-        return instances
-
-    def power_off(self, instance, timeout=0, retry_interval=0):
-
-        LOG.debug('start to stop server: %s' % instance.uuid)
-        server = self._get_sub_fs_instance(hybrid_instance=instance)
-        if not server:
-            LOG.debug('can not find sub fs server for '
-                      'instance: %s' % instance.uuid)
-            raise exception_ex.ServerNotExistException(
-                server_name=instance.display_name)
-
-        context = req_context.RequestContext(project_id=instance.project_id)
-
-        LOG.debug('server: %s status is: %s' % (server.id, server.status))
-        if server.status == vm_states.ACTIVE.upper():
-            LOG.debug('start to add stop task')
-            self.fs_novaclient(context).stop(server)
-            LOG.debug('submit stop task')
-            self.fs_novaclient(context).check_stop_server_complete(server.id)
-            LOG.debug('stop server: %s success' % instance.uuid)
-        elif server.status == 'SHUTOFF':
-            LOG.debug('sub instance status is already STOPPED.')
-            LOG.debug('stop server: %s success' % instance.uuid)
-            return
-        else:
-            LOG.warning('server status is not in ACTIVE OR STOPPED,'
-                        'can not do POWER_OFF operation')
-            raise exception_ex.ServerStatusException(status=server.status)
-
-    def power_on(self, context, instance, network_info,
-                 block_device_info=None):
-
-        LOG.debug('start to start server: %s' % instance.uuid)
-        server = self._get_sub_fs_instance(context, instance)
-        if not server:
-            LOG.debug('can not find sub fs server for '
-                      'instance: %s' % instance.uuid)
-            raise exception_ex.ServerNotExistException(instance.display_name)
-
-        LOG.debug('server: %s status is: %s' % (server.id, server.status))
-        if server.status == 'SHUTOFF':
-            LOG.debug('start to add start task')
-            self.fs_novaclient(context).start(server)
-            LOG.debug('submit start task')
-            self.fs_novaclient(context).check_start_server_complete(server.id)
-            LOG.debug('stop server: %s success' % instance.uuid)
-        elif server.status == vm_states.ACTIVE.upper():
-            LOG.debug('sub instance status is already ACTIVE.')
-            return
-        else:
-            LOG.warning('server status is not in ACTIVE OR STOPPED,'
-                        'can not do POWER_ON operation')
-            raise exception_ex.ServerStatusException(status=server.status)
-
-    def reboot(self, context, instance, network_info, reboot_type,
-               block_device_info=None, bad_volumes_callback=None):
-
-        LOG.debug('start to reboot server: %s' % instance.uuid)
-        server = self._get_sub_fs_instance(context, instance)
-        if not server:
-            LOG.debug('can not find sub fs server for '
-                      'instance: %s' % instance.uuid)
-            raise exception_ex.ServerNotExistException(
-                server_name=instance.display_name)
-
-        LOG.debug('server: %s status is: %s' % (server.id, server.status))
-        if server.status == vm_states.ACTIVE.upper():
-            server.reboot(reboot_type)
-            self.fs_novaclient(context).check_reboot_server_complete(server.id)
-            LOG.debug('reboot server: %s success' % instance.uuid)
-        elif server.status == 'SHUTOFF':
-            server.start()
-            self.fs_novaclient(context).check_start_server_complete(server.id)
-            LOG.debug('reboot server: %s success' % instance.uuid)
-        else:
-            LOG.warning('server status is not in ACTIVE OR STOPPED,'
-                        'can not do POWER_OFF operation')
-            raise exception_ex.ServerStatusException(status=server.status)
-
-    def resume_state_on_host_boot(self, context, instance, network_info,
-                                  block_device_info=None):
-        pass
-
-    def snapshot(self, context, instance, image_id, update_task_state):
-        pass
-
-    @logger_helper()
-    def spawn(self, context, instance, image_meta, injected_files,
-              admin_password, network_info=None, block_device_info=None):
-        """Create a new instance/VM/domain on the virtualization platform.
-
-        Once this successfully completes, the instance should be
-        running (power_state.RUNNING).
-
-        If this fails, any partial instance should be completely
-        cleaned up, and the virtualization platform should be in the state
-        that it was before this call began.
-
-        :param context: security context
-        :param instance: nova.objects.instance.Instance
-                         This function should use the data there to guide
-                         the creation of the new instance.
-                         Instance(
-                             access_ip_v4=None,
-                             access_ip_v6=None,
-                             architecture=None,
-                             auto_disk_config=False,
-                             availability_zone='az31.shenzhen--aws',
-                             cell_name=None,
-                             cleaned=False,
-                             config_drive='',
-                             created_at=2015-08-31T02:44:36Z,
-                             default_ephemeral_device=None,
-                             default_swap_device=None,
-                             deleted=False,
-                             deleted_at=None,
-                             disable_terminate=False,
-                             display_description='server@daa5e17c-cb2c-4014-9726-b77109380ca6',
-                             display_name='server@daa5e17c-cb2c-4014-9726-b77109380ca6',
-                             ephemeral_gb=0,
-                             ephemeral_key_uuid=None,
-                             fault=<?>,
-                             host='42085B38-683D-7455-A6A3-52F35DF929E3',
-                             hostname='serverdaa5e17c-cb2c-4014-9726-b77109380ca6',
-                             id=49,
-                             image_ref='6004b47b-d453-4695-81be-cd127e23f59e',
-                             info_cache=InstanceInfoCache,
-                             instance_type_id=2,
-                             kernel_id='',
-                             key_data=None,
-                             key_name=None,
-                             launch_index=0,
-                             launched_at=None,
-                             launched_on='42085B38-683D-7455-A6A3-52F35DF929E3',
-                             locked=False,
-                             locked_by=None,
-                             memory_mb=512,
-                             metadata={},
-                             node='h',
-                             numa_topology=None,
-                             os_type=None,
-                             pci_devices=<?>,
-                             power_state=0,
-                             progress=0,
-                             project_id='52957ad92b2146a0a2e2b3279cdc2c5a',
-                             ramdisk_id='',
-                             reservation_id='r-d1dkde4x',
-                             root_device_name='/dev/sda',
-                             root_gb=1,
-                             scheduled_at=None,
-                             security_groups=SecurityGroupList,
-                             shutdown_terminate=False,
-                             system_metadata={
-                                 image_base_image_ref='6004b47b-d453-4695-81be-cd127e23f59e',
-                                 image_container_format='bare',
-                                 image_disk_format='qcow2',
-                                 image_min_disk='1',
-                                 image_min_ram='0',
-                                 instance_type_ephemeral_gb='0',
-                                 instance_type_flavorid='1',
-                                 instance_type_id='2',
-                                 instance_type_memory_mb='512',
-                                 instance_type_name='m1.tiny',
-                                 instance_type_root_gb='1',
-                                 instance_type_rxtx_factor='1.0',
-                                 instance_type_swap='0',
-                                 instance_type_vcpu_weight=None,
-                                 instance_type_vcpus='1'
-                                 },
-                             task_state='spawning',
-                             terminated_at=None,
-                             updated_at=2015-08-31T02:44:38Z,
-                             user_data=u'<SANITIZED>,
-                             user_id='ea4393b196684c8ba907129181290e8d',
-                             uuid=92d22a62-c364-4169-9795-e5a34b5f5968,
-                             vcpus=1,
-                             vm_mode=None,
-                             vm_state='building')
-        :param image_meta: image object returned by nova.image.glance that
-                           defines the image from which to boot this instance
-                           e.g.
-                           {
-                               u'status': u'active',
-                               u'deleted': False,
-                               u'container_format': u'bare',
-                               u'min_ram': 0,
-                               u'updated_at': u'2015-08-17T07:46:48.708903',
-                               u'min_disk': 0,
-                               u'owner': u'52957ad92b2146a0a2e2b3279cdc2c5a',
-                               u'is_public': True,
-                               u'deleted_at': None,
-                               u'properties': {},
-                               u'size': 338735104,
-                               u'name': u'emall-backend',
-                               u'checksum': u'0f2294c98c7d113f0eb26ad3e76c86fa',
-                               u'created_at': u'2015-08-17T07:46:20.581706',
-                               u'disk_format': u'qcow2',
-                               u'id': u'6004b47b-d453-4695-81be-cd127e23f59e'
-                            }
-
-        :param injected_files: User files to inject into instance.
-        :param admin_password: Administrator password to set in instance.
-        :param network_info:
-           :py:meth:`~nova.network.manager.NetworkManager.get_instance_nw_info`
-        :param block_device_info: Information about block devices to be
-                                  attached to the instance.
-        """
-
-        #self._binding_host(context, network_info, instance.uuid)
-        self._spawn(context, instance, image_meta, injected_files,
-                    admin_password, network_info, block_device_info)
-        #self._binding_host(context, network_info, instance.uuid)
-
-    def _spawn(self, context, instance, image_meta, injected_files,
-               admin_password, network_info=None, block_device_info=None):
-        try:
-            LOG.debug('instance: %s' % instance)
-            LOG.debug('block device info: %s' % block_device_info)
-
-            flavor = instance.get_flavor()
-            LOG.debug('flavor: %s' % flavor)
-
-            sub_flavor_id = self._get_sub_flavor_id(context, flavor.flavorid)
-
-            name = self._generate_sub_fs_instance_name(instance.display_name,
-                                                       instance.uuid)
-            LOG.debug('name: %s' % name)
-
-            image_ref = None
-
-            if instance.image_ref:
-                sub_image_id = self._get_sub_image_id(context,
-                                                      instance.image_ref)
-                try:
-                    image_ref = self.fs_glanceclient(context).get_image(
-                        sub_image_id)
-                except Exception as ex:
-                    LOG.exception(_LE("get image(%(image_id)s) failed, "
-                                      "ex = %(ex)s"), image_id=sub_image_id,
-                                  ex=ex)
-                    raise
-            else:
-                image_ref = None
-
-            metadata = self._add_agent_conf_to_metadata(instance)
-            LOG.debug('metadata: %s' % metadata)
-
-            app_security_groups = instance.security_groups
-            LOG.debug('app_security_groups: %s' % app_security_groups)
-
-            LOG.debug('injected files: %s' % injected_files)
-            agent_inject_files = self._get_agent_inject_file(instance,
-                                                             injected_files)
-
-            sub_bdm = self._transfer_to_sub_block_device_mapping_v2(
-                context, block_device_info)
-            LOG.debug('sub_bdm: %s' % sub_bdm)
-
-            project_mapper = self._get_project_mapper(context,
-                                                      context.project_id)
-
-            security_groups = self._get_provider_security_groups_list(
-                context, project_mapper)
-            nics = self._get_provider_nics(context, project_mapper)
-
-            provider_server = self.fs_novaclient(context).create_server(
-                name, image_ref, sub_flavor_id, meta=metadata,
-                files=agent_inject_files,
-                reservation_id=instance.reservation_id,
-                security_groups=security_groups,
-                nics=nics,
-                availability_zone=project_mapper.get("availability_zone", None),
-                block_device_mapping_v2=sub_bdm)
-
-            LOG.debug('wait for server active')
-            self.fs_novaclient(context).check_create_server_complete(
-                provider_server.id)
-            LOG.debug('create server success.............!!!')
-
-            interface_list = self.fs_novaclient(context).interface_list(
-                provider_server)
-            ips = []
-            for interface in interface_list:
-                ip = interface.fixed_ips[0].get('ip_address')
-                ips.append(ip)
-            instance_ips = ','.join(ips)
-            LOG.debug('luorui debug instance_ips %s' % instance_ips)
-            instance.system_metadata['instance_ips'] = instance_ips
-            instance.system_metadata['instance_id'] = provider_server.id
-            instance.save()
-
-        except Exception as e:
-            LOG.error(
-                'Exception when spawn, exception: %s' % traceback.format_exc(e))
-            raise Exception(
-                'Exception when spawn, exception: %s' % traceback.format_exc(e))
-
     def _add_agent_conf_to_metadata(self, instance):
         metadata = instance.metadata
         added_meta = None
@@ -1101,3 +416,700 @@ class FsComputeDriver(driver.ComputeDriver):
             raise exception_ex.AccountNotConfig()
 
         return project_mapper
+
+    def _get_sub_fs_volume_name(self, volume_name, volume_id):
+        if not volume_name:
+            volume_name = 'volume'
+        return '@'.join([volume_name, volume_id])
+
+    def volume_create(self, context, instance):
+        size = instance.get_flavor().get('root_gb')
+        volume_name = instance.uuid
+        self.fs_cinderclient(context).create_volume(size,
+                                                    display_name=volume_name)
+        volume = self.fs_cinderclient(context).get_volume_by_name(volume_name)
+        self.fs_cinderclient(context).wait_for_volume_in_specified_status(
+            volume.id, 'available')
+        return volume
+
+    def volume_delete(self, context, instance):
+        volume_name = instance.uuid
+        volume = self.fs_cinderclient(context).get_volume_by_name(volume_name)
+        if volume:
+            self.fs_cinderclient(context).delete_volume(volume)
+            self.fs_cinderclient(context).wait_for_volume_deleted(volume,
+                                                                  timeout=60)
+
+    def attach_volume(self, context, connection_info, instance, mountpoint=None,
+                      disk_bus=None, device_type=None,
+                      encryption=None):
+        """
+
+        :param context:
+            ['auth_token',
+            'elevated',
+            'from_dict',
+            'instance_lock_checked',
+            'is_admin',
+            'project_id',
+            'project_name',
+            'quota_class',
+            'read_deleted',
+            'remote_address',
+            'request_id',
+            'roles',
+            'service_catalog',
+            'tenant',
+            'timestamp',
+            'to_dict',
+            'update_store',
+            'user',
+            'user_id',
+            'user_name']
+        :param connection_info:
+            {
+                u'driver_volume_type': u'vcloud_volume',
+                'serial': u'824d397e-4138-48e4-b00b-064cf9ef4ed8',
+                u'data': {
+                    u'access_mode': u'rw',
+                    u'qos_specs': None,
+                    u'display_name': u'volume_02',
+                    u'volume_id': u'824d397e-4138-48e4-b00b-064cf9ef4ed8',
+                    u'backend': u'vcloud'
+                }
+            }
+        :param instance:
+        Instance(
+            access_ip_v4=None,
+            access_ip_v6=None,
+            architecture=None,
+            auto_disk_config=False,
+            availability_zone='az01.hws--fusionsphere',
+            cell_name=None,
+            cleaned=False,
+            config_drive='',
+            created_at=2016-01-14T07: 17: 40Z,
+            default_ephemeral_device=None,
+            default_swap_device=None,
+            deleted=False,
+            deleted_at=None,
+            disable_terminate=False,
+            display_description='volume_backend_01',
+            display_name='volume_backend_01',
+            ephemeral_gb=0,
+            ephemeral_key_uuid=None,
+            fault=<?>,
+            host='420824B8-AC4B-7A64-6B8D-D5ACB90E136A',
+            hostname='volume-backend-01',
+            id=57,
+            image_ref='',
+            info_cache=InstanceInfoCache,
+            instance_type_id=2,
+            kernel_id='',
+            key_data=None,
+            key_name=None,
+            launch_index=0,
+            launched_at=2016-01-14T07: 17: 43Z,
+            launched_on='420824B8-AC4B-7A64-6B8D-D5ACB90E136A',
+            locked=False,
+            locked_by=None,
+            memory_mb=512,
+            metadata={
+
+            },
+            node='420824B8-AC4B-7A64-6B8D-D5ACB90E136A',
+            numa_topology=<?>,
+            os_type=None,
+            pci_devices=<?>,
+            power_state=0,
+            progress=0,
+            project_id='e178f1b9539b4a02a9c849dd7ea3ea9e',
+            ramdisk_id='',
+            reservation_id='r-marvoq8g',
+            root_device_name='/dev/sda',
+            root_gb=1,
+            scheduled_at=None,
+            security_groups=SecurityGroupList,
+            shutdown_terminate=False,
+            system_metadata={
+                image_base_image_ref='',
+                image_checksum='d972013792949d0d3ba628fbe8685bce',
+                image_container_format='bare',
+                image_disk_format='qcow2',
+                image_image_id='617e72df-41ba-4e0d-ac88-cfff935a7dc3',
+                image_image_name='cirros',
+                image_min_disk='0',
+                image_min_ram='0',
+                image_size='13147648',
+                instance_type_ephemeral_gb='0',
+                instance_type_flavorid='1',
+                instance_type_id='2',
+                instance_type_memory_mb='512',
+                instance_type_name='m1.tiny',
+                instance_type_root_gb='1',
+                instance_type_rxtx_factor='1.0',
+                instance_type_swap='0',
+                instance_type_vcpu_weight=None,
+                instance_type_vcpus='1'
+            },
+            task_state=None,
+            terminated_at=None,
+            updated_at=2016-01-14T07: 17: 43Z,
+            user_data=u'<SANITIZED>,
+            user_id='d38732b0a8ff451eb044015e80bbaa65',
+            uuid=9eef20f0-5ebf-4793-b4a2-5a667b0acad0,
+            vcpus=1,
+            vm_mode=None,
+            vm_state='active')
+
+        Volume object:
+        {
+            'status': u'attaching',
+            'volume_type_id': u'type01',
+            'volume_image_metadata': {
+                u'container_format': u'bare',
+                u'min_ram': u'0',
+                u'disk_format': u'qcow2',
+                u'image_name': u'cirros',
+                u'image_id': u'617e72df-41ba-4e0d-ac88-cfff935a7dc3',
+                u'checksum': u'd972013792949d0d3ba628fbe8685bce',
+                u'min_disk': u'0',
+                u'size': u'13147648'
+            },
+            'display_name': u'volume_02',
+            'attachments': [],
+            'attach_time': '',
+            'availability_zone': u'az01.hws--fusionsphere',
+            'bootable': True,
+            'created_at': u'2016-01-18T07: 03: 57.822386',
+            'attach_status': 'detached',
+            'display_description': None,
+            'volume_metadata': {
+                u'readonly': u'False'
+            },
+            'shareable': u'false',
+            'snapshot_id': None,
+            'mountpoint': '',
+            'id': u'824d397e-4138-48e4-b00b-064cf9ef4ed8',
+            'size': 120
+        }
+        :param mountpoint: string. e.g. "/dev/sdb"
+        :param disk_bus:
+        :param device_type:
+        :param encryption:
+        :return:
+        """
+        LOG.debug('start to attach volume.')
+
+        cascading_volume_id = connection_info['data']['volume_id']
+        cascading_volume_name = connection_info['data']['display_name']
+        su_volume_name = self._get_sub_fs_volume_name(cascading_volume_name,
+                                                      cascading_volume_id)
+
+        LOG.debug("+++hw, su_volume_name = %s", su_volume_name)
+
+        sub_volume = self.fs_cinderclient(context).get_volume_by_name(
+            su_volume_name)
+        if not sub_volume:
+            sub_volume = self.fs_cinderclient(context).get_volume_by_name(
+                cascading_volume_name)
+            if not sub_volume:
+                LOG.error('Can not find volume in provider fs,'
+                          'volume: %s ' % cascading_volume_id)
+                raise exception_ex.VolumeNotFoundAtProvider()
+
+        sub_server = self._get_sub_fs_instance(context, instance)
+        if not sub_server:
+            LOG.error('Can not find server in provider fs, '
+                      'server: %s' % instance.uuid)
+            raise exception_ex.ServerNotExistException(
+                server_name=instance.display_name)
+
+        if sub_volume.status == 'available':
+            self.fs_novaclient(context).attach_volume(sub_server.id,
+                                                      sub_volume.id,
+                                                      mountpoint)
+            self.fs_cinderclient(context).wait_for_volume_in_specified_status(
+                sub_volume.id, 'in-use')
+        else:
+            raise Exception('sub volume %s of volume: %s is not available, '
+                            'status is %s' %
+                            (sub_volume.id, cascading_volume_id,
+                             sub_volume.status))
+        LOG.debug('attach volume : %s success.' % cascading_volume_id)
+
+    def destroy(self, context, instance, network_info, block_device_info=None,
+                destroy_disks=True, migrate_data=None):
+        """
+        :param instance:
+        :param network_info:
+        :param block_device_info:
+        :param destroy_disks:
+        :param migrate_data:
+        :return:
+        """
+
+        sub_fs_server = self._get_sub_fs_instance(context, instance)
+        if sub_fs_server:
+            self.fs_novaclient(context).delete(sub_fs_server)
+            self.fs_novaclient(context).check_delete_server_complete(
+                sub_fs_server.id)
+        else:
+            LOG.error('Can not found server to delete.')
+            # raise exception_ex.ServerNotExistException(server_name=instance.display_name)
+
+        LOG.debug('success to delete instance: %s' % instance.uuid)
+
+    def detach_volume(self, connection_info, instance, mountpoint,
+                      encryption=None):
+        LOG.debug('start to detach volume.')
+        LOG.debug('instance: %s' % instance)
+        LOG.debug('connection_info: %s' % connection_info)
+
+        cascading_volume_id = connection_info['data']['volume_id']
+        cascading_volume_name = connection_info['data']['display_name']
+        sub_volume_name = self._get_sub_fs_volume_name(cascading_volume_name,
+                                                       cascading_volume_id)
+
+        context = req_context.RequestContext(instance.project_id)
+
+        sub_volume = self.fs_cinderclient(context).get_volume_by_name(
+            sub_volume_name)
+        if not sub_volume:
+            sub_volume = self.fs_cinderclient(context).get_volume_by_name(
+                cascading_volume_name)
+            if not sub_volume:
+                LOG.error('Can not find volume in provider fs, '
+                          'volume: %s ' % cascading_volume_id)
+                raise exception_ex.VolumeNotFoundAtProvider()
+
+        attachment_id, server_id = self._get_attachment_id_for_volume(
+            sub_volume)
+
+        LOG.debug('server_id: %s' % server_id)
+        LOG.debug('submit detach task')
+        self.fs_novaclient(context).detach_volume(server_id, sub_volume.id)
+
+        LOG.debug('wait for volume in available status.')
+        self.fs_cinderclient(context).wait_for_volume_in_specified_status(
+            sub_volume.id, 'available')
+
+    def _get_attachment_id_for_volume(self, sub_volume):
+        LOG.debug('start to _get_attachment_id_for_volume: %s' % sub_volume)
+        attachment_id = None
+        server_id = None
+        attachments = sub_volume.attachments
+        LOG.debug('attachments: %s' % attachments)
+        for attachment in attachments:
+            volume_id = attachment.get('volume_id')
+            tmp_attachment_id = attachment.get('attachment_id')
+            tmp_server_id = attachment.get('server_id')
+            if volume_id == sub_volume.id:
+                attachment_id = tmp_attachment_id
+                server_id = tmp_server_id
+                break
+            else:
+                continue
+
+        return attachment_id, server_id
+
+    def get_available_nodes(self, refresh=False):
+        """Returns nodenames of all nodes managed by the compute service.
+
+        This method is for multi compute-nodes support. If a driver supports
+        multi compute-nodes, this method returns a list of nodenames managed
+        by the service. Otherwise, this method should return
+        [hypervisor_hostname].
+        """
+        hostname = socket.gethostname()
+        return [hostname]
+
+    def _get_host_stats(self, hostname):
+        return {'vcpus': 999999, 'vcpus_used': 0, 'memory_mb': 999999,
+                'memory_mb_used': 0, 'local_gb': 99999999,
+                'local_gb_used': 0, 'host_memory_total': 99999999,
+                'disk_total': 99999999, 'host_memory_free': 99999999,
+                'disk_used': 0, 'hypervisor_type': 'fusionsphere',
+                'hypervisor_version': '5005000',
+                'hypervisor_hostname': hostname,
+                'cpu_info': '{"model": ["Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz"],'
+                            '"vendor": ["Huawei Technologies Co., Ltd."], '
+                            '"topology": {"cores": 16, "threads": 32}}',
+                'supported_instances': jsonutils.dumps(
+                    [["i686", "xen", "uml"], ["x86_64", "xen", "uml"]]),
+                'numa_topology': None,}
+
+    def get_available_resource(self, nodename):
+        host_stats = self._get_host_stats(nodename)
+
+        supported_instances = list()
+        for one in jsonutils.loads(host_stats['supported_instances']):
+            supported_instances.append((one[0], one[1], one[2]))
+
+        return {'vcpus': host_stats['vcpus'],
+                'memory_mb': host_stats['host_memory_total'],
+                'local_gb': host_stats['disk_total'], 'vcpus_used': 0,
+                'memory_mb_used': host_stats['host_memory_total'] - host_stats[
+                    'host_memory_free'],
+                'local_gb_used': host_stats['disk_used'],
+                'hypervisor_type': host_stats['hypervisor_type'],
+                'hypervisor_version': host_stats['hypervisor_version'],
+                'hypervisor_hostname': host_stats['hypervisor_hostname'],
+                'cpu_info': jsonutils.dumps(host_stats['cpu_info']),
+                'supported_instances': supported_instances,
+                'numa_topology': None,}
+
+    def get_info(self, instance):
+        LOG.debug('get_info: %s' % instance)
+        STATUS = power_state.NOSTATE
+        server = self._get_sub_fs_instance(None, instance)
+        LOG.debug('server: %s' % server)
+        if server:
+            instance_power_state = getattr(server, 'OS-EXT-STS:power_state')
+            STATUS = FS_POWER_STATE[instance_power_state]
+        LOG.debug('end to get_info: %s' % STATUS)
+
+        return hardware.InstanceInfo(
+            state=STATUS,
+            max_mem_kb=0,
+            mem_kb=0,
+            num_cpu=1)
+
+    def get_instance_macs(self, instance):
+        """
+        No need to implement.
+        :param instance:
+        :return:
+        """
+        pass
+
+    def get_volume_connector(self, instance):
+        return {'ip': CONF.my_block_storage_ip,
+                'initiator': 'fake',
+                'host': 'fakehost'}
+
+    def init_host(self, host):
+        pass
+
+    def list_instances(self):
+        """List VM instances from all nodes.
+        :return: list of instance id. e.g.['id_001', 'id_002', ...]
+        """
+
+        instances = []
+        context = req_context.RequestContext(project_id='default')
+        servers = self.fs_novaclient(context).list()
+        for server in servers:
+            server_id = server.id
+            instances.append(server_id)
+
+        LOG.debug('list_instance: %s' % instances)
+        return instances
+
+    def power_off(self, instance, timeout=0, retry_interval=0):
+
+        LOG.debug('start to stop server: %s' % instance.uuid)
+        server = self._get_sub_fs_instance(hybrid_instance=instance)
+        if not server:
+            LOG.debug('can not find sub fs server for '
+                      'instance: %s' % instance.uuid)
+            raise exception_ex.ServerNotExistException(
+                server_name=instance.display_name)
+
+        context = req_context.RequestContext(project_id=instance.project_id)
+
+        LOG.debug('server: %s status is: %s' % (server.id, server.status))
+        if server.status == vm_states.ACTIVE.upper():
+            LOG.debug('start to add stop task')
+            self.fs_novaclient(context).stop(server)
+            LOG.debug('submit stop task')
+            self.fs_novaclient(context).check_stop_server_complete(server.id)
+            LOG.debug('stop server: %s success' % instance.uuid)
+        elif server.status == 'SHUTOFF':
+            LOG.debug('sub instance status is already STOPPED.')
+            LOG.debug('stop server: %s success' % instance.uuid)
+            return
+        else:
+            LOG.warning('server status is not in ACTIVE OR STOPPED,'
+                        'can not do POWER_OFF operation')
+            raise exception_ex.ServerStatusException(status=server.status)
+
+    def power_on(self, context, instance, network_info,
+                 block_device_info=None):
+
+        LOG.debug('start to start server: %s' % instance.uuid)
+        server = self._get_sub_fs_instance(context, instance)
+        if not server:
+            LOG.debug('can not find sub fs server for '
+                      'instance: %s' % instance.uuid)
+            raise exception_ex.ServerNotExistException(instance.display_name)
+
+        LOG.debug('server: %s status is: %s' % (server.id, server.status))
+        if server.status == 'SHUTOFF':
+            LOG.debug('start to add start task')
+            self.fs_novaclient(context).start(server)
+            LOG.debug('submit start task')
+            self.fs_novaclient(context).check_start_server_complete(server.id)
+            LOG.debug('stop server: %s success' % instance.uuid)
+        elif server.status == vm_states.ACTIVE.upper():
+            LOG.debug('sub instance status is already ACTIVE.')
+            return
+        else:
+            LOG.warning('server status is not in ACTIVE OR STOPPED,'
+                        'can not do POWER_ON operation')
+            raise exception_ex.ServerStatusException(status=server.status)
+
+    def reboot(self, context, instance, network_info, reboot_type,
+               block_device_info=None, bad_volumes_callback=None):
+
+        LOG.debug('start to reboot server: %s' % instance.uuid)
+        server = self._get_sub_fs_instance(context, instance)
+        if not server:
+            LOG.debug('can not find sub fs server for '
+                      'instance: %s' % instance.uuid)
+            raise exception_ex.ServerNotExistException(
+                server_name=instance.display_name)
+
+        LOG.debug('server: %s status is: %s' % (server.id, server.status))
+        if server.status == vm_states.ACTIVE.upper():
+            server.reboot(reboot_type)
+            self.fs_novaclient(context).check_reboot_server_complete(server.id)
+            LOG.debug('reboot server: %s success' % instance.uuid)
+        elif server.status == 'SHUTOFF':
+            server.start()
+            self.fs_novaclient(context).check_start_server_complete(server.id)
+            LOG.debug('reboot server: %s success' % instance.uuid)
+        else:
+            LOG.warning('server status is not in ACTIVE OR STOPPED,'
+                        'can not do POWER_OFF operation')
+            raise exception_ex.ServerStatusException(status=server.status)
+
+    def resume_state_on_host_boot(self, context, instance, network_info,
+                                  block_device_info=None):
+        pass
+
+    def snapshot(self, context, instance, image_id, update_task_state):
+        pass
+
+    def _spawn(self, context, instance, image_meta, injected_files,
+               admin_password, network_info=None, block_device_info=None):
+        try:
+            LOG.debug('instance: %s' % instance)
+            LOG.debug('block device info: %s' % block_device_info)
+
+            flavor = instance.get_flavor()
+            LOG.debug('flavor: %s' % flavor)
+
+            sub_flavor_id = self._get_sub_flavor_id(context, flavor.flavorid)
+
+            name = self._generate_sub_fs_instance_name(instance.display_name,
+                                                       instance.uuid)
+            LOG.debug('name: %s' % name)
+
+            image_ref = None
+
+            if instance.image_ref:
+                sub_image_id = self._get_sub_image_id(context,
+                                                      instance.image_ref)
+                try:
+                    image_ref = self.fs_glanceclient(context).get_image(
+                        sub_image_id)
+                except Exception as ex:
+                    LOG.exception(_LE("get image(%(image_id)s) failed, "
+                                      "ex = %(ex)s"), image_id=sub_image_id,
+                                  ex=ex)
+                    raise
+            else:
+                image_ref = None
+
+            metadata = self._add_agent_conf_to_metadata(instance)
+            LOG.debug('metadata: %s' % metadata)
+
+            app_security_groups = instance.security_groups
+            LOG.debug('app_security_groups: %s' % app_security_groups)
+
+            LOG.debug('injected files: %s' % injected_files)
+            agent_inject_files = self._get_agent_inject_file(instance,
+                                                             injected_files)
+
+            sub_bdm = self._transfer_to_sub_block_device_mapping_v2(
+                context, block_device_info)
+            LOG.debug('sub_bdm: %s' % sub_bdm)
+
+            project_mapper = self._get_project_mapper(context,
+                                                      context.project_id)
+
+            security_groups = self._get_provider_security_groups_list(
+                context, project_mapper)
+            nics = self._get_provider_nics(context, project_mapper)
+
+            provider_server = self.fs_novaclient(context).create_server(
+                name, image_ref, sub_flavor_id, meta=metadata,
+                files=agent_inject_files,
+                reservation_id=instance.reservation_id,
+                security_groups=security_groups,
+                nics=nics,
+                availability_zone=project_mapper.get("availability_zone", None),
+                block_device_mapping_v2=sub_bdm)
+
+            LOG.debug('wait for server active')
+            self.fs_novaclient(context).check_create_server_complete(
+                provider_server.id)
+            LOG.debug('create server success.............!!!')
+
+            interface_list = self.fs_novaclient(context).interface_list(
+                provider_server)
+            ips = []
+            for interface in interface_list:
+                ip = interface.fixed_ips[0].get('ip_address')
+                ips.append(ip)
+            instance_ips = ','.join(ips)
+            LOG.debug('luorui debug instance_ips %s' % instance_ips)
+            instance.system_metadata['instance_ips'] = instance_ips
+            instance.system_metadata['instance_id'] = provider_server.id
+            instance.save()
+
+        except Exception as e:
+            LOG.error(
+                'Exception when spawn, exception: %s' % traceback.format_exc(e))
+            raise Exception(
+                'Exception when spawn, exception: %s' % traceback.format_exc(e))
+
+    @logger_helper()
+    def spawn(self, context, instance, image_meta, injected_files,
+              admin_password, network_info=None, block_device_info=None):
+        """Create a new instance/VM/domain on the virtualization platform.
+
+        Once this successfully completes, the instance should be
+        running (power_state.RUNNING).
+
+        If this fails, any partial instance should be completely
+        cleaned up, and the virtualization platform should be in the state
+        that it was before this call began.
+
+        :param context: security context
+        :param instance: nova.objects.instance.Instance
+                         This function should use the data there to guide
+                         the creation of the new instance.
+                         Instance(
+                             access_ip_v4=None,
+                             access_ip_v6=None,
+                             architecture=None,
+                             auto_disk_config=False,
+                             availability_zone='az31.shenzhen--aws',
+                             cell_name=None,
+                             cleaned=False,
+                             config_drive='',
+                             created_at=2015-08-31T02:44:36Z,
+                             default_ephemeral_device=None,
+                             default_swap_device=None,
+                             deleted=False,
+                             deleted_at=None,
+                             disable_terminate=False,
+                             display_description='server@daa5e17c-cb2c-4014-9726-b77109380ca6',
+                             display_name='server@daa5e17c-cb2c-4014-9726-b77109380ca6',
+                             ephemeral_gb=0,
+                             ephemeral_key_uuid=None,
+                             fault=<?>,
+                             host='42085B38-683D-7455-A6A3-52F35DF929E3',
+                             hostname='serverdaa5e17c-cb2c-4014-9726-b77109380ca6',
+                             id=49,
+                             image_ref='6004b47b-d453-4695-81be-cd127e23f59e',
+                             info_cache=InstanceInfoCache,
+                             instance_type_id=2,
+                             kernel_id='',
+                             key_data=None,
+                             key_name=None,
+                             launch_index=0,
+                             launched_at=None,
+                             launched_on='42085B38-683D-7455-A6A3-52F35DF929E3',
+                             locked=False,
+                             locked_by=None,
+                             memory_mb=512,
+                             metadata={},
+                             node='h',
+                             numa_topology=None,
+                             os_type=None,
+                             pci_devices=<?>,
+                             power_state=0,
+                             progress=0,
+                             project_id='52957ad92b2146a0a2e2b3279cdc2c5a',
+                             ramdisk_id='',
+                             reservation_id='r-d1dkde4x',
+                             root_device_name='/dev/sda',
+                             root_gb=1,
+                             scheduled_at=None,
+                             security_groups=SecurityGroupList,
+                             shutdown_terminate=False,
+                             system_metadata={
+                                 image_base_image_ref='6004b47b-d453-4695-81be-cd127e23f59e',
+                                 image_container_format='bare',
+                                 image_disk_format='qcow2',
+                                 image_min_disk='1',
+                                 image_min_ram='0',
+                                 instance_type_ephemeral_gb='0',
+                                 instance_type_flavorid='1',
+                                 instance_type_id='2',
+                                 instance_type_memory_mb='512',
+                                 instance_type_name='m1.tiny',
+                                 instance_type_root_gb='1',
+                                 instance_type_rxtx_factor='1.0',
+                                 instance_type_swap='0',
+                                 instance_type_vcpu_weight=None,
+                                 instance_type_vcpus='1'
+                                 },
+                             task_state='spawning',
+                             terminated_at=None,
+                             updated_at=2015-08-31T02:44:38Z,
+                             user_data=u'<SANITIZED>,
+                             user_id='ea4393b196684c8ba907129181290e8d',
+                             uuid=92d22a62-c364-4169-9795-e5a34b5f5968,
+                             vcpus=1,
+                             vm_mode=None,
+                             vm_state='building')
+        :param image_meta: image object returned by nova.image.glance that
+                           defines the image from which to boot this instance
+                           e.g.
+                           {
+                               u'status': u'active',
+                               u'deleted': False,
+                               u'container_format': u'bare',
+                               u'min_ram': 0,
+                               u'updated_at': u'2015-08-17T07:46:48.708903',
+                               u'min_disk': 0,
+                               u'owner': u'52957ad92b2146a0a2e2b3279cdc2c5a',
+                               u'is_public': True,
+                               u'deleted_at': None,
+                               u'properties': {},
+                               u'size': 338735104,
+                               u'name': u'emall-backend',
+                               u'checksum': u'0f2294c98c7d113f0eb26ad3e76c86fa',
+                               u'created_at': u'2015-08-17T07:46:20.581706',
+                               u'disk_format': u'qcow2',
+                               u'id': u'6004b47b-d453-4695-81be-cd127e23f59e'
+                            }
+
+        :param injected_files: User files to inject into instance.
+        :param admin_password: Administrator password to set in instance.
+        :param network_info:
+           :py:meth:`~nova.network.manager.NetworkManager.get_instance_nw_info`
+        :param block_device_info: Information about block devices to be
+                                  attached to the instance.
+        """
+
+        #self._binding_host(context, network_info, instance.uuid)
+        self._spawn(context, instance, image_meta, injected_files,
+                    admin_password, network_info, block_device_info)
+        #self._binding_host(context, network_info, instance.uuid)
+
+    def sub_flavor_detail(self, context):
+        """get flavor detail"""
+
+        ret = []
+        sub_flavors = self.fs_novaclient(context).get_flavor_detail()
+        for sub_flavor in sub_flavors:
+            ret.append(sub_flavor._info)
+
+        return ret
+
+

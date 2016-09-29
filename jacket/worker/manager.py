@@ -14,18 +14,20 @@ from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging as messaging
 
-from jacket.compute import exception
-from jacket import rpc
 from jacket.compute.cloud import manager as com_manager
-from jacket.storage.volume import manager as vol_manager
+from jacket.compute import exception as com_exception
+from jacket import exception
+from jacket.i18n import _LE
 from jacket import manager
+from jacket import rpc
+from jacket.storage.volume import manager as vol_manager
 
 CONF = cfg.CONF
 
 LOG = logging.getLogger(__name__)
 
 get_notifier = functools.partial(rpc.get_notifier, service='worker')
-wrap_exception = functools.partial(exception.wrap_exception,
+wrap_exception = functools.partial(com_exception.wrap_exception,
                                    get_notifier=get_notifier)
 
 
@@ -50,8 +52,11 @@ class WorkerManager(manager.Manager):
         self.additional_endpoints.append(self.compute_manager)
         self.additional_endpoints.append(self.storage_manager)
 
+        self.compute_driver = self.compute_manager.driver
+        self.storage_driver = self.storage_manager.storage_driver
+
         # use storage manage rpc version
-        self.RPC_API_VERSION = self.storage_manager.RPC_API_VERSION
+        #self.RPC_API_VERSION = self.storage_manager.RPC_API_VERSION
 
     def init_host(self):
         """Initialization for a standalone cloud service."""
@@ -88,3 +93,15 @@ class WorkerManager(manager.Manager):
         # jacket post_start_hook TODO
         self.compute_manager.reset()
         self.storage_manager.reset()
+
+    def _require_driver_support(self, driver, method):
+        if not hasattr(driver, method):
+            driver_name = driver.__class__.__name__
+            LOG.error(_LE("driver %s not support method %s"), driver_name,
+                      method)
+            raise exception.DriverNotSupported()
+
+    @wrap_exception()
+    def sub_flavor_detail(self, context):
+        self._require_driver_support(self.compute_driver, 'sub_flavor_detail')
+        return self.compute_driver.sub_flavor_detail(context)
