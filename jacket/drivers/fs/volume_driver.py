@@ -137,7 +137,9 @@ class FsVolumeDriver(driver.VolumeDriver):
             exist_volume = self.fs_cinderlient(context).get_volume_by_name(
                 volume_args['display_name'])
             if exist_volume:
-                exist_volume.force_delete()
+                exist_volume.delete()
+                self.fs_cinderlient(context).check_delete_volume_complete(
+                    exist_volume.id)
         except Exception:
             pass
 
