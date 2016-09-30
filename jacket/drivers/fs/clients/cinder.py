@@ -17,6 +17,7 @@ import time
 from cinderclient import client as cc
 from cinderclient import exceptions
 from oslo_log import log as logging
+from retrying import retry
 
 from jacket import conf
 from jacket.drivers.fs import exception_ex
@@ -29,6 +30,17 @@ from jacket.i18n import _LW
 LOG = logging.getLogger(__name__)
 
 CONF = conf.CONF
+
+
+def retry_exception_deal(exc):
+    # todo auth failed ,need to retry
+
+    return False
+
+
+def retry_auth_failed(exe):
+    # todo auth failed ,need to retry, refresh fs_context
+    return False
 
 
 class CinderClientPlugin(client_plugin.ClientPlugin):
@@ -72,12 +84,18 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
         """Check if specific extension is present."""
         return alias in self._list_extensions()
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def get_volume(self, volume):
         try:
             return self.client().volumes.get(volume)
         except exceptions.NotFound:
             raise exception.EntityNotFound(entity='Volume', name=volume)
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def get_volume_by_name(self, volume_name):
         volume_list = self.client().volumes.list(
             search_opts={'name': volume_name})
@@ -86,6 +104,9 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
         else:
             return None
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def get_volume_snapshot(self, snapshot):
         try:
             return self.client().volume_snapshots.get(snapshot)
@@ -93,13 +114,9 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
             raise exception.EntityNotFound(entity='VolumeSnapshot',
                                            name=snapshot)
 
-    def get_volume_backup(self, backup):
-        try:
-            return self.client().backups.get(backup)
-        except exceptions.NotFound:
-            raise exception.EntityNotFound(entity='Volume backup',
-                                           name=backup)
-
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def get_volume_type(self, volume_type):
         vt_id = None
         volume_type_list = self.client().volume_types.list()
@@ -113,14 +130,23 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
 
         return vt_id
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def get_volume_type_by_id(self, volume_type_id):
         volume_type = self.client().volume_types.get(volume_type_id)
         return volume_type
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def get_volume_type_detail(self):
         volume_types = self.client().volume_types.list()
         return volume_types
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def get_qos_specs(self, qos_specs):
         try:
             qos = self.client().qos_specs.get(qos_specs)
@@ -138,11 +164,16 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
         return (isinstance(ex, exceptions.ClientException) and
                 ex.code == 409)
 
+    @retry(stop_max_attempt_number=60,
+           wait_fixed=2000,
+           retry_on_result=client_plugin.retry_if_result_is_false,
+           retry_on_exception=retry_auth_failed)
     def check_detach_volume_complete(self, vol_id):
         try:
             vol = self.client().volumes.get(vol_id)
         except Exception as ex:
-            self.ignore_not_found(ex)
+            if not self.ignore_not_found(ex):
+                raise
             return True
 
         if vol.status in ('in-use', 'detaching'):
@@ -162,6 +193,10 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
         else:
             return True
 
+    @retry(stop_max_attempt_number=60,
+           wait_fixed=2000,
+           retry_on_result=client_plugin.retry_if_result_is_false,
+           retry_on_exception=retry_auth_failed)
     def check_attach_volume_complete(self, vol_id):
         vol = self.client().volumes.get(vol_id)
         if vol.status in ('available', 'attaching'):
@@ -179,6 +214,57 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
                 result=_('Volume attachment failed'))
 
         LOG.info(_LI('Attaching volume %(id)s complete'), {'id': vol_id})
+        return True
+
+    @retry(stop_max_attempt_number=300,
+           wait_fixed=2000,
+           retry_on_result=client_plugin.retry_if_result_is_false,
+           retry_on_exception=retry_auth_failed)
+    def check_create_volume_complete(self, vol_id):
+        vol = self.client().volumes.get(vol_id)
+        if vol.status in ('creating', 'downloading'):
+            LOG.debug("Volume %(id)s is being created - "
+                      "volume status: %(status)s" % {'id': vol_id,
+                                                     'status': vol.status})
+            return False
+
+        if vol.status != 'available':
+            LOG.debug("create failed - volume %(vol)s is "
+                      "in %(status)s status" % {"vol": vol_id,
+                                                "status": vol.status})
+            raise exception.ResourceUnknownStatus(
+                resource_status=vol.status,
+                result=_('Volume create failed'))
+
+        LOG.info(_LI('create volume %(id)s complete'), {'id': vol_id})
+        return True
+
+    @retry(stop_max_attempt_number=60,
+           wait_fixed=2000,
+           retry_on_result=client_plugin.retry_if_result_is_false,
+           retry_on_exception=retry_auth_failed)
+    def check_delete_volume_complete(self, vol_id):
+        try:
+            vol = self.client().volumes.get(vol_id)
+        except Exception as ex:
+            if not self.ignore_not_found(ex):
+                raise
+            LOG.info(_LI('delete volume %(id)s complete'), {'id': vol_id})
+            return True
+        if vol.status in ('deleting'):
+            LOG.debug("Volume %(id)s is being deleted - "
+                      "volume status: %(status)s" % {'id': vol_id,
+                                                     'status': vol.status})
+            return False
+
+        if vol.status == 'error':
+            LOG.debug("delete failed - volume %(vol)s is "
+                      "in %(status)s status" % {"vol": vol_id,
+                                                "status": vol.status})
+            raise exception.ResourceUnknownStatus(
+                resource_status=vol.status,
+                result=_('Volume delete failed'))
+
         return True
 
     def wait_for_volume_in_specified_status(self, vol_id, status):
@@ -216,6 +302,9 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
                                                         timeout=int(
                                                             time.time() - start))
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def create_volume(self, size=None, snapshot_id=None, source_volid=None,
                       display_name=None, display_description=None,
                       volume_type=None, user_id=None,
@@ -229,6 +318,9 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
             project_id=project_id, availability_zone=availability_zone,
             metadata=metadata, imageRef=imageRef)
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def delete_volume(self, volume):
         """Delete a volume.
 
@@ -253,9 +345,15 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
                 raise exception_ex.VolumeDeleteTimeoutException(
                     volume_id=volume.id)
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def detach(self, volume, attachment_uuid):
         return self.client().volumes.detach(volume, attachment_uuid)
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def create_snapshot(self, volume_id, force=False, name=None,
                         description=None, metadata=None):
         return self.client().volume_snapshots.create(volume_id, force=force,
@@ -263,21 +361,25 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
                                                      description=description,
                                                      metadata=metadata)
 
-    def check_create_snapshot_complete(self, snap_is):
-        snap = self.client().volume_snapshots.get(snap_is)
-        if snap.status in ('creating', 'attaching'):
-            LOG.debug("Volume %(id)s is being attached - "
-                      "volume status: %(status)s" % {'id': vol_id,
-                                                     'status': vol.status})
+    @retry(stop_max_attempt_number=60,
+           wait_fixed=2000,
+           retry_on_result=client_plugin.retry_if_result_is_false,
+           retry_on_exception=retry_auth_failed)
+    def check_create_snapshot_complete(self, snap_id):
+        snap = self.client().volume_snapshots.get(snap_id)
+        if snap.status in ('creating'):
+            LOG.debug("Snapshot %(id)s is being created - "
+                      "status: %(status)s" % {'id': snap_id,
+                                                'status': snap.status})
             return False
 
-        if vol.status != 'in-use':
-            LOG.debug("Attachment failed - volume %(vol)s is "
-                      "in %(status)s status" % {"vol": vol_id,
-                                                "status": vol.status})
+        if snap.status != 'available':
+            LOG.debug("create failed - snapshot %(snap)s is "
+                      "in %(status)s status" % {"snap": snap_id,
+                                                "status": snap.status})
             raise exception.ResourceUnknownStatus(
-                resource_status=vol.status,
-                result=_('Volume attachment failed'))
+                resource_status=snap.status,
+                result=_('Snapshot create failed'))
 
-        LOG.info(_LI('Attaching volume %(id)s complete'), {'id': vol_id})
+        LOG.info(_LI('creating snapshot %(id)s complete'), {'id': snap_id})
         return True

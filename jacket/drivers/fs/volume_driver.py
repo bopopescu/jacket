@@ -98,7 +98,6 @@ class FsVolumeDriver(driver.VolumeDriver):
         base_linux_image = project_mapper.get("base_linux_image", None)
 
         image_mapper = hybrid_db_api.image_mapper_get(context, image_id)
-        LOG.debug("+++hw, image_mapper = %s", image_mapper)
         sub_image_id = image_mapper.get("dest_image_id", base_linux_image)
 
         return sub_image_id
@@ -186,8 +185,8 @@ class FsVolumeDriver(driver.VolumeDriver):
 
         LOG.debug('start to wait for volume %s in status '
                   'available' % sub_volume.id)
-        self.fs_cinderlient(context).wait_for_volume_in_specified_status(
-            sub_volume.id, 'available')
+        self.fs_cinderlient(context).check_create_volume_complete(
+            sub_volume.id)
 
         LOG.debug('create volume %s success.' % volume.id)
 
@@ -247,12 +246,11 @@ class FsVolumeDriver(driver.VolumeDriver):
 
         LOG.debug('start to wait for volume %s in status '
                   'available' % sub_volume.id)
-        self.fs_cinderlient(context).wait_for_volume_in_specified_status(
-            sub_volume.id, 'available')
+        self.fs_cinderlient(context).check_create_volume_complete(
+            sub_volume.id)
 
         LOG.debug('create volume %s success.' % volume.id)
 
-        LOG.debug('end to create volume')
         return {'provider_location': 'SUB-FusionSphere'}
 
     def delete_volume(self, volume):
@@ -262,10 +260,10 @@ class FsVolumeDriver(driver.VolumeDriver):
                                              volume.id)
         if sub_volume:
             LOG.debug('submit delete-volume task')
-            self.fs_cinderlient(context).delete_volume(sub_volume)
+            sub_volume.delete()
             LOG.debug('wait for volume delete')
-            self.fs_cinderlient(context).wait_for_volume_deleted(sub_volume,
-                                                                 600)
+            self.fs_cinderlient(context).check_delete_volume_complete(
+                sub_volume.id)
         else:
             LOG.debug('no sub-volume exist, '
                       'no need to delete sub volume')

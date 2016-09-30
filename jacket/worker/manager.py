@@ -39,7 +39,8 @@ class WorkerManager(manager.Manager):
 
     def __init__(self, *args, **kwargs):
         """Load configuration options and connect to the cloud."""
-        super(WorkerManager, self).__init__(service_name="worker", *args, **kwargs)
+        super(WorkerManager, self).__init__(service_name="worker", *args,
+                                            **kwargs)
         self.compute_manager = com_manager.ComputeManager()
 
         backend = None

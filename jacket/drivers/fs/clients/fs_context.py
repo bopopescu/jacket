@@ -91,8 +91,6 @@ class FsClientContext(object):
         self.auth_url = project_info.pop("auth_url", None)
         self.region_name = project_info.pop("region", None)
 
-        LOG.debug("+++hw, project_info = %s", project_info)
-
         if not self.username or not self.password or not self.project_id or \
             not self.auth_url:
             raise exception_ex.AccountNotConfig()

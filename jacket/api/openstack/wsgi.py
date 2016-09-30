@@ -1367,9 +1367,6 @@ class Fault(webob.exc.HTTPException):
             self.wrapped_exc.headers['Vary'] = \
               API_VERSION_REQUEST_HEADER
 
-        LOG.debug("+++hw, type text = %s, %s", type(self.wrapped_exc.text),
-                  JSONDictSerializer().serialize(fault_data))
-
         self.wrapped_exc.content_type = 'application/json'
         self.wrapped_exc.charset = 'UTF-8'
         self.wrapped_exc.text = JSONDictSerializer().serialize(fault_data)

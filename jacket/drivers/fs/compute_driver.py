@@ -388,7 +388,6 @@ class FsComputeDriver(driver.ComputeDriver):
         base_linux_image = project_mapper.get("base_linux_image", None)
 
         image_mapper = self.db_api.image_mapper_get(context, image_id)
-        LOG.debug("+++hw, image_mapper = %s", image_mapper)
         sub_image_id = image_mapper.get("dest_image_id", base_linux_image)
 
         return sub_image_id
@@ -428,8 +427,7 @@ class FsComputeDriver(driver.ComputeDriver):
         self.fs_cinderclient(context).create_volume(size,
                                                     display_name=volume_name)
         volume = self.fs_cinderclient(context).get_volume_by_name(volume_name)
-        self.fs_cinderclient(context).wait_for_volume_in_specified_status(
-            volume.id, 'available')
+        self.fs_cinderclient(context).check_create_volume_complete(volume.id)
         return volume
 
     def volume_delete(self, context, instance):
@@ -437,8 +435,8 @@ class FsComputeDriver(driver.ComputeDriver):
         volume = self.fs_cinderclient(context).get_volume_by_name(volume_name)
         if volume:
             self.fs_cinderclient(context).delete_volume(volume)
-            self.fs_cinderclient(context).wait_for_volume_deleted(volume,
-                                                                  timeout=60)
+            self.fs_cinderclient(context).check_delete_volume_complete(
+                volume.id)
 
     def attach_volume(self, context, connection_info, instance, mountpoint=None,
                       disk_bus=None, device_type=None,
@@ -629,8 +627,8 @@ class FsComputeDriver(driver.ComputeDriver):
             self.fs_novaclient(context).attach_volume(sub_server.id,
                                                       sub_volume.id,
                                                       mountpoint)
-            self.fs_cinderclient(context).wait_for_volume_in_specified_status(
-                sub_volume.id, 'in-use')
+            self.fs_cinderclient(context).check_attach_volume_complete(
+                sub_volume.id)
         else:
             raise Exception('sub volume %s of volume: %s is not available, '
                             'status is %s' %
@@ -691,8 +689,8 @@ class FsComputeDriver(driver.ComputeDriver):
         self.fs_novaclient(context).detach_volume(server_id, sub_volume.id)
 
         LOG.debug('wait for volume in available status.')
-        self.fs_cinderclient(context).wait_for_volume_in_specified_status(
-            sub_volume.id, 'available')
+        self.fs_cinderclient(context).check_detach_volume_complete(
+            sub_volume.id)
 
     def _get_attachment_id_for_volume(self, sub_volume):
         LOG.debug('start to _get_attachment_id_for_volume: %s' % sub_volume)
