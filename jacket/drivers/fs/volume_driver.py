@@ -30,7 +30,7 @@ from jacket.drivers.fs.clients import fs_context
 from jacket.drivers.fs.clients import cinder as cinderclient
 from jacket.drivers.fs.clients import glance as glanceclient
 from jacket.drivers.fs import exception_ex
-from jacket.i18n import _LE
+from jacket.i18n import _LE, _LI
 from jacket.storage.volume import driver
 
 LOG = logging.getLogger(__name__)
@@ -274,7 +274,7 @@ class FsVolumeDriver(driver.VolumeDriver):
 
     def create_snapshot(self, snapshot):
         volume_id = snapshot.volume.id
-        volume_name = snapshot.volume_name
+        volume_name = snapshot.volume.display_name
         context = snapshot.context
 
         sub_volume = self._get_sub_fs_volume(context, volume_name, volume_id)
@@ -284,15 +284,32 @@ class FsVolumeDriver(driver.VolumeDriver):
         sub_sn_name = self._get_sub_snapshot_name(snapshot.id,
                                                   snapshot.display_name)
 
-        self.fs_cinderlient(context).snapshot_create(
+        sub_snapshot = self.fs_cinderlient(context).create_snapshot(
             sub_volume.id, force=True, name=sub_sn_name,
             description=snapshot.display_description,
             metadata=snapshot.metadata)
 
+        self.fs_cinderlient(context).check_create_snapshot_complete(
+            sub_snapshot.id)
+        LOG.info(_LI("create snapshot(%(id)s) success!"), sub_snapshot.id)
 
     def delete_snapshot(self, snapshot):
         """Delete a snapshot."""
-        pass
+        context = snapshot.context
+
+        sub_sn_name = self._get_sub_snapshot_name(snapshot.id,
+                                                  snapshot.display_name)
+        sub_snap = self.fs_cinderlient(context).get_volume_snapshot_by_name(
+            sub_sn_name)
+        if sub_snap is None:
+            LOG.debug("sub_sn_name(%s) is not exist, "
+                      "no need to delete", sub_sn_name)
+            return
+
+        sub_snap.delete()
+        self.fs_cinderlient(context).check_delete_snapshot_complete(sub_snap.id)
+
+        LOG.info(_LI("delete snapshot(%s) success!"), sub_snap.id)
 
     def do_setup(self, context):
         """Instantiate common class and log in storage system."""

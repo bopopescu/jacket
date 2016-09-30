@@ -107,16 +107,6 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
     @retry(stop_max_attempt_number=3,
            wait_fixed=2000,
            retry_on_exception=retry_auth_failed)
-    def get_volume_snapshot(self, snapshot):
-        try:
-            return self.client().volume_snapshots.get(snapshot)
-        except exceptions.NotFound:
-            raise exception.EntityNotFound(entity='VolumeSnapshot',
-                                           name=snapshot)
-
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
     def get_volume_type(self, volume_type):
         vt_id = None
         volume_type_list = self.client().volume_types.list()
@@ -328,28 +318,32 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
         """
         return self.client().volumes.delete(volume)
 
-    def wait_for_volume_deleted(self, volume, timeout):
-        start = int(time.time())
-        while True:
-            time.sleep(2)
-            try:
-                volume = self.client().volumes.get(volume.id)
-                status_of_volume = volume.status
-                cost_time = int(time.time()) - start
-                LOG.debug('volume: %s status is: %s, cost time: %s' % (
-                    volume.id, status_of_volume, str(cost_time)))
-            except Exception as e:
-                LOG.debug('volume: %s is deleted' % volume.id)
-                break
-            if int(time.time()) - start >= timeout:
-                raise exception_ex.VolumeDeleteTimeoutException(
-                    volume_id=volume.id)
-
     @retry(stop_max_attempt_number=3,
            wait_fixed=2000,
            retry_on_exception=retry_auth_failed)
     def detach(self, volume, attachment_uuid):
         return self.client().volumes.detach(volume, attachment_uuid)
+
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
+    def get_volume_snapshot(self, snapshot):
+        try:
+            return self.client().volume_snapshots.get(snapshot)
+        except exceptions.NotFound:
+            raise exception.EntityNotFound(entity='VolumeSnapshot',
+                                           name=snapshot)
+
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
+    def get_volume_snapshot_by_name(self, snap_name):
+        snapshots = self.client().volume_snapshots.list(
+            search_opts={'name': snap_name})
+        if len(snapshots) > 0:
+            return snapshots[0]
+        else:
+            return None
 
     @retry(stop_max_attempt_number=3,
            wait_fixed=2000,
@@ -360,6 +354,12 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
                                                      name=name,
                                                      description=description,
                                                      metadata=metadata)
+
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
+    def delete_snapshot(self, snapshot, force=False):
+        return self.client().volume_snapshots.delete(snapshot, force=force)
 
     @retry(stop_max_attempt_number=60,
            wait_fixed=2000,
@@ -382,4 +382,32 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
                 result=_('Snapshot create failed'))
 
         LOG.info(_LI('creating snapshot %(id)s complete'), {'id': snap_id})
+        return True
+
+    @retry(stop_max_attempt_number=60,
+           wait_fixed=2000,
+           retry_on_result=client_plugin.retry_if_result_is_false,
+           retry_on_exception=retry_auth_failed)
+    def check_delete_snapshot_complete(self, snap_id):
+        try:
+            snap = self.client().volume_snapshots.get(snap_id)
+        except Exception as ex:
+            if not self.ignore_not_found(ex):
+                raise
+            return True
+        if snap.status in ('deleting'):
+            LOG.debug("Snapshot %(id)s is being deleted - "
+                      "status: %(status)s" % {'id': snap_id,
+                                              'status': snap.status})
+            return False
+
+        if snap.status == 'error':
+            LOG.debug("delete failed - snapshot %(snap)s is "
+                      "in %(status)s status" % {"snap": snap_id,
+                                                "status": snap.status})
+            raise exception.ResourceUnknownStatus(
+                resource_status=snap.status,
+                result=_('Snapshot delete failed'))
+
+        LOG.info(_LI('delete snapshot %(id)s complete'), {'id': snap_id})
         return True
