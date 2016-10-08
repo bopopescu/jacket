@@ -270,6 +270,23 @@ class FsVolumeDriver(driver.VolumeDriver):
             LOG.debug('no sub-volume exist, '
                       'no need to delete sub volume')
 
+    def extend_volume(self, volume, new_size):
+        """Extend a volume."""
+
+        context = req_context.RequestContext(project_id=volume.project_id)
+
+        sub_volume = self._get_sub_fs_volume(context, volume.display_name,
+                                             volume.id)
+        if not sub_volume:
+            LOG.exception(_LE("volume(%s) not found in provider cloud!"),
+                          volume.id)
+            raise exception_ex.VolumeNotFoundAtProvider()
+
+        sub_volume.extend(sub_volume, new_size)
+        self.fs_cinderlient(context).check_extend_volume_complete(sub_volume.id)
+
+        LOG.info(_LI("extend volume(%s) success!"), sub_volume.id)
+
     def create_volume_from_snapshot(self, volume, snapshot):
         """Create a volume from a snapshot."""
         pass
@@ -319,10 +336,6 @@ class FsVolumeDriver(driver.VolumeDriver):
 
     def ensure_export(self, context, volume):
         """Synchronously recreate an export for a volume."""
-        pass
-
-    def extend_volume(self, volume, new_size):
-        """Extend a volume."""
         pass
 
     def get_volume_stats(self, refresh=False):

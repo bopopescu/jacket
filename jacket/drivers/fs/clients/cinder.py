@@ -154,143 +154,109 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
         return (isinstance(ex, exceptions.ClientException) and
                 ex.code == 409)
 
-    @retry(stop_max_attempt_number=60,
-           wait_fixed=2000,
-           retry_on_result=client_plugin.retry_if_result_is_false,
-           retry_on_exception=retry_auth_failed)
-    def check_detach_volume_complete(self, vol_id):
+    def check_opt_volume_complete(self, opt, vol_id,
+                                  by_status=[],
+                                  expect_status=[],
+                                  not_expect_status=[],
+                                  is_ignore_not_found=False):
         try:
             vol = self.client().volumes.get(vol_id)
         except Exception as ex:
-            if not self.ignore_not_found(ex):
+            if not is_ignore_not_found and not self.ignore_not_found(ex):
                 raise
             return True
 
-        if vol.status in ('in-use', 'detaching'):
-            LOG.debug('%s - volume still in use' % vol_id)
+        if vol.status in by_status:
+            LOG.debug('volume(%s) status(%s) not expect status, continue',
+                      vol_id, vol.status)
             return False
 
         LOG.debug('Volume %(id)s - status: %(status)s' % {
             'id': vol.id, 'status': vol.status})
 
-        if vol.status not in ('available', 'deleting'):
-            LOG.debug("Detachment failed - volume %(vol)s "
-                      "is in %(status)s status" % {"vol": vol.id,
+        if not_expect_status and vol.status in not_expect_status:
+            LOG.debug("%(opt)s failed - volume %(vol)s "
+                      "is in %(status)s status" % {"opt": opt,
+                                                    "vol": vol.id,
                                                    "status": vol.status})
             raise exception.ResourceUnknownStatus(
                 resource_status=vol.status,
-                result=_('Volume detachment failed'))
+                result=_('Volume %s failed') % opt)
+
+        if expect_status and vol.status not in expect_status:
+            LOG.debug("%(opt)s failed - volume %(vol)s "
+                      "is in %(status)s status" % {"opt": opt,
+                                                    "vol": vol.id,
+                                                   "status": vol.status})
+            raise exception.ResourceUnknownStatus(
+                resource_status=vol.status,
+                result=_('Volume %s failed') % opt)
         else:
+            LOG.info(_LI('%(opt)s volume %(id)s complete'), {'opt': opt,
+                                                             'id': vol_id})
             return True
+
+    @retry(stop_max_attempt_number=60,
+           wait_fixed=2000,
+           retry_on_result=client_plugin.retry_if_result_is_false,
+           retry_on_exception=retry_auth_failed)
+    def check_detach_volume_complete(self, vol_id):
+
+        LOG.info(_LI("wait volume(%s) detach complete"), vol_id)
+        by_status = ['in-use', 'detaching']
+        expect_status = ['available', 'deleting']
+        return self.check_opt_volume_complete("detach", vol_id, by_status,
+                                              expect_status)
 
     @retry(stop_max_attempt_number=60,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=retry_auth_failed)
     def check_attach_volume_complete(self, vol_id):
-        vol = self.client().volumes.get(vol_id)
-        if vol.status in ('available', 'attaching'):
-            LOG.debug("Volume %(id)s is being attached - "
-                      "volume status: %(status)s" % {'id': vol_id,
-                                                     'status': vol.status})
-            return False
 
-        if vol.status != 'in-use':
-            LOG.debug("Attachment failed - volume %(vol)s is "
-                      "in %(status)s status" % {"vol": vol_id,
-                                                "status": vol.status})
-            raise exception.ResourceUnknownStatus(
-                resource_status=vol.status,
-                result=_('Volume attachment failed'))
-
-        LOG.info(_LI('Attaching volume %(id)s complete'), {'id': vol_id})
-        return True
+        LOG.info(_LI("wait volume(%s) attach complete"), vol_id)
+        by_status = ['available', 'attaching']
+        expect_status = ['in-use']
+        return self.check_opt_volume_complete("attach", vol_id, by_status,
+                                              expect_status)
 
     @retry(stop_max_attempt_number=300,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=retry_auth_failed)
     def check_create_volume_complete(self, vol_id):
-        vol = self.client().volumes.get(vol_id)
-        if vol.status in ('creating', 'downloading'):
-            LOG.debug("Volume %(id)s is being created - "
-                      "volume status: %(status)s" % {'id': vol_id,
-                                                     'status': vol.status})
-            return False
-
-        if vol.status != 'available':
-            LOG.debug("create failed - volume %(vol)s is "
-                      "in %(status)s status" % {"vol": vol_id,
-                                                "status": vol.status})
-            raise exception.ResourceUnknownStatus(
-                resource_status=vol.status,
-                result=_('Volume create failed'))
-
-        LOG.info(_LI('create volume %(id)s complete'), {'id': vol_id})
-        return True
+        LOG.info(_LI("wait volume(%s) create complete"), vol_id)
+        by_status = ['creating', 'downloading']
+        expect_status = ['available']
+        return self.check_opt_volume_complete("create", vol_id, by_status,
+                                              expect_status)
 
     @retry(stop_max_attempt_number=60,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=retry_auth_failed)
     def check_delete_volume_complete(self, vol_id):
-        try:
-            vol = self.client().volumes.get(vol_id)
-        except Exception as ex:
-            if not self.ignore_not_found(ex):
-                raise
-            LOG.info(_LI('delete volume %(id)s complete'), {'id': vol_id})
-            return True
-        if vol.status in ('deleting'):
-            LOG.debug("Volume %(id)s is being deleted - "
-                      "volume status: %(status)s" % {'id': vol_id,
-                                                     'status': vol.status})
-            return False
+        LOG.info(_LI("wait volume(%s) delete complete"), vol_id)
+        by_status = ['deleting']
+        expect_status = ['available']
+        not_expect_status = ['error']
+        return self.check_opt_volume_complete("create", vol_id, by_status,
+                                              expect_status,
+                                              not_expect_status,
+                                              is_ignore_not_found=True)
 
-        if vol.status == 'error':
-            LOG.debug("delete failed - volume %(vol)s is "
-                      "in %(status)s status" % {"vol": vol_id,
-                                                "status": vol.status})
-            raise exception.ResourceUnknownStatus(
-                resource_status=vol.status,
-                result=_('Volume delete failed'))
-
-        return True
-
-    def wait_for_volume_in_specified_status(self, vol_id, status):
-
-        start = time.time()
-        retries = self._get_client_option(self.CLIENT_NAME, "wait_retries")
-        wait_retries_interval = self._get_client_option(
-            self.CLIENT_NAME, "wait_retries_interval")
-        if retries < 0:
-            LOG.warning(_LW("Treating negative config value (%(retries)s) for "
-                            "'block_device_retries' as 0."),
-                        {'retries': retries})
-        # (1) treat  negative config value as 0
-        # (2) the configured value is 0, one attempt should be made
-        # (3) the configured value is > 0, then the total number attempts
-        #      is (retries + 1)
-        attempts = 1
-        if retries >= 1:
-            attempts = retries + 1
-        for attempt in range(1, attempts + 1):
-            volume = self.client().volumes.get(vol_id)
-            status_of_volume = volume.status
-            if volume.status == status:
-                LOG.info(_LI("fs volume wait status(%(status)s) successfully."),
-                         status=status)
-                return
-
-            if volume.status == 'ERROR' or volume.status == 'error':
-                raise exception_ex.VolumeCreateException(volume_id=volume.id)
-
-            greenthread.sleep(wait_retries_interval)
-
-        raise exception_ex.VolumeStatusTimeoutException(volume_id=volume.id,
-                                                        status=status_of_volume,
-                                                        timeout=int(
-                                                            time.time() - start))
+    @retry(stop_max_attempt_number=60,
+           wait_fixed=2000,
+           retry_on_result=client_plugin.retry_if_result_is_false,
+           retry_on_exception=retry_auth_failed)
+    def check_extend_volume_complete(self, vol_id):
+        LOG.info(_LI("wait volume(%s) extend complete"), vol_id)
+        by_status = ['extending']
+        expect_status = ['available']
+        not_expect_status = ['error_extending']
+        return self.check_opt_volume_complete("extend", vol_id, by_status,
+                                              expect_status,
+                                              not_expect_status)
 
     @retry(stop_max_attempt_number=3,
            wait_fixed=2000,
