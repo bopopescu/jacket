@@ -45,7 +45,7 @@ class FsVolumeDriver(driver.VolumeDriver):
         self._fs_cinderclient = None
         self._fs_glanceclient = None
         self.storage_db = storage_db_api
-        self.bybrid_db = hybrid_db_api
+        self.hybrid_db = hybrid_db_api
 
     def fs_cinderlient(self, context=None):
         if self._fs_cinderclient is None:
@@ -71,12 +71,19 @@ class FsVolumeDriver(driver.VolumeDriver):
             volume_name = "volume"
         return '@'.join([volume_name, volume_id])
 
-    def _get_sub_fs_volume(self, context, volume_name, volume_id):
-        sub_volume_name = self._get_sub_fs_volume_name(volume_name,
-                                                       volume_id)
+    def _get_sub_fs_volume(self, context, hybrid_volume):
+
+        sub_volume_name = self._get_sub_fs_volume_name(
+            hybrid_volume.display_name, hybrid_volume.id)
         LOG.debug('sub_volume_name: %s' % sub_volume_name)
 
-        return self.fs_cinderlient(context).get_volume_by_name(sub_volume_name)
+        sub_volume = self.fs_cinderlient(context).get_volume_by_name(
+            sub_volume_name)
+        if sub_volume is None:
+            raise exception.EntityNotFound(entity='Volume',
+                                           name=sub_volume_name)
+
+        return sub_volume
 
     def _get_project_mapper(self, context, project_id=None):
         if project_id is None:
@@ -102,7 +109,7 @@ class FsVolumeDriver(driver.VolumeDriver):
 
         return sub_image_id
 
-    def _get_typename(self, context, type_id):
+    def _get_type_name(self, context, type_id):
         found = False
         typename = None
         volume_type_list = self.storage_db.volume_type_get_all(context)
@@ -118,10 +125,38 @@ class FsVolumeDriver(driver.VolumeDriver):
 
         return typename
 
+    def _get_sub_type_name(self, context, type_id):
+        type_name = self._get_type_name(context, type_id)
+        try:
+            volume_type_obj = self.fs_cinderlient(context).get_volume_type(
+                type_name)
+            LOG.debug('dir volume_type: %s, '
+                      'volume_type: %s' % (
+                          volume_type_obj, volume_type_obj))
+            volume_type_name = volume_type_obj.name
+        except exception.EntityNotFound:
+            project_mapper = self._get_project_mapper(context,
+                                                      context.project_id)
+            volume_type_name = project_mapper.get('volume_type', None)
+
+        return volume_type_name
+
     def _get_sub_snapshot_name(self, snap_id, snap_name=None):
         if not snap_name:
             snap_name = 'snapshot'
         return "@".join([snap_name, snap_id])
+
+    def _get_sub_snapshot(self, context, hybrid_snap):
+
+        sub_sn_name = self._get_sub_snapshot_name(hybrid_snap.id,
+                                                  hybrid_snap.display_name)
+        sub_snap = self.fs_cinderlient(context).get_volume_snapshot_by_name(
+            sub_sn_name)
+        if sub_snap is None:
+            raise exception.EntityNotFound(entity='VolumeSnapshot',
+                                           name=sub_sn_name)
+
+        return sub_snap
 
     def copy_image_to_volume(self, context, volume, image_service, image_id):
         LOG.debug('dir volume: %s' % dir(volume))
@@ -159,25 +194,13 @@ class FsVolumeDriver(driver.VolumeDriver):
         volume_type_id = volume.volume_type_id
         LOG.debug('volume type id %s ' % volume_type_id)
         if volume_type_id:
-            type_name = self._get_typename(req_context.get_admin_context(),
-                                           volume_type_id)
-            try:
-                volume_type_obj = self.fs_cinderlient(context).get_volume_type(
-                    type_name)
-                LOG.debug('dir volume_type: %s, '
-                          'volume_type: %s' % (
-                              volume_type_obj, volume_type_obj))
-                volume_type_name = volume_type_obj.name
-            except exception.EntityNotFound:
-                project_mapper = self._get_project_mapper(context,
-                                                          context.project_id)
-                volume_type_name = project_mapper.get('volume_type', None)
+            volume_type_name = self._get_sub_type_name(
+                req_context.get_admin_context(), volume_type_id)
 
         if volume_type_name:
             volume_args['volume_type'] = volume_type_name
 
-        optionals = ('snapshot_id', 'source_volid',
-                     'multiattach')
+        optionals = ('metadata', 'multiattach')
 
         volume_args.update((prop, getattr(volume, prop)) for prop in optionals
                            if getattr(volume, prop, None))
@@ -197,7 +220,51 @@ class FsVolumeDriver(driver.VolumeDriver):
 
     def create_cloned_volume(self, volume, src_vref):
         """Create a clone of the specified volume."""
-        pass
+        LOG.debug('start to create volume from volume')
+
+        volume_args = {}
+        volume_args['size'] = volume.size
+        volume_args['display_description'] = volume.display_description
+        volume_args['display_name'] = self._get_sub_fs_volume_name(
+            volume.display_name, volume.id)
+
+        context = req_context.RequestContext(project_id=volume.project_id)
+        volume_type_id = volume.volume_type_id
+        volume_type_name = None
+        LOG.debug('volume type id %s ' % volume_type_id)
+        if volume_type_id:
+            volume_type_name = self._get_sub_type_name(
+                req_context.get_admin_context(), volume_type_id)
+
+        if volume_type_name:
+            volume_args['volume_type'] = volume_type_name
+
+        try:
+            src_sub_volume = self._get_sub_fs_volume(context, src_vref)
+        except exception.EntityNotFound:
+            LOG.exception(_LE("not found sub volume of %s"), src_vref.id)
+            raise exception_ex.VolumeNotFoundAtProvider(
+                volume_id=src_vref.id)
+
+        volume_args['source_volid'] = src_sub_volume.id
+
+        optionals = ('shareable', 'metadata', 'multiattach')
+
+        volume_args.update((prop, getattr(volume, prop)) for prop in optionals
+                           if getattr(volume, prop, None))
+
+        sub_volume = self.fs_cinderlient(context).create_volume(**volume_args)
+        LOG.debug('submit create-volume task to sub fs. '
+                  'sub volume id: %s' % sub_volume.id)
+
+        LOG.debug('start to wait for volume %s in status '
+                  'available' % sub_volume.id)
+        self.fs_cinderlient(context).check_create_volume_complete(
+            sub_volume.id)
+
+        LOG.debug('create volume %s success.' % volume.id)
+
+        return {'provider_location': 'SUB-FusionSphere'}
 
     def create_export(self, context, volume, connector):
         """Export the volume."""
@@ -219,19 +286,8 @@ class FsVolumeDriver(driver.VolumeDriver):
         volume_type_name = None
         LOG.debug('volume type id %s ' % volume_type_id)
         if volume_type_id:
-            type_name = self._get_typename(req_context.get_admin_context(),
-                                           volume_type_id)
-            try:
-                volume_type_obj = self.fs_cinderlient(context).get_volume_type(
-                    type_name)
-                LOG.debug('dir volume_type: %s, '
-                          'volume_type: %s' % (
-                              volume_type_obj, volume_type_obj))
-                volume_type_name = volume_type_obj.name
-            except exception.EntityNotFound:
-                project_mapper = self._get_project_mapper(context,
-                                                          context.project_id)
-                volume_type_name = project_mapper.get('volume_type', None)
+            volume_type_name = self._get_sub_type_name(
+                req_context.get_admin_context(), volume_type_id)
 
         if volume_type_name:
             volume_args['volume_type'] = volume_type_name
@@ -257,30 +313,30 @@ class FsVolumeDriver(driver.VolumeDriver):
 
     def delete_volume(self, volume):
         context = req_context.RequestContext(project_id=volume.project_id)
-
-        sub_volume = self._get_sub_fs_volume(context, volume.display_name,
-                                             volume.id)
-        if sub_volume:
-            LOG.debug('submit delete-volume task')
-            sub_volume.delete()
-            LOG.debug('wait for volume delete')
-            self.fs_cinderlient(context).check_delete_volume_complete(
-                sub_volume.id)
-        else:
+        try:
+            sub_volume = self._get_sub_fs_volume(context, volume)
+        except exception.EntityNotFound:
             LOG.debug('no sub-volume exist, '
                       'no need to delete sub volume')
+            return
+
+        LOG.debug('submit delete-volume task')
+        sub_volume.delete()
+        LOG.debug('wait for volume delete')
+        self.fs_cinderlient(context).check_delete_volume_complete(
+            sub_volume.id)
 
     def extend_volume(self, volume, new_size):
         """Extend a volume."""
 
         context = req_context.RequestContext(project_id=volume.project_id)
 
-        sub_volume = self._get_sub_fs_volume(context, volume.display_name,
-                                             volume.id)
-        if not sub_volume:
+        try:
+            sub_volume = self._get_sub_fs_volume(context, volume)
+        except exception.EntityNotFound:
             LOG.exception(_LE("volume(%s) not found in provider cloud!"),
                           volume.id)
-            raise exception_ex.VolumeNotFoundAtProvider()
+            raise exception_ex.VolumeNotFoundAtProvider(volume_id=volume.id)
 
         sub_volume.extend(sub_volume, new_size)
         self.fs_cinderlient(context).check_extend_volume_complete(sub_volume.id)
@@ -289,16 +345,63 @@ class FsVolumeDriver(driver.VolumeDriver):
 
     def create_volume_from_snapshot(self, volume, snapshot):
         """Create a volume from a snapshot."""
-        pass
+        LOG.debug('start to create volume from snapshot')
+
+        volume_args = {}
+        volume_args['size'] = volume.size
+        volume_args['display_description'] = volume.display_description
+        volume_args['display_name'] = self._get_sub_fs_volume_name(
+            volume.display_name, volume.id)
+
+        context = req_context.RequestContext(project_id=volume.project_id)
+        volume_type_id = volume.volume_type_id
+        volume_type_name = None
+        LOG.debug('volume type id %s ' % volume_type_id)
+        if volume_type_id:
+            volume_type_name = self._get_sub_type_name(
+                req_context.get_admin_context(), volume_type_id)
+
+        if volume_type_name:
+            volume_args['volume_type'] = volume_type_name
+
+        try:
+            sub_snap = self._get_sub_snapshot(context, snapshot)
+        except exception.EntityNotFound:
+            LOG.exception(_LE("not found sub snapshot of %s"), snapshot.id)
+            raise exception_ex.VolumeSnapshotNotFoundAtProvider(
+                snapshot_id=snapshot.id)
+
+        volume_args['snapshot_id'] = sub_snap.id
+
+        optionals = ('shareable', 'metadata', 'multiattach')
+
+        volume_args.update((prop, getattr(volume, prop)) for prop in optionals
+                           if getattr(volume, prop, None))
+
+        sub_volume = self.fs_cinderlient(context).create_volume(**volume_args)
+        LOG.debug('submit create-volume task to sub fs. '
+                  'sub volume id: %s' % sub_volume.id)
+
+        LOG.debug('start to wait for volume %s in status '
+                  'available' % sub_volume.id)
+        self.fs_cinderlient(context).check_create_volume_complete(
+            sub_volume.id)
+
+        LOG.debug('create volume %s success.' % volume.id)
+
+        return {'provider_location': 'SUB-FusionSphere'}
 
     def create_snapshot(self, snapshot):
         volume_id = snapshot.volume.id
         volume_name = snapshot.volume.display_name
         context = snapshot.context
 
-        sub_volume = self._get_sub_fs_volume(context, volume_name, volume_id)
-        if sub_volume is None:
-            raise exception_ex.VolumeNotExistException(volume_id=volume_id)
+        try:
+            sub_volume = self._get_sub_fs_volume(context, snapshot.volume)
+        except exception.EntityNotFound:
+            LOG.exception(_LE("volume(%s) not found in provider cloud!"),
+                          volume_id)
+            raise exception_ex.VolumeNotFoundAtProvider(volume_id=volume_id)
 
         sub_sn_name = self._get_sub_snapshot_name(snapshot.id,
                                                   snapshot.display_name)
@@ -310,19 +413,18 @@ class FsVolumeDriver(driver.VolumeDriver):
 
         self.fs_cinderlient(context).check_create_snapshot_complete(
             sub_snapshot.id)
+
         LOG.info(_LI("create snapshot(%(id)s) success!"), sub_snapshot.id)
 
     def delete_snapshot(self, snapshot):
         """Delete a snapshot."""
         context = snapshot.context
 
-        sub_sn_name = self._get_sub_snapshot_name(snapshot.id,
-                                                  snapshot.display_name)
-        sub_snap = self.fs_cinderlient(context).get_volume_snapshot_by_name(
-            sub_sn_name)
-        if sub_snap is None:
-            LOG.debug("sub_sn_name(%s) is not exist, "
-                      "no need to delete", sub_sn_name)
+        try:
+            sub_snap = self._get_sub_snapshot(context, snapshot)
+        except exception.EntityNotFound:
+            LOG.debug("sub snapshot is not exist, "
+                      "no need to delete")
             return
 
         sub_snap.delete()

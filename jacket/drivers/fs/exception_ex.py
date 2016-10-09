@@ -31,7 +31,11 @@ class UploadVolumeFailure(JacketException):
 
 
 class VolumeNotFoundAtProvider(JacketException):
-    msg_fmt = _("can not find this volume at provider cloud")
+    msg_fmt = _("can not find this volume(%(volume_id)s) at provider cloud")
+
+
+class VolumeSnapshotNotFoundAtProvider(JacketException):
+    msg_fmt = _("can not find this snapshot(%(snapshot_id)s) at provider cloud")
 
 
 class ProviderRequestTimeOut(JacketException):
