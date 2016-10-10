@@ -24,7 +24,7 @@ from oslo_log import log as logging
 from jacket import conf
 from jacket import context as req_context
 from jacket import exception
-from jacket.db.hybrid_cloud import api as hybrid_db_api
+from jacket.db.hybrid_cloud import api as caa_db_api
 from jacket.db.storage import api as storage_db_api
 from jacket.drivers.fs.clients import fs_context
 from jacket.drivers.fs.clients import cinder as cinderclient
@@ -45,7 +45,7 @@ class FsVolumeDriver(driver.VolumeDriver):
         self._fs_cinderclient = None
         self._fs_glanceclient = None
         self.storage_db = storage_db_api
-        self.hybrid_db = hybrid_db_api
+        self.caa_db = caa_db_api
 
     def fs_cinderlient(self, context=None):
         if self._fs_cinderclient is None:
@@ -71,17 +71,22 @@ class FsVolumeDriver(driver.VolumeDriver):
             volume_name = "volume"
         return '@'.join([volume_name, volume_id])
 
+    def _get_provider_volume_id(self, context, caa_volume_id):
+        volume_mapper = self.caa_db.volume_mapper_get(context, caa_volume_id)
+        LOG.debug("volume_mapper = %s", volume_mapper)
+        return volume_mapper.get('provider_volume_id', None)
+
     def _get_sub_fs_volume(self, context, hybrid_volume):
+        provider_volume_id = self._get_provider_volume_id(context,
+                                                          hybrid_volume.id)
+        if provider_volume_id:
+            return self.fs_cinderlient(context).get_volume(provider_volume_id)
 
-        sub_volume_name = self._get_sub_fs_volume_name(
-            hybrid_volume.display_name, hybrid_volume.id)
-        LOG.debug('sub_volume_name: %s' % sub_volume_name)
-
-        sub_volume = self.fs_cinderlient(context).get_volume_by_name(
-            sub_volume_name)
+        sub_volume = self.fs_cinderlient(context).get_volume_by_caa_volume_id(
+            hybrid_volume.id)
         if sub_volume is None:
             raise exception.EntityNotFound(entity='Volume',
-                                           name=sub_volume_name)
+                                           name=hybrid_volume.id)
 
         return sub_volume
 
@@ -89,10 +94,10 @@ class FsVolumeDriver(driver.VolumeDriver):
         if project_id is None:
             project_id = 'default'
 
-        project_mapper = hybrid_db_api.project_mapper_get(context, project_id)
+        project_mapper = self.caa_db.project_mapper_get(context, project_id)
         if not project_mapper:
-            project_mapper = hybrid_db_api.project_mapper_get(context,
-                                                              'default')
+            project_mapper = self.caa_db.project_mapper_get(context,
+                                                            'default')
 
         if not project_mapper:
             raise exception_ex.AccountNotConfig()
@@ -104,7 +109,7 @@ class FsVolumeDriver(driver.VolumeDriver):
         project_mapper = self._get_project_mapper(context, context.project_id)
         base_linux_image = project_mapper.get("base_linux_image", None)
 
-        image_mapper = hybrid_db_api.image_mapper_get(context, image_id)
+        image_mapper = self.caa_db.image_mapper_get(context, image_id)
         sub_image_id = image_mapper.get("dest_image_id", base_linux_image)
 
         return sub_image_id
@@ -146,15 +151,24 @@ class FsVolumeDriver(driver.VolumeDriver):
             snap_name = 'snapshot'
         return "@".join([snap_name, snap_id])
 
+    def _get_provider_snapshot_id(self, context, caa_snapshot_id):
+        snapshot_mapper = self.caa_db.volume_snapshot_mapper_get(context,
+                                                                 caa_snapshot_id)
+        return snapshot_mapper.get('provider_snapshot_id', None)
+
     def _get_sub_snapshot(self, context, hybrid_snap):
 
-        sub_sn_name = self._get_sub_snapshot_name(hybrid_snap.id,
-                                                  hybrid_snap.display_name)
-        sub_snap = self.fs_cinderlient(context).get_volume_snapshot_by_name(
-            sub_sn_name)
+        provider_snapshot_id = self._get_provider_snapshot_id(context,
+                                                              hybrid_snap.id)
+        if provider_snapshot_id:
+            return self.fs_cinderlient(context).get_volume_snapshot(
+                provider_snapshot_id)
+
+        sub_snap = self.fs_cinderlient(context).get_snapshot_by_caa_snap_id(
+            hybrid_snap.id)
         if sub_snap is None:
             raise exception.EntityNotFound(entity='VolumeSnapshot',
-                                           name=sub_sn_name)
+                                           name=hybrid_snap.id)
 
         return sub_snap
 
@@ -201,9 +215,13 @@ class FsVolumeDriver(driver.VolumeDriver):
             volume_args['volume_type'] = volume_type_name
 
         optionals = ('metadata', 'multiattach')
-
         volume_args.update((prop, getattr(volume, prop)) for prop in optionals
                            if getattr(volume, prop, None))
+
+        if 'metadata' not in volume_args:
+            volume_args['metadata'] = {}
+        volume_args['metadata']['tag:caa_volume_id'] = volume.id
+
         sub_volume = self.fs_cinderlient(context).create_volume(**volume_args)
         LOG.debug('submit create-volume task to sub fs. '
                   'sub volume id: %s' % sub_volume.id)
@@ -212,6 +230,16 @@ class FsVolumeDriver(driver.VolumeDriver):
                   'available' % sub_volume.id)
         self.fs_cinderlient(context).check_create_volume_complete(
             sub_volume.id)
+
+        try:
+            # create volume mapper
+            values = {"provider_volume_id": sub_volume.id}
+            self.caa_db.volume_mapper_create(context, volume.id,
+                                             context.project_id, values)
+        except Exception as ex:
+            LOG.exception(_LE("volume_mapper_create failed! ex = %s"), ex)
+            sub_volume.delete()
+            raise
 
         LOG.debug('create volume %s success.' % volume.id)
 
@@ -249,9 +277,12 @@ class FsVolumeDriver(driver.VolumeDriver):
         volume_args['source_volid'] = src_sub_volume.id
 
         optionals = ('shareable', 'metadata', 'multiattach')
-
         volume_args.update((prop, getattr(volume, prop)) for prop in optionals
                            if getattr(volume, prop, None))
+
+        if 'metadata' not in volume_args:
+            volume_args['metadata'] = {}
+        volume_args['metadata']['tag:caa_volume_id'] = volume.id
 
         sub_volume = self.fs_cinderlient(context).create_volume(**volume_args)
         LOG.debug('submit create-volume task to sub fs. '
@@ -261,6 +292,16 @@ class FsVolumeDriver(driver.VolumeDriver):
                   'available' % sub_volume.id)
         self.fs_cinderlient(context).check_create_volume_complete(
             sub_volume.id)
+
+        try:
+            # create volume mapper
+            values = {"provider_volume_id": sub_volume.id}
+            self.caa_db.volume_mapper_create(context, volume.id,
+                                             context.project_id, values)
+        except Exception as ex:
+            LOG.exception(_LE("volume_mapper_create failed! ex = %s"), ex)
+            sub_volume.delete()
+            raise
 
         LOG.debug('create volume %s success.' % volume.id)
 
@@ -292,11 +333,13 @@ class FsVolumeDriver(driver.VolumeDriver):
         if volume_type_name:
             volume_args['volume_type'] = volume_type_name
 
-        optionals = ('shareable', 'snapshot_id', 'source_volid',
-                     'metadata', 'multiattach')
-
+        optionals = ('shareable', 'metadata', 'multiattach')
         volume_args.update((prop, getattr(volume, prop)) for prop in optionals
                            if getattr(volume, prop, None))
+
+        if 'metadata' not in volume_args:
+            volume_args['metadata'] = {}
+        volume_args['metadata']['tag:caa_volume_id'] = volume.id
 
         sub_volume = self.fs_cinderlient(context).create_volume(**volume_args)
         LOG.debug('submit create-volume task to sub fs. '
@@ -306,6 +349,16 @@ class FsVolumeDriver(driver.VolumeDriver):
                   'available' % sub_volume.id)
         self.fs_cinderlient(context).check_create_volume_complete(
             sub_volume.id)
+
+        try:
+            # create volume mapper
+            values = {"provider_volume_id": sub_volume.id}
+            self.caa_db.volume_mapper_create(context, volume.id,
+                                             context.project_id, values)
+        except Exception as ex:
+            LOG.exception(_LE("volume_mapper_create failed! ex = %s"), ex)
+            sub_volume.delete()
+            raise
 
         LOG.debug('create volume %s success.' % volume.id)
 
@@ -325,6 +378,13 @@ class FsVolumeDriver(driver.VolumeDriver):
         LOG.debug('wait for volume delete')
         self.fs_cinderlient(context).check_delete_volume_complete(
             sub_volume.id)
+
+        try:
+            # delelte volume snapshot mapper
+            self.caa_db.volume_mapper_delete(context, volume.id,
+                                             context.project_id)
+        except Exception as ex:
+            LOG.error(_LE("volume_mapper_delete failed! ex = %s"), ex)
 
     def extend_volume(self, volume, new_size):
         """Extend a volume."""
@@ -374,9 +434,12 @@ class FsVolumeDriver(driver.VolumeDriver):
         volume_args['snapshot_id'] = sub_snap.id
 
         optionals = ('shareable', 'metadata', 'multiattach')
-
         volume_args.update((prop, getattr(volume, prop)) for prop in optionals
                            if getattr(volume, prop, None))
+
+        if 'metadata' not in volume_args:
+            volume_args['metadata'] = {}
+        volume_args['metadata']['tag:caa_volume_id'] = volume.id
 
         sub_volume = self.fs_cinderlient(context).create_volume(**volume_args)
         LOG.debug('submit create-volume task to sub fs. '
@@ -386,6 +449,16 @@ class FsVolumeDriver(driver.VolumeDriver):
                   'available' % sub_volume.id)
         self.fs_cinderlient(context).check_create_volume_complete(
             sub_volume.id)
+
+        try:
+            # create volume mapper
+            values = {"provider_volume_id": sub_volume.id}
+            self.caa_db.volume_mapper_create(context, volume.id,
+                                             context.project_id, values)
+        except Exception as ex:
+            LOG.exception(_LE("volume_mapper_create failed! ex = %s"), ex)
+            sub_volume.delete()
+            raise
 
         LOG.debug('create volume %s success.' % volume.id)
 
@@ -406,13 +479,29 @@ class FsVolumeDriver(driver.VolumeDriver):
         sub_sn_name = self._get_sub_snapshot_name(snapshot.id,
                                                   snapshot.display_name)
 
+        metadata = snapshot.metadata
+        if not metadata:
+            metadata = {}
+
+        metadata['tag:caa_snapshot_id'] = snapshot.id
+
         sub_snapshot = self.fs_cinderlient(context).create_snapshot(
             sub_volume.id, force=True, name=sub_sn_name,
             description=snapshot.display_description,
-            metadata=snapshot.metadata)
+            metadata=metadata)
 
         self.fs_cinderlient(context).check_create_snapshot_complete(
             sub_snapshot.id)
+
+        try:
+            # create volume snapshot mapper
+            values = {"provider_snapshot_id": sub_snapshot.id}
+            self.caa_db.volume_mapper_create(context, snapshot.id,
+                                             context.project_id, values)
+        except Exception as ex:
+            LOG.exception(_LE("volume_mapper_create failed! ex = %s"), ex)
+            sub_snapshot.delete()
+            raise
 
         LOG.info(_LI("create snapshot(%(id)s) success!"), sub_snapshot.id)
 
@@ -429,6 +518,13 @@ class FsVolumeDriver(driver.VolumeDriver):
 
         sub_snap.delete()
         self.fs_cinderlient(context).check_delete_snapshot_complete(sub_snap.id)
+
+        try:
+            # delelte volume snapshot mapper
+            self.caa_db.volume_snapshot_mapper_delete(context, snapshot.id,
+                                                      context.project_id)
+        except Exception as ex:
+            LOG.error(_LE("volume_snapshot_mapper_delete failed! ex = %s"), ex)
 
         LOG.info(_LI("delete snapshot(%s) success!"), sub_snap.id)
 

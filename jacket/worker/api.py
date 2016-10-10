@@ -23,7 +23,6 @@ from jacket.db import base
 from jacket.db.hybrid_cloud import api as db_api
 from jacket.worker import rpcapi as worker_rpcapi
 
-
 LOG = logging.getLogger(__name__)
 
 get_notifier = functools.partial(rpc.get_notifier, service='jacket')
@@ -33,14 +32,18 @@ CONF = cfg.CONF
 
 def policy_decorator(scope):
     """Check corresponding policy prior of wrapped method to execution."""
+
     def outer(func):
         @functools.wraps(func)
         def wrapped(self, context, target, *args, **kwargs):
             if not self.skip_policy_check:
                 check_policy(context, func.__name__, target, scope)
             return func(self, context, target, *args, **kwargs)
+
         return wrapped
+
     return outer
+
 
 wrap_check_policy = policy_decorator(scope='jacket')
 
@@ -84,10 +87,25 @@ class API(base.Base):
         return self.db_api.image_mapper_get(context, image_id, project_id)
 
     def image_mapper_create(self, context, image_id, project_id, values):
-        return self.db_api.image_mapper_create(context, image_id, project_id, values)
+        return self.db_api.image_mapper_create(context, image_id, project_id,
+                                               values)
 
     def image_mapper_update(self, context, image_id, project_id, values):
-        return self.db_api.image_mapper_update(context, image_id, project_id, values, delete=True)
+        set_properties = values.get("set_properties", {})
+        unset_properties = values.get("unset_properties", {})
+        image_info = self.image_mapper_get(context, image_id, project_id)
+
+        for key, value in set_properties.iteritems():
+            image_info[key] = value
+        for key in unset_properties.keys():
+            if key in image_info:
+                del image_info[key]
+
+        del image_info['image_id']
+        del image_info['project_id']
+
+        return self.db_api.image_mapper_update(context, image_id, project_id,
+                                               image_info, delete=True)
 
     def image_mapper_delete(self, context, image_id, project_id=None):
         return self.db_api.image_mapper_delete(context, image_id, project_id)
@@ -99,10 +117,24 @@ class API(base.Base):
         return self.db_api.flavor_mapper_get(context, flavor_id, project_id)
 
     def flavor_mapper_create(self, context, flavor_id, project_id, values):
-        return self.db_api.flavor_mapper_create(context, flavor_id, project_id, values)
+        return self.db_api.flavor_mapper_create(context, flavor_id, project_id,
+                                                values)
 
     def flavor_mapper_update(self, context, flavor_id, project_id, values):
-        return self.db_api.flavor_mapper_update(context, flavor_id, project_id, values, delete=True)
+        set_properties = values.get("set_properties", {})
+        unset_properties = values.get("unset_properties", {})
+        flavor_info = self.flavor_mapper_get(context, flavor_id, project_id)
+        for key, value in set_properties.iteritems():
+            flavor_info[key] = value
+        for key in unset_properties.keys():
+            if key in flavor_info:
+                del flavor_info[key]
+
+        del flavor_info['flavor_id']
+        del flavor_info['project_id']
+
+        return self.db_api.flavor_mapper_update(context, flavor_id, project_id,
+                                                flavor_info, delete=True)
 
     def flavor_mapper_delete(self, context, flavor_id, project_id=None):
         return self.db_api.flavor_mapper_delete(context, flavor_id, project_id)
@@ -117,7 +149,19 @@ class API(base.Base):
         return self.db_api.project_mapper_create(context, project_id, values)
 
     def project_mapper_update(self, context, project_id, values):
-        return self.db_api.project_mapper_update(context, project_id, values, delete=True)
+        set_properties = values.get("set_properties", {})
+        unset_properties = values.get("unset_properties", {})
+        project_info = self.project_mapper_get(context, project_id)
+        for key, value in set_properties.iteritems():
+            project_info[key] = value
+        for key in unset_properties.keys():
+            if key in project_info:
+                del project_info[key]
+
+        del project_info['project_id']
+
+        return self.db_api.project_mapper_update(context, project_id, project_info,
+                                                 delete=True)
 
     def project_mapper_delete(self, context, project_id):
         return self.db_api.project_mapper_delete(context, project_id)

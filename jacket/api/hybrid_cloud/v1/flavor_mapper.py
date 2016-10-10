@@ -41,7 +41,9 @@ class FlavorMapperController(wsgi.Controller):
         try:
             flavor = self.config_api.flavor_mapper_get(context, id)
         except Exception as ex:
-            LOG.error(_LE("get flavor(%(flavor_id)s) mapper failed, ex = %(ex)s"), flavor_id=id, ex=ex)
+            LOG.error(
+                _LE("get flavor(%(flavor_id)s) mapper failed, ex = %(ex)s"),
+                flavor_id=id, ex=ex)
             raise exc.HTTPBadRequest(explanation=ex)
         return {'flavor_mapper': flavor}
 
@@ -55,7 +57,9 @@ class FlavorMapperController(wsgi.Controller):
             flavor = self.config_api.flavor_mapper_get(context, id)
             self.config_api.flavor_mapper_delete(context, id)
         except Exception as ex:
-            LOG.error(_LE("delete flavor mapper with id: %(id)s failed, ex = %(ex)s"), id=id, ex=ex)
+            LOG.error(
+                _LE("delete flavor mapper with id: %(id)s failed, ex = %(ex)s"),
+                id=id, ex=ex)
             raise exc.HTTPBadRequest(explanation=ex)
         return webob.Response(status_int=202)
 
@@ -89,10 +93,12 @@ class FlavorMapperController(wsgi.Controller):
 
         try:
             flavor = self.config_api.flavor_mapper_create(context, flavor_id,
-                                                          project_id, flavor_mapper)
+                                                          project_id,
+                                                          flavor_mapper)
         except Exception as ex:
-            LOG.exception(_LE("create flavor(%(flavor_id)s) mapper failed, ex = %(ex)s"),
-                      flavor_id=flavor_id, ex=ex)
+            LOG.exception(
+                _LE("create flavor(%(flavor_id)s) mapper failed, ex = %(ex)s"),
+                flavor_id=flavor_id, ex=ex)
             raise exc.HTTPBadRequest(explanation=ex)
         return {'flavor_mapper': flavor}
 
@@ -105,12 +111,16 @@ class FlavorMapperController(wsgi.Controller):
         flavor_mapper = body['flavor_mapper']
         project_id = flavor_mapper.pop('project_id', None)
         try:
-            flavor = self.config_api.flavor_mapper_update(context, id, project_id, flavor_mapper)
+            flavor = self.config_api.flavor_mapper_update(context, id,
+                                                          project_id,
+                                                          flavor_mapper)
         except Exception as ex:
-            LOG.exception(_LE("update flavor(%(flavor_id)s) mapper failed, ex = %(ex)s"),
-                      flavor_id=id, ex=ex)
+            LOG.exception(
+                _LE("update flavor(%(flavor_id)s) mapper failed, ex = %(ex)s"),
+                flavor_id=id, ex=ex)
             raise exc.HTTPBadRequest(explanation=ex)
         return {'flavor_mapper': flavor}
+
 
 def create_resource(ext_mgr):
     return wsgi.Resource(FlavorMapperController(ext_mgr))

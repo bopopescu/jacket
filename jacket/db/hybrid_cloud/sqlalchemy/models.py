@@ -23,12 +23,10 @@ SQLAlchemy models for jacket data.
 from oslo_config import cfg
 from oslo_db.sqlalchemy import models
 from oslo_utils import timeutils
-from sqlalchemy import and_, func, select
-from sqlalchemy import bindparam
+
 from sqlalchemy import Column, Index, Integer, String, Text, schema
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import ForeignKey, DateTime, Boolean, UniqueConstraint
-from sqlalchemy.orm import backref, column_property, relationship, validates
 
 
 CONF = cfg.CONF
@@ -67,7 +65,9 @@ class ImagesMapper(BASE, JacketBase, models.SoftDeleteMixin):
 
     __table_args__ = (
         Index('image_id_deleted_idx', 'image_id', 'deleted'),
-        Index('image_id_project_id_deleted_idx', 'image_id', 'project_id', 'deleted'),
+        Index('image_id_project_id_deleted_idx', 'image_id', 'project_id',
+              'deleted'),
+        UniqueConstraint('image_id', 'project_id', 'deleted', 'key'),
     )
 
     id = Column(Integer, primary_key=True)
@@ -84,7 +84,9 @@ class FlavorsMapper(BASE, JacketBase, models.SoftDeleteMixin):
 
     __table_args__ = (
         Index('flavor_id_deleted_idx', 'flavor_id', 'deleted'),
-        Index('flavor_id_az_deleted_idx', 'flavor_id', 'project_id', 'deleted'),
+        Index('flavor_id_az_deleted_idx', 'flavor_id', 'project_id',
+              'deleted'),
+        UniqueConstraint('flavor_id', 'project_id', 'deleted', 'key'),
     )
 
     id = Column(Integer, primary_key=True)
@@ -101,9 +103,67 @@ class ProjectsMapper(BASE, JacketBase, models.SoftDeleteMixin):
 
     __table_args__ = (
         Index('project_id_deleted_idx', 'project_id', 'deleted'),
+        UniqueConstraint('project_id', 'deleted', 'key'),
     )
 
     id = Column(Integer, primary_key=True)
     project_id = Column(String(255), nullable=False)
+    key = Column(String(255))
+    value = Column(String(255))
+
+
+class InstancesMapper(BASE, JacketBase, models.SoftDeleteMixin):
+    """Represents a mapper key/value pair for instances"""
+
+    __tablename__ = "instances_mapper"
+
+    __table_args__ = (
+        Index('instance_id_deleted_idx', 'instance_id', 'deleted'),
+        Index('instance_id_project_id_deleted_idx', 'instance_id',
+              'project_id', 'deleted'),
+        UniqueConstraint('instance_id', 'project_id', 'deleted', 'key'),
+    )
+
+    id = Column(Integer, primary_key=True)
+    instance_id = Column(String(36), nullable=False)
+    project_id = Column(String(255))
+    key = Column(String(255))
+    value = Column(String(255))
+
+
+class VolumesMapper(BASE, JacketBase, models.SoftDeleteMixin):
+    """Represents a mapper key/value pair for instances"""
+
+    __tablename__ = "volumes_mapper"
+
+    __table_args__ = (
+        Index('volume_id_deleted_idx', 'volume_id', 'deleted'),
+        Index('volume_id_project_id_deleted_idx', 'volume_id',
+              'project_id', 'deleted'),
+        UniqueConstraint('volume_id', 'project_id', 'deleted', 'key'),
+    )
+
+    id = Column(Integer, primary_key=True)
+    volume_id = Column(String(36), nullable=False)
+    project_id = Column(String(255))
+    key = Column(String(255))
+    value = Column(String(255))
+
+
+class VolumeSnapshotsMapper(BASE, JacketBase, models.SoftDeleteMixin):
+    """Represents a mapper key/value pair for instances"""
+
+    __tablename__ = "volume_snapshots_mapper"
+
+    __table_args__ = (
+        Index('snapshot_id_deleted_idx', 'snapshot_id', 'deleted'),
+        Index('snapshot_id_project_id_deleted_idx', 'snapshot_id',
+              'project_id', 'deleted'),
+        UniqueConstraint('snapshot_id', 'project_id', 'deleted', 'key'),
+    )
+
+    id = Column(Integer, primary_key=True)
+    snapshot_id = Column(String(36), nullable=False)
+    project_id = Column(String(255))
     key = Column(String(255))
     value = Column(String(255))

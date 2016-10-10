@@ -16,7 +16,6 @@ profiler = importutils.try_import('osprofiler.profiler')
 osprofiler_web = importutils.try_import('osprofiler.web')
 profiler_opts = importutils.try_import('osprofiler.opts')
 
-
 from jacket.compute import baserpc
 from jacket.compute import conductor
 from jacket.compute import debugger
@@ -46,15 +45,16 @@ service_opts = [
                default=10,
                help='Seconds between nodes reporting state to datastore'),
     cfg.BoolOpt('periodic_enable',
-               default=True,
-               help='Enable periodic tasks'),
+                default=True,
+                help='Enable periodic tasks'),
     cfg.IntOpt('periodic_fuzzy_delay',
                default=60,
                help='Range of seconds to randomly delay when starting the'
                     ' periodic task scheduler to reduce stampeding.'
                     ' (Disable by setting to 0)'),
     cfg.ListOpt('enabled_apis',
-                default=['osapi_compute', 'metadata', 'osapi_jacket', 'osapi_volume'],
+                default=['osapi_compute', 'metadata', 'osapi_jacket',
+                         'osapi_volume'],
                 help='A list of APIs to enable by default'),
     cfg.ListOpt('enabled_ssl_apis',
                 default=[],
@@ -94,7 +94,7 @@ service_opts = [
     cfg.StrOpt('console_manager',
                default='jacket.compute.console.manager.ConsoleProxyManager',
                help='DEPRECATED: Full class name for the Manager for '
-                   'console proxy',
+                    'console proxy',
                deprecated_for_removal=True),
     cfg.StrOpt('consoleauth_manager',
                default='jacket.compute.consoleauth.manager.ConsoleAuthManager',
@@ -113,7 +113,7 @@ service_opts = [
     cfg.StrOpt('compute_scheduler_manager',
                default='jacket.compute.scheduler.manager.SchedulerManager',
                help='DEPRECATED: Full class name for the Manager for '
-                   'scheduler',
+                    'scheduler',
                deprecated_for_removal=True),
     cfg.IntOpt('service_down_time',
                default=60,
@@ -143,7 +143,7 @@ service_opts = [
     cfg.IntOpt('jacket_controller_workers',
                help='Number of workers for OpenStack Jacket API service. '
                     'The default is equal to the number of CPUs available.'),
-    ]
+]
 
 CONF = cfg.CONF
 CONF.register_opts(service_opts)
@@ -155,9 +155,9 @@ if profiler_opts:
 
 def setup_profiler(binary, host):
     if (osprofiler_notifier is None or
-            profiler is None or
-            osprofiler_web is None or
-            profiler_opts is None):
+                profiler is None or
+                osprofiler_web is None or
+                profiler_opts is None):
         LOG.debug('osprofiler is not present')
         return
 
@@ -189,7 +189,7 @@ def _create_service_ref(this_service, context):
     service.report_count = 0
     service.availability_zone = CONF.default_availability_zone
     if hasattr(this_service.manager, 'RPC_API_VERSION'):
-        service.rpc_current_version = this_service.manager.RPC_API_VERSION
+        service.rpc_current_version = this_service.manager.storage_manager.RPC_API_VERSION
     service.object_current_version = storage_objects_base.OBJ_VERSIONS.get_current()
     service.create()
     return service
@@ -249,7 +249,7 @@ class Service(service.Service):
     def start(self):
         verstr = version.version_string_with_package()
         LOG.info(_LI('Starting %(topic)s node (version %(version)s)'),
-                  {'topic': self.topic, 'version': verstr})
+                 {'topic': self.topic, 'version': verstr})
         self.basic_config_check()
         self.manager.init_host()
         self.model_disconnected = False
@@ -301,9 +301,9 @@ class Service(service.Service):
                 initial_delay = None
 
             self.tg.add_dynamic_timer(self.periodic_tasks,
-                                     initial_delay=initial_delay,
-                                     periodic_interval_max=
-                                        self.periodic_interval_max)
+                                      initial_delay=initial_delay,
+                                      periodic_interval_max=
+                                      self.periodic_interval_max)
 
     def __getattr__(self, key):
         manager = self.__dict__.get('manager', None)
@@ -445,11 +445,11 @@ class WSGIService(service.Service):
         setup_profiler(name, self.host)
 
         self.server = base_wsgi.Server(name,
-                                  self.app,
-                                  host=self.host,
-                                  port=self.port,
-                                  use_ssl=self.use_ssl,
-                                  max_url_len=max_url_len)
+                                       self.app,
+                                       host=self.host,
+                                       port=self.port,
+                                       use_ssl=self.use_ssl,
+                                       max_url_len=max_url_len)
         # Pull back actual port used
         self.port = self.server.port
         self.backdoor_port = None

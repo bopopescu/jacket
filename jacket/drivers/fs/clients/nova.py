@@ -131,6 +131,27 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
         return server
 
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_connection_err)
+    def get_server_by_caa_instance_id(self, caa_instance_id):
+        """Return fresh server object.
+
+        Substitutes Nova's NotFound for Heat's EntityNotFound,
+        to be returned to user as HTTP error.
+        """
+        server_list = self.client().servers.list()
+
+        if server_list is None or len(server_list) <= 0:
+            return None
+
+        for server in server_list:
+            if hasattr(server, 'metadata'):
+                temp_id = server.metdata.get('tag:caa_instance_id', None)
+                if temp_id == caa_instance_id:
+                    return server
+
+        return None
+
     def fetch_server(self, server_id):
         """Fetch fresh server object from Nova.
 

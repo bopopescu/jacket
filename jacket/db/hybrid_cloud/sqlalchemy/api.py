@@ -206,7 +206,7 @@ def model_query(context, model,
 
 def _mapper_convert_dict(key_values):
     keys = ['image_id', 'flavor_id',
-            'project_id']
+            'project_id', 'instance_id', 'volume_id', 'snapshot_id']
     ret = {}
     for key_value in key_values:
         temp_key = None
@@ -238,7 +238,7 @@ def image_mapper_all(context):
 
 def image_mapper_get(context, image_id, project_id=None):
     query = model_query(context, models.ImagesMapper, read_deleted="no")
-    key_values = query.filter_by(image_id=image_id, project_id=project_id).all()
+    key_values = query.filter_by(image_id=image_id).all()
     return _mapper_convert_dict(key_values)
 
 
@@ -274,7 +274,7 @@ def image_mapper_update(context, image_id, project_id, values, delete=False):
     session = get_session()
     query = model_query(context, models.ImagesMapper, read_deleted="no",
                         session=session).\
-        filter_by(image_id=image_id, project_id=project_id)
+        filter_by(image_id=image_id)
     all_keys = values.keys()
 
     cur_project_id = project_id
@@ -309,7 +309,7 @@ def image_mapper_update(context, image_id, project_id, values, delete=False):
 
 def image_mapper_delete(context, image_id, project_id=None):
     query = model_query(context, models.ImagesMapper, read_deleted="no")
-    query.filter_by(image_id=image_id, project_id=project_id).soft_delete()
+    query.filter_by(image_id=image_id).soft_delete()
 
 
 def flavor_mapper_all(context):
@@ -325,7 +325,7 @@ def flavor_mapper_all(context):
 
 def flavor_mapper_get(context, flavor_id, project_id=None):
     query = model_query(context, models.FlavorsMapper, read_deleted="no")
-    key_values = query.filter_by(flavor_id=flavor_id, project_id=project_id).all()
+    key_values = query.filter_by(flavor_id=flavor_id).all()
     return _mapper_convert_dict(key_values)
 
 
@@ -361,7 +361,7 @@ def flavor_mapper_update(context, flavor_id, project_id, values, delete=False):
     session = get_session()
     query = model_query(context, models.FlavorsMapper, read_deleted="no",
                         session=session).\
-        filter_by(flavor_id=flavor_id, project_id=project_id)
+        filter_by(flavor_id=flavor_id)
     all_keys = values.keys()
 
     cur_project_id = project_id
@@ -473,3 +473,270 @@ def project_mapper_update(context, project_id, values, delete=False):
 def project_mapper_delete(context, project_id):
     query = model_query(context, models.ProjectsMapper, read_deleted="no")
     query.filter_by(project_id=project_id).soft_delete()
+
+
+def instance_mapper_all(context):
+    query = model_query(context, models.InstancesMapper, read_deleted="no")
+    instances_mapper = query.all()
+    instance_ids = set([instance_mapper['instance_id'] for instance_mapper in
+                     instances_mapper])
+    ret = []
+    for instance_id in instance_ids:
+        key_values = query.filter_by(instance_id=instance_id).all()
+        ret.append(_mapper_convert_dict(key_values))
+    return ret
+
+
+def instance_mapper_get(context, instance_id, project_id=None):
+    query = model_query(context, models.InstancesMapper, read_deleted="no")
+    key_values = query.filter_by(instance_id=instance_id).all()
+    return _mapper_convert_dict(key_values)
+
+
+def _instance_mapper_convert_objs(instance_id, project_id, values_dict):
+    value_refs = []
+    if values_dict:
+        for k, v in values_dict.items():
+            value_ref = models.InstancesMapper()
+            value_ref.instance_id = instance_id
+            value_ref.project_id = project_id
+            value_ref['key'] = k
+            value_ref['value'] = v
+            value_refs.append(value_ref)
+    else:
+        value_ref = models.InstancesMapper()
+        value_ref.instance_id = instance_id
+        value_ref.project_id = project_id
+        value_refs.append(value_ref)
+    return value_refs
+
+
+def instance_mapper_create(context, instance_id, project_id, values):
+    value_refs = _instance_mapper_convert_objs(instance_id, project_id, values)
+    for value in value_refs:
+        value.save(get_session())
+
+    return instance_mapper_get(context, instance_id, project_id)
+
+
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+def instance_mapper_update(context, instance_id, project_id, values, delete=False):
+    session = get_session()
+    query = model_query(context, models.InstancesMapper, read_deleted="no",
+                        session=session).\
+        filter_by(instance_id=instance_id)
+    all_keys = values.keys()
+
+    cur_project_id = project_id
+
+    if 'project_id' in all_keys:
+        all_keys.remove('project_id')
+        cur_project_id = values.pop('project_id')
+        query.update({'project_id': cur_project_id})
+
+    if delete:
+        query.filter(~models.InstancesMapper.key.in_(all_keys)).\
+            soft_delete(synchronize_session=False)
+
+    already_existing_keys = []
+    mod_refs = query.filter(models.InstancesMapper.key.in_(all_keys)).all()
+    for one in mod_refs:
+        already_existing_keys.append(one.key)
+        one.update({"value": values[one.key]})
+        one.save(session)
+
+    new_keys = set(all_keys) - set(already_existing_keys)
+    for key in new_keys:
+        update_ref = models.InstancesMapper()
+        update_ref.update({"instance_id": instance_id,
+                           "project_id": cur_project_id,
+                           "key": key,
+                           "value": values[key]})
+        update_ref.save(session)
+
+    return instance_mapper_get(context, instance_id, project_id)
+
+
+def instance_mapper_delete(context, instance_id, project_id=None):
+    query = model_query(context, models.InstancesMapper, read_deleted="no")
+    query.filter_by(instance_id=instance_id).soft_delete()
+
+
+def volume_mapper_all(context):
+    query = model_query(context, models.VolumesMapper, read_deleted="no")
+    volumes_mapper = query.all()
+    volume_ids = set([volume_mapper['volume_id'] for volume_mapper in
+                     volumes_mapper])
+    ret = []
+    for volume_id in volume_ids:
+        key_values = query.filter_by(volume_id=volume_id).all()
+        ret.append(_mapper_convert_dict(key_values))
+    return ret
+
+
+def volume_mapper_get(context, volume_id, project_id=None):
+    query = model_query(context, models.VolumesMapper, read_deleted="no")
+    key_values = query.filter_by(volume_id=volume_id).all()
+    return _mapper_convert_dict(key_values)
+
+
+def _volume_mapper_convert_objs(volume_id, project_id, values_dict):
+    value_refs = []
+    if values_dict:
+        for k, v in values_dict.items():
+            value_ref = models.VolumesMapper()
+            value_ref.volume_id = volume_id
+            value_ref.project_id = project_id
+            value_ref['key'] = k
+            value_ref['value'] = v
+            value_refs.append(value_ref)
+    else:
+        value_ref = models.VolumesMapper()
+        value_ref.volume_id = volume_id
+        value_ref.project_id = project_id
+        value_refs.append(value_ref)
+    return value_refs
+
+
+def volume_mapper_create(context, volume_id, project_id, values):
+    value_refs = _volume_mapper_convert_objs(volume_id, project_id, values)
+    for value in value_refs:
+        value.save(get_session())
+
+    return volume_mapper_get(context, volume_id, project_id)
+
+
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+def volume_mapper_update(context, volume_id, project_id, values, delete=False):
+    session = get_session()
+    query = model_query(context, models.VolumesMapper, read_deleted="no",
+                        session=session).\
+        filter_by(volume_id=volume_id)
+    all_keys = values.keys()
+
+    cur_project_id = project_id
+
+    if 'project_id' in all_keys:
+        all_keys.remove('project_id')
+        cur_project_id = values.pop('project_id')
+        query.update({'project_id': cur_project_id})
+
+    if delete:
+        query.filter(~models.VolumesMapper.key.in_(all_keys)).\
+            soft_delete(synchronize_session=False)
+
+    already_existing_keys = []
+    mod_refs = query.filter(models.VolumesMapper.key.in_(all_keys)).all()
+    for one in mod_refs:
+        already_existing_keys.append(one.key)
+        one.update({"value": values[one.key]})
+        one.save(session)
+
+    new_keys = set(all_keys) - set(already_existing_keys)
+    for key in new_keys:
+        update_ref = models.VolumesMapper()
+        update_ref.update({"volume_id": volume_id,
+                           "project_id": cur_project_id,
+                           "key": key,
+                           "value": values[key]})
+        update_ref.save(session)
+
+    return volume_mapper_get(context, volume_id, project_id)
+
+
+def volume_mapper_delete(context, volume_id, project_id=None):
+    query = model_query(context, models.VolumesMapper, read_deleted="no")
+    query.filter_by(volume_id=volume_id).soft_delete()
+
+
+def volume_snapshot_mapper_all(context):
+    query = model_query(context, models.VolumeSnapshotsMapper, read_deleted="no")
+    volume_snapshots_mapper = query.all()
+    volume_snapshot_ids = set([volume_snapshot_mapper['volume_snapshot_id']
+                               for volume_snapshot_mapper in
+                               volume_snapshots_mapper])
+    ret = []
+    for volume_snapshot_id in volume_snapshot_ids:
+        key_values = query.filter_by(snapshot_id=volume_snapshot_id).all()
+        ret.append(_mapper_convert_dict(key_values))
+    return ret
+
+
+def volume_snapshot_mapper_get(context, snapshot_id, project_id=None):
+    query = model_query(context, models.VolumeSnapshotsMapper, read_deleted="no")
+    key_values = query.filter_by(snapshot_id=snapshot_id).all()
+    return _mapper_convert_dict(key_values)
+
+
+def _volume_snapshot_mapper_convert_objs(snapshot_id, project_id, values_dict):
+    value_refs = []
+    if values_dict:
+        for k, v in values_dict.items():
+            value_ref = models.VolumeSnapshotsMapper()
+            value_ref.snapshot_id = snapshot_id
+            value_ref.project_id = project_id
+            value_ref['key'] = k
+            value_ref['value'] = v
+            value_refs.append(value_ref)
+    else:
+        value_ref = models.VolumeSnapshotsMapper()
+        value_ref.snapshot_id = snapshot_id
+        value_ref.project_id = project_id
+        value_refs.append(value_ref)
+    return value_refs
+
+
+def volume_snapshot_mapper_create(context, snapshot_id, project_id, values):
+    value_refs = _volume_snapshot_mapper_convert_objs(snapshot_id, project_id,
+                                                      values)
+    for value in value_refs:
+        value.save(get_session())
+
+    return volume_snapshot_mapper_get(context, snapshot_id, project_id)
+
+
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+def volume_snapshot_mapper_update(context, snapshot_id, project_id, values,
+                                  delete=False):
+    session = get_session()
+    query = model_query(context, models.VolumeSnapshotsMapper, read_deleted="no",
+                        session=session).\
+        filter_by(snapshot_id=snapshot_id)
+    all_keys = values.keys()
+
+    cur_project_id = project_id
+
+    if 'project_id' in all_keys:
+        all_keys.remove('project_id')
+        cur_project_id = values.pop('project_id')
+        query.update({'project_id': cur_project_id})
+
+    if delete:
+        query.filter(~models.VolumeSnapshotsMapper.key.in_(all_keys)).\
+            soft_delete(synchronize_session=False)
+
+    already_existing_keys = []
+    mod_refs = query.filter(models.VolumeSnapshotsMapper.key.in_(all_keys)).all()
+    for one in mod_refs:
+        already_existing_keys.append(one.key)
+        one.update({"value": values[one.key]})
+        one.save(session)
+
+    new_keys = set(all_keys) - set(already_existing_keys)
+    for key in new_keys:
+        update_ref = models.VolumeSnapshotsMapper()
+        update_ref.update({"snapshot_id": snapshot_id,
+                           "project_id": cur_project_id,
+                           "key": key,
+                           "value": values[key]})
+        update_ref.save(session)
+
+    return volume_snapshot_mapper_get(context, snapshot_id, project_id)
+
+
+def volume_snapshot_mapper_delete(context, snapshot_id, project_id=None):
+    query = model_query(context, models.VolumeSnapshotsMapper, read_deleted="no")
+    query.filter_by(snapshot_id=snapshot_id).soft_delete()

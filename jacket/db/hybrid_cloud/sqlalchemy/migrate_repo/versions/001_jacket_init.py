@@ -37,7 +37,9 @@ def define_tables(meta):
         Column('key', String(255)),
         Column('value', String(255)),
         Index('image_id_deleted_idx', 'image_id', 'deleted'),
-        Index('image_id_project_id_deleted_idx', 'image_id', 'project_id', 'deleted'),
+        Index('image_id_project_id_deleted_idx', 'image_id', 'project_id',
+              'deleted'),
+        UniqueConstraint('image_id', 'project_id', 'deleted', 'key'),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
     )
@@ -54,7 +56,9 @@ def define_tables(meta):
         Column('key', String(255)),
         Column('value', String(255)),
         Index('flavor_id_deleted_idx', 'flavor_id', 'deleted'),
-        Index('flavor_id_az_deleted_idx', 'flavor_id', 'project_id', 'deleted'),
+        Index('flavor_id_az_deleted_idx', 'flavor_id', 'project_id',
+              'deleted'),
+        UniqueConstraint('flavor_id', 'project_id', 'deleted', 'key'),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
     )
@@ -70,10 +74,70 @@ def define_tables(meta):
         Column('key', String(255)),
         Column('value', String(255)),
         Index('project_id_deleted_idx', 'project_id', 'deleted'),
+        UniqueConstraint('project_id', 'deleted', 'key'),
         mysql_engine='InnoDB',
         mysql_charset='utf8'
     )
-    return [images_mapper, flavors_mapper, projects_mapper]
+
+    instances_mapper = Table(
+        'instances_mapper', meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True),
+        Column('instance_id', String(36), nullable=False),
+        Column('project_id', String(255)),
+        Column('key', String(255)),
+        Column('value', String(255)),
+        Index('instance_id_deleted_idx', 'instance_id', 'deleted'),
+        Index('instance_id_az_deleted_idx', 'instance_id', 'project_id',
+              'deleted'),
+        UniqueConstraint('instance_id', 'project_id', 'deleted', 'key'),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    volumes_mapper = Table(
+        'volumes_mapper', meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True),
+        Column('volume_id', String(36), nullable=False),
+        Column('project_id', String(255)),
+        Column('key', String(255)),
+        Column('value', String(255)),
+        Index('volume_id_deleted_idx', 'volume_id', 'deleted'),
+        Index('volume_id_az_deleted_idx', 'volume_id', 'project_id',
+              'deleted'),
+        UniqueConstraint('volume_id', 'project_id', 'deleted', 'key'),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    volume_snapshots_mapper = Table(
+        'volume_snapshots_mapper', meta,
+        Column('created_at', DateTime),
+        Column('updated_at', DateTime),
+        Column('deleted_at', DateTime),
+        Column('deleted', Boolean),
+        Column('id', Integer, primary_key=True),
+        Column('snapshot_id', String(36), nullable=False),
+        Column('project_id', String(255)),
+        Column('key', String(255)),
+        Column('value', String(255)),
+        Index('snapshot_id_deleted_idx', 'snapshot_id', 'deleted'),
+        Index('snapshot_id_az_deleted_idx', 'snapshot_id', 'project_id',
+              'deleted'),
+        UniqueConstraint('snapshot_id', 'project_id', 'deleted', 'key'),
+        mysql_engine='InnoDB',
+        mysql_charset='utf8'
+    )
+
+    return [images_mapper, flavors_mapper, projects_mapper, instances_mapper,
+            volumes_mapper, volume_snapshots_mapper]
 
 
 def upgrade(migrate_engine):

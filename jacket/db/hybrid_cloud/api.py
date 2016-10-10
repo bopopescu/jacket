@@ -42,12 +42,10 @@ from oslo_db import options as db_options
 
 from jacket.common import constants
 
-
 CONF = cfg.CONF
 db_options.set_defaults(CONF)
 
 _BACKEND_MAPPING = {'sqlalchemy': 'jacket.db.hybrid_cloud.sqlalchemy.api'}
-
 
 IMPL = oslo_db_api.DBAPI.from_config(conf=CONF,
                                      backend_mapping=_BACKEND_MAPPING,
@@ -84,7 +82,8 @@ def image_mapper_create(context, image_id, project_id, values):
 
 
 def image_mapper_update(context, image_id, project_id, values, delete=True):
-    return IMPL.image_mapper_update(context, image_id, project_id, values, delete=delete)
+    return IMPL.image_mapper_update(context, image_id, project_id, values,
+                                    delete=delete)
 
 
 def image_mapper_delete(context, image_id, project_id=None):
@@ -104,7 +103,8 @@ def flavor_mapper_create(context, flavor_id, project_id, values):
 
 
 def flavor_mapper_update(context, flavor_id, project_id, values, delete=True):
-    return IMPL.flavor_mapper_update(context, flavor_id, project_id, values, delete=delete)
+    return IMPL.flavor_mapper_update(context, flavor_id, project_id, values,
+                                     delete=delete)
 
 
 def flavor_mapper_delete(context, flavor_id, project_id=None):
@@ -124,8 +124,78 @@ def project_mapper_create(context, project_id, values):
 
 
 def project_mapper_update(context, project_id, values, delete=True):
-    return IMPL.project_mapper_update(context, project_id, values, delete=delete)
+    return IMPL.project_mapper_update(context, project_id, values,
+                                      delete=delete)
 
 
 def project_mapper_delete(context, project_id):
     return IMPL.project_mapper_delete(context, project_id)
+
+
+def instance_mapper_all(context):
+    return IMPL.instance_mapper_all(context)
+
+
+def instance_mapper_get(context, instance_id, project_id=None):
+    return IMPL.instance_mapper_get(context, instance_id, project_id)
+
+
+def instance_mapper_create(context, instance_id, project_id, values):
+    return IMPL.instance_mapper_create(context, instance_id, project_id, values)
+
+
+def instance_mapper_update(context, instance_id, project_id, values,
+                           delete=True):
+    return IMPL.instance_mapper_update(context, instance_id, project_id, values,
+                                       delete=delete)
+
+
+def instance_mapper_delete(context, instance_id, project_id=None):
+    return IMPL.instance_mapper_delete(context, instance_id, project_id)
+
+
+def volume_mapper_all(context):
+    return IMPL.volume_mapper_all(context)
+
+
+def volume_mapper_get(context, volume_id, project_id=None):
+    return IMPL.volume_mapper_get(context, volume_id, project_id)
+
+
+def volume_mapper_create(context, volume_id, project_id, values):
+    return IMPL.volume_mapper_create(context, volume_id, project_id, values)
+
+
+def volume_mapper_update(context, volume_id, project_id, values,
+                         delete=True):
+    return IMPL.volume_mapper_update(context, volume_id, project_id, values,
+                                     delete=delete)
+
+
+def volume_mapper_delete(context, volume_id, project_id=None):
+    return IMPL.volume_mapper_delete(context, volume_id, project_id)
+
+
+def volume_snapshot_mapper_all(context):
+    return IMPL.volume_snapshot_mapper_all(context)
+
+
+def volume_snapshot_mapper_get(context, snapshot_id, project_id=None):
+    return IMPL.volume_snapshot_mapper_get(context, snapshot_id,
+                                           project_id)
+
+
+def volume_snapshot_mapper_create(context, snapshot_id, project_id,
+                                  values):
+    return IMPL.volume_snapshot_mapper_create(context, snapshot_id,
+                                              project_id, values)
+
+
+def volume_snapshot_mapper_update(context, snapshot_id, project_id, values,
+                                  delete=True):
+    return IMPL.volume_snapshot_mapper_update(context, snapshot_id, project_id,
+                                              values, delete=delete)
+
+
+def volume_snapshot_mapper_delete(context, snapshot_id, project_id=None):
+    return IMPL.volume_snapshot_mapper_delete(context, snapshot_id, project_id)

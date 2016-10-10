@@ -33,13 +33,14 @@ from jacket.compute.virt import driver
 from jacket.compute.virt import hardware
 from jacket import conf
 from jacket import context as req_context
-from jacket.db.hybrid_cloud import api as db_api
+from jacket.db.hybrid_cloud import api as caa_db_api
 from jacket.drivers.fs import exception_ex
 from jacket.drivers.fs.clients import fs_context
 from jacket.drivers.fs.clients import nova as novaclient
 from jacket.drivers.fs.clients import cinder as cinderclient
 from jacket.drivers.fs.clients import glance as glanceclient
 from jacket.drivers.fs import hyper_agent_api
+from jacket import exception
 from jacket.i18n import _LE
 
 LOG = logging.getLogger(__name__)
@@ -98,7 +99,7 @@ class FsComputeDriver(driver.ComputeDriver):
         self._fs_novaclient = None
         self._fs_cinderclient = None
         self._fs_glanceclient = None
-        self.db_api = db_api
+        self.caa_db_api = caa_db_api
         self.hyper_agent_api = hyper_agent_api.HyperAgentAPI()
 
     def fs_novaclient(self, context=None):
@@ -164,6 +165,13 @@ class FsComputeDriver(driver.ComputeDriver):
                 added_meta = None
 
         return added_meta
+
+    def _add_tag_to_metadata(self, metadata, caa_instance_id):
+        if not metadata:
+            metadata = {}
+
+        metadata['tag:caa_instance_id'] = caa_instance_id
+        return metadata
 
     def _transfer_to_sub_block_device_mapping_v2(self, context,
                                                  block_device_mapping):
@@ -370,16 +378,26 @@ class FsComputeDriver(driver.ComputeDriver):
         """
         return '@'.join([instance_name, instance_id])
 
+    def _get_provider_instance_id(self, context, caa_instance_id):
+        instance_mapper = self.caa_db_api.instance_mapper_get(context,
+                                                              caa_instance_id)
+        return instance_mapper.get('provider_instance_id', None)
+
     @logger_helper()
     def _get_sub_fs_instance(self, context=None, hybrid_instance=None):
         if not context:
             context = req_context.RequestContext(hybrid_instance.project_id)
-        server = None
-        sub_instance_name = self._generate_sub_fs_instance_name(
-            hybrid_instance.display_name, hybrid_instance.uuid)
-        server = self.fs_novaclient(context).get_server_by_name(
-            sub_instance_name)
 
+        provider_instance_id = self._get_provider_instance_id(context,
+                                                              hybrid_instance.uuid)
+        if provider_instance_id:
+            return self.fs_novaclient(context).get_server(provider_instance_id)
+
+        server = self.fs_novaclient(context).get_server_by_caa_instance_id(
+            hybrid_instance.uuid)
+        if server is None:
+            raise exception.EntityNotFound(entity='Server',
+                                           name=hybrid_instance.uuid)
         return server
 
     def _get_sub_image_id(self, context, image_id):
@@ -387,7 +405,7 @@ class FsComputeDriver(driver.ComputeDriver):
         project_mapper = self._get_project_mapper(context, context.project_id)
         base_linux_image = project_mapper.get("base_linux_image", None)
 
-        image_mapper = self.db_api.image_mapper_get(context, image_id)
+        image_mapper = self.caa_db_api.image_mapper_get(context, image_id)
         sub_image_id = image_mapper.get("dest_image_id", base_linux_image)
 
         return sub_image_id
@@ -395,9 +413,9 @@ class FsComputeDriver(driver.ComputeDriver):
     def _get_sub_flavor_id(self, context, flavor_id):
 
         # get dest flavor id
-        flavor_mapper = self.db_api.flavor_mapper_get(context,
-                                                      flavor_id,
-                                                      context.project_id)
+        flavor_mapper = self.caa_db_api.flavor_mapper_get(context,
+                                                          flavor_id,
+                                                          context.project_id)
 
         dest_flavor_id = flavor_mapper.get("dest_flavor_id", flavor_id)
 
@@ -407,9 +425,10 @@ class FsComputeDriver(driver.ComputeDriver):
         if project_id is None:
             project_id = 'default'
 
-        project_mapper = self.db_api.project_mapper_get(context, project_id)
+        project_mapper = self.caa_db_api.project_mapper_get(context, project_id)
         if not project_mapper:
-            project_mapper = self.db_api.project_mapper_get(context, 'default')
+            project_mapper = self.caa_db_api.project_mapper_get(context,
+                                                                'default')
 
         if not project_mapper:
             raise exception_ex.AccountNotConfig()
@@ -428,6 +447,7 @@ class FsComputeDriver(driver.ComputeDriver):
                                                     display_name=volume_name)
         volume = self.fs_cinderclient(context).get_volume_by_name(volume_name)
         self.fs_cinderclient(context).check_create_volume_complete(volume.id)
+
         return volume
 
     def volume_delete(self, context, instance):
@@ -655,6 +675,14 @@ class FsComputeDriver(driver.ComputeDriver):
         else:
             LOG.error('Can not found server to delete.')
             # raise exception_ex.ServerNotExistException(server_name=instance.display_name)
+
+        try:
+            # delete instance mapper
+            self.caa_db_api.instance_mapper_delete(context,
+                                                   instance.uuid,
+                                                   instance.project_id)
+        except Exception as ex:
+            LOG.error(_LE("instance_mapper_delete failed! ex = %s"), ex)
 
         LOG.debug('success to delete instance: %s' % instance.uuid)
 
@@ -921,6 +949,7 @@ class FsComputeDriver(driver.ComputeDriver):
                 image_ref = None
 
             metadata = self._add_agent_conf_to_metadata(instance)
+            metadata = self._add_tag_to_metadata(metadata, instance.uuid)
             LOG.debug('metadata: %s' % metadata)
 
             app_security_groups = instance.security_groups
@@ -954,6 +983,18 @@ class FsComputeDriver(driver.ComputeDriver):
             self.fs_novaclient(context).check_create_server_complete(
                 provider_server.id)
             LOG.debug('create server success.............!!!')
+
+            try:
+                # instance mapper
+                values = {'provider_instance_id': provider_server.id}
+                self.caa_db_api.instance_mapper_create(context,
+                                                       instance.uuid,
+                                                       instance.project_id,
+                                                       values)
+            except Exception as ex:
+                LOG.exception(_LE("instance_mapper_create failed! ex = %s"), ex)
+                provider_server.delete()
+                raise
 
             interface_list = self.fs_novaclient(context).interface_list(
                 provider_server)
@@ -1095,10 +1136,10 @@ class FsComputeDriver(driver.ComputeDriver):
                                   attached to the instance.
         """
 
-        #self._binding_host(context, network_info, instance.uuid)
+        # self._binding_host(context, network_info, instance.uuid)
         self._spawn(context, instance, image_meta, injected_files,
                     admin_password, network_info, block_device_info)
-        #self._binding_host(context, network_info, instance.uuid)
+        # self._binding_host(context, network_info, instance.uuid)
 
     def sub_flavor_detail(self, context):
         """get flavor detail"""
@@ -1109,5 +1150,3 @@ class FsComputeDriver(driver.ComputeDriver):
             ret.append(sub_flavor._info)
 
         return ret
-
-

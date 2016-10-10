@@ -107,6 +107,21 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
     @retry(stop_max_attempt_number=3,
            wait_fixed=2000,
            retry_on_exception=retry_auth_failed)
+    def get_volume_by_caa_volume_id(self, caa_volume_id):
+        volume_list = self.client().volumes.list()
+        if volume_list is None or len(volume_list) <= 0:
+            return None
+
+        for volume in volume_list:
+            if hasattr(volume, 'metadata'):
+                temp_id = volume.metadata.get('tag:caa_volume_id', None)
+                if temp_id == caa_volume_id:
+                    return volume
+        return None
+
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def get_volume_type(self, volume_type):
         vt_id = None
         volume_type_list = self.client().volume_types.list()
@@ -310,6 +325,21 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
             return snapshots[0]
         else:
             return None
+
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
+    def get_snapshot_by_caa_snap_id(self, caa_snap_id):
+        snap_list = self.client().volume_snapshots.list()
+        if snap_list is None or len(snap_list) <= 0:
+            return None
+
+        for snap in snap_list:
+            if hasattr(snap, 'metadata'):
+                temp_id = snap.metadata.get('tag:caa_snapshot_id', None)
+                if temp_id == caa_snap_id:
+                    return snap
+        return None
 
     @retry(stop_max_attempt_number=3,
            wait_fixed=2000,
