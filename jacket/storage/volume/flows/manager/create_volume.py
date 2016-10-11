@@ -646,6 +646,7 @@ class CreateVolumeFromSpecTask(flow_utils.CinderTask):
         try:
             volume_ref = self.db.volume_update(context,
                                                volume_ref['id'], updates)
+            volume_ref = storage.Volume.get_by_id(context, volume_ref['id'])
         except exception.CinderException:
             LOG.exception(_LE("Failed updating volume %(volume_id)s with "
                               "%(updates)s"),
