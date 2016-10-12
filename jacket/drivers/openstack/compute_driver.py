@@ -1155,3 +1155,12 @@ class OsComputeDriver(driver.ComputeDriver):
             ret.append(sub_flavor._info)
 
         return ret
+
+    def rename(self, ctxt, instance, display_name=None):
+        provider_uuid = self._get_provider_instance_id(ctxt, instance.uuid)
+        if not display_name:
+            display_name = instance.display_name
+
+        provider_name = self._generate_sub_os_instance_name(display_name,
+                                                            instance.uuid)
+        self.os_novaclient(ctxt).rename(provider_uuid, provider_name)

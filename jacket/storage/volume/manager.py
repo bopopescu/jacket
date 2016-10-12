@@ -3479,6 +3479,15 @@ class VolumeManager(manager.Manager):
         secure_enabled = self.storage_driver.secure_file_operations_enabled()
         return secure_enabled
 
+    def rename_volume(self, ctxt, volume, display_name=None):
+        if hasattr(self.storage_driver, 'rename_volume'):
+            return self.storage_driver.rename_volume(ctxt, volume, display_name)
+
+    def rename_snapshot(self, ctxt, snapshot, display_name=None):
+        if hasattr(self.storage_driver, 'rename_snapshot'):
+            return self.storage_driver.rename_snapshot(ctxt, snapshot,
+                                                       display_name)
+
 
 # TODO(dulek): This goes away immediately in Newton and is just present in
 # Mitaka so that we can receive v1.x and v2.0 messages
@@ -3623,3 +3632,9 @@ class _VolumeV1Proxy(object):
 
     def secure_file_operations_enabled(self, ctxt, volume):
         return self.manager.secure_file_operations_enabled(ctxt, volume)
+
+    def rename_volume(self, ctxt, volume, display_name=None):
+        return self.manager.rename_volume(ctxt, volume, display_name)
+
+    def rename_snapshot(self, ctxt, snapshot, display_name=None):
+        return self.manager.rename_snapshot(ctxt, snapshot, display_name)

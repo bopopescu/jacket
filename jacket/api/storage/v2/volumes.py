@@ -455,6 +455,15 @@ class VolumeController(wsgi.Controller):
             volume_utils.notify_about_volume_usage(context, volume,
                                                    'update.start')
             self.volume_api.update(context, volume, update_dict)
+
+            # NOTE(laoyi) need to rename
+            try:
+                if 'display_name' in update_dict:
+                    self.volume_api.rename_volume(context, volume,
+                                                  update_dict['display_name'])
+            except Exception:
+                pass
+
         except exception.VolumeNotFound as error:
             raise exc.HTTPNotFound(explanation=error.msg)
 

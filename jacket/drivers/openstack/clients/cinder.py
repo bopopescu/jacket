@@ -192,7 +192,7 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
         if not_expect_status and vol.status in not_expect_status:
             LOG.debug("%(opt)s failed - volume %(vol)s "
                       "is in %(status)s status" % {"opt": opt,
-                                                    "vol": vol.id,
+                                                   "vol": vol.id,
                                                    "status": vol.status})
             raise exception.ResourceUnknownStatus(
                 resource_status=vol.status,
@@ -201,7 +201,7 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
         if expect_status and vol.status not in expect_status:
             LOG.debug("%(opt)s failed - volume %(vol)s "
                       "is in %(status)s status" % {"opt": opt,
-                                                    "vol": vol.id,
+                                                   "vol": vol.id,
                                                    "status": vol.status})
             raise exception.ResourceUnknownStatus(
                 resource_status=vol.status,
@@ -302,6 +302,12 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
     @retry(stop_max_attempt_number=3,
            wait_fixed=2000,
            retry_on_exception=retry_auth_failed)
+    def update_volume(self, volume_id, **kwargs):
+        return self.client().volumes.update(volume_id, **kwargs)
+
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def detach(self, volume, attachment_uuid):
         return self.client().volumes.detach(volume, attachment_uuid)
 
@@ -357,6 +363,12 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
     def delete_snapshot(self, snapshot, force=False):
         return self.client().volume_snapshots.delete(snapshot, force=force)
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
+    def update_snapshot(self, snapshot_id, **kwargs):
+        return self.client().volume_snapshots.update(snapshot_id, **kwargs)
+
     @retry(stop_max_attempt_number=60,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
@@ -366,7 +378,7 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
         if snap.status in ('creating'):
             LOG.debug("Snapshot %(id)s is being created - "
                       "status: %(status)s" % {'id': snap_id,
-                                                'status': snap.status})
+                                              'status': snap.status})
             return False
 
         if snap.status != 'available':

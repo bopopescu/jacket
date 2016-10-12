@@ -172,6 +172,7 @@ conf_init()
     crudini --set /etc/jacket/jacket.conf DEFAULT enabled_backends "${enabled_backends}"
     crudini --set /etc/jacket/jacket.conf DEFAULT rpc_backend rabbit
     crudini --set /etc/jacket/jacket.conf DEFAULT use_neutron "${use_neutron}"
+    crudini --set /etc/jacket/jacket.conf DEFAULT network_api_class "jacket.compute.network.neutronv2.api.API"
     crudini --set /etc/jacket/jacket.conf DEFAULT linuxnet_ovs_integration_bridge "${linuxnet_ovs_integration_bridge}"
     crudini --set /etc/jacket/jacket.conf DEFAULT default_schedule_zone "${default_schedule_zone}"
     crudini --set /etc/jacket/jacket.conf DEFAULT default_availability_zone "${default_availability_zone}"

@@ -1671,6 +1671,12 @@ class API(base.Base):
             except (ValueError, SyntaxError):
                 LOG.debug('Could not evaluate value %s, assuming string', v)
 
+    def rename_volume(self, ctxt, volume, display_name=None):
+        return self.volume_rpcapi.rename_volume(ctxt, volume, display_name)
+
+    def rename_snapshot(self, ctxt, snapshot, display_name=None):
+        return self.volume_rpcapi.rename_snapshot(ctxt, snapshot, display_name)
+
 
 class HostAPI(base.Base):
     def __init__(self):

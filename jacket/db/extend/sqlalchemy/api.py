@@ -601,6 +601,7 @@ def _volume_mapper_convert_objs(volume_id, project_id, values_dict):
 
 def volume_mapper_create(context, volume_id, project_id, values):
     value_refs = _volume_mapper_convert_objs(volume_id, project_id, values)
+    LOG.debug("+++hw, value_refs = %s", value_refs)
     for value in value_refs:
         value.save(get_session())
 

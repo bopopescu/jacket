@@ -3603,6 +3603,9 @@ class API(base.Base):
             host_statuses[instance.uuid] = host_status
         return host_statuses
 
+    def rename(self, context, instance, display_name=None):
+        return self.compute_rpcapi.rename(context, instance, display_name)
+
 
 class HostAPI(base.Base):
     """Sub-set of the Compute Manager API for managing host operations."""

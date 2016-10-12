@@ -1066,3 +1066,14 @@ class ComputeAPI(object):
         cctxt = self.client.prepare(server=_compute_host(None, instance),
                 version=version)
         return cctxt.cast(ctxt, "trigger_crash_dump", instance=instance)
+
+    def rename(self, ctxt, instance, display_name=None):
+        version = '4.6'
+
+        if not self.client.can_send_version(version):
+            raise exception.TriggerCrashDumpNotSupported()
+
+        cctxt = self.client.prepare(server=_compute_host(None, instance),
+                                    version=version)
+        return cctxt.call(ctxt, "rename_instance", instance=instance,
+                          display_name=display_name)

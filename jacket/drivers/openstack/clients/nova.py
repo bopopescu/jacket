@@ -404,7 +404,10 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
     def rename(self, server, name):
         """Update the name for a server."""
-        server.update(name)
+        if isinstance(server, six.string_types):
+            self.client().servers.update(server, name)
+        else:
+            server.update(name)
 
     def resize(self, server_id, flavor_id):
         """Resize the server."""

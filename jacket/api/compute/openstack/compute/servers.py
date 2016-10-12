@@ -820,6 +820,14 @@ class ServersController(wsgi.Controller):
             # might throw an exception.
             instance.update(update_dict)
             instance.save()
+
+            # NOTE(laoyi) need to rename
+            try:
+                if 'display_name' in update_dict:
+                    self.compute_api.rename(ctxt, instance)
+            except Exception:
+                pass
+
             return self._view_builder.show(req, instance,
                                            extend_address=False)
         except exception.InstanceNotFound:

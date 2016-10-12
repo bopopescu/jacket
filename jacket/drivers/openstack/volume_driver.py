@@ -73,8 +73,18 @@ class OsVolumeDriver(driver.VolumeDriver):
 
     def _get_provider_volume_id(self, context, caa_volume_id):
         volume_mapper = self.caa_db.volume_mapper_get(context, caa_volume_id)
-        LOG.debug("volume_mapper = %s", volume_mapper)
-        return volume_mapper.get('provider_volume_id', None)
+        provider_volume_id = volume_mapper.get('provider_volume_id', None)
+        if provider_volume_id:
+            return provider_volume_id
+
+        provider_volume = self.os_cinderlient(
+            context).get_volume_by_caa_volume_id(
+            caa_volume_id)
+        if provider_volume is None:
+            raise exception.EntityNotFound(entity='Volume',
+                                           name=caa_volume_id)
+
+        return provider_volume.id
 
     def _get_sub_os_volume(self, context, hybrid_volume):
         provider_volume_id = self._get_provider_volume_id(context,
@@ -154,7 +164,18 @@ class OsVolumeDriver(driver.VolumeDriver):
     def _get_provider_snapshot_id(self, context, caa_snapshot_id):
         snapshot_mapper = self.caa_db.volume_snapshot_mapper_get(context,
                                                                  caa_snapshot_id)
-        return snapshot_mapper.get('provider_snapshot_id', None)
+        provider_snapshot_id = snapshot_mapper.get('provider_snapshot_id', None)
+        if provider_snapshot_id:
+            return provider_snapshot_id
+
+        provider_snap = self.os_cinderlient(
+            context).get_snapshot_by_caa_snap_id(
+            caa_snapshot_id)
+        if provider_snap is None:
+            raise exception.EntityNotFound(entity='VolumeSnapshot',
+                                           name=provider_snap)
+
+        return provider_snap.id
 
     def _get_sub_snapshot(self, context, hybrid_snap):
 
@@ -491,10 +512,12 @@ class OsVolumeDriver(driver.VolumeDriver):
         try:
             # create volume snapshot mapper
             values = {"provider_snapshot_id": sub_snapshot.id}
-            self.caa_db.volume_mapper_create(context, snapshot.id,
-                                             context.project_id, values)
+            self.caa_db.volume_snapshot_mapper_create(context, snapshot.id,
+                                                      context.project_id,
+                                                      values)
         except Exception as ex:
-            LOG.exception(_LE("volume_mapper_create failed! ex = %s"), ex)
+            LOG.exception(_LE("volume_snapshot_mapper_create failed! ex = %s"),
+                          ex)
             sub_snapshot.delete()
             raise
 
@@ -594,3 +617,23 @@ class OsVolumeDriver(driver.VolumeDriver):
             ret.append(sub_vol_type._info)
 
         return ret
+
+    def rename_volume(self, ctxt, volume, display_name=None):
+        provider_uuid = self._get_provider_volume_id(ctxt, volume.id)
+
+        if not display_name:
+            display_name = volume.display_name
+
+        provider_name = self._get_sub_os_volume_name(display_name,
+                                                     volume.id)
+        self.os_cinderlient(ctxt).update_volume(provider_uuid,
+                                                display_name=provider_name)
+
+    def rename_snapshot(self, ctxt, snapshot, display_name=None):
+        provider_uuid = self._get_provider_snapshot_id(ctxt, snapshot.id)
+        if not display_name:
+            display_name = snapshot.display_name
+
+        provider_name = self._get_sub_snapshot_name(snapshot.id, display_name)
+        self.os_cinderlient(ctxt).update_snapshot(provider_uuid,
+                                                  display_name=provider_name)

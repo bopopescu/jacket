@@ -243,6 +243,14 @@ class SnapshotsController(wsgi.Controller):
             volume_utils.notify_about_snapshot_usage(context, snapshot,
                                                      'update.start')
             self.volume_api.update_snapshot(context, snapshot, update_dict)
+
+            # NOTE(laoyi) need to rename
+            try:
+                if 'display_name' in update_dict:
+                    self.volume_api.rename_snapshot(context, snapshot,
+                                                  update_dict['display_name'])
+            except Exception:
+                pass
         except exception.SnapshotNotFound as error:
             raise exc.HTTPNotFound(explanation=error.msg)
 

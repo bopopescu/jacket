@@ -435,3 +435,17 @@ class VolumeAPI(rpc.RPCAPI):
         cctxt = self._get_cctxt(volume.host, version)
         return cctxt.call(ctxt, 'secure_file_operations_enabled',
                           volume=volume)
+
+    def rename_volume(self, ctxt, volume, display_name=None):
+        """Clear the frozen setting on a backend host."""
+        version = '2.0'
+        cctxt = self._get_cctxt(volume.host, version)
+        return cctxt.call(ctxt, 'rename_volume',
+                          volume=volume, display_name=display_name)
+
+    def rename_snapshot(self, ctxt, snapshot, display_name=None):
+        """Clear the frozen setting on a backend host."""
+        version = '2.0'
+        cctxt = self._get_cctxt(None, version)
+        return cctxt.call(ctxt, 'rename_snapshot',
+                          snapshot=snapshot, display_name=display_name)
