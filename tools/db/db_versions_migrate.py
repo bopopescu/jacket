@@ -46,20 +46,26 @@ current_dir = os.getcwd()
 current_dir = os.path.dirname(current_dir)
 current_dir = os.path.dirname(current_dir)
 
-
-MIGRATE_REPO = os.path.join(current_dir, "jacket", "db", "sqlalchemy", "migrate_repo")
-API_DB_MIGRATE_REPO = os.path.join(current_dir, "jacket", "db", "sqlalchemy", "api_migrations", "migrate_repo")
-COMPUTE_MIGRATE_REPO = os.path.join(current_dir, "jacket", "db", "compute", "sqlalchemy", "migrate_repo")
-STORAGE_MIGRATE_REPO = os.path.join(current_dir, "jacket", "db", "storage", "sqlalchemy", "migrate_repo")
-HYBRID_CLOUD_MIGRATE_REPO = os.path.join(current_dir, "jacket", "db", "hybrid_cloud", "sqlalchemy", "migrate_repo")
-COMPUTE_API_DB_MIGRATE_REPO = os.path.join(current_dir, "jacket", "db", "compute", "sqlalchemy", "api_migrations", "migrate_repo")
+MIGRATE_REPO = os.path.join(current_dir, "jacket", "db", "sqlalchemy",
+                            "migrate_repo")
+API_DB_MIGRATE_REPO = os.path.join(current_dir, "jacket", "db", "sqlalchemy",
+                                   "api_migrations", "migrate_repo")
+COMPUTE_MIGRATE_REPO = os.path.join(current_dir, "jacket", "db", "compute",
+                                    "sqlalchemy", "migrate_repo")
+STORAGE_MIGRATE_REPO = os.path.join(current_dir, "jacket", "db", "storage",
+                                    "sqlalchemy", "migrate_repo")
+EXTEND_MIGRATE_REPO = os.path.join(current_dir, "jacket", "db", "extend",
+                                         "sqlalchemy", "migrate_repo")
+COMPUTE_API_DB_MIGRATE_REPO = os.path.join(current_dir, "jacket", "db",
+                                           "compute", "sqlalchemy",
+                                           "api_migrations", "migrate_repo")
 
 MODELS = {"compute": COMPUTE_MIGRATE_REPO,
           "storage": STORAGE_MIGRATE_REPO,
-          "hybridcloud": HYBRID_CLOUD_MIGRATE_REPO,}
-
+          "extend": EXTEND_MIGRATE_REPO,}
 
 log = logging.getLogger(__name__)
+
 
 class VerNum(object):
     """A version number that behaves like a string and int at the same time"""
@@ -73,7 +79,7 @@ class VerNum(object):
         ret = cls._instances[val]
         return ret
 
-    def __init__(self,value):
+    def __init__(self, value):
         self.value = str(int(value))
         if self < 0:
             raise ValueError("Version number cannot be negative")
@@ -132,8 +138,8 @@ class Collection(object):
         if '1' in files:
             # deprecation
             raise Exception('It looks like you have a repository in the old '
-                'format (with directories for each version). '
-                'Please convert repository before proceeding.')
+                            'format (with directories for each version). '
+                            'Please convert repository before proceeding.')
 
         tempVersions = dict()
         for filename in files:
@@ -214,7 +220,8 @@ class Version(object):
     def _add_script_py(self, path):
         if self.python is not None:
             raise Exception('You can only have one Python script '
-                'per version, but you have: %s and %s' % (self.python, path))
+                            'per version, but you have: %s and %s' % (
+                            self.python, path))
         self.python = path
 
     def parse_model(self, model):
@@ -236,12 +243,14 @@ class Extensions(object):
     py = 'py'
     sql = 'sql'
 
+
 def str_to_filename(s):
     """Replaces spaces, (double and single) quotes
     and double underscores to underscores
     """
 
-    s = s.replace(' ', '_').replace('"', '_').replace("'", '_').replace(".", "_")
+    s = s.replace(' ', '_').replace('"', '_').replace("'", '_').replace(".",
+                                                                        "_")
     while '__' in s:
         s = s.replace('__', '_')
     return s
@@ -285,16 +294,18 @@ def model_process(model, dest_versions, latest):
         else:
             latest += 1
 
-        dest_file_name = "%03d_%s_%s" % (int(latest_num), model, os.path.basename(curl_version.python))
+        dest_file_name = "%03d_%s_%s" % (
+        int(latest_num), model, os.path.basename(curl_version.python))
         dest_path = os.path.join(dest_versions.path, dest_file_name)
-        src_path = os.path.join(model_coll.path, os.path.basename(curl_version.python))
+        src_path = os.path.join(model_coll.path,
+                                os.path.basename(curl_version.python))
         shutil.copyfile(src_path, dest_path)
 
     return latest
 
 
 def main():
-    #timestamp = datetime.datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    # timestamp = datetime.datetime.utcnow().strftime("%Y%m%d_%H%M%S")
     print("main start....")
     db_versions_path = os.path.join(MIGRATE_REPO, "versions")
 
@@ -304,8 +315,9 @@ def main():
     latest = model_process('storage', db_versions, latest)
     latest = model_process('hybridcloud', db_versions, latest)
 
-    #api db
-    compute_api_db_versions_path = os.path.join(COMPUTE_API_DB_MIGRATE_REPO, "versions")
+    # api db
+    compute_api_db_versions_path = os.path.join(COMPUTE_API_DB_MIGRATE_REPO,
+                                                "versions")
     api_db_versions_path = os.path.join(API_DB_MIGRATE_REPO, "versions")
 
     shutil.rmtree(api_db_versions_path)
@@ -317,4 +329,3 @@ if __name__ == "__main__":
     main()
     print("end....")
     sys.exit(0)
-

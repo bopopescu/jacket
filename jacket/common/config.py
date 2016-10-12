@@ -53,7 +53,7 @@ global_opts = [
                      'jacket_extension option with cinder.api.contrib.'
                      'select_extensions'),
     cfg.MultiStrOpt('osapi_jacket_extension',
-                    default=['jacket.api.hybrid_cloud.contrib.standard_extensions'],
+                    default=['jacket.api.extend.contrib.standard_extensions'],
                     help='osapi jacket extension to load'),
     cfg.BoolOpt('allow_availability_zone_fallback',
                 default=False,

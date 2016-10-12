@@ -101,7 +101,7 @@ from jacket.compute.virt import virtapi
 from jacket.compute import volume
 from jacket.compute.volume import encryptors
 
-from jacket.worker.hypervm.driver import JacketHypervmDriver
+from jacket.worker.hypercontainer.driver import JacketHyperContainerDriver
 from wormholeclient import constants
 
 compute_opts = [
@@ -704,7 +704,7 @@ class ComputeManager(manager.Manager):
             openstack_driver.is_neutron_security_groups())
         self.consoleauth_rpcapi = consoleauth.rpcapi.ConsoleAuthAPI()
         self.cells_rpcapi = cells_rpcapi.CellsAPI()
-        self.jacketdriver = JacketHypervmDriver()
+        self.jacketdriver = JacketHyperContainerDriver()
         # self.scheduler_client = scheduler_client.SchedulerClient()
         self._resource_tracker_dict = {}
         self.instance_events = InstanceEvents()

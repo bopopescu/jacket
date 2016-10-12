@@ -20,7 +20,7 @@ from oslo_log import log as logging
 import jacket.policy
 from jacket import rpc
 from jacket.db import base
-from jacket.db.hybrid_cloud import api as db_api
+from jacket.db.extend import api as db_api
 from jacket.worker import rpcapi as worker_rpcapi
 
 LOG = logging.getLogger(__name__)
