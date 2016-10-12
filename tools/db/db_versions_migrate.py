@@ -313,7 +313,7 @@ def main():
     latest = db_versions.latest
     latest = model_process('compute', db_versions, latest)
     latest = model_process('storage', db_versions, latest)
-    latest = model_process('hybridcloud', db_versions, latest)
+    latest = model_process('extend', db_versions, latest)
 
     # api db
     compute_api_db_versions_path = os.path.join(COMPUTE_API_DB_MIGRATE_REPO,
