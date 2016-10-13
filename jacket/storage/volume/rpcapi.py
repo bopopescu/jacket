@@ -101,7 +101,7 @@ class VolumeAPI(rpc.RPCAPI):
         2.0  - Remove 1.x compatibility
     """
 
-    RPC_API_VERSION = '1.40'
+    RPC_API_VERSION = '2.0'
     TOPIC = CONF.volume_topic
     # BINARY = 'storage-volume'
     BINARY = 'nova-compute'

@@ -77,7 +77,7 @@ param_parse()
 attrs_init()
 {
     for attr in ${ATTRS}; do
-        crudini --get "${CONF_FILE}" CONF $attr
+        crudini --get "${CONF_FILE}" CONF $attr 2>/dev/null
         if [ $? -ne 0 ]; then
             die 1 "get attr($attr) from $CONF_FILE failed!"
         fi
