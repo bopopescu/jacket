@@ -1146,6 +1146,16 @@ class OsComputeDriver(driver.ComputeDriver):
                     admin_password, network_info, block_device_info)
         # self._binding_host(context, network_info, instance.uuid)
 
+    def pause(self, instance):
+        context = req_context.RequestContext(project_id=instance.project_id)
+        provider_uuid = self._get_provider_instance_id(context, instance.uuid)
+        self.os_novaclient(context).pause(provider_uuid)
+
+    def unpause(self, instance):
+        context = req_context.RequestContext(project_id=instance.project_id)
+        provider_uuid = self._get_provider_instance_id(context, instance.uuid)
+        self.os_novaclient(context).unpause(provider_uuid)
+
     def sub_flavor_detail(self, context):
         """get flavor detail"""
 

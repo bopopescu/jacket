@@ -36,6 +36,10 @@ CONF = conf.CONF
 CLIENT_RETRY_LIMIT = CONF.clients_drivers.client_retry_limit
 REBOOT_SOFT, REBOOT_HARD = 'SOFT', 'HARD'
 
+def retry_auth_failed(exe):
+    # todo auth failed ,need to retry, refresh os_context
+    return False
+
 
 class NovaClientPlugin(client_plugin.ClientPlugin):
     CLIENT_NAME = 'nova'
@@ -152,6 +156,9 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
         return None
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def fetch_server(self, server_id):
         """Fetch fresh server object from Nova.
 
@@ -187,6 +194,112 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                                           sort_keys=sort_keys,
                                           sort_dirs=sort_dirs)
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
+    def start(self, server):
+        return self.client().servers.start(server)
+
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
+    def stop(self, server):
+        return self.client().servers.stop(server)
+
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
+    def reboot(self, server, reboot_type=REBOOT_SOFT):
+        """
+        Reboot a server.
+
+        :param server: The :class:`Server` (or its ID) to share onto.
+        :param reboot_type: either :data:`REBOOT_SOFT` for a software-level
+                reboot, or `REBOOT_HARD` for a virtual power cycle hard reboot.
+        """
+        self.client().servers.reboot(server, reboot_type)
+
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
+    def create_server(self, name, image, flavor, meta=None, files=None,
+               reservation_id=None, min_count=None,
+               max_count=None, security_groups=None, userdata=None,
+               key_name=None, availability_zone=None,
+               block_device_mapping=None, block_device_mapping_v2=None,
+               nics=None, scheduler_hints=None,
+               config_drive=None, disk_config=None, **kwargs):
+        """
+        Create (boot) a new server.
+
+        :param name: Something to name the server.
+        :param image: The :class:`Image` to boot with.
+        :param flavor: The :class:`Flavor` to boot onto.
+        :param meta: A dict of arbitrary key/value metadata to store for this
+                     server. A maximum of five entries is allowed, and both
+                     keys and values must be 255 characters or less.
+        :param files: A dict of files to overrwrite on the server upon boot.
+                      Keys are file names (i.e. ``/etc/passwd``) and values
+                      are the file contents (either as a string or as a
+                      file-like object). A maximum of five entries is allowed,
+                      and each file must be 10k or less.
+        :param userdata: user data to pass to be exposed by the metadata
+                      server this can be a file type object as well or a
+                      string.
+        :param reservation_id: a UUID for the set of servers being requested.
+        :param key_name: (optional extension) name of previously created
+                      keypair to inject into the instance.
+        :param availability_zone: Name of the availability zone for instance
+                                  placement.
+        :param block_device_mapping: (optional extension) A dict of block
+                      device mappings for this server.
+        :param block_device_mapping_v2: (optional extension) A dict of block
+                      device mappings for this server.
+        :param nics:  (optional extension) an ordered list of nics to be
+                      added to this server, with information about
+                      connected networks, fixed ips, port etc.
+        :param scheduler_hints: (optional extension) arbitrary key-value pairs
+                            specified by the client to help boot an instance
+        :param config_drive: (optional extension) value for config drive
+                            either boolean, or volume-id
+        :param disk_config: (optional extension) control how the disk is
+                            partitioned when the server is created.  possible
+                            values are 'AUTO' or 'MANUAL'.
+        """
+        return self.client().servers.create(name, image, flavor, meta, files,
+               reservation_id, min_count,
+               max_count, security_groups, userdata,
+               key_name, availability_zone,
+               block_device_mapping, block_device_mapping_v2,
+               nics, scheduler_hints,
+               config_drive, disk_config)
+
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
+    def delete(self, server):
+        """
+
+        :param server: type Server
+        :return:
+        """
+        return self.client().servers.delete(server)
+
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
+    def pause(self, server):
+        return self.client().servers.pause(server)
+
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
+    def unpause(self, server):
+        return self.client().servers.pause(server)
+
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def refresh_server(self, server):
         """Refresh server's attributes.
 
@@ -262,6 +375,9 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                 resource_status=server.status,
                 result=_('%s is not active') % res_name)
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def find_flavor_by_name_or_id(self, flavor):
         """Find the specified flavor by name or id.
 
@@ -276,6 +392,9 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         # that would differentiate similar resource names across tenants.
         return self.get_flavor(flavor).id
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def get_flavor(self, flavor_identifier):
         """Get the flavor object for the specified flavor name or id.
 
@@ -289,6 +408,9 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
         return flavor
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def get_flavor_detail(self):
         return self.client().flavors.list()
 
@@ -402,6 +524,9 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         return self.check_opt_server_complete(server_id, opt, task_states,
                                               wait_statuses)
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def rename(self, server, name):
         """Update the name for a server."""
         if isinstance(server, six.string_types):
@@ -409,6 +534,9 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         else:
             server.update(name)
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def resize(self, server_id, flavor_id):
         """Resize the server."""
         server = self.fetch_server(server_id)
@@ -463,6 +591,9 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
             raise exception.ResourceUnknownStatus(
                 result=msg, resource_status=status)
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def rebuild(self, server_id, image_id, password=None,
                 preserve_ephemeral=False):
         """Rebuild the server and call check_rebuild to verify."""
@@ -508,6 +639,9 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         return dict([(limit.name, limit.value)
                     for limit in list(limits.absolute)])
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def get_console_urls(self, server):
         """Return dict-like structure of server's console urls.
 
@@ -543,6 +677,9 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
         return ConsoleUrls(server)
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def attach_volume(self, server_id, volume_id, device):
         try:
             va = self.client().volumes.create_server_volume(
@@ -559,6 +696,9 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                 raise
         return va.id
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def detach_volume(self, server_id, attach_id):
         # detach the volume using volume_attachment
         try:
@@ -591,6 +731,9 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                 'att': attach_id, 'srv': server_id})
             return False
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def interface_detach(self, server_id, port_id):
         server = self.fetch_server(server_id)
         if server:
@@ -599,9 +742,15 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         else:
             return False
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def interface_list(self, server):
         return self.client().servers.interface_list(server)
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def interface_attach(self, server_id, port_id=None, net_id=None, fip=None):
         server = self.fetch_server(server_id)
         if server:
@@ -638,119 +787,9 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         extensions = self.client().list_extensions.show_all()
         return set(extension.alias for extension in extensions)
 
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def has_extension(self, alias):
         """Check if specific extension is present."""
         return alias in self._list_extensions()
-
-    def stop(self, server):
-        return self.client().servers.stop(server)
-
-    def start(self, server):
-        return self.client().servers.start(server)
-
-    def reboot(self, server, reboot_type=REBOOT_SOFT):
-        """
-        Reboot a server.
-
-        :param server: The :class:`Server` (or its ID) to share onto.
-        :param reboot_type: either :data:`REBOOT_SOFT` for a software-level
-                reboot, or `REBOOT_HARD` for a virtual power cycle hard reboot.
-        """
-        self.client().servers.reboot(server, reboot_type)
-
-    def create_server(self, name, image, flavor, meta=None, files=None,
-               reservation_id=None, min_count=None,
-               max_count=None, security_groups=None, userdata=None,
-               key_name=None, availability_zone=None,
-               block_device_mapping=None, block_device_mapping_v2=None,
-               nics=None, scheduler_hints=None,
-               config_drive=None, disk_config=None, **kwargs):
-        """
-        Create (boot) a new server.
-
-        :param name: Something to name the server.
-        :param image: The :class:`Image` to boot with.
-        :param flavor: The :class:`Flavor` to boot onto.
-        :param meta: A dict of arbitrary key/value metadata to store for this
-                     server. A maximum of five entries is allowed, and both
-                     keys and values must be 255 characters or less.
-        :param files: A dict of files to overrwrite on the server upon boot.
-                      Keys are file names (i.e. ``/etc/passwd``) and values
-                      are the file contents (either as a string or as a
-                      file-like object). A maximum of five entries is allowed,
-                      and each file must be 10k or less.
-        :param userdata: user data to pass to be exposed by the metadata
-                      server this can be a file type object as well or a
-                      string.
-        :param reservation_id: a UUID for the set of servers being requested.
-        :param key_name: (optional extension) name of previously created
-                      keypair to inject into the instance.
-        :param availability_zone: Name of the availability zone for instance
-                                  placement.
-        :param block_device_mapping: (optional extension) A dict of block
-                      device mappings for this server.
-        :param block_device_mapping_v2: (optional extension) A dict of block
-                      device mappings for this server.
-        :param nics:  (optional extension) an ordered list of nics to be
-                      added to this server, with information about
-                      connected networks, fixed ips, port etc.
-        :param scheduler_hints: (optional extension) arbitrary key-value pairs
-                            specified by the client to help boot an instance
-        :param config_drive: (optional extension) value for config drive
-                            either boolean, or volume-id
-        :param disk_config: (optional extension) control how the disk is
-                            partitioned when the server is created.  possible
-                            values are 'AUTO' or 'MANUAL'.
-        """
-        return self.client().servers.create(name, image, flavor, meta, files,
-               reservation_id, min_count,
-               max_count, security_groups, userdata,
-               key_name, availability_zone,
-               block_device_mapping, block_device_mapping_v2,
-               nics, scheduler_hints,
-               config_drive, disk_config)
-
-    def wait_for_server_in_specified_status(self, server, status):
-
-        start = time.time()
-        retries = self._get_client_option(self.CLIENT_NAME, "wait_retries")
-        wait_retries_interval = self._get_client_option(
-            self.CLIENT_NAME, "wait_retries_interval")
-        if retries < 0:
-            LOG.warning(_LW("Treating negative config value (%(retries)s) for "
-                            "'block_device_retries' as 0."),
-                        {'retries': retries})
-        # (1) treat  negative config value as 0
-        # (2) the configured value is 0, one attempt should be made
-        # (3) the configured value is > 0, then the total number attempts
-        #      is (retries + 1)
-        attempts = 1
-        if retries >= 1:
-            attempts = retries + 1
-        for attempt in range(1, attempts + 1):
-            server = self.get_server(server)
-            status_of_server = server.status
-            if status_of_server == status:
-                LOG.info(_LI("os compute wait status(%(status)s) "
-                             "successfully."),
-                         status=status)
-                return
-
-            if status_of_server == "ERROR":
-                raise exception_ex.ServerStatusException(
-                    status=status_of_server)
-
-            greenthread.sleep(wait_retries_interval)
-
-        raise exception_ex.ServerStatusTimeoutException(server_id=server.id,
-                                                        status=status_of_server,
-                                                        timeout=int(
-                                                            time.time() - start))
-
-    def delete(self, server):
-        """
-
-        :param server: type Server
-        :return:
-        """
-        return self.client().servers.delete(server)

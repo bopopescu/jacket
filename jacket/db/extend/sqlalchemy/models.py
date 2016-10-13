@@ -47,7 +47,7 @@ class JacketBase(models.TimestampMixin,
 
     @staticmethod
     def delete_values():
-        return {'deleted': True,
+        return {'deleted': 1,
                 'deleted_at': timeutils.utcnow()}
 
     def delete(self, session):
