@@ -23,6 +23,7 @@ from jacket.api.extend import extensions
 import jacket.api.openstack
 from jacket.api.extend import versions
 from jacket.api.extend.v1 import image_mapper
+from jacket.api.extend.v1 import instance_mapper
 from jacket.api.extend.v1 import flavor_mapper
 from jacket.api.extend.v1 import project_mapper
 from jacket.api.extend.v1 import sub_flavor
@@ -70,3 +71,9 @@ class APIRouter(jacket.api.openstack.APIRouter):
                        controller=self.resources['sub_volume_type'],
                        action="detail",
                        conditions={"method": ['GET']})
+
+        self.resources['instance_mapper'] = instance_mapper.create_resource(
+            ext_mgr)
+        mapper.resource("instance_mapper", "instance_mapper",
+                        controller=self.resources['instance_mapper'],
+                        collection={'detail': 'GET'})
