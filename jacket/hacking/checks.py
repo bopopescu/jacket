@@ -39,7 +39,7 @@ cfg_re = re.compile(r".*\scfg\.")
 # Excludes oslo.config OptGroup objects
 cfg_opt_re = re.compile(r".*[\s\[]cfg\.[a-zA-Z]*Opt\(")
 vi_header_re = re.compile(r"^#\s+vim?:.+")
-virt_file_re = re.compile(r"\./compute/(?:tests/)?virt/(\w+)/")
+virt_file_re = re.compile(r"\./jacket\.compute/(?:tests/)?virt/(\w+)/")
 virt_import_re = re.compile(
     r"^\s*(?:import|from) compute\.(?:tests\.)?virt\.(\w+)")
 virt_config_re = re.compile(

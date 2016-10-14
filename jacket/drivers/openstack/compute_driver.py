@@ -228,7 +228,8 @@ class OsComputeDriver(driver.ComputeDriver):
                         volume_display_name, volume_id)
                     sub_volume = self.os_cinderclient(
                         context).get_volume_by_name(sub_volume_name)
-                    bdm_info_dict['boot_index'] = boot_index
+                    if boot_index is not None:
+                        bdm_info_dict['boot_index'] = boot_index
                     bdm_info_dict['uuid'] = sub_volume.id
                     bdm_info_dict['volume_size'] = str(sub_volume.size)
                     bdm_info_dict['device_name'] = device_name

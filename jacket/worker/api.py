@@ -160,7 +160,8 @@ class API(base.Base):
 
         del project_info['project_id']
 
-        return self.db_api.project_mapper_update(context, project_id, project_info,
+        return self.db_api.project_mapper_update(context, project_id,
+                                                 project_info,
                                                  delete=True)
 
     def project_mapper_delete(self, context, project_id):
@@ -171,3 +172,116 @@ class API(base.Base):
 
     def sub_vol_type_detail(self, context):
         return self.worker_rpcapi.sub_vol_type_detail(context)
+
+    def instance_mapper_all(self, context):
+        return self.db_api.instance_mapper_all(context)
+
+    def instance_mapper_get(self, context, instance_id, project_id=None):
+        return self.db_api.instance_mapper_get(context, instance_id, project_id)
+
+    def instance_mapper_create(self, context, instance_id, project_id, values):
+        return self.db_api.instance_mapper_create(context, instance_id,
+                                                  project_id,
+                                                  values)
+
+    def instance_mapper_update(self, context, instance_id, project_id, values):
+        set_properties = values.get("set_properties", {})
+        unset_properties = values.get("unset_properties", {})
+        instance_info = self.instance_mapper_get(context, instance_id,
+                                                 project_id)
+
+        for key, value in set_properties.iteritems():
+            instance_info[key] = value
+        for key in unset_properties.keys():
+            if key in instance_info:
+                del instance_info[key]
+
+        del instance_info['instance_id']
+        del instance_info['project_id']
+
+        return self.db_api.instance_mapper_update(context, instance_id,
+                                                  project_id,
+                                                  instance_info, delete=True)
+
+    def instance_mapper_delete(self, context, instance_id, project_id=None):
+        return self.db_api.instance_mapper_delete(context, instance_id,
+                                                  project_id)
+
+    def volume_mapper_all(self, context):
+        return self.db_api.volume_mapper_all(context)
+
+    def volume_mapper_get(self, context, volume_id, project_id=None):
+        return self.db_api.volume_mapper_get(context, volume_id, project_id)
+
+    def volume_mapper_create(self, context, volume_id, project_id, values):
+        return self.db_api.volume_mapper_create(context, volume_id,
+                                                project_id,
+                                                values)
+
+    def volume_mapper_update(self, context, volume_id, project_id, values):
+        set_properties = values.get("set_properties", {})
+        unset_properties = values.get("unset_properties", {})
+        volume_info = self.volume_mapper_get(context, volume_id,
+                                             project_id)
+
+        for key, value in set_properties.iteritems():
+            volume_info[key] = value
+        for key in unset_properties.keys():
+            if key in volume_info:
+                del volume_info[key]
+
+        del volume_info['volume_id']
+        del volume_info['project_id']
+
+        return self.db_api.volume_mapper_update(context, volume_id,
+                                                project_id,
+                                                volume_info, delete=True)
+
+    def volume_mapper_delete(self, context, volume_id, project_id=None):
+        return self.db_api.volume_mapper_delete(context, volume_id,
+                                                project_id)
+
+    def volume_snapshot_mapper_all(self, context):
+        return self.db_api.volume_snapshot_mapper_all(context)
+
+    def volume_snapshot_mapper_get(self, context, volume_snapshot_id,
+                                   project_id=None):
+        return self.db_api.volume_snapshot_mapper_get(context,
+                                                      volume_snapshot_id,
+                                                      project_id)
+
+    def volume_snapshot_mapper_create(self, context, volume_snapshot_id,
+                                      project_id, values):
+        return self.db_api.volume_snapshot_mapper_create(context,
+                                                         volume_snapshot_id,
+                                                         project_id,
+                                                         values)
+
+    def volume_snapshot_mapper_update(self, context, volume_snapshot_id,
+                                      project_id, values):
+        set_properties = values.get("set_properties", {})
+        unset_properties = values.get("unset_properties", {})
+        volume_snapshot_info = self.volume_snapshot_mapper_get(context,
+                                                               volume_snapshot_id,
+                                                               project_id)
+
+        for key, value in set_properties.iteritems():
+            volume_snapshot_info[key] = value
+        for key in unset_properties.keys():
+            if key in volume_snapshot_info:
+                del volume_snapshot_info[key]
+
+        del volume_snapshot_info['snapshot_id']
+        del volume_snapshot_info['project_id']
+
+        return self.db_api.volume_snapshot_mapper_update(context,
+                                                         volume_snapshot_id,
+                                                         project_id,
+                                                         volume_snapshot_info,
+                                                         delete=True)
+
+    def volume_snapshot_mapper_delete(self, context, volume_snapshot_id,
+                                      project_id=None):
+        return self.db_api.volume_snapshot_mapper_delete(context,
+                                                         volume_snapshot_id,
+                                                         project_id)
