@@ -67,30 +67,6 @@ FS_POWER_STATE = {
     FS_DOMAIN_PMSUSPENDED: power_state.SUSPENDED,
 }
 
-enable_logger_help = True
-logger_header = 'start to %s, args: %s, kwargs: %s'
-logger_end = 'end to %s, return: %s'
-
-
-def logger_helper():
-    def _wrapper(func):
-        def __wrapper(self, *args, **kwargs):
-            try:
-                if enable_logger_help:
-                    LOG.debug(logger_header % (func.func_name, args, kwargs))
-                result = func(self, *args, **kwargs)
-                if enable_logger_help:
-                    LOG.debug(logger_end % (func.func_name, result))
-                return result
-            except Exception as e:
-                LOG.error('exception occur when execute %s, exception: %s' %
-                          (func.func_name, traceback.format_exc(e)))
-                raise e
-
-        return __wrapper
-
-    return _wrapper
-
 
 class OsComputeDriver(driver.ComputeDriver):
     def __init__(self, virtapi):
@@ -346,7 +322,6 @@ class OsComputeDriver(driver.ComputeDriver):
 
         return inject_files
 
-    @logger_helper()
     def _get_agent_inject_file(self, instance, driver_param_inject_files):
         """
         1. transfer format of inject file from [('file_path', 'file_contents')] to {'file_path': 'file_contents'}
@@ -384,7 +359,6 @@ class OsComputeDriver(driver.ComputeDriver):
                                                               caa_instance_id)
         return instance_mapper.get('provider_instance_id', None)
 
-    @logger_helper()
     def _get_sub_os_instance(self, context=None, hybrid_instance=None):
         if not context:
             context = req_context.RequestContext(hybrid_instance.project_id)
@@ -1020,7 +994,6 @@ class OsComputeDriver(driver.ComputeDriver):
             raise Exception(
                 'Exception when spawn, exception: %s' % traceback.format_exc(e))
 
-    @logger_helper()
     def spawn(self, context, instance, image_meta, injected_files,
               admin_password, network_info=None, block_device_info=None):
         """Create a new instance/VM/domain on the virtualization platform.

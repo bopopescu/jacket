@@ -135,8 +135,9 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
         return server
 
-    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
-           retry_on_exception=client_plugin.retry_if_connection_err)
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
     def get_server_by_caa_instance_id(self, caa_instance_id):
         """Return fresh server object.
 
@@ -150,7 +151,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
         for server in server_list:
             if hasattr(server, 'metadata'):
-                temp_id = server.metdata.get('tag:caa_instance_id', None)
+                temp_id = server.metadata.get('tag:caa_instance_id', None)
                 if temp_id == caa_instance_id:
                     return server
 
