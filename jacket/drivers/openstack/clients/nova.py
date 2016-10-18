@@ -17,6 +17,7 @@ import time
 
 from novaclient import client as nc
 from novaclient import exceptions
+from novaclient import base
 from oslo_log import log as logging
 from retrying import retry
 import six
@@ -29,12 +30,12 @@ from jacket.i18n import _
 from jacket.i18n import _LI
 from jacket.i18n import _LW
 
-
 LOG = logging.getLogger(__name__)
 
 CONF = conf.CONF
 CLIENT_RETRY_LIMIT = CONF.clients_drivers.client_retry_limit
 REBOOT_SOFT, REBOOT_HARD = 'SOFT', 'HARD'
+
 
 def retry_auth_failed(exe):
     # todo auth failed ,need to retry, refresh os_context
@@ -177,9 +178,9 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                          'exception': exc})
         except exceptions.ClientException as exc:
             if ((getattr(exc, 'http_status', getattr(exc, 'code', None)) in
-                 (500, 503))):
+                     (500, 503))):
                 LOG.warning(_LW("Received the following exception when "
-                            "fetching server (%(id)s) : %(exception)s"),
+                                "fetching server (%(id)s) : %(exception)s"),
                             {'id': server_id,
                              'exception': exc})
             else:
@@ -224,12 +225,12 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
            wait_fixed=2000,
            retry_on_exception=retry_auth_failed)
     def create_server(self, name, image, flavor, meta=None, files=None,
-               reservation_id=None, min_count=None,
-               max_count=None, security_groups=None, userdata=None,
-               key_name=None, availability_zone=None,
-               block_device_mapping=None, block_device_mapping_v2=None,
-               nics=None, scheduler_hints=None,
-               config_drive=None, disk_config=None, **kwargs):
+                      reservation_id=None, min_count=None,
+                      max_count=None, security_groups=None, userdata=None,
+                      key_name=None, availability_zone=None,
+                      block_device_mapping=None, block_device_mapping_v2=None,
+                      nics=None, scheduler_hints=None,
+                      config_drive=None, disk_config=None, **kwargs):
         """
         Create (boot) a new server.
 
@@ -268,12 +269,14 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                             values are 'AUTO' or 'MANUAL'.
         """
         return self.client().servers.create(name, image, flavor, meta, files,
-               reservation_id, min_count,
-               max_count, security_groups, userdata,
-               key_name, availability_zone,
-               block_device_mapping, block_device_mapping_v2,
-               nics, scheduler_hints,
-               config_drive, disk_config)
+                                            reservation_id, min_count,
+                                            max_count, security_groups,
+                                            userdata,
+                                            key_name, availability_zone,
+                                            block_device_mapping,
+                                            block_device_mapping_v2,
+                                            nics, scheduler_hints,
+                                            config_drive, disk_config)
 
     @retry(stop_max_attempt_number=3,
            wait_fixed=2000,
@@ -316,7 +319,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                          'exception': exc})
         except exceptions.ClientException as exc:
             if ((getattr(exc, 'http_status', getattr(exc, 'code', None)) in
-                 (500, 503))):
+                     (500, 503))):
                 LOG.warning(_LW('Server "%(name)s" (%(id)s) received the '
                                 'following exception during server.get(): '
                                 '%(exception)s'),
@@ -415,11 +418,14 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
     def get_flavor_detail(self):
         return self.client().flavors.list()
 
-    def check_opt_server_complete(self, server_id, opt, task_states,
+    def check_opt_server_complete(self, server, opt, task_states,
                                   wait_statuses, is_ignore_not_found=False):
         """Wait for server to disappear from Nova."""
         try:
-            server = self.fetch_server(server_id)
+            if isinstance(server, six.string_types):
+                server = self.fetch_server(server)
+            else:
+                self.refresh_server(server)
         except Exception as exc:
             if is_ignore_not_found:
                 return self.ignore_not_found(exc)
@@ -638,7 +644,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         """Return the absolute limits as a dictionary."""
         limits = self.client().limits.get()
         return dict([(limit.name, limit.value)
-                    for limit in list(limits.absolute)])
+                     for limit in list(limits.absolute)])
 
     @retry(stop_max_attempt_number=3,
            wait_fixed=2000,
@@ -789,8 +795,74 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         return set(extension.alias for extension in extensions)
 
     @retry(stop_max_attempt_number=3,
-           wait_fixed=2000,
+           wait_fixed=1000,
            retry_on_exception=retry_auth_failed)
     def has_extension(self, alias):
         """Check if specific extension is present."""
         return alias in self._list_extensions()
+
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=1000,
+           retry_on_exception=retry_auth_failed)
+    def get_console_output(self, server, length=None):
+        return self.client().servers.get_console_output(server, length)
+
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=1000,
+           retry_on_exception=retry_auth_failed)
+    def get_diagnostics(self, server):
+        return self.client().servers.diagnostics(server)[1]
+
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=1000,
+           retry_on_exception=retry_auth_failed)
+    def rescue(self, server, password=None, image=None):
+        self.client().servers.rescue(server, password=password, image=image)
+
+    @retry(stop_max_attempt_number=60,
+           wait_fixed=2000,
+           retry_on_result=client_plugin.retry_if_result_is_false,
+           retry_on_exception=retry_auth_failed)
+    def check_rescue_instance_complete(self, provider_instance):
+        LOG.info(_LI("wait instance(%s) rescue complete"), provider_instance)
+
+        opt = "rescue"
+        task_states = ["rescuing"]
+        wait_statuses = ["RESCUE"]
+
+        return self.check_opt_server_complete(provider_instance, opt,
+                                              task_states,
+                                              wait_statuses)
+
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=1000,
+           retry_on_exception=retry_auth_failed)
+    def unrescue(self, server):
+        self.client().servers.unrescue(server)
+
+    @retry(stop_max_attempt_number=60,
+           wait_fixed=2000,
+           retry_on_result=client_plugin.retry_if_result_is_false,
+           retry_on_exception=retry_auth_failed)
+    def check_unrescue_instance_complete(self, provider_instance):
+        LOG.info(_LI("wait instance(%s) unrescue complete"), provider_instance)
+
+        opt = "unrescue"
+        task_states = ["unrescuing"]
+        wait_statuses = ["ACTIVE"]
+
+        return self.check_opt_server_complete(provider_instance, opt,
+                                              task_states,
+                                              wait_statuses)
+
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=1000,
+           retry_on_exception=retry_auth_failed)
+    def trigger_crash_dump(self, server):
+        return self.client().servers.trigger_crash_dump(server)
+
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=1000,
+           retry_on_exception=retry_auth_failed)
+    def change_password(self, server, password):
+        self.client().servers.change_password(server, password)

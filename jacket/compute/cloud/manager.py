@@ -6558,7 +6558,7 @@ class ComputeManager(manager.Manager):
         """Reclaim instances that are queued for deletion."""
         interval = CONF.reclaim_instance_interval
         if interval <= 0:
-            LOG.debug("CONF.reclaim_instance_interval <= 0, skipping...")
+            LOG.debug("CONF.reclaim_instanc e_interval <= 0, skipping...")
             return
 
         # TODO(comstud, jichenjc): Dummy quota object for now See bug 1296414.

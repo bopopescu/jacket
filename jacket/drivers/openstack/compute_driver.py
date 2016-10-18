@@ -415,6 +415,36 @@ class OsComputeDriver(driver.ComputeDriver):
             volume_name = 'volume'
         return '@'.join([volume_name, volume_id])
 
+    def list_instance_uuids(self):
+        uuids = []
+        context = req_context.RequestContext(project_id='default')
+        servers = self.os_novaclient(context).list()
+        for server in servers:
+            server_id = server.id
+            uuids.append(server_id)
+
+        LOG.debug('list_instance_uuids: %s' % uuids)
+        return uuids
+
+    def list_instances(self):
+        """List VM instances from all nodes.
+        :return: list of instance id. e.g.['id_001', 'id_002', ...]
+        """
+
+        instances = []
+        context = req_context.RequestContext(project_id='default')
+        servers = self.os_novaclient(context).list()
+        for server in servers:
+            server_name = server.name
+            instances.append(server_name)
+
+        LOG.debug('list_instance: %s' % instances)
+        return instances
+
+    def get_console_output(self, context, instance):
+        provider_uuid = self._get_provider_instance_id(context, instance.uuid)
+        return self.os_novaclient(context).get_console_output(provider_uuid)
+
     def volume_create(self, context, instance):
         size = instance.get_flavor().get('root_gb')
         volume_name = instance.uuid
@@ -797,21 +827,6 @@ class OsComputeDriver(driver.ComputeDriver):
     def init_host(self, host):
         pass
 
-    def list_instances(self):
-        """List VM instances from all nodes.
-        :return: list of instance id. e.g.['id_001', 'id_002', ...]
-        """
-
-        instances = []
-        context = req_context.RequestContext(project_id='default')
-        servers = self.os_novaclient(context).list()
-        for server in servers:
-            server_id = server.id
-            instances.append(server_id)
-
-        LOG.debug('list_instance: %s' % instances)
-        return instances
-
     def power_off(self, instance, timeout=0, retry_interval=0):
 
         LOG.debug('start to stop server: %s' % instance.uuid)
@@ -889,10 +904,6 @@ class OsComputeDriver(driver.ComputeDriver):
             LOG.warning('server status is not in ACTIVE OR STOPPED,'
                         'can not do POWER_OFF operation')
             raise exception_ex.ServerStatusException(status=server.status)
-
-    def resume_state_on_host_boot(self, context, instance, network_info,
-                                  block_device_info=None):
-        pass
 
     def snapshot(self, context, instance, image_id, update_task_state):
         pass
@@ -1148,3 +1159,79 @@ class OsComputeDriver(driver.ComputeDriver):
         provider_name = self._generate_sub_os_instance_name(display_name,
                                                             instance.uuid)
         self.os_novaclient(ctxt).rename(provider_uuid, provider_name)
+
+    def get_diagnostics(self, instance):
+        context = req_context.RequestContext(project_id=instance.project_id)
+        provider_uuid = self._get_provider_instance_id(context, instance.uuid)
+        return self.os_novaclient(context).get_diagnostics(provider_uuid)
+
+    def get_instance_diagnostics(self, instance):
+        context = req_context.RequestContext(project_id=instance.project_id)
+        provider_uuid = self._get_provider_instance_id(context, instance.uuid)
+        return self.os_novaclient(context).get_diagnostics(provider_uuid)
+
+    def resume_state_on_host_boot(self, context, instance, network_info,
+                                  block_device_info=None):
+        """resume guest state when a host is booted."""
+        # Check if the instance is running already and avoid doing
+        # anything if it is.
+        try:
+            provider_instance = self._get_sub_os_instance(context, instance)
+
+            ignored_states = ("ACTIVE",
+                              "SUSPENDED",
+                              "PAUSED")
+
+            if provider_instance.status in ignored_states:
+                return
+
+            provider_instance.reboot('HARD')
+        except exception.NovaException:
+            pass
+
+    def rescue(self, context, instance, network_info, image_meta,
+               rescue_password):
+
+        provider_instance = self._get_sub_os_instance(context, instance)
+
+        rescue_image_id = None
+        if image_meta.obj_attr_is_set("id"):
+            rescue_image_id = image_meta.id
+
+        image_id = (rescue_image_id or CONF.libvirt.rescue_image_id or
+                    instance.image_ref)
+
+        provider_image_id = self._get_sub_image_id(context, image_id)
+
+        LOG.debug("+++image id = %s", provider_image_id)
+
+        provider_instance.rescue(rescue_password, provider_image_id)
+
+        self.os_novaclient(context).check_rescue_instance_complete(
+            provider_instance)
+
+    def unrescue(self, instance, network_info):
+
+        context = req_context.RequestContext(project_id=instance.project_id)
+
+        provider_instance = self._get_sub_os_instance(context, instance)
+        provider_instance.unrescue()
+
+        self.os_novaclient(context).check_unrescue_instance_complete(
+            provider_instance)
+
+    def trigger_crash_dump(self, instance):
+        context = req_context.RequestContext(project_id=instance.project_id)
+
+        provider_instance_uuid = self._get_provider_instance_id(context,
+                                                                instance.uuid)
+        return self.os_novaclient(context).trigger_crash_dump(
+            provider_instance_uuid)
+
+    def set_admin_password(self, instance, new_pass):
+        context = req_context.RequestContext(project_id=instance.project_id)
+
+        provider_instance_uuid = self._get_provider_instance_id(context,
+                                                                instance.uuid)
+        self.os_novaclient(context).change_password(
+            provider_instance_uuid, new_pass)
