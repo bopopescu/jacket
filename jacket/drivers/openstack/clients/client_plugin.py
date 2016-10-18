@@ -25,6 +25,7 @@ import six
 
 from jacket import conf
 from jacket import exception as jacket_exception
+from jacket.drivers.openstack import exception_ex
 
 CONF = conf.CONF
 LOG = logging.getLogger(__name__)
@@ -114,16 +115,12 @@ class ClientPlugin(object):
             and not self.os_context.auth_needs_refresh()):
             return self._client_instances[version]
 
-        # Back-ward compatibility
-        if version is None:
-            self._client_instances[version] = self._create()
-        else:
-            if version not in self.SUPPORTED_VERSION:
-                raise jacket_exception.OsInvalidServiceVersion(
-                    version=version,
-                    service=self._get_service_name())
+        if version not in self.SUPPORTED_VERSION:
+            raise jacket_exception.OsInvalidServiceVersion(
+                version=version,
+                service=self._get_service_name())
 
-            self._client_instances[version] = self._create(version=version)
+        self._client_instances[version] = self._create(version=version)
 
         return self._client_instances[version]
 
@@ -213,9 +210,14 @@ class ClientPlugin(object):
             return False
 
 
-def retry_if_connection_err(exception):
-    return isinstance(exception, requests.ConnectionError)
+def retry_if_ignore_exe(exception):
+    return isinstance(exception, requests.ConnectionError) or \
+           isinstance(exception, exception_ex.Unauthorized)
 
 
 def retry_if_result_is_false(result):
     return result is False
+
+
+def retry_auth_failed(exe):
+    return isinstance(exe, exception_ex.Unauthorized)

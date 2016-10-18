@@ -10,9 +10,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from jacket.compute.exception import * # noqu
+from jacket.compute.exception import *  # noqu
 from jacket.i18n import _
 from jacket.exception import JacketException
+
 
 class MultiInstanceConfusion(JacketException):
     msg_fmt = _("More than one instance are found")
@@ -126,3 +127,7 @@ class OsNovaConnectFailed(JacketException):
 
 class OsInvalidServiceVersion(JacketException):
     msg_fmt = _("Invalid service %(service)s version %(version)s")
+
+
+class Unauthorized(JacketException):
+    msg_fmt = "authorize failed!"

@@ -11,11 +11,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import functools
+
 from glanceclient import client as gc
 from glanceclient import exc
 from glanceclient.openstack.common.apiclient import exceptions
 
 from oslo_log import log as logging
+from oslo_utils import excutils
+from retrying import retry
 import six.moves.urllib.parse as urlparse
 
 from keystoneauth1 import discover
@@ -25,14 +29,30 @@ from keystoneauth1.identity import v3 as v3_auth
 from keystoneauth1 import loading
 
 from jacket import conf
+from jacket.drivers.openstack import exception_ex
 from jacket import exception
 from jacket.i18n import _
 from jacket.drivers.openstack.clients import client_plugin
 from argparse import Namespace
 
 CONF = conf.CONF
+CLIENT_RETRY_LIMIT = CONF.clients_drivers.client_retry_limit
 
 LOG = logging.getLogger(__name__)
+
+
+def wrap_auth_failed(function):
+    @functools.wraps(function)
+    def decorated_function(self, *args, **kwargs):
+        try:
+            return function(self, *args, **kwargs)
+        except (exceptions.Unauthorized):
+            with excutils.save_and_reraise_exception():
+                self.os_context.auth_refresh()
+                self.invalidate()
+                raise exception_ex.Unauthorized()
+
+    return decorated_function
 
 
 class GlanceClientPlugin(client_plugin.ClientPlugin):
@@ -211,13 +231,13 @@ class GlanceClientPlugin(client_plugin.ClientPlugin):
                 'name': entity,
                 'args': kwargs
             }
-            raise exception.NotFound(msg)
+            raise exception_ex.NotFound(msg)
         elif num_matches > 1:
             msg = _("No %(name)s unique match found for %(args)s.") % {
                 'name': entity,
                 'args': kwargs
             }
-            raise exception.NoUniqueMatch(msg)
+            raise exception_ex.NoUniqueMatch(msg)
         else:
             return matches[0]
 
@@ -236,6 +256,9 @@ class GlanceClientPlugin(client_plugin.ClientPlugin):
     def is_conflict(self, ex):
         return isinstance(ex, (exceptions.Conflict, exc.Conflict))
 
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def find_image_by_name_or_id(self, image_identifier):
         """Return the ID for the specified image name or identifier.
 
@@ -249,6 +272,9 @@ class GlanceClientPlugin(client_plugin.ClientPlugin):
         # that would differentiate similar resource names across tenants.
         return self.get_image(image_identifier).id
 
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def get_image(self, image_identifier):
         """Return the image object for the specified image name/id.
 

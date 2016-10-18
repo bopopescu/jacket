@@ -99,3 +99,7 @@ class OsClientContext(object):
 
     def auth_needs_refresh(self):
         return False
+
+    def auth_refresh(self):
+        LOG.debug("begin to auth refresh")
+        self.init_os_context(self.context)

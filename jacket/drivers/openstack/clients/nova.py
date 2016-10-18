@@ -11,14 +11,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from eventlet import greenthread
 import collections
-import time
+import functools
 
 from novaclient import client as nc
 from novaclient import exceptions
-from novaclient import base
 from oslo_log import log as logging
+from oslo_utils import excutils
 from retrying import retry
 import six
 
@@ -37,10 +36,18 @@ CLIENT_RETRY_LIMIT = CONF.clients_drivers.client_retry_limit
 REBOOT_SOFT, REBOOT_HARD = 'SOFT', 'HARD'
 
 
-def retry_auth_failed(exe):
-    # todo auth failed ,need to retry, refresh os_context
-    return False
+def wrap_auth_failed(function):
 
+    @functools.wraps(function)
+    def decorated_function(self, *args, **kwargs):
+        try:
+            return function(self, *args, **kwargs)
+        except (exceptions.Unauthorized):
+            with excutils.save_and_reraise_exception():
+                self.os_context.auth_refresh()
+                self.invalidate()
+                raise exception_ex.Unauthorized()
+    return decorated_function
 
 class NovaClientPlugin(client_plugin.ClientPlugin):
     CLIENT_NAME = 'nova'
@@ -106,7 +113,8 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                 http_status == 422)
 
     @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
-           retry_on_exception=client_plugin.retry_if_connection_err)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def get_server(self, server):
         """Return fresh server object.
 
@@ -119,7 +127,8 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
             raise exception.EntityNotFound(entity='Server', name=server)
 
     @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
-           retry_on_exception=client_plugin.retry_if_connection_err)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def get_server_by_name(self, server_name):
         """Return fresh server object.
 
@@ -136,9 +145,10 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
         return server
 
-    @retry(stop_max_attempt_number=3,
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def get_server_by_caa_instance_id(self, caa_instance_id):
         """Return fresh server object.
 
@@ -158,9 +168,10 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
         return None
 
-    @retry(stop_max_attempt_number=3,
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def fetch_server(self, server_id):
         """Fetch fresh server object from Nova.
 
@@ -187,6 +198,10 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                 raise
         return server
 
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           wait_fixed=2000,
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def list(self, detailed=True, search_opts=None, marker=None, limit=None,
              sort_keys=None, sort_dirs=None):
         return self.client().servers.list(detailed=detailed,
@@ -196,21 +211,24 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                                           sort_keys=sort_keys,
                                           sort_dirs=sort_dirs)
 
-    @retry(stop_max_attempt_number=3,
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def start(self, server):
         return self.client().servers.start(server)
 
-    @retry(stop_max_attempt_number=3,
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def stop(self, server):
         return self.client().servers.stop(server)
 
-    @retry(stop_max_attempt_number=3,
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def reboot(self, server, reboot_type=REBOOT_SOFT):
         """
         Reboot a server.
@@ -221,9 +239,10 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         """
         self.client().servers.reboot(server, reboot_type)
 
-    @retry(stop_max_attempt_number=3,
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def create_server(self, name, image, flavor, meta=None, files=None,
                       reservation_id=None, min_count=None,
                       max_count=None, security_groups=None, userdata=None,
@@ -278,9 +297,10 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                                             nics, scheduler_hints,
                                             config_drive, disk_config)
 
-    @retry(stop_max_attempt_number=3,
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def delete(self, server):
         """
 
@@ -289,21 +309,24 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         """
         return self.client().servers.delete(server)
 
-    @retry(stop_max_attempt_number=3,
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def pause(self, server):
         return self.client().servers.pause(server)
 
-    @retry(stop_max_attempt_number=3,
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def unpause(self, server):
         return self.client().servers.pause(server)
 
-    @retry(stop_max_attempt_number=3,
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def refresh_server(self, server):
         """Refresh server's attributes.
 
@@ -379,9 +402,10 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                 resource_status=server.status,
                 result=_('%s is not active') % res_name)
 
-    @retry(stop_max_attempt_number=3,
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def find_flavor_by_name_or_id(self, flavor):
         """Find the specified flavor by name or id.
 
@@ -396,9 +420,10 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         # that would differentiate similar resource names across tenants.
         return self.get_flavor(flavor).id
 
-    @retry(stop_max_attempt_number=3,
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def get_flavor(self, flavor_identifier):
         """Get the flavor object for the specified flavor name or id.
 
@@ -412,9 +437,10 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
         return flavor
 
-    @retry(stop_max_attempt_number=3,
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def get_flavor_detail(self):
         return self.client().flavors.list()
 
@@ -461,7 +487,8 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
     @retry(stop_max_attempt_number=1800,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
-           retry_on_exception=lambda exc: False)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def check_create_server_complete(self, server_id):
         """Wait for server to create success from Nova."""
 
@@ -476,7 +503,8 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
     @retry(stop_max_attempt_number=300,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
-           retry_on_exception=lambda exc: False)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def check_delete_server_complete(self, server_id):
         """Wait for server to disappear from Nova."""
 
@@ -490,7 +518,8 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
     @retry(stop_max_attempt_number=600,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
-           retry_on_exception=lambda exc: False)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def check_reboot_server_complete(self, server_id):
         """Wait for server to disappear from Nova."""
 
@@ -506,7 +535,8 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
     @retry(stop_max_attempt_number=300,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
-           retry_on_exception=lambda exc: False)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def check_start_server_complete(self, server_id):
         """Wait for server to disappear from Nova."""
 
@@ -520,7 +550,8 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
     @retry(stop_max_attempt_number=300,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
-           retry_on_exception=lambda exc: False)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def check_stop_server_complete(self, server_id):
         """Wait for server to disappear from Nova."""
 
@@ -531,9 +562,10 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         return self.check_opt_server_complete(server_id, opt, task_states,
                                               wait_statuses)
 
-    @retry(stop_max_attempt_number=3,
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def rename(self, server, name):
         """Update the name for a server."""
         if isinstance(server, six.string_types):
@@ -541,66 +573,10 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         else:
             server.update(name)
 
-    @retry(stop_max_attempt_number=3,
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
-    def resize(self, server_id, flavor_id):
-        """Resize the server."""
-        server = self.fetch_server(server_id)
-        if server:
-            server.resize(flavor_id)
-            return True
-        else:
-            return False
-
-    def check_resize(self, server_id, flavor):
-        """Verify that a resizing server is properly resized.
-
-        If that's the case, confirm the resize, if not raise an error.
-        """
-        server = self.fetch_server(server_id)
-        # resize operation is asynchronous so the server resize may not start
-        # when checking server status (the server may stay ACTIVE instead
-        # of RESIZE).
-        if not server or server.status in ('RESIZE', 'ACTIVE'):
-            return False
-        if server.status == 'VERIFY_RESIZE':
-            return True
-        else:
-            raise exception.Error(
-                _("Resizing to '%(flavor)s' failed, status '%(status)s'") %
-                dict(flavor=flavor, status=server.status))
-
-    def verify_resize(self, server_id):
-        server = self.fetch_server(server_id)
-        if not server:
-            return False
-        status = self.get_status(server)
-        if status == 'VERIFY_RESIZE':
-            server.confirm_resize()
-            return True
-        else:
-            msg = _("Could not confirm resize of server %s") % server_id
-            raise exception.ResourceUnknownStatus(
-                result=msg, resource_status=status)
-
-    def check_verify_resize(self, server_id):
-        server = self.fetch_server(server_id)
-        if not server:
-            return False
-        status = self.get_status(server)
-        if status == 'ACTIVE':
-            return True
-        if status == 'VERIFY_RESIZE':
-            return False
-        else:
-            msg = _("Confirm resize for server %s failed") % server_id
-            raise exception.ResourceUnknownStatus(
-                result=msg, resource_status=status)
-
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def rebuild(self, server_id, image_id, password=None,
                 preserve_ephemeral=False):
         """Rebuild the server and call check_rebuild to verify."""
@@ -639,16 +615,19 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                     return server.networks[n][0]
 
     @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
-           retry_on_exception=client_plugin.retry_if_connection_err)
+           wait_fixed=2000,
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def absolute_limits(self):
         """Return the absolute limits as a dictionary."""
         limits = self.client().limits.get()
         return dict([(limit.name, limit.value)
                      for limit in list(limits.absolute)])
 
-    @retry(stop_max_attempt_number=3,
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def get_console_urls(self, server):
         """Return dict-like structure of server's console urls.
 
@@ -684,9 +663,10 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
         return ConsoleUrls(server)
 
-    @retry(stop_max_attempt_number=3,
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def interface_detach(self, server_id, port_id):
         server = self.fetch_server(server_id)
         if server:
@@ -695,15 +675,17 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         else:
             return False
 
-    @retry(stop_max_attempt_number=3,
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def interface_list(self, server):
         return self.client().servers.interface_list(server)
 
-    @retry(stop_max_attempt_number=3,
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def interface_attach(self, server_id, port_id=None, net_id=None, fip=None):
         server = self.fetch_server(server_id)
         if server:
@@ -714,7 +696,9 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
     @retry(stop_max_attempt_number=60,
            wait_fixed=500,
-           retry_on_result=client_plugin.retry_if_result_is_false)
+           retry_on_result=client_plugin.retry_if_result_is_false,
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def check_interface_detach(self, server_id, port_id):
         server = self.fetch_server(server_id)
         if server:
@@ -726,7 +710,9 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
     @retry(stop_max_attempt_number=60,
            wait_fixed=500,
-           retry_on_result=client_plugin.retry_if_result_is_false)
+           retry_on_result=client_plugin.retry_if_result_is_false,
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def check_interface_attach(self, server_id, port_id):
         server = self.fetch_server(server_id)
         if server:
@@ -740,35 +726,40 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         extensions = self.client().list_extensions.show_all()
         return set(extension.alias for extension in extensions)
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=1000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           wait_fixed=2000,
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def has_extension(self, alias):
         """Check if specific extension is present."""
         return alias in self._list_extensions()
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=1000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           wait_fixed=2000,
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def get_console_output(self, server, length=None):
         return self.client().servers.get_console_output(server, length)
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=1000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           wait_fixed=2000,
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def get_diagnostics(self, server):
         return self.client().servers.diagnostics(server)[1]
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=1000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           wait_fixed=2000,
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def rescue(self, server, password=None, image=None):
         self.client().servers.rescue(server, password=password, image=image)
 
     @retry(stop_max_attempt_number=60,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def check_rescue_instance_complete(self, provider_instance):
         LOG.info(_LI("wait instance(%s) rescue complete"), provider_instance)
 
@@ -780,16 +771,18 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                                               task_states,
                                               wait_statuses)
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=1000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           wait_fixed=2000,
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def unrescue(self, server):
         self.client().servers.unrescue(server)
 
     @retry(stop_max_attempt_number=60,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def check_unrescue_instance_complete(self, provider_instance):
         LOG.info(_LI("wait instance(%s) unrescue complete"), provider_instance)
 
@@ -801,21 +794,24 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                                               task_states,
                                               wait_statuses)
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=1000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           wait_fixed=2000,
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def trigger_crash_dump(self, server):
         return self.client().servers.trigger_crash_dump(server)
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=1000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           wait_fixed=2000,
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def change_password(self, server, password):
         self.client().servers.change_password(server, password)
 
-    @retry(stop_max_attempt_number=3,
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def attach_volume(self, server_id, volume_id, device):
         try:
             va = self.client().volumes.create_server_volume(
@@ -832,9 +828,10 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                 raise
         return va.id
 
-    @retry(stop_max_attempt_number=3,
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def detach_volume(self, server_id, attach_id):
         # detach the volume using volume_attachment
         try:

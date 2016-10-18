@@ -11,12 +11,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from eventlet import greenthread
-import time
+import functools
 
 from cinderclient import client as cc
 from cinderclient import exceptions
 from oslo_log import log as logging
+from oslo_utils import excutils
 from retrying import retry
 
 from jacket import conf
@@ -25,22 +25,25 @@ from jacket.drivers.openstack.clients import client_plugin
 from jacket import exception
 from jacket.i18n import _
 from jacket.i18n import _LI
-from jacket.i18n import _LW
 
 LOG = logging.getLogger(__name__)
 
 CONF = conf.CONF
+CLIENT_RETRY_LIMIT = CONF.clients_drivers.client_retry_limit
 
 
-def retry_exception_deal(exc):
-    # todo auth failed ,need to retry
+def wrap_auth_failed(function):
 
-    return False
-
-
-def retry_auth_failed(exe):
-    # todo auth failed ,need to retry, refresh os_context
-    return False
+    @functools.wraps(function)
+    def decorated_function(self, *args, **kwargs):
+        try:
+            return function(self, *args, **kwargs)
+        except (exceptions.Unauthorized):
+            with excutils.save_and_reraise_exception():
+                self.os_context.auth_refresh()
+                self.invalidate()
+                raise exception_ex.Unauthorized()
+    return decorated_function
 
 
 class CinderClientPlugin(client_plugin.ClientPlugin):
@@ -84,18 +87,18 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
         """Check if specific extension is present."""
         return alias in self._list_extensions()
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def get_volume(self, volume):
         try:
             return self.client().volumes.get(volume)
         except exceptions.NotFound:
             raise exception.EntityNotFound(entity='Volume', name=volume)
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def get_volume_by_name(self, volume_name):
         volume_list = self.client().volumes.list(
             search_opts={'name': volume_name})
@@ -104,9 +107,9 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
         else:
             return None
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def get_volume_by_caa_volume_id(self, caa_volume_id):
         volume_list = self.client().volumes.list()
         if volume_list is None or len(volume_list) <= 0:
@@ -119,9 +122,9 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
                     return volume
         return None
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def get_volume_type(self, volume_type):
         vt_id = None
         volume_type_list = self.client().volume_types.list()
@@ -135,23 +138,23 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
 
         return vt_id
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def get_volume_type_by_id(self, volume_type_id):
         volume_type = self.client().volume_types.get(volume_type_id)
         return volume_type
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def get_volume_type_detail(self):
         volume_types = self.client().volume_types.list()
         return volume_types
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def get_qos_specs(self, qos_specs):
         try:
             qos = self.client().qos_specs.get(qos_specs)
@@ -214,7 +217,8 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
     @retry(stop_max_attempt_number=60,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def check_detach_volume_complete(self, vol_id):
 
         LOG.info(_LI("wait volume(%s) detach complete"), vol_id)
@@ -226,7 +230,8 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
     @retry(stop_max_attempt_number=60,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def check_attach_volume_complete(self, vol_id):
 
         LOG.info(_LI("wait volume(%s) attach complete"), vol_id)
@@ -238,7 +243,8 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
     @retry(stop_max_attempt_number=300,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def check_create_volume_complete(self, vol_id):
         LOG.info(_LI("wait volume(%s) create complete"), vol_id)
         by_status = ['creating', 'downloading']
@@ -249,7 +255,8 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
     @retry(stop_max_attempt_number=60,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def check_delete_volume_complete(self, vol_id):
         LOG.info(_LI("wait volume(%s) delete complete"), vol_id)
         by_status = ['deleting']
@@ -263,7 +270,8 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
     @retry(stop_max_attempt_number=60,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def check_extend_volume_complete(self, vol_id):
         LOG.info(_LI("wait volume(%s) extend complete"), vol_id)
         by_status = ['extending']
@@ -273,9 +281,9 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
                                               expect_status,
                                               not_expect_status)
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def create_volume(self, size=None, snapshot_id=None, source_volid=None,
                       display_name=None, display_description=None,
                       volume_type=None, user_id=None,
@@ -289,9 +297,9 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
             project_id=project_id, availability_zone=availability_zone,
             metadata=metadata, imageRef=imageRef)
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def delete_volume(self, volume):
         """Delete a volume.
 
@@ -299,21 +307,21 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
         """
         return self.client().volumes.delete(volume)
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def update_volume(self, volume_id, **kwargs):
         return self.client().volumes.update(volume_id, **kwargs)
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def detach(self, volume, attachment_uuid):
         return self.client().volumes.detach(volume, attachment_uuid)
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def get_volume_snapshot(self, snapshot):
         try:
             return self.client().volume_snapshots.get(snapshot)
@@ -321,9 +329,9 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
             raise exception.EntityNotFound(entity='VolumeSnapshot',
                                            name=snapshot)
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def get_volume_snapshot_by_name(self, snap_name):
         snapshots = self.client().volume_snapshots.list(
             search_opts={'name': snap_name})
@@ -332,9 +340,9 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
         else:
             return None
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def get_snapshot_by_caa_snap_id(self, caa_snap_id):
         snap_list = self.client().volume_snapshots.list()
         if snap_list is None or len(snap_list) <= 0:
@@ -347,9 +355,9 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
                     return snap
         return None
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def create_snapshot(self, volume_id, force=False, name=None,
                         description=None, metadata=None):
         return self.client().volume_snapshots.create(volume_id, force=force,
@@ -357,22 +365,23 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
                                                      description=description,
                                                      metadata=metadata)
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def delete_snapshot(self, snapshot, force=False):
         return self.client().volume_snapshots.delete(snapshot, force=force)
 
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def update_snapshot(self, snapshot_id, **kwargs):
         return self.client().volume_snapshots.update(snapshot_id, **kwargs)
 
     @retry(stop_max_attempt_number=60,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def check_create_snapshot_complete(self, snap_id):
         snap = self.client().volume_snapshots.get(snap_id)
         if snap.status in ('creating'):
@@ -395,7 +404,8 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
     @retry(stop_max_attempt_number=60,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
-           retry_on_exception=retry_auth_failed)
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def check_delete_snapshot_complete(self, snap_id):
         try:
             snap = self.client().volume_snapshots.get(snap_id)
