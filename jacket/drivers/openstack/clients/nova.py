@@ -812,3 +812,37 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
            retry_on_exception=retry_auth_failed)
     def change_password(self, server, password):
         self.client().servers.change_password(server, password)
+
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
+    def attach_volume(self, server_id, volume_id, device):
+        try:
+            va = self.client().volumes.create_server_volume(
+                server_id=server_id,
+                volume_id=volume_id)
+        except Exception as ex:
+            if self.is_client_exception(ex):
+                raise exception.Error(_(
+                    "Failed to attach volume %(vol)s to server %(srv)s "
+                    "- %(err)s") % {'vol': volume_id,
+                                    'srv': server_id,
+                                    'err': ex})
+            else:
+                raise
+        return va.id
+
+    @retry(stop_max_attempt_number=3,
+           wait_fixed=2000,
+           retry_on_exception=retry_auth_failed)
+    def detach_volume(self, server_id, attach_id):
+        # detach the volume using volume_attachment
+        try:
+            self.client().volumes.delete_server_volume(server_id, attach_id)
+        except Exception as ex:
+            if not (self.is_not_found(ex)
+                    or self.is_bad_request(ex)):
+                raise exception.Error(
+                    _("Could not detach attachment %(att)s "
+                      "from server %(srv)s.") % {'srv': server_id,
+                                                 'att': attach_id})
