@@ -687,60 +687,6 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
     @retry(stop_max_attempt_number=3,
            wait_fixed=2000,
            retry_on_exception=retry_auth_failed)
-    def attach_volume(self, server_id, volume_id, device):
-        try:
-            va = self.client().volumes.create_server_volume(
-                server_id=server_id,
-                volume_id=volume_id)
-        except Exception as ex:
-            if self.is_client_exception(ex):
-                raise exception.Error(_(
-                    "Failed to attach volume %(vol)s to server %(srv)s "
-                    "- %(err)s") % {'vol': volume_id,
-                                    'srv': server_id,
-                                    'err': ex})
-            else:
-                raise
-        return va.id
-
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
-    def detach_volume(self, server_id, attach_id):
-        # detach the volume using volume_attachment
-        try:
-            self.client().volumes.delete_server_volume(server_id, attach_id)
-        except Exception as ex:
-            if not (self.is_not_found(ex)
-                    or self.is_bad_request(ex)):
-                raise exception.Error(
-                    _("Could not detach attachment %(att)s "
-                      "from server %(srv)s.") % {'srv': server_id,
-                                                 'att': attach_id})
-
-    def check_detach_volume_complete(self, server_id, attach_id):
-        """Check that nova server lost attachment.
-
-        This check is needed for immediate reattachment when updating:
-        there might be some time between cinder marking volume as 'available'
-        and nova removing attachment from its own objects, so we
-        check that nova already knows that the volume is detached.
-        """
-        try:
-            self.client().volumes.get_server_volume(server_id, attach_id)
-        except Exception as ex:
-            self.ignore_not_found(ex)
-            LOG.info(_LI("Volume %(vol)s is detached from server %(srv)s"),
-                     {'vol': attach_id, 'srv': server_id})
-            return True
-        else:
-            LOG.debug("Server %(srv)s still has attachment %(att)s." % {
-                'att': attach_id, 'srv': server_id})
-            return False
-
-    @retry(stop_max_attempt_number=3,
-           wait_fixed=2000,
-           retry_on_exception=retry_auth_failed)
     def interface_detach(self, server_id, port_id):
         server = self.fetch_server(server_id)
         if server:
