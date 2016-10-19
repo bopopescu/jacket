@@ -1,20 +1,29 @@
-__author__ = 'luorui'
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
 
-from jacket.worker.hypercontainer.wormhole_business import *
-from jacket.compute.virt.driver import CONF
 
+from oslo_log import log as logging
+
+from jacket import conf
+from jacket.i18n import _LI, _LW
+from jacket.worker.hypercontainer.wormhole_business import RetryDecorator
+from jacket.worker.hypercontainer.wormhole_business import WormHoleBusiness
+from jacket.worker.hypercontainer.wormhole_business import RetryException
 from wormholeclient.client import Client
 
 LOG = logging.getLogger(__name__)
 
-hybrid_cloud_agent_opts = [
-    cfg.StrOpt('hybrid_service_port',
-               default='7127',
-               help='The route gw of the provider network.'),
-]
-
-CONF = cfg.CONF
-CONF.register_opts(hybrid_cloud_agent_opts, 'hybrid_cloud_agent_opts')
+CONF = conf.CONF
 
 
 class JacketHyperContainerDriver():
@@ -28,137 +37,163 @@ class JacketHyperContainerDriver():
         return wormhole
 
     def stop_container(self, instance):
+
         LOG.debug('start to stop container')
         wormhole = self._create_wormhole(instance)
+
         try:
             version = wormhole.get_version()
-        except Exception, e:
+        except Exception:
             LOG.debug('hyper service is not online, stop base vm directlly.')
             version = None
+
         if version:
-            stop_result = wormhole.stop_container()
-        LOG.info('Stop Server: %s, result is: %s' % (
-        instance.display_name, stop_result))
+            wormhole.stop_container()
+
+        LOG.info(_LI('in Server: %s, stop container success!') % (
+            instance.display_name))
 
     def start_container(self, instance, network_info, block_device_info):
+
         wormhole = self._create_wormhole(instance)
         LOG.debug('start to start container')
+
         try:
             version = wormhole.get_version()
-        except Exception, e:
+        except Exception:
             LOG.error('hyper service is not online, no need to start container')
             version = None
 
         if version:
-            start_result = wormhole.start_container(network_info,
-                                                    block_device_info)
+            wormhole.start_container(network_info,
+                                     block_device_info)
 
-        LOG.info('Start Server: %s, result is: %s' % (
-        instance.display_name, start_result))
+        LOG.info(_LI('in Server: %s, start container success!') % (
+            instance.display_name))
 
     def restart_container(self, instance, network_info, block_device_info):
+
         wormhole = self._create_wormhole(instance)
         LOG.debug('start to restart container')
+
         try:
             version = wormhole.get_version()
-        except Exception, e:
+        except Exception:
             LOG.error(
                 'hyper service is not online, no need to restart container')
             version = None
 
         if version:
-            restart_result = wormhole.restart_container(network_info,
-                                                        block_device_info)
+            wormhole.restart_container(network_info,
+                                       block_device_info)
 
-        LOG.info('Restart Server: %s, result is: %s' % (
-        instance.display_name, restart_result))
+        LOG.info(_LI('in Server: %s, restart container success!') % (
+            instance.display_name))
 
     def pause(self, instance):
+
         LOG.debug('start to pause instance: %s' % instance)
         wormhole = self._create_wormhole(instance)
         try:
             version = wormhole.get_version()
-        except Exception, e:
+        except Exception:
             LOG.error('hyper service is not online')
             version = None
+
         if version:
-            pause_result = wormhole.pause()
-        LOG.info('Pause Server: %s, result is: %s' % (
-        instance.display_name, pause_result))
+            wormhole.pause()
+
+        LOG.info(_LI('in Server: %s, pause container success!') % (
+            instance.display_name))
 
     def unpause(self, instance):
+
         LOG.debug('start to unpause instance: %s' % instance)
         wormhole = self._create_wormhole(instance)
+
         try:
             version = wormhole.get_version()
-        except Exception, e:
+        except Exception:
             LOG.error('hyper service is not online')
             version = None
+
         if version:
-            unpause_result = wormhole.unpause()
-        LOG.info('Unpause Server: %s, result is: %s' % (
-        instance.display_name, unpause_result))
+            wormhole.unpause()
+
+        LOG.info(_LI('in Server: %s, unpause container success!') % (
+            instance.display_name))
 
     def attach_interface(self, instance, vif):
+
         LOG.debug('start to attach interface: %s' % vif)
         wormhole = self._create_wormhole(instance)
         try:
             version = wormhole.get_version()
-        except Exception, e:
+        except Exception:
             LOG.error('hyper service is not online')
             version = None
+
         if version:
-            attach_result = wormhole.attach_interface(vif)
-        LOG.info('Attach interface result is: %s' % attach_result)
+            wormhole.attach_interface(vif)
+
+        LOG.info(_LI('in Server: %s, container attach interface success!') % (
+            instance.display_name))
 
     def detach_interface(self, instance, vif):
         LOG.debug('start to detach interface: %s' % vif)
         wormhole = self._create_wormhole(instance)
         try:
             version = wormhole.get_version()
-        except Exception, e:
+        except Exception:
             LOG.error('hyper service is not online')
             version = None
+
         if version:
-            detach_result = wormhole.detach_interface(vif)
-        LOG.info('Detach interface result is: %s' % detach_result)
+            wormhole.detach_interface(vif)
+
+        LOG.info(_LI('in Server: %s, container detach interface success!') % (
+            instance.display_name))
 
     def attach_volume(self, instance, volume_id, device, mount_device):
         LOG.debug('start to attach volume: %s' % volume_id)
         wormhole = self._create_wormhole(instance)
         try:
             version = wormhole.get_version()
-        except Exception, e:
+        except Exception:
             LOG.error('hyper service is not online')
             version = None
+
         if version:
-            attach_result = wormhole.attach_volume(volume_id, device,
-                                                   mount_device)
-        LOG.info('Attach Volume result is: %s' % attach_result)
+            wormhole.attach_volume(volume_id, device,
+                                   mount_device)
+        LOG.info(_LI('Attach Volume success!'), instance=instance)
 
     def detach_volume(self, instance, volume_id):
         LOG.debug('start to detach volume: %s' % volume_id)
         wormhole = self._create_wormhole(instance)
         try:
             version = wormhole.get_version()
-        except Exception, e:
+        except Exception:
             LOG.error('hyper service is not online')
             version = None
+
         if version:
-            detach_result = wormhole.detach_volume(volume_id)
-        LOG.info('Detach Volume result is: %s' % detach_result)
+            wormhole.detach_volume(volume_id)
+        LOG.info(_LI('Detach Volume success!'))
 
     def list_volumes(self, instance):
         LOG.debug('List volumes')
         wormhole = self._create_wormhole(instance)
         try:
             version = wormhole.get_version()
-        except Exception, e:
+        except Exception:
             LOG.error('hyper service is not online')
             version = None
+
+        list_result = []
         if version:
             list_result = wormhole.list_volume()
-        LOG.info('List Volume result is: %s' % list_result)
+        LOG.info(_LI('List Volume result is: %s') % list_result)
         return list_result
 
     def status(self, instance):
@@ -166,12 +201,14 @@ class JacketHyperContainerDriver():
         wormhole = self._create_wormhole(instance)
         try:
             version = wormhole.get_version()
-        except Exception, e:
+        except Exception:
             LOG.error('hyper service is not online')
             version = None
+
+        status_result = None
         if version:
             status_result = wormhole.status()
-        LOG.info('Get container status result is: %s' % status_result)
+        LOG.info(_LI('Get container status result is: %s') % status_result)
         return status_result
 
     @RetryDecorator(max_retry_count=50, inc_sleep_time=5, max_sleep_time=30,
@@ -181,12 +218,13 @@ class JacketHyperContainerDriver():
         wormhole = self._create_wormhole(instance)
         try:
             status_result = wormhole.status()
-            if status_result['status']['code'] == specified_status:
+            if status_result is not None and \
+                            status_result['status']['code'] == specified_status:
                 return
-        except Exception, e:
-            LOG.warning('hyper service is not online')
-        LOG.warning('hyper service is not in specified status')
-        raise RetryException
+        except Exception:
+            LOG.warning(_LW('hyper service is not online'))
+        LOG.warning(_LW('hyper service is not in specified status'))
+        raise RetryException()
 
     def _get_clients(self, ips, port):
         clients = []

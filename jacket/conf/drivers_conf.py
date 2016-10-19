@@ -47,6 +47,9 @@ client_http_log_debug_opts = [
                 help=_("Allow client's debug log output."))]
 
 hybrid_cloud_agent_opts = [
+    cfg.StrOpt('hybrid_service_port',
+               default='7127',
+               help='The route gw of the provider network.'),
     cfg.StrOpt('tunnel_cidr', help='tunnel_cidr', default='172.28.48.0/24'),
     cfg.StrOpt('route_gw', help='route_gw', default='172.28.48.254'),
     cfg.StrOpt('personality_path',

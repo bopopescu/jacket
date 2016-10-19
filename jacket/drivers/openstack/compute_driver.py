@@ -19,15 +19,14 @@ Driver base-classes:
     types that support that contract
 """
 
+import copy
 import socket
 import traceback
-import base64
 
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
 
 from jacket.compute.cloud import power_state
-from jacket.compute.network.neutronv2 import api as network_api
 from jacket.compute.cloud import vm_states
 from jacket.compute.virt import driver
 from jacket.compute.virt import hardware
@@ -818,8 +817,11 @@ class OsComputeDriver(driver.ComputeDriver):
                     raise
             else:
                 image_ref = None
+            if instance.metadata:
+                metadata = copy.deepcopy(instance.metadata)
+            else:
+                metadata = {}
 
-            metadata = instance.metadata
             metadata = self._add_tag_to_metadata(metadata, instance.uuid)
             LOG.debug('metadata: %s' % metadata)
 

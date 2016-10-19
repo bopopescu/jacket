@@ -34,7 +34,6 @@ from jacket.i18n import _, _LE
 
 LOG = logging.getLogger(__name__)
 
-
 CONF = cfg.CONF
 
 
@@ -261,6 +260,7 @@ class ResourceInError(JacketException):
         super(ResourceInError, self).__init__(status_reason=status_reason,
                                               **kwargs)
 
+
 class ResourceUnknownStatus(JacketException):
     msg_fmt = _('%(result)s - Unknown status %(resource_status)s due to '
                 '"%(status_reason)s"')
@@ -272,7 +272,7 @@ class ResourceUnknownStatus(JacketException):
 
 
 class Error(JacketException):
-    msg_fmt = "%(message)s"
+    msg_fmt = _("%(message)s")
 
     def __init__(self, msg):
         super(Error, self).__init__(message=msg)
