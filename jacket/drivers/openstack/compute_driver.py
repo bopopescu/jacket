@@ -111,37 +111,6 @@ class OsComputeDriver(driver.ComputeDriver):
     def after_detach_volume_success(self, job_detail_info, **kwargs):
         pass
 
-    def _add_agent_conf_to_metadata(self, instance):
-        metadata = instance.metadata
-        added_meta = None
-        personality_path = CONF.hybrid_cloud_agent_opts.personality_path
-        tunnel_cidr = CONF.hybrid_cloud_agent_opts.tunnel_cidr
-        route_gw = CONF.hybrid_cloud_agent_opts.route_gw
-        if personality_path and tunnel_cidr and route_gw:
-            neutron_agent_conf = {
-                "rabbit_userid": CONF.hybrid_cloud_agent_opts.rabbit_host_user_id,
-                "rabbit_password": CONF.hybrid_cloud_agent_opts.rabbit_host_user_password,
-                "rabbit_host": CONF.hybrid_cloud_agent_opts.rabbit_host_ip,
-                "host": instance.uuid,
-                "tunnel_cidr": tunnel_cidr,
-                "route_gw": route_gw
-            }
-        else:
-            neutron_agent_conf = {}
-
-        if metadata:
-            if neutron_agent_conf:
-                added_meta = dict(metadata, **neutron_agent_conf)
-            else:
-                added_meta = metadata
-        else:
-            if neutron_agent_conf:
-                added_meta = neutron_agent_conf
-            else:
-                added_meta = None
-
-        return added_meta
-
     def _add_tag_to_metadata(self, metadata, caa_instance_id):
         if not metadata:
             metadata = {}
@@ -200,7 +169,7 @@ class OsComputeDriver(driver.ComputeDriver):
                 if volume_id:
                     volume_display_name = bdm.get('connection_info').get(
                         'data').get('display_name')
-                    sub_volume_name = self._get_sub_os_volume_name(
+                    sub_volume_name = self._get_provider_volume_name(
                         volume_display_name, volume_id)
                     sub_volume = self.os_cinderclient(
                         context).get_volume_by_name(sub_volume_name)
@@ -253,99 +222,10 @@ class OsComputeDriver(driver.ComputeDriver):
 
         return nics
 
-    def _get_personality_data(self, instance):
-        """
-
-        :param instance:
-        :return: string, string.  string personality_path, string personality_contents
-        """
-        personality_path = CONF.hybrid_cloud_agent_opts.personality_path
-        tunnel_cidr = CONF.hybrid_cloud_agent_opts.tunnel_cidr
-        route_gw = CONF.hybrid_cloud_agent_opts.route_gw
-
-        if personality_path and tunnel_cidr and route_gw:
-            user_data = {
-                "rabbit_userid": CONF.hybrid_cloud_agent_opts.rabbit_host_user_id,
-                "rabbit_password": CONF.hybrid_cloud_agent_opts.rabbit_host_user_password,
-                "rabbit_host": CONF.hybrid_cloud_agent_opts.rabbit_host_ip,
-                "host": instance.uuid,
-                "tunnel_cidr": tunnel_cidr,
-                "route_gw": route_gw
-            }
-            file_content = self._make_personality_content(user_data)
-            # file_content = self._add_base64(file_content)
-        else:
-            LOG.info(
-                'personality setting incorrect, path: %s, '
-                'tunnel_cidr: %s, route_gw: %s' %
-                (personality_path, tunnel_cidr, route_gw))
-            personality_path = None
-            file_content = None
-
-        LOG.info(
-            'success to get personality setting, path: %s, '
-            'tunnel_cidr: %s, route_gw: %s' %
-            (personality_path, tunnel_cidr, route_gw))
-
-        return personality_path, file_content
-
-    def _add_base64(self, contents):
-        return base64.b64encode(contents)
-
-    def _make_personality_content(self, user_data):
-        file_content = ""
-        for key, value in user_data.items():
-            line_content = "".join(["=".join([key, value]), "\n"])
-            file_content = "".join([file_content, line_content])
-
-        return file_content
-
-    @staticmethod
-    def _binding_host(context, network_info, host_id):
-        neutron = network_api.get_client(context, admin=True)
-        port_req_body = {'port': {'binding:host_id': host_id}}
-        for vif in network_info:
-            neutron.update_port(vif.get('id'), port_req_body)
-
-    def _transfer_inject_files(self, driver_param_inject_files):
+    def _get_agent_inject_file(self, instance, driver_param_inject_files):
         return dict(driver_param_inject_files)
 
-    def _add_agent_conf_file_to_inject_files(self, instance, inject_files):
-        """
-
-        :param instance:
-        :param inject_files: {'file_path': 'file_contents'}
-        :return:
-        """
-        config_path, contents = self._get_personality_data(instance)
-        inject_files[config_path] = contents
-
-        return inject_files
-
-    def _get_agent_inject_file(self, instance, driver_param_inject_files):
-        """
-        1. transfer format of inject file from [('file_path', 'file_contents')] to {'file_path': 'file_contents'}
-        2. add hybrid agent config file to inject file.
-           default path of hybrid agent config file is: '/home/neutron_agent_conf.txt'
-           default content of hybrid agent config file is:
-               {
-                "rabbit_userid": CONF.hybrid_cloud_agent_opts.rabbit_host_user_id,
-                "rabbit_password": CONF.hybrid_cloud_agent_opts.rabbit_host_user_password,
-                "rabbit_host": CONF.hybrid_cloud_agent_opts.rabbit_host_ip,
-                "host": instance.uuid,
-                "tunnel_cidr": tunnel_cidr,
-                "route_gw": route_gw
-                }
-
-        :param instance:
-        :param driver_param_inject_files: [('file_path', 'file_contents')]
-        :return: {'file_path': 'file_contents'}
-        """
-        inject_files = self._transfer_inject_files(driver_param_inject_files)
-        # return self._add_agent_conf_file_to_inject_files(instance, inject_files)
-        return inject_files
-
-    def _generate_sub_os_instance_name(self, instance_name, instance_id):
+    def _generate_provider_instance_name(self, instance_name, instance_id):
         """
 
         :param instance_name: type string
@@ -359,7 +239,7 @@ class OsComputeDriver(driver.ComputeDriver):
                                                               caa_instance_id)
         return instance_mapper.get('provider_instance_id', None)
 
-    def _get_sub_os_instance(self, context=None, hybrid_instance=None):
+    def _get_provider_instance(self, context=None, hybrid_instance=None):
         if not context:
             context = req_context.RequestContext(hybrid_instance.project_id)
 
@@ -410,7 +290,7 @@ class OsComputeDriver(driver.ComputeDriver):
 
         return project_mapper
 
-    def _get_sub_os_volume_name(self, volume_name, volume_id):
+    def _get_provider_volume_name(self, volume_name, volume_id):
         if not volume_name:
             volume_name = 'volume'
         return '@'.join([volume_name, volume_id])
@@ -626,8 +506,8 @@ class OsComputeDriver(driver.ComputeDriver):
 
         cascading_volume_id = connection_info['data']['volume_id']
         cascading_volume_name = connection_info['data']['display_name']
-        su_volume_name = self._get_sub_os_volume_name(cascading_volume_name,
-                                                      cascading_volume_id)
+        su_volume_name = self._get_provider_volume_name(cascading_volume_name,
+                                                        cascading_volume_id)
 
         LOG.debug("+++hw, su_volume_name = %s", su_volume_name)
 
@@ -641,7 +521,7 @@ class OsComputeDriver(driver.ComputeDriver):
                           'volume: %s ' % cascading_volume_id)
                 raise exception_ex.VolumeNotFoundAtProvider()
 
-        sub_server = self._get_sub_os_instance(context, instance)
+        sub_server = self._get_provider_instance(context, instance)
         if not sub_server:
             LOG.error('Can not find server in provider os, '
                       'server: %s' % instance.uuid)
@@ -672,16 +552,16 @@ class OsComputeDriver(driver.ComputeDriver):
         :return:
         """
         try:
-            sub_os_server = self._get_sub_os_instance(context, instance)
+            provider_server = self._get_provider_instance(context, instance)
         except exception.EntityNotFound:
             LOG.debug("instance is not exist, no need to delete!",
                       instance=instance)
             return
 
-        if sub_os_server:
-            self.os_novaclient(context).delete(sub_os_server)
+        if provider_server:
+            self.os_novaclient(context).delete(provider_server)
             self.os_novaclient(context).check_delete_server_complete(
-                sub_os_server.id)
+                provider_server.id)
         else:
             LOG.error('Can not found server to delete.')
             # raise exception_ex.ServerNotExistException(server_name=instance.display_name)
@@ -704,8 +584,8 @@ class OsComputeDriver(driver.ComputeDriver):
 
         cascading_volume_id = connection_info['data']['volume_id']
         cascading_volume_name = connection_info['data']['display_name']
-        sub_volume_name = self._get_sub_os_volume_name(cascading_volume_name,
-                                                       cascading_volume_id)
+        sub_volume_name = self._get_provider_volume_name(cascading_volume_name,
+                                                         cascading_volume_id)
 
         context = req_context.RequestContext(instance.project_id)
 
@@ -798,7 +678,7 @@ class OsComputeDriver(driver.ComputeDriver):
     def get_info(self, instance):
         LOG.debug('get_info: %s' % instance)
         STATUS = power_state.NOSTATE
-        server = self._get_sub_os_instance(None, instance)
+        server = self._get_provider_instance(None, instance)
         LOG.debug('server: %s' % server)
         if server:
             instance_power_state = getattr(server, 'OS-EXT-STS:power_state')
@@ -830,7 +710,7 @@ class OsComputeDriver(driver.ComputeDriver):
     def power_off(self, instance, timeout=0, retry_interval=0):
 
         LOG.debug('start to stop server: %s' % instance.uuid)
-        server = self._get_sub_os_instance(hybrid_instance=instance)
+        server = self._get_provider_instance(hybrid_instance=instance)
         if not server:
             LOG.debug('can not find sub os server for '
                       'instance: %s' % instance.uuid)
@@ -859,7 +739,7 @@ class OsComputeDriver(driver.ComputeDriver):
                  block_device_info=None):
 
         LOG.debug('start to start server: %s' % instance.uuid)
-        server = self._get_sub_os_instance(context, instance)
+        server = self._get_provider_instance(context, instance)
         if not server:
             LOG.debug('can not find sub os server for '
                       'instance: %s' % instance.uuid)
@@ -884,7 +764,7 @@ class OsComputeDriver(driver.ComputeDriver):
                block_device_info=None, bad_volumes_callback=None):
 
         LOG.debug('start to reboot server: %s' % instance.uuid)
-        server = self._get_sub_os_instance(context, instance)
+        server = self._get_provider_instance(context, instance)
         if not server:
             LOG.debug('can not find sub os server for '
                       'instance: %s' % instance.uuid)
@@ -919,8 +799,8 @@ class OsComputeDriver(driver.ComputeDriver):
 
             sub_flavor_id = self._get_sub_flavor_id(context, flavor.flavorid)
 
-            name = self._generate_sub_os_instance_name(instance.display_name,
-                                                       instance.uuid)
+            name = self._generate_provider_instance_name(instance.display_name,
+                                                         instance.uuid)
             LOG.debug('name: %s' % name)
 
             image_ref = None
@@ -939,7 +819,7 @@ class OsComputeDriver(driver.ComputeDriver):
             else:
                 image_ref = None
 
-            metadata = self._add_agent_conf_to_metadata(instance)
+            metadata = instance.metadata
             metadata = self._add_tag_to_metadata(metadata, instance.uuid)
             LOG.debug('metadata: %s' % metadata)
 
@@ -1156,8 +1036,8 @@ class OsComputeDriver(driver.ComputeDriver):
         if not display_name:
             display_name = instance.display_name
 
-        provider_name = self._generate_sub_os_instance_name(display_name,
-                                                            instance.uuid)
+        provider_name = self._generate_provider_instance_name(display_name,
+                                                              instance.uuid)
         self.os_novaclient(ctxt).rename(provider_uuid, provider_name)
 
     def get_diagnostics(self, instance):
@@ -1176,7 +1056,7 @@ class OsComputeDriver(driver.ComputeDriver):
         # Check if the instance is running already and avoid doing
         # anything if it is.
         try:
-            provider_instance = self._get_sub_os_instance(context, instance)
+            provider_instance = self._get_provider_instance(context, instance)
 
             ignored_states = ("ACTIVE",
                               "SUSPENDED",
@@ -1192,7 +1072,7 @@ class OsComputeDriver(driver.ComputeDriver):
     def rescue(self, context, instance, network_info, image_meta,
                rescue_password):
 
-        provider_instance = self._get_sub_os_instance(context, instance)
+        provider_instance = self._get_provider_instance(context, instance)
 
         rescue_image_id = None
         if image_meta.obj_attr_is_set("id"):
@@ -1214,7 +1094,7 @@ class OsComputeDriver(driver.ComputeDriver):
 
         context = req_context.RequestContext(project_id=instance.project_id)
 
-        provider_instance = self._get_sub_os_instance(context, instance)
+        provider_instance = self._get_provider_instance(context, instance)
         provider_instance.unrescue()
 
         self.os_novaclient(context).check_unrescue_instance_complete(

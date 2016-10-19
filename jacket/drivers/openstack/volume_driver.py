@@ -66,7 +66,7 @@ class OsVolumeDriver(driver.VolumeDriver):
     def check_for_setup_error(self):
         return
 
-    def _get_sub_os_volume_name(self, volume_name, volume_id):
+    def _get_provider_volume_name(self, volume_name, volume_id):
         if not volume_name:
             volume_name = "volume"
         return '@'.join([volume_name, volume_id])
@@ -86,7 +86,7 @@ class OsVolumeDriver(driver.VolumeDriver):
 
         return provider_volume.id
 
-    def _get_sub_os_volume(self, context, hybrid_volume):
+    def _get_provider_volume(self, context, hybrid_volume):
         provider_volume_id = self._get_provider_volume_id(context,
                                                           hybrid_volume.id)
         if provider_volume_id:
@@ -200,7 +200,7 @@ class OsVolumeDriver(driver.VolumeDriver):
         volume_args = {}
         volume_args['size'] = volume.size
         volume_args['display_description'] = volume.display_description
-        volume_args['display_name'] = self._get_sub_os_volume_name(
+        volume_args['display_name'] = self._get_provider_volume_name(
             volume.display_name, volume.id)
 
         try:
@@ -269,7 +269,7 @@ class OsVolumeDriver(driver.VolumeDriver):
         volume_args = {}
         volume_args['size'] = volume.size
         volume_args['display_description'] = volume.display_description
-        volume_args['display_name'] = self._get_sub_os_volume_name(
+        volume_args['display_name'] = self._get_provider_volume_name(
             volume.display_name, volume.id)
 
         context = req_context.RequestContext(project_id=volume.project_id)
@@ -284,7 +284,7 @@ class OsVolumeDriver(driver.VolumeDriver):
             volume_args['volume_type'] = volume_type_name
 
         try:
-            src_sub_volume = self._get_sub_os_volume(context, src_vref)
+            src_sub_volume = self._get_provider_volume(context, src_vref)
         except exception.EntityNotFound:
             LOG.exception(_LE("not found sub volume of %s"), src_vref.id)
             raise exception_ex.VolumeNotFoundAtProvider(
@@ -335,7 +335,7 @@ class OsVolumeDriver(driver.VolumeDriver):
         volume_args = {}
         volume_args['size'] = volume.size
         volume_args['display_description'] = volume.display_description
-        volume_args['display_name'] = self._get_sub_os_volume_name(
+        volume_args['display_name'] = self._get_provider_volume_name(
             volume.display_name, volume.id)
 
         context = req_context.RequestContext(project_id=volume.project_id)
@@ -383,7 +383,7 @@ class OsVolumeDriver(driver.VolumeDriver):
     def delete_volume(self, volume):
         context = req_context.RequestContext(project_id=volume.project_id)
         try:
-            sub_volume = self._get_sub_os_volume(context, volume)
+            sub_volume = self._get_provider_volume(context, volume)
         except exception.EntityNotFound:
             LOG.debug('no sub-volume exist, '
                       'no need to delete sub volume')
@@ -408,7 +408,7 @@ class OsVolumeDriver(driver.VolumeDriver):
         context = req_context.RequestContext(project_id=volume.project_id)
 
         try:
-            sub_volume = self._get_sub_os_volume(context, volume)
+            sub_volume = self._get_provider_volume(context, volume)
         except exception.EntityNotFound:
             LOG.exception(_LE("volume(%s) not found in provider cloud!"),
                           volume.id)
@@ -426,7 +426,7 @@ class OsVolumeDriver(driver.VolumeDriver):
         volume_args = {}
         volume_args['size'] = volume.size
         volume_args['display_description'] = volume.display_description
-        volume_args['display_name'] = self._get_sub_os_volume_name(
+        volume_args['display_name'] = self._get_provider_volume_name(
             volume.display_name, volume.id)
 
         context = req_context.RequestContext(project_id=volume.project_id)
@@ -486,7 +486,7 @@ class OsVolumeDriver(driver.VolumeDriver):
         context = snapshot.context
 
         try:
-            sub_volume = self._get_sub_os_volume(context, snapshot.volume)
+            sub_volume = self._get_provider_volume(context, snapshot.volume)
         except exception.EntityNotFound:
             LOG.exception(_LE("volume(%s) not found in provider cloud!"),
                           volume_id)
@@ -624,7 +624,7 @@ class OsVolumeDriver(driver.VolumeDriver):
         if not display_name:
             display_name = volume.display_name
 
-        provider_name = self._get_sub_os_volume_name(display_name,
+        provider_name = self._get_provider_volume_name(display_name,
                                                      volume.id)
         self.os_cinderlient(ctxt).update_volume(provider_uuid,
                                                 display_name=provider_name)

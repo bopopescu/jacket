@@ -7212,5 +7212,3 @@ class ComputeManager(manager.Manager):
     def rename_instance(self, ctxt, instance, display_name=None):
         if hasattr(self.driver, "rename"):
             return self.driver.rename(ctxt, instance, display_name)
-
-
