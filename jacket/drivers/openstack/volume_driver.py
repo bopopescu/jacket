@@ -245,7 +245,7 @@ class OsVolumeDriver(driver.VolumeDriver):
         LOG.debug('start to wait for volume %s in status '
                   'available' % sub_volume.id)
         self.os_cinderlient(context).check_create_volume_complete(
-            sub_volume.id)
+            sub_volume)
 
         try:
             # create volume mapper
@@ -307,7 +307,7 @@ class OsVolumeDriver(driver.VolumeDriver):
         LOG.debug('start to wait for volume %s in status '
                   'available' % sub_volume.id)
         self.os_cinderlient(context).check_create_volume_complete(
-            sub_volume.id)
+            sub_volume)
 
         try:
             # create volume mapper
@@ -364,7 +364,7 @@ class OsVolumeDriver(driver.VolumeDriver):
         LOG.debug('start to wait for volume %s in status '
                   'available' % sub_volume.id)
         self.os_cinderlient(context).check_create_volume_complete(
-            sub_volume.id)
+            sub_volume)
 
         try:
             # create volume mapper
@@ -393,7 +393,7 @@ class OsVolumeDriver(driver.VolumeDriver):
         sub_volume.delete()
         LOG.debug('wait for volume delete')
         self.os_cinderlient(context).check_delete_volume_complete(
-            sub_volume.id)
+            sub_volume)
 
         try:
             # delelte volume snapshot mapper
@@ -415,7 +415,7 @@ class OsVolumeDriver(driver.VolumeDriver):
             raise exception_ex.VolumeNotFoundAtProvider(volume_id=volume.id)
 
         sub_volume.extend(sub_volume, new_size)
-        self.os_cinderlient(context).check_extend_volume_complete(sub_volume.id)
+        self.os_cinderlient(context).check_extend_volume_complete(sub_volume)
 
         LOG.info(_LI("extend volume(%s) success!"), sub_volume.id)
 
@@ -464,7 +464,7 @@ class OsVolumeDriver(driver.VolumeDriver):
         LOG.debug('start to wait for volume %s in status '
                   'available' % sub_volume.id)
         self.os_cinderlient(context).check_create_volume_complete(
-            sub_volume.id)
+            sub_volume)
 
         try:
             # create volume mapper

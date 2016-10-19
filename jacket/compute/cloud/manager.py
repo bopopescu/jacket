@@ -7017,6 +7017,8 @@ class ComputeManager(manager.Manager):
                             injected_files, admin_password,
                             network_info, block_device_info):
 
+        block_device_info = block_device_info or {}
+
         bdms = block_device_info.get('block_device_mapping', [])
         block_device_info['block_device_mapping'] = []
         for bdm in bdms:

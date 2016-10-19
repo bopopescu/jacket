@@ -489,7 +489,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=client_plugin.retry_if_ignore_exe)
     @wrap_auth_failed
-    def check_create_server_complete(self, server_id):
+    def check_create_server_complete(self, server):
         """Wait for server to create success from Nova."""
 
         opt = "create"
@@ -497,7 +497,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                        "spawning"]
         wait_statuses = ["ACTIVE"]
 
-        return self.check_opt_server_complete(server_id, opt, task_states,
+        return self.check_opt_server_complete(server, opt, task_states,
                                               wait_statuses)
 
     @retry(stop_max_attempt_number=300,
@@ -505,14 +505,14 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=client_plugin.retry_if_ignore_exe)
     @wrap_auth_failed
-    def check_delete_server_complete(self, server_id):
+    def check_delete_server_complete(self, server):
         """Wait for server to disappear from Nova."""
 
         opt = "delete"
         task_states = ["deleting", "soft-deleting"]
         wait_statuses = ["DELETED", "SOFT_DELETED"]
 
-        return self.check_opt_server_complete(server_id, opt, task_states,
+        return self.check_opt_server_complete(server, opt, task_states,
                                               wait_statuses, True)
 
     @retry(stop_max_attempt_number=600,
@@ -520,7 +520,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=client_plugin.retry_if_ignore_exe)
     @wrap_auth_failed
-    def check_reboot_server_complete(self, server_id):
+    def check_reboot_server_complete(self, server):
         """Wait for server to disappear from Nova."""
 
         opt = "reboot"
@@ -529,7 +529,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                        "reboot_started_hard"]
         wait_statuses = ["ACTIVE"]
 
-        return self.check_opt_server_complete(server_id, opt, task_states,
+        return self.check_opt_server_complete(server, opt, task_states,
                                               wait_statuses)
 
     @retry(stop_max_attempt_number=300,
@@ -537,14 +537,14 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=client_plugin.retry_if_ignore_exe)
     @wrap_auth_failed
-    def check_start_server_complete(self, server_id):
+    def check_start_server_complete(self, server):
         """Wait for server to disappear from Nova."""
 
         opt = "start"
         task_states = ["powering-on"]
         wait_statuses = ["ACTIVE"]
 
-        return self.check_opt_server_complete(server_id, opt, task_states,
+        return self.check_opt_server_complete(server, opt, task_states,
                                               wait_statuses)
 
     @retry(stop_max_attempt_number=300,
@@ -552,14 +552,14 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=client_plugin.retry_if_ignore_exe)
     @wrap_auth_failed
-    def check_stop_server_complete(self, server_id):
+    def check_stop_server_complete(self, server):
         """Wait for server to disappear from Nova."""
 
         opt = "stop"
         task_states = ["powering-off"]
         wait_statuses = ["SHUTOFF"]
 
-        return self.check_opt_server_complete(server_id, opt, task_states,
+        return self.check_opt_server_complete(server, opt, task_states,
                                               wait_statuses)
 
     @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
@@ -760,14 +760,14 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=client_plugin.retry_if_ignore_exe)
     @wrap_auth_failed
-    def check_rescue_instance_complete(self, provider_instance):
-        LOG.info(_LI("wait instance(%s) rescue complete"), provider_instance)
+    def check_rescue_instance_complete(self, server):
+        LOG.info(_LI("wait instance(%s) rescue complete"), server)
 
         opt = "rescue"
         task_states = ["rescuing"]
         wait_statuses = ["RESCUE"]
 
-        return self.check_opt_server_complete(provider_instance, opt,
+        return self.check_opt_server_complete(server, opt,
                                               task_states,
                                               wait_statuses)
 
@@ -783,14 +783,14 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=client_plugin.retry_if_ignore_exe)
     @wrap_auth_failed
-    def check_unrescue_instance_complete(self, provider_instance):
-        LOG.info(_LI("wait instance(%s) unrescue complete"), provider_instance)
+    def check_unrescue_instance_complete(self, server):
+        LOG.info(_LI("wait instance(%s) unrescue complete"), server)
 
         opt = "unrescue"
         task_states = ["unrescuing"]
         wait_statuses = ["ACTIVE"]
 
-        return self.check_opt_server_complete(provider_instance, opt,
+        return self.check_opt_server_complete(server, opt,
                                               task_states,
                                               wait_statuses)
 

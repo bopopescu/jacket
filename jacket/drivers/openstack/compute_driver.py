@@ -533,7 +533,7 @@ class OsComputeDriver(driver.ComputeDriver):
                                                       sub_volume.id,
                                                       mountpoint)
             self.os_cinderclient(context).check_attach_volume_complete(
-                sub_volume.id)
+                sub_volume)
         else:
             raise Exception('sub volume %s of volume: %s is not available, '
                             'status is %s' %
@@ -561,7 +561,7 @@ class OsComputeDriver(driver.ComputeDriver):
         if provider_server:
             self.os_novaclient(context).delete(provider_server)
             self.os_novaclient(context).check_delete_server_complete(
-                provider_server.id)
+                provider_server)
         else:
             LOG.error('Can not found server to delete.')
             # raise exception_ex.ServerNotExistException(server_name=instance.display_name)
@@ -608,7 +608,7 @@ class OsComputeDriver(driver.ComputeDriver):
 
         LOG.debug('wait for volume in available status.')
         self.os_cinderclient(context).check_detach_volume_complete(
-            sub_volume.id)
+            sub_volume)
 
     def _get_attachment_id_for_volume(self, sub_volume):
         LOG.debug('start to _get_attachment_id_for_volume: %s' % sub_volume)
@@ -722,9 +722,9 @@ class OsComputeDriver(driver.ComputeDriver):
         LOG.debug('server: %s status is: %s' % (server.id, server.status))
         if server.status == vm_states.ACTIVE.upper():
             LOG.debug('start to add stop task')
-            self.os_novaclient(context).stop(server)
+            server.stop()
             LOG.debug('submit stop task')
-            self.os_novaclient(context).check_stop_server_complete(server.id)
+            self.os_novaclient(context).check_stop_server_complete(server)
             LOG.debug('stop server: %s success' % instance.uuid)
         elif server.status == 'SHUTOFF':
             LOG.debug('sub instance status is already STOPPED.')
@@ -748,9 +748,9 @@ class OsComputeDriver(driver.ComputeDriver):
         LOG.debug('server: %s status is: %s' % (server.id, server.status))
         if server.status == 'SHUTOFF':
             LOG.debug('start to add start task')
-            self.os_novaclient(context).start(server)
+            server.start()
             LOG.debug('submit start task')
-            self.os_novaclient(context).check_start_server_complete(server.id)
+            self.os_novaclient(context).check_start_server_complete(server)
             LOG.debug('stop server: %s success' % instance.uuid)
         elif server.status == vm_states.ACTIVE.upper():
             LOG.debug('sub instance status is already ACTIVE.')
@@ -774,11 +774,11 @@ class OsComputeDriver(driver.ComputeDriver):
         LOG.debug('server: %s status is: %s' % (server.id, server.status))
         if server.status == vm_states.ACTIVE.upper():
             server.reboot(reboot_type)
-            self.os_novaclient(context).check_reboot_server_complete(server.id)
+            self.os_novaclient(context).check_reboot_server_complete(server)
             LOG.debug('reboot server: %s success' % instance.uuid)
         elif server.status == 'SHUTOFF':
             server.start()
-            self.os_novaclient(context).check_start_server_complete(server.id)
+            self.os_novaclient(context).check_start_server_complete(server)
             LOG.debug('reboot server: %s success' % instance.uuid)
         else:
             LOG.warning('server status is not in ACTIVE OR STOPPED,'
@@ -852,7 +852,7 @@ class OsComputeDriver(driver.ComputeDriver):
 
             LOG.debug('wait for server active')
             self.os_novaclient(context).check_create_server_complete(
-                provider_server.id)
+                provider_server)
             LOG.debug('create server success.............!!!')
 
             try:

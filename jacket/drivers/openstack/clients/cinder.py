@@ -18,6 +18,7 @@ from cinderclient import exceptions
 from oslo_log import log as logging
 from oslo_utils import excutils
 from retrying import retry
+import six
 
 from jacket import conf
 from jacket.drivers.openstack import exception_ex
@@ -172,46 +173,49 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
         return (isinstance(ex, exceptions.ClientException) and
                 ex.code == 409)
 
-    def check_opt_volume_complete(self, opt, vol_id,
+    def check_opt_volume_complete(self, opt, volume,
                                   by_status=[],
                                   expect_status=[],
                                   not_expect_status=[],
                                   is_ignore_not_found=False):
         try:
-            vol = self.client().volumes.get(vol_id)
+            if isinstance(volume, six.string_types):
+                volume = self.client().volumes.get(volume)
+            else:
+                volume.get()
         except Exception as ex:
             if not is_ignore_not_found and not self.ignore_not_found(ex):
                 raise
             return True
 
-        if vol.status in by_status:
+        if volume.status in by_status:
             LOG.debug('volume(%s) status(%s) not expect status, continue',
-                      vol_id, vol.status)
+                      volume.id, volume.status)
             return False
 
         LOG.debug('Volume %(id)s - status: %(status)s' % {
-            'id': vol.id, 'status': vol.status})
+            'id': volume.id, 'status': volume.status})
 
-        if not_expect_status and vol.status in not_expect_status:
+        if not_expect_status and volume.status in not_expect_status:
             LOG.debug("%(opt)s failed - volume %(vol)s "
                       "is in %(status)s status" % {"opt": opt,
-                                                   "vol": vol.id,
-                                                   "status": vol.status})
+                                                   "vol": volume.id,
+                                                   "status": volume.status})
             raise exception.ResourceUnknownStatus(
-                resource_status=vol.status,
+                resource_status=volume.status,
                 result=_('Volume %s failed') % opt)
 
-        if expect_status and vol.status not in expect_status:
+        if expect_status and volume.status not in expect_status:
             LOG.debug("%(opt)s failed - volume %(vol)s "
                       "is in %(status)s status" % {"opt": opt,
-                                                   "vol": vol.id,
-                                                   "status": vol.status})
+                                                   "vol": volume.id,
+                                                   "status": volume.status})
             raise exception.ResourceUnknownStatus(
-                resource_status=vol.status,
+                resource_status=volume.status,
                 result=_('Volume %s failed') % opt)
         else:
             LOG.info(_LI('%(opt)s volume %(id)s complete'), {'opt': opt,
-                                                             'id': vol_id})
+                                                             'id': volume.id})
             return True
 
     @retry(stop_max_attempt_number=60,
@@ -219,12 +223,12 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=client_plugin.retry_if_ignore_exe)
     @wrap_auth_failed
-    def check_detach_volume_complete(self, vol_id):
+    def check_detach_volume_complete(self, volume):
 
-        LOG.info(_LI("wait volume(%s) detach complete"), vol_id)
+        LOG.info(_LI("wait volume(%s) detach complete"), volume)
         by_status = ['in-use', 'detaching']
         expect_status = ['available', 'deleting']
-        return self.check_opt_volume_complete("detach", vol_id, by_status,
+        return self.check_opt_volume_complete("detach", volume, by_status,
                                               expect_status)
 
     @retry(stop_max_attempt_number=60,
@@ -232,12 +236,12 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=client_plugin.retry_if_ignore_exe)
     @wrap_auth_failed
-    def check_attach_volume_complete(self, vol_id):
+    def check_attach_volume_complete(self, volume):
 
-        LOG.info(_LI("wait volume(%s) attach complete"), vol_id)
+        LOG.info(_LI("wait volume(%s) attach complete"), volume)
         by_status = ['available', 'attaching']
         expect_status = ['in-use']
-        return self.check_opt_volume_complete("attach", vol_id, by_status,
+        return self.check_opt_volume_complete("attach", volume, by_status,
                                               expect_status)
 
     @retry(stop_max_attempt_number=300,
@@ -245,11 +249,11 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=client_plugin.retry_if_ignore_exe)
     @wrap_auth_failed
-    def check_create_volume_complete(self, vol_id):
-        LOG.info(_LI("wait volume(%s) create complete"), vol_id)
+    def check_create_volume_complete(self, volume):
+        LOG.info(_LI("wait volume(%s) create complete"), volume)
         by_status = ['creating', 'downloading']
         expect_status = ['available']
-        return self.check_opt_volume_complete("create", vol_id, by_status,
+        return self.check_opt_volume_complete("create", volume, by_status,
                                               expect_status)
 
     @retry(stop_max_attempt_number=60,
@@ -257,12 +261,12 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=client_plugin.retry_if_ignore_exe)
     @wrap_auth_failed
-    def check_delete_volume_complete(self, vol_id):
-        LOG.info(_LI("wait volume(%s) delete complete"), vol_id)
+    def check_delete_volume_complete(self, volume):
+        LOG.info(_LI("wait volume(%s) delete complete"), volume)
         by_status = ['deleting']
         expect_status = ['available']
         not_expect_status = ['error']
-        return self.check_opt_volume_complete("create", vol_id, by_status,
+        return self.check_opt_volume_complete("create", volume, by_status,
                                               expect_status,
                                               not_expect_status,
                                               is_ignore_not_found=True)
@@ -272,12 +276,12 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=client_plugin.retry_if_ignore_exe)
     @wrap_auth_failed
-    def check_extend_volume_complete(self, vol_id):
-        LOG.info(_LI("wait volume(%s) extend complete"), vol_id)
+    def check_extend_volume_complete(self, volume):
+        LOG.info(_LI("wait volume(%s) extend complete"), volume)
         by_status = ['extending']
         expect_status = ['available']
         not_expect_status = ['error_extending']
-        return self.check_opt_volume_complete("extend", vol_id, by_status,
+        return self.check_opt_volume_complete("extend", volume, by_status,
                                               expect_status,
                                               not_expect_status)
 
