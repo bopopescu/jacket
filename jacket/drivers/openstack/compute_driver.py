@@ -25,9 +25,12 @@ import traceback
 
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
+from oslo_utils import excutils
 
 from jacket.compute.cloud import power_state
+from jacket.compute.cloud import task_states
 from jacket.compute.cloud import vm_states
+from jacket.compute import image
 from jacket.compute.virt import driver
 from jacket.compute.virt import hardware
 from jacket import conf
@@ -38,7 +41,6 @@ from jacket.drivers.openstack.clients import os_context
 from jacket.drivers.openstack.clients import nova as novaclient
 from jacket.drivers.openstack.clients import cinder as cinderclient
 from jacket.drivers.openstack.clients import glance as glanceclient
-from jacket.drivers.openstack import hyper_agent_api
 from jacket import exception
 from jacket.i18n import _LE
 
@@ -75,7 +77,7 @@ class OsComputeDriver(driver.ComputeDriver):
         self._os_cinderclient = None
         self._os_glanceclient = None
         self.caa_db_api = caa_db_api
-        self.hyper_agent_api = hyper_agent_api.HyperAgentAPI()
+        self._image_api = image.API()
 
     def os_novaclient(self, context=None):
         if self._os_novaclient is None:
@@ -98,7 +100,7 @@ class OsComputeDriver(driver.ComputeDriver):
     def os_glanceclient(self, context=None):
         if self._os_glanceclient is None:
             oscontext = os_context.OsClientContext(
-                context, version='1'
+                context, version='2'
             )
             self._os_glanceclient = glanceclient.GlanceClientPlugin(oscontext)
 
@@ -260,7 +262,7 @@ class OsComputeDriver(driver.ComputeDriver):
         base_linux_image = project_mapper.get("base_linux_image", None)
 
         image_mapper = self.caa_db_api.image_mapper_get(context, image_id)
-        sub_image_id = image_mapper.get("dest_image_id", base_linux_image)
+        sub_image_id = image_mapper.get("provider_image_id", base_linux_image)
 
         return sub_image_id
 
@@ -293,6 +295,34 @@ class OsComputeDriver(driver.ComputeDriver):
         if not volume_name:
             volume_name = 'volume'
         return '@'.join([volume_name, volume_id])
+
+    def _create_snapshot_metadata(self, image_meta, instance,
+                                  img_fmt, snp_name):
+        metadata = {'is_public': False,
+                    'status': 'active',
+                    'name': snp_name,
+                    'properties': {
+                        'kernel_id': instance.kernel_id,
+                        'image_location': 'snapshot',
+                        'image_state': 'available',
+                        'owner_id': instance.project_id,
+                        'ramdisk_id': instance.ramdisk_id,
+                    }
+                    }
+        if instance.os_type:
+            metadata['properties']['os_type'] = instance.os_type
+
+        if img_fmt:
+            metadata['disk_format'] = img_fmt
+        else:
+            metadata['disk_format'] = image_meta.disk_format
+
+        if image_meta.obj_attr_is_set("container_format"):
+            metadata['container_format'] = image_meta.container_format
+        else:
+            metadata['container_format'] = "bare"
+
+        return metadata
 
     def list_instance_uuids(self):
         uuids = []
@@ -785,7 +815,76 @@ class OsComputeDriver(driver.ComputeDriver):
             raise exception_ex.ServerStatusException(status=server.status)
 
     def snapshot(self, context, instance, image_id, update_task_state):
-        pass
+
+        snapshot = self._image_api.get(context, image_id)
+
+        image_format = None
+
+        metadata = self._create_snapshot_metadata(instance.image_meta,
+                                                  instance,
+                                                  image_format,
+                                                  snapshot['name'])
+
+        provider_instance = self._get_provider_instance(context,
+                                                        instance)
+
+        try:
+
+            update_task_state(task_state=task_states.IMAGE_PENDING_UPLOAD)
+            # provider create image
+            location, provider_image_id = self.os_novaclient(
+                context).create_image(
+                provider_instance, snapshot['name'])
+
+            # wait create image success
+            self.os_novaclient(context).check_create_image_server_complete(
+                provider_instance)
+
+            # wait image status is active
+            self.os_glanceclient(context).check_image_active_complete(
+                provider_image_id)
+
+            update_task_state(task_state=task_states.IMAGE_UPLOADING,
+                              expected_state=task_states.IMAGE_PENDING_UPLOAD)
+
+            try:
+                image = self.os_glanceclient(context).get_image(provider_image_id)
+                LOG.debug("+++hw, image = %s", image)
+                if hasattr(image, "direct_url"):
+                    direct_url = image.direct_url
+                    if direct_url.startswith("swift+http://") or \
+                            direct_url.startswith("http://") or \
+                        direct_url.startswith("https://"):
+
+                        metadata["location"] = direct_url
+                        self._image_api.update(context, image_id, metadata,
+                                           purge_props=False)
+                    else:
+                        raise Exception()
+                else:
+                    raise Exception()
+            except Exception:
+                metadata.pop("location", None)
+                # download from provider glance
+                LOG.debug("+++hw, begin to download image(%s)",
+                          provider_image_id)
+                image_data = self.os_glanceclient(context).data(
+                    provider_image_id)
+                LOG.debug("+++hw, image length = %s", len(image_data))
+                self._image_api.update(context,
+                                       image_id,
+                                       metadata,
+                                       image_data)
+
+            # create image mapper
+            values = {"provider_image_id": provider_image_id}
+            self.caa_db_api.image_mapper_create(context, image_id,
+                                                context.project_id,
+                                                values)
+        except Exception as ex:
+            LOG.exception(_LE("create image failed! ex = %s"), ex)
+            with excutils.save_and_reraise_exception():
+                self.os_glanceclient(context).delete(provider_image_id)
 
     def _spawn(self, context, instance, image_meta, injected_files,
                admin_password, network_info=None, block_device_info=None):

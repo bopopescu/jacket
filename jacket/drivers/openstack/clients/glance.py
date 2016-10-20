@@ -12,6 +12,7 @@
 #    under the License.
 
 import functools
+import logging as py_logging
 
 from glanceclient import client as gc
 from glanceclient import exc
@@ -20,6 +21,7 @@ from glanceclient.openstack.common.apiclient import exceptions
 from oslo_log import log as logging
 from oslo_utils import excutils
 from retrying import retry
+import six
 import six.moves.urllib.parse as urlparse
 
 from keystoneauth1 import discover
@@ -31,7 +33,7 @@ from keystoneauth1 import loading
 from jacket import conf
 from jacket.drivers.openstack import exception_ex
 from jacket import exception
-from jacket.i18n import _
+from jacket.i18n import _, _LW
 from jacket.drivers.openstack.clients import client_plugin
 from argparse import Namespace
 
@@ -69,6 +71,12 @@ class GlanceClientPlugin(client_plugin.ClientPlugin):
              "service_name": "glance",
              "interface": "publicURL"},
     }
+
+    def __init__(self, os_context):
+
+        # make sure keystoneauth1 no debug log, otherwise download maybe slow
+        py_logging.getLogger('keystoneauth1').setLevel(py_logging.WARNING)
+        super(GlanceClientPlugin, self).__init__(os_context)
 
     def _create(self, version=None):
         version = self.os_context.version
@@ -285,3 +293,78 @@ class GlanceClientPlugin(client_plugin.ClientPlugin):
             return self.client().images.get(image_identifier)
         except exc.HTTPNotFound:
             return self._find_with_attr('images', name=image_identifier)
+
+    @retry(stop_max_attempt_number=1800,
+           wait_fixed=2000,
+           retry_on_result=client_plugin.retry_if_result_is_false,
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
+    def check_image_active_complete(self, image_id):
+        try:
+            image_ref = self.get_image(image_id)
+        except Exception:
+            raise
+        if not image_ref:
+            return False
+
+        LOG.debug("-------------image_ref = %s, type = %s", image_ref,
+                  type(image_ref))
+
+        status = image_ref.status
+        LOG.debug("+++hw, wait image(%s), current status = %s", image_id,
+                  status)
+
+        if status == "active":
+            return True
+
+        if status == 'ERROR':
+            errmsg = _("image(%s) wait failed") % image_id
+            raise exception.ResourceInError(resource_status=status,
+                                            status_reason=errmsg)
+
+        return False
+
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
+    def delete(self, image_id):
+        try:
+            self.client().images.delete(image_id)
+        except exc.HTTPNotFound:
+            LOG.warn(_LW("image(%s) is not exist"), image_id)
+
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
+    def data(self, image_id):
+        image_data = self.client().images.data(image_id)
+        return DataFile(image_data)
+
+
+class DataFile(object):
+    """An iterator wrapper with image.
+
+    :note: Use only with iterator that yield strings.
+    """
+
+    def __init__(self, wrapped):
+        self._wrapped = wrapped
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        try:
+            data = six.next(self._wrapped)
+            return data
+        except StopIteration:
+            raise
+
+    def read(self, length):
+        return self.next()
+
+    def __len__(self):
+        return len(self._wrapped)
+
+    # In Python 3, __next__() has replaced next().
+    __next__ = next

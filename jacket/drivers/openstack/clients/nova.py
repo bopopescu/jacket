@@ -37,7 +37,6 @@ REBOOT_SOFT, REBOOT_HARD = 'SOFT', 'HARD'
 
 
 def wrap_auth_failed(function):
-
     @functools.wraps(function)
     def decorated_function(self, *args, **kwargs):
         try:
@@ -47,7 +46,9 @@ def wrap_auth_failed(function):
                 self.os_context.auth_refresh()
                 self.invalidate()
                 raise exception_ex.Unauthorized()
+
     return decorated_function
+
 
 class NovaClientPlugin(client_plugin.ClientPlugin):
     CLIENT_NAME = 'nova'
@@ -446,7 +447,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
     def check_opt_server_complete(self, server, opt, task_states,
                                   wait_statuses, is_ignore_not_found=False):
-        """Wait for server to disappear from Nova."""
+        """Wait for server to complete from Nova."""
         try:
             if isinstance(server, six.string_types):
                 server = self.fetch_server(server)
@@ -466,11 +467,15 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         LOG.debug("+++hw, wait task_state = %s, current status = %s",
                   task_state_in_nova, status)
 
-        if task_state_in_nova in task_states:
+        if status != "ERROR" and task_state_in_nova in task_states:
             return False
+
+        if status != "ERROR" and not wait_statuses:
+            return True
 
         if status in wait_statuses:
             return True
+
         if status == 'ERROR':
             fault = getattr(server, 'fault', {})
             message = fault.get('message', 'Unknown')
@@ -482,6 +487,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                                              message=message)
             raise exception.ResourceInError(resource_status=status,
                                             status_reason=errmsg)
+
         return False
 
     @retry(stop_max_attempt_number=1800,
@@ -843,3 +849,35 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
                     _("Could not detach attachment %(att)s "
                       "from server %(srv)s.") % {'srv': server_id,
                                                  'att': attach_id})
+
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           wait_fixed=2000,
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
+    def create_image(self, server, image_name, metadata=None):
+
+        body = {'name': image_name, 'metadata': metadata or {}}
+        resp, body = self.client().servers._action_return_resp_and_body(
+            'createImage', server, body)
+        location = resp.headers['location']
+        image_uuid = location.split('/')[-1]
+
+        LOG.debug("location = %s, image_uuid = %s", location, image_uuid)
+        return location, image_uuid
+
+
+    @retry(stop_max_attempt_number=1800,
+           wait_fixed=2000,
+           retry_on_result=client_plugin.retry_if_result_is_false,
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
+    def check_create_image_server_complete(self, server):
+        """Wait for server to create success from Nova."""
+
+        opt = "create_image"
+        task_states = ["image_snapshot_pending", "image_snapshot",
+                       "image_pending_upload", "image_uploading"]
+        wait_statuses = []
+
+        return self.check_opt_server_complete(server, opt, task_states,
+                                              wait_statuses)
