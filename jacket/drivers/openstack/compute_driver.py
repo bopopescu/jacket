@@ -814,6 +814,34 @@ class OsComputeDriver(driver.ComputeDriver):
                         'can not do POWER_OFF operation')
             raise exception_ex.ServerStatusException(status=server.status)
 
+    def provider_create_image(self, context, instance, image, metadata):
+        provider_instance = self._get_provider_instance(context,
+                                                        instance)
+
+        provider_metadata = {
+            "disk_format": metadata.get("disk_format", "raw"),
+            "container_format": metadata.get("container_format", "bare")}
+
+        # provider create image
+        location, provider_image_id = self.os_novaclient(
+            context).create_image(
+            provider_instance, image['name'], provider_metadata)
+
+        try:
+            # wait create image success
+            self.os_novaclient(context).check_create_image_server_complete(
+                provider_instance)
+
+            # wait image status is active
+            self.os_glanceclient(context).check_image_active_complete(
+                provider_image_id)
+        except Exception as ex:
+            LOG.exception(_LE("create image failed! ex = %s"), ex)
+            with excutils.save_and_reraise_exception():
+                self.os_glanceclient(context).delete(provider_image_id)
+
+        return provider_instance, provider_image_id
+
     def snapshot(self, context, instance, image_id, update_task_state):
 
         snapshot = self._image_api.get(context, image_id)
@@ -825,40 +853,28 @@ class OsComputeDriver(driver.ComputeDriver):
                                                   image_format,
                                                   snapshot['name'])
 
-        provider_instance = self._get_provider_instance(context,
-                                                        instance)
+        update_task_state(task_state=task_states.IMAGE_PENDING_UPLOAD)
+        provider_instance, provider_image_id = self.provider_create_image(
+            context, instance, snapshot, metadata)
 
         try:
-
-            update_task_state(task_state=task_states.IMAGE_PENDING_UPLOAD)
-            # provider create image
-            location, provider_image_id = self.os_novaclient(
-                context).create_image(
-                provider_instance, snapshot['name'])
-
-            # wait create image success
-            self.os_novaclient(context).check_create_image_server_complete(
-                provider_instance)
-
-            # wait image status is active
-            self.os_glanceclient(context).check_image_active_complete(
-                provider_image_id)
 
             update_task_state(task_state=task_states.IMAGE_UPLOADING,
                               expected_state=task_states.IMAGE_PENDING_UPLOAD)
 
             try:
-                image = self.os_glanceclient(context).get_image(provider_image_id)
+                image = self.os_glanceclient(context).get_image(
+                    provider_image_id)
                 LOG.debug("+++hw, image = %s", image)
                 if hasattr(image, "direct_url"):
                     direct_url = image.direct_url
                     if direct_url.startswith("swift+http://") or \
                             direct_url.startswith("http://") or \
-                        direct_url.startswith("https://"):
+                            direct_url.startswith("https://"):
 
                         metadata["location"] = direct_url
                         self._image_api.update(context, image_id, metadata,
-                                           purge_props=False)
+                                               purge_props=False)
                     else:
                         raise Exception()
                 else:

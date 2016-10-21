@@ -210,7 +210,7 @@ class DriverEphemeralBlockDevice(DriverBlockDevice):
 
 class DriverVolumeBlockDevice(DriverBlockDevice):
     _legacy_fields = set(['connection_info', 'mount_device',
-                          'delete_on_termination'])
+                          'delete_on_termination', 'boot_index'])
     _new_fields = set(['guest_format', 'device_type',
                        'disk_bus', 'boot_index'])
     _fields = _legacy_fields | _new_fields

@@ -20,6 +20,7 @@ Driver base-classes:
 """
 
 from oslo_log import log as logging
+from oslo_utils import excutils
 
 from jacket import conf
 from jacket import context as req_context
@@ -58,7 +59,7 @@ class OsVolumeDriver(driver.VolumeDriver):
     def os_glanceclient(self, context=None):
         if self._os_glanceclient is None:
             oscontext = os_context.OsClientContext(
-                context, version='1')
+                context, version='2')
             self._os_glanceclient = glanceclient.GlanceClientPlugin(oscontext)
 
         return self._os_glanceclient
@@ -260,7 +261,48 @@ class OsVolumeDriver(driver.VolumeDriver):
         LOG.debug('create volume %s success.' % volume.id)
 
     def copy_volume_to_image(self, context, volume, image_service, image_meta):
-        pass
+        image_id = image_meta['id']
+        LOG.debug("volume(%s), begin to copy_volume_to_image", volume.id)
+
+        image = image_service.show(context, image_id)
+        provider_volume = self._get_provider_volume(context, volume)
+
+        # provider create image
+        provider_image = provider_volume.upload_to_image(
+            True, image["name"],
+            image_meta.get("container-format", "bare"),
+            image_meta.get("disk_format", "raw"))
+
+        provider_image = provider_image[1]["os-volume_upload_image"]
+
+        try:
+
+            # wait upload image success
+            self.os_cinderlient(context).check_upload_image_volume_complete(
+                provider_volume.id)
+
+            # wait image status active
+            self.os_glanceclient(context).check_image_active_complete(
+                provider_image["image_id"])
+
+            # download from provider glance
+            LOG.debug("+++hw, begin to download image(%s)",
+                      provider_image["image_id"])
+            image_data = self.os_glanceclient(context).data(
+                provider_image["image_id"])
+            LOG.debug("+++hw, image length = %s", len(image_data))
+            image_service.update(context, image_id, {}, image_data)
+
+            # create image mapper
+            values = {"provider_image_id": provider_image["image_id"]}
+            self.caa_db.image_mapper_create(context, image_id,
+                                            context.project_id,
+                                            values)
+
+        except Exception as ex:
+            LOG.exception(_LE("upload image failed! ex = %s"), ex)
+            with excutils.save_and_reraise_exception():
+                self.os_glanceclient(context).delete(provider_image["image_id"])
 
     def create_cloned_volume(self, volume, src_vref):
         """Create a clone of the specified volume."""
@@ -625,7 +667,7 @@ class OsVolumeDriver(driver.VolumeDriver):
             display_name = volume.display_name
 
         provider_name = self._get_provider_volume_name(display_name,
-                                                     volume.id)
+                                                       volume.id)
         self.os_cinderlient(ctxt).update_volume(provider_uuid,
                                                 display_name=provider_name)
 

@@ -433,3 +433,26 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
 
         LOG.info(_LI('delete snapshot %(id)s complete'), {'id': snap_id})
         return True
+
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
+    def upload_to_image(self, volume, force, image_name, container_format=None,
+                        disk_format=None):
+        return self.client().volumes.upload_to_image(volume, force, image_name,
+                                             container_format, disk_format)
+
+    @retry(stop_max_attempt_number=150,
+           wait_fixed=2000,
+           retry_on_result=client_plugin.retry_if_result_is_false,
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
+    def check_upload_image_volume_complete(self, volume):
+
+        LOG.info(_LI("wait volume(%s) upload image complete"), volume)
+        by_status = ['uploading']
+        expect_status = []
+        not_expect_status = ["error"]
+        return self.check_opt_volume_complete("upload_image", volume, by_status,
+                                              expect_status, not_expect_status)
+

@@ -337,6 +337,7 @@ class GlanceClientPlugin(client_plugin.ClientPlugin):
            retry_on_exception=client_plugin.retry_if_ignore_exe)
     @wrap_auth_failed
     def data(self, image_id):
+        py_logging.getLogger('keystoneauth1').setLevel(py_logging.WARNING)
         image_data = self.client().images.data(image_id)
         return DataFile(image_data)
 
