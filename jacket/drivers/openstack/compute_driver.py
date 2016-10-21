@@ -368,7 +368,8 @@ class OsComputeDriver(driver.ComputeDriver):
         volume_name = instance.uuid
         volume = self.os_cinderclient(context).get_volume_by_name(volume_name)
         if volume:
-            self.os_cinderclient(context).delete_volume(volume)
+            if volume.status != "deleting":
+                self.os_cinderclient(context).delete_volume(volume)
             self.os_cinderclient(context).check_delete_volume_complete(
                 volume.id)
 

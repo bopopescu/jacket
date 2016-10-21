@@ -264,7 +264,7 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
     def check_delete_volume_complete(self, volume):
         LOG.info(_LI("wait volume(%s) delete complete"), volume)
         by_status = ['deleting']
-        expect_status = ['available']
+        expect_status = []
         not_expect_status = ['error']
         return self.check_opt_volume_complete("create", volume, by_status,
                                               expect_status,
