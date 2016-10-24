@@ -897,7 +897,7 @@ class API(base_api.NetworkAPI):
 
     def update_port(self, context, port_id, request_body):
         neutron = get_client(context)
-        neutron.update_port(context, port_id, request_body)
+        neutron.update_port(port_id, request_body)
 
     def _show_port(self, context, port_id, neutron_client=None, fields=None):
         """Return the port for the client given the port id.

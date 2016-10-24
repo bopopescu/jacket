@@ -2098,6 +2098,8 @@ class ComputeManager(manager.Manager):
                               instance=instance)
                     with timeutils.StopWatch() as timer:
                         if image.get('container_format') == 'hypercontainer':
+                            LOG.debug("begin to hypercontainer to spawn",
+                                      instance=instance)
                             self._do_hybrid_vm_spawn(context, instance, image,
                                                      injected_files,
                                                      admin_password,
