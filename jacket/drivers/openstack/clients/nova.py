@@ -322,7 +322,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
            retry_on_exception=client_plugin.retry_if_ignore_exe)
     @wrap_auth_failed
     def unpause(self, server):
-        return self.client().servers.pause(server)
+        return self.client().servers.unpause(server)
 
     @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            wait_fixed=2000,
@@ -564,6 +564,36 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         opt = "stop"
         task_states = ["powering-off"]
         wait_statuses = ["SHUTOFF"]
+
+        return self.check_opt_server_complete(server, opt, task_states,
+                                              wait_statuses)
+
+    @retry(stop_max_attempt_number=300,
+           wait_fixed=2000,
+           retry_on_result=client_plugin.retry_if_result_is_false,
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
+    def check_pause_server_complete(self, server):
+        """Wait for server to create success from Nova."""
+
+        opt = "pause"
+        task_states = ["pausing"]
+        wait_statuses = ["PAUSED"]
+
+        return self.check_opt_server_complete(server, opt, task_states,
+                                              wait_statuses)
+
+    @retry(stop_max_attempt_number=300,
+           wait_fixed=2000,
+           retry_on_result=client_plugin.retry_if_result_is_false,
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
+    def check_unpause_server_complete(self, server):
+        """Wait for server to create success from Nova."""
+
+        opt = "unpause"
+        task_states = ["unpausing"]
+        wait_statuses = ["ACTIVE"]
 
         return self.check_opt_server_complete(server, opt, task_states,
                                               wait_statuses)

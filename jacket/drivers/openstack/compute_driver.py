@@ -43,6 +43,7 @@ from jacket.drivers.openstack.clients import cinder as cinderclient
 from jacket.drivers.openstack.clients import glance as glanceclient
 from jacket import exception
 from jacket.i18n import _LE
+from jacket import utils
 
 LOG = logging.getLogger(__name__)
 
@@ -1131,13 +1132,17 @@ class OsComputeDriver(driver.ComputeDriver):
 
     def pause(self, instance):
         context = req_context.RequestContext(project_id=instance.project_id)
-        provider_uuid = self._get_provider_instance_id(context, instance.uuid)
-        self.os_novaclient(context).pause(provider_uuid)
+        provider_instance = self._get_provider_instance(context, instance)
+        self.os_novaclient(context).pause(provider_instance)
+        self.os_novaclient(context).check_pause_server_complete(
+            provider_instance)
 
     def unpause(self, instance):
         context = req_context.RequestContext(project_id=instance.project_id)
-        provider_uuid = self._get_provider_instance_id(context, instance.uuid)
-        self.os_novaclient(context).unpause(provider_uuid)
+        provider_instance = self._get_provider_instance(context, instance)
+        self.os_novaclient(context).unpause(provider_instance)
+        self.os_novaclient(context).check_unpause_server_complete(
+            provider_instance)
 
     def sub_flavor_detail(self, context):
         """get flavor detail"""
@@ -1233,3 +1238,8 @@ class OsComputeDriver(driver.ComputeDriver):
                                                                 instance.uuid)
         self.os_novaclient(context).change_password(
             provider_instance_uuid, new_pass)
+
+    def get_host_uptime(self):
+        """Returns the result of calling "uptime"."""
+        out, err = utils.execute('env', 'LANG=C', 'uptime')
+        return out

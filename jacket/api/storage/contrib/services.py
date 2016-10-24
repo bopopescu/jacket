@@ -104,14 +104,19 @@ class ServiceController(wsgi.Controller):
                 "Query by service parameter is deprecated. "
                 "Please use binary parameter instead."))
 
-        services = objects.ServiceList.get_all(context, filters)
+        services = objects.ServiceList.get_all(context)
 
         svcs = []
         for svc in services:
+            if svc.host != filters.get("host", svc.host):
+                continue
+            if svc.binary != filters.get("binary", svc.binary):
+                continue
+
             updated_at = svc.updated_at
             delta = now - (svc.updated_at or svc.created_at)
             delta_sec = delta.total_seconds()
-            if svc.modified_at:
+            if hasattr(svc, 'modified_at') and svc.modified_at:
                 delta_mod = now - svc.modified_at
                 if abs(delta_sec) >= abs(delta_mod.total_seconds()):
                     updated_at = svc.modified_at
@@ -125,7 +130,7 @@ class ServiceController(wsgi.Controller):
             ret_fields = {'binary': svc.binary, 'host': svc.host,
                           'zone': svc.availability_zone,
                           'status': active, 'state': art,
-                          'updated_at': updated_at}
+                              'updated_at': updated_at}
             if detailed:
                 ret_fields['disabled_reason'] = svc.disabled_reason
                 if svc.binary == "storage-volume":

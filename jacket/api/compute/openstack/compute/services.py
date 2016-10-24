@@ -30,7 +30,6 @@ authorize = extensions.os_compute_authorizer(ALIAS)
 
 
 class ServiceController(wsgi.Controller):
-
     def __init__(self):
         self.host_api = cloud.HostAPI()
         self.servicegroup_api = servicegroup.API()
@@ -39,16 +38,17 @@ class ServiceController(wsgi.Controller):
                         "disable-log-reason": self._disable_log_reason}
 
     def _get_services(self, req):
-        api_services = ('cloud-osapi_compute', 'cloud-ec2', 'cloud-metadata')
+        api_services = ('jacket-osapi_compute', 'jacket-osapi_volume',
+                        'jacket-osapi_jacket', 'jacket-ec2', 'jacket-metadata')
 
         context = req.environ['compute.context']
         authorize(context)
 
         _services = [
-           s
-           for s in self.host_api.service_get_all(context, set_zones=True)
-           if s['binary'] not in api_services
-        ]
+            s
+            for s in self.host_api.service_get_all(context, set_zones=True)
+            if s['binary'] not in api_services
+            ]
 
         host = ''
         if 'host' in req.GET:
