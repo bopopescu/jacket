@@ -255,10 +255,11 @@ class API(base_api.NetworkAPI):
                 port_req_body['port']['extra_dhcp_opts'] = dhcp_opts
             port = port_client.create_port(port_req_body)
             port_id = port['port']['id']
-            if (port['port'].get('binding:vif_type') ==
-                network_model.VIF_TYPE_BINDING_FAILED):
-                port_client.delete_port(port_id)
-                raise exception.PortBindingFailed(port_id=port_id)
+            # NOTE(add by laoyi)
+            #if (port['port'].get('binding:vif_type') ==
+            #    network_model.VIF_TYPE_BINDING_FAILED):
+            #    port_client.delete_port(port_id)
+            #    raise exception.PortBindingFailed(port_id=port_id)
             LOG.debug('Successfully created port: %s', port_id,
                       instance=instance)
             return port_id
