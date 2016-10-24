@@ -326,17 +326,19 @@ main()
 
     #keystone中设置jacket
 
-    keystone user-get $auth_username || keystone user-create --name $auth_username \
-    --tenant $project_name --pass $auth_password --email "jacket@email"
+    if [ "${publicurl}" != "" ]; then
+        keystone user-get $auth_username || keystone user-create --name $auth_username \
+        --tenant $project_name --pass $auth_password --email "jacket@email"
 
-    keystone user-role-add --user $auth_username --role admin --tenant $project_name
+        keystone user-role-add --user $auth_username --role admin --tenant $project_name
 
-    keystone service-get $jacketsvce || keystone service-create --name $jacketsvce --description "OpenStack jacket service" --type jacket
+        keystone service-get $jacketsvce || keystone service-create --name $jacketsvce --description "OpenStack jacket service" --type jacket
 
-    keystone endpoint-get --service $jacketsvce || keystone endpoint-create --region $endpointsregion --service $jacketsvce \
-    --publicurl "${publicurl}" \
-    --adminurl "${adminurl}" \
-    --internalurl "${internalurl}"
+        keystone endpoint-get --service $jacketsvce || keystone endpoint-create --region $endpointsregion --service $jacketsvce \
+        --publicurl "${publicurl}" \
+        --adminurl "${adminurl}" \
+        --internalurl "${internalurl}"
+    fi
 
     # 创建image对应关系
     #jacket --insecure --debug image-mapper-create 66ecc1c0-8367-477b-92c5-1bb09b0bfa89 fc84fa2c-dafd-498a-8246-0692702532c3
