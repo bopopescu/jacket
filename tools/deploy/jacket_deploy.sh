@@ -324,6 +324,16 @@ main()
     chown jacket:jacket "${log_dir}"
     system_service
 
+    cat << EOF >/etc/logrotate.d/jacket
+/var/log/jacket/*.log {
+    rotate 14
+    size 10M
+    missingok
+    compress
+    copytruncate
+}
+EOF
+
     #keystone中设置jacket
 
     if [ "${publicurl}" != "" ]; then
