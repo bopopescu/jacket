@@ -3,6 +3,7 @@
 import sys
 import traceback
 
+from oslo_concurrency import processutils
 from oslo_log import log as logging
 from oslo_reports import guru_meditation_report as gmr
 
@@ -54,9 +55,10 @@ def main():
         LOG.warning(_LW('Conductor local mode is deprecated and will '
                         'be removed in a subsequent release'))
 
-    #server = service.Service.create(binary='jacket-worker',
+    # server = service.Service.create(binary='jacket-worker',
     server = service.Service.create(binary='nova-compute',
                                     topic=CONF.jacket_topic,
                                     db_allowed=CONF.conductor.use_local)
-    service.serve(server)
+    workers = CONF.worker.workers or processutils.get_worker_count()
+    service.serve(server, workers=workers)
     service.wait()

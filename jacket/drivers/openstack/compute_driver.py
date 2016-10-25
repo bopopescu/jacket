@@ -1243,3 +1243,9 @@ class OsComputeDriver(driver.ComputeDriver):
         """Returns the result of calling "uptime"."""
         out, err = utils.execute('env', 'LANG=C', 'uptime')
         return out
+
+    def attach_interface(self, instance, image_meta, vif):
+        pass
+
+    def detach_interface(self, instance, vif):
+        pass

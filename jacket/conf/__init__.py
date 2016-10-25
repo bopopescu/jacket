@@ -7,6 +7,7 @@ from jacket.conf import api
 from jacket.conf import drivers_conf
 from jacket.conf import netconf
 from jacket.conf import quota
+from jacket.conf import worker
 
 
 CONF = conf.CONF
@@ -15,3 +16,4 @@ api.register_opts(CONF)
 drivers_conf.register_opts(CONF)
 quota.register_opts(CONF)
 netconf.register_opts(CONF)
+worker.register_opts(CONF)
