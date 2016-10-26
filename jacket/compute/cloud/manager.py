@@ -7220,10 +7220,12 @@ class ComputeManager(manager.Manager):
                            instance.system_metadata.get('image_id')
 
         bdms = block_device_info['block_device_mapping']
+
         data['root_volume_id'] = None
         for bdm in bdms:
             if bdm['boot_index'] == 0:
-                data['root_volume_id'] = bdm['data']['volume_id']
+                data['root_volume_id'] = bdm['connection_info']['data'][
+                    'volume_id']
 
         vifs = []
         for vif in network_info:

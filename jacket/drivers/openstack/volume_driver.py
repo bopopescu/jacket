@@ -40,6 +40,8 @@ CONF = conf.CONF
 
 
 class OsVolumeDriver(driver.VolumeDriver):
+    CLOUD_DRIVER = True
+
     def __init__(self, *args, **kwargs):
         super(OsVolumeDriver, self).__init__(*args, **kwargs)
 
@@ -203,11 +205,6 @@ class OsVolumeDriver(driver.VolumeDriver):
         volume_args['display_description'] = volume.display_description
         volume_args['display_name'] = self._get_provider_volume_name(
             volume.display_name, volume.id)
-
-        try:
-            self.delete_volume(volume)
-        except Exception:
-            pass
 
         try:
             sub_image = self.os_glanceclient(context).get_image(
