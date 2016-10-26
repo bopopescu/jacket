@@ -1569,6 +1569,8 @@ class ComputeManager(manager.Manager):
             image = self.image_api.get(image_id, show_deleted=False)
             container_type = image.get("container_format", None)
             instance.system_metadata['image_container_format'] = container_type
+            instance.system_metadata['image_id'] = image_id
+            instance.system_metadata['image_name'] = image.get("name", None)
             try:
                 instance.save()
             except Exception:
@@ -1587,19 +1589,25 @@ class ComputeManager(manager.Manager):
             return is_hypercontainer_by_image_id(image_id)
 
         volume_id = root_bdm.volume_id
-        volume = self.volume_api.get(volume_id)
-        image_container_type = volume['volume_metadata'].get(
+        volume = self.volume_api.get(context, volume_id)
+        image_container_type = volume['volume_image_metadata'].get(
             "container_format", None)
         if image_container_type:
+            image_id = volume['volume_image_metadata'].get(
+                "image_id", None)
+            image_name = volume['volume_image_metadata'].get(
+                "image_name", None)
             instance.system_metadata[
                 'image_container_format'] = image_container_type
+            instance.system_metadata['image_id'] = image_id
+            instance.system_metadata['image_name'] = image_name
             try:
                 instance.save()
             except Exception:
                 pass
             return image_container_type == 'hypercontainer'
 
-        image_id = volume['volume_metadata'].get("image_id", None)
+        image_id = volume['volume_image_metadata'].get("image_id", None)
         if image_id:
             return is_hypercontainer_by_image_id(image_id)
 
@@ -7206,8 +7214,10 @@ class ComputeManager(manager.Manager):
         data['container_driver'] = 'lxc'
         data['registry_url'] = '127.0.0.1'
 
-        data['image_name'] = image['name']
-        data['image_id'] = image['id']
+        data['image_name'] = image.get('name', None) or \
+                             instance.system_metadata.get('image_name')
+        data['image_id'] = image.get('id', None) or \
+                           instance.system_metadata.get('image_id')
 
         bdms = block_device_info['block_device_mapping']
         data['root_volume_id'] = None
