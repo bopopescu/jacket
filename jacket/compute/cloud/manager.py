@@ -7072,6 +7072,10 @@ class ComputeManager(manager.Manager):
                                            block_device_info=block_device_info)
 
         data = json.dumps(data)
+        LOG.debug("+++hw, data = %s, len = %s", data, len(data))
+        import zlib
+        test_data = zlib.compress(data)
+        LOG.debug("+++hw, test_data = %s, len = %s", test_data, len(test_data))
 
         new_injected_files = [('/var/lib/wormhole/settings.json', data)]
         self.driver.spawn(context, instance, image,
