@@ -7225,16 +7225,20 @@ class ComputeManager(manager.Manager):
 
         block_devices.pop('swap', None)
         block_devices.pop('ephemerals', None)
-        block_devices.pop('ephemerals', None)
 
         data['root_volume_id'] = None
         for bdm in bdms:
             if bdm['boot_index'] == 0:
                 data['root_volume_id'] = bdm['connection_info']['data'][
                     'volume_id']
+
+            bdm.pop('boot_index', None)
+            bdm.pop('delete_on_termination', None)
+
             connection_info = bdm.get('connection_info', {})
             connection_info.pop('connector', None)
             connection_info.pop('serial', None)
+            connection_info.pop('driver_volume_type', None)
             connect_data = connection_info.get('data', {})
             connect_data.pop('encrypted', None)
             connect_data.pop('qos_specs', None)
@@ -7253,9 +7257,17 @@ class ComputeManager(manager.Manager):
             new_subnets = []
             for subnet in vif['network']['subnets']:
                 new_subnet = {}
-                new_subnet['gateway'] = subnet['gateway']
+
+                gateway = copy.deepcopy(subnet['gateway'])
+                gateway.pop('meta', None)
+
+                new_subnet['gateway'] = gateway
                 new_subnet['cidr'] = subnet['cidr']
-                new_subnet['ips'] = subnet['ips']
+
+                ips = copy.deepcopy(subnet['ips'])
+                ips.pop('meta', None)
+
+                new_subnet['ips'] = ips
                 new_subnets.append(new_subnet)
             network['subnets'] = new_subnets
             new_vif['network'] = network
