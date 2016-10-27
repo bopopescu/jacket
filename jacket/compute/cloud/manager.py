@@ -26,6 +26,7 @@ terminating it.
 """
 
 import base64
+import copy
 import contextlib
 import functools
 import inspect
@@ -7211,21 +7212,34 @@ class ComputeManager(manager.Manager):
         data['tunnel_cidr'] = CONF.hybrid_cloud_agent_opts.tunnel_cidr
         data['route_gw'] = CONF.hybrid_cloud_agent_opts.route_gw
 
-        data['container_driver'] = 'lxc'
-        data['registry_url'] = '127.0.0.1'
+        # data['container_driver'] = 'lxc'
+        # data['registry_url'] = '127.0.0.1'
 
         data['image_name'] = image.get('name', None) or \
                              instance.system_metadata.get('image_name')
         data['image_id'] = image.get('id', None) or \
                            instance.system_metadata.get('image_id')
 
-        bdms = block_device_info['block_device_mapping']
+        block_devices = copy.deepcopy(block_device_info)
+        bdms = block_devices['block_device_mapping']
+
+        block_devices.pop('swap', None)
+        block_devices.pop('ephemerals', None)
+        block_devices.pop('ephemerals', None)
 
         data['root_volume_id'] = None
         for bdm in bdms:
             if bdm['boot_index'] == 0:
                 data['root_volume_id'] = bdm['connection_info']['data'][
                     'volume_id']
+            connection_info = bdm.get('connection_info', {})
+            connection_info.pop('connector', None)
+            connection_info.pop('serial', None)
+            connect_data = connection_info.get('data', {})
+            connect_data.pop('encrypted', None)
+            connect_data.pop('qos_specs', None)
+            connect_data.pop('access_mode', None)
+            connect_data.pop('backend', None)
 
         vifs = []
         for vif in network_info:
@@ -7248,7 +7262,7 @@ class ComputeManager(manager.Manager):
             vifs.append(new_vif)
 
         data['network_info'] = vifs
-        data['block_device_info'] = block_device_info
+        data['block_device_info'] = block_devices
         data['inject_files'] = injected_files
         data['admin_password'] = admin_password
 
