@@ -1567,7 +1567,7 @@ class ComputeManager(manager.Manager):
             return image_container_type == 'hypercontainer'
 
         def is_hypercontainer_by_image_id(image_id):
-            image = self.image_api.get(image_id, show_deleted=False)
+            image = self.image_api.get(context, image_id, show_deleted=False)
             container_type = image.get("container_format", None)
             instance.system_metadata['image_container_format'] = container_type
             instance.system_metadata['image_id'] = image_id
@@ -7071,11 +7071,9 @@ class ComputeManager(manager.Manager):
                                            network_info=network_info,
                                            block_device_info=block_device_info)
 
-        data = json.dumps(data)
-        LOG.debug("+++hw, data = %s, len = %s", data, len(data))
-        import zlib
-        test_data = zlib.compress(data)
-        LOG.debug("+++hw, test_data = %s, len = %s", test_data, len(test_data))
+        data = json.dumps(data).encode('zlib')
+        data = base64.b64encode(data)
+        LOG.debug("+++hw, len = %s", len(data))
 
         new_injected_files = [('/var/lib/wormhole/settings.json', data)]
         self.driver.spawn(context, instance, image,
