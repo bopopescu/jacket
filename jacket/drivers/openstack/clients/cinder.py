@@ -320,6 +320,15 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
     @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
            retry_on_exception=client_plugin.retry_if_ignore_exe)
     @wrap_auth_failed
+    def attach(self, volume, instance_uuid, mountpoint, mode='rw',
+               host_name=None):
+        return self.client().volumes.attach(volume, instance_uuid,
+                                            mountpoint, mode=mode,
+                                            host_name=host_name)
+
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
     def detach(self, volume, attachment_uuid):
         return self.client().volumes.detach(volume, attachment_uuid)
 

@@ -21,6 +21,7 @@ Driver base-classes:
 
 from oslo_log import log as logging
 from oslo_utils import excutils
+import six
 
 from jacket import conf
 from jacket import context as req_context
@@ -50,7 +51,7 @@ class OsVolumeDriver(driver.VolumeDriver):
         self.storage_db = storage_db_api
         self.caa_db = caa_db_api
 
-    def os_cinderlient(self, context=None):
+    def os_cinderclient(self, context=None):
         if self._os_cinderclient is None:
             oscontext = os_context.OsClientContext(
                 context, version='2')
@@ -80,7 +81,7 @@ class OsVolumeDriver(driver.VolumeDriver):
         if provider_volume_id:
             return provider_volume_id
 
-        provider_volume = self.os_cinderlient(
+        provider_volume = self.os_cinderclient(
             context).get_volume_by_caa_volume_id(
             caa_volume_id)
         if provider_volume is None:
@@ -90,16 +91,20 @@ class OsVolumeDriver(driver.VolumeDriver):
         return provider_volume.id
 
     def _get_provider_volume(self, context, hybrid_volume):
+        if isinstance(hybrid_volume, six.string_types):
+            volume_id = hybrid_volume
+        else:
+            volume_id = hybrid_volume.id
         provider_volume_id = self._get_provider_volume_id(context,
-                                                          hybrid_volume.id)
+                                                          volume_id)
         if provider_volume_id:
-            return self.os_cinderlient(context).get_volume(provider_volume_id)
+            return self.os_cinderclient(context).get_volume(provider_volume_id)
 
-        sub_volume = self.os_cinderlient(context).get_volume_by_caa_volume_id(
-            hybrid_volume.id)
+        sub_volume = self.os_cinderclient(context).get_volume_by_caa_volume_id(
+            volume_id)
         if sub_volume is None:
             raise exception.EntityNotFound(entity='Volume',
-                                           name=hybrid_volume.id)
+                                           name=volume_id)
 
         return sub_volume
 
@@ -146,7 +151,7 @@ class OsVolumeDriver(driver.VolumeDriver):
     def _get_sub_type_name(self, context, type_id):
         type_name = self._get_type_name(context, type_id)
         try:
-            volume_type_obj = self.os_cinderlient(context).get_volume_type(
+            volume_type_obj = self.os_cinderclient(context).get_volume_type(
                 type_name)
             LOG.debug('dir volume_type: %s, '
                       'volume_type: %s' % (
@@ -171,7 +176,7 @@ class OsVolumeDriver(driver.VolumeDriver):
         if provider_snapshot_id:
             return provider_snapshot_id
 
-        provider_snap = self.os_cinderlient(
+        provider_snap = self.os_cinderclient(
             context).get_snapshot_by_caa_snap_id(
             caa_snapshot_id)
         if provider_snap is None:
@@ -185,16 +190,40 @@ class OsVolumeDriver(driver.VolumeDriver):
         provider_snapshot_id = self._get_provider_snapshot_id(context,
                                                               hybrid_snap.id)
         if provider_snapshot_id:
-            return self.os_cinderlient(context).get_volume_snapshot(
+            return self.os_cinderclient(context).get_volume_snapshot(
                 provider_snapshot_id)
 
-        sub_snap = self.os_cinderlient(context).get_snapshot_by_caa_snap_id(
+        sub_snap = self.os_cinderclient(context).get_snapshot_by_caa_snap_id(
             hybrid_snap.id)
         if sub_snap is None:
             raise exception.EntityNotFound(entity='VolumeSnapshot',
                                            name=hybrid_snap.id)
 
         return sub_snap
+
+    def _get_provider_instance_id(self, context, caa_instance_id):
+        instance_mapper = self.caa_db.instance_mapper_get(context,
+                                                          caa_instance_id)
+        return instance_mapper.get('provider_instance_id', None)
+
+    def _get_attachment_id_for_volume(self, sub_volume):
+        LOG.debug('start to _get_attachment_id_for_volume: %s' % sub_volume)
+        attachment_id = None
+        server_id = None
+        attachments = sub_volume.attachments
+        LOG.debug('attachments: %s' % attachments)
+        for attachment in attachments:
+            volume_id = attachment.get('volume_id')
+            tmp_attachment_id = attachment.get('attachment_id')
+            tmp_server_id = attachment.get('server_id')
+            if volume_id == sub_volume.id:
+                attachment_id = tmp_attachment_id
+                server_id = tmp_server_id
+                break
+            else:
+                continue
+
+        return attachment_id, server_id
 
     def copy_image_to_volume(self, context, volume, image_service, image_id):
         LOG.debug('dir volume: %s' % dir(volume))
@@ -236,13 +265,13 @@ class OsVolumeDriver(driver.VolumeDriver):
             volume_args['metadata'] = {}
         volume_args['metadata']['tag:caa_volume_id'] = volume.id
 
-        sub_volume = self.os_cinderlient(context).create_volume(**volume_args)
+        sub_volume = self.os_cinderclient(context).create_volume(**volume_args)
         LOG.debug('submit create-volume task to sub os. '
                   'sub volume id: %s' % sub_volume.id)
 
         LOG.debug('start to wait for volume %s in status '
                   'available' % sub_volume.id)
-        self.os_cinderlient(context).check_create_volume_complete(
+        self.os_cinderclient(context).check_create_volume_complete(
             sub_volume)
 
         try:
@@ -275,7 +304,7 @@ class OsVolumeDriver(driver.VolumeDriver):
         try:
 
             # wait upload image success
-            self.os_cinderlient(context).check_upload_image_volume_complete(
+            self.os_cinderclient(context).check_upload_image_volume_complete(
                 provider_volume.id)
 
             # wait image status active
@@ -339,13 +368,13 @@ class OsVolumeDriver(driver.VolumeDriver):
             volume_args['metadata'] = {}
         volume_args['metadata']['tag:caa_volume_id'] = volume.id
 
-        sub_volume = self.os_cinderlient(context).create_volume(**volume_args)
+        sub_volume = self.os_cinderclient(context).create_volume(**volume_args)
         LOG.debug('submit create-volume task to sub os. '
                   'sub volume id: %s' % sub_volume.id)
 
         LOG.debug('start to wait for volume %s in status '
                   'available' % sub_volume.id)
-        self.os_cinderlient(context).check_create_volume_complete(
+        self.os_cinderclient(context).check_create_volume_complete(
             sub_volume)
 
         try:
@@ -396,13 +425,13 @@ class OsVolumeDriver(driver.VolumeDriver):
             volume_args['metadata'] = {}
         volume_args['metadata']['tag:caa_volume_id'] = volume.id
 
-        sub_volume = self.os_cinderlient(context).create_volume(**volume_args)
+        sub_volume = self.os_cinderclient(context).create_volume(**volume_args)
         LOG.debug('submit create-volume task to sub os. '
                   'sub volume id: %s' % sub_volume.id)
 
         LOG.debug('start to wait for volume %s in status '
                   'available' % sub_volume.id)
-        self.os_cinderlient(context).check_create_volume_complete(
+        self.os_cinderclient(context).check_create_volume_complete(
             sub_volume)
 
         try:
@@ -431,7 +460,7 @@ class OsVolumeDriver(driver.VolumeDriver):
         LOG.debug('submit delete-volume task')
         sub_volume.delete()
         LOG.debug('wait for volume delete')
-        self.os_cinderlient(context).check_delete_volume_complete(
+        self.os_cinderclient(context).check_delete_volume_complete(
             sub_volume)
 
         try:
@@ -454,7 +483,7 @@ class OsVolumeDriver(driver.VolumeDriver):
             raise exception_ex.VolumeNotFoundAtProvider(volume_id=volume.id)
 
         sub_volume.extend(sub_volume, new_size)
-        self.os_cinderlient(context).check_extend_volume_complete(sub_volume)
+        self.os_cinderclient(context).check_extend_volume_complete(sub_volume)
 
         LOG.info(_LI("extend volume(%s) success!"), sub_volume.id)
 
@@ -496,13 +525,13 @@ class OsVolumeDriver(driver.VolumeDriver):
             volume_args['metadata'] = {}
         volume_args['metadata']['tag:caa_volume_id'] = volume.id
 
-        sub_volume = self.os_cinderlient(context).create_volume(**volume_args)
+        sub_volume = self.os_cinderclient(context).create_volume(**volume_args)
         LOG.debug('submit create-volume task to sub os. '
                   'sub volume id: %s' % sub_volume.id)
 
         LOG.debug('start to wait for volume %s in status '
                   'available' % sub_volume.id)
-        self.os_cinderlient(context).check_create_volume_complete(
+        self.os_cinderclient(context).check_create_volume_complete(
             sub_volume)
 
         try:
@@ -540,12 +569,12 @@ class OsVolumeDriver(driver.VolumeDriver):
 
         metadata['tag:caa_snapshot_id'] = snapshot.id
 
-        sub_snapshot = self.os_cinderlient(context).create_snapshot(
+        sub_snapshot = self.os_cinderclient(context).create_snapshot(
             sub_volume.id, force=True, name=sub_sn_name,
             description=snapshot.display_description,
             metadata=metadata)
 
-        self.os_cinderlient(context).check_create_snapshot_complete(
+        self.os_cinderclient(context).check_create_snapshot_complete(
             sub_snapshot.id)
 
         try:
@@ -574,7 +603,8 @@ class OsVolumeDriver(driver.VolumeDriver):
             return
 
         sub_snap.delete()
-        self.os_cinderlient(context).check_delete_snapshot_complete(sub_snap.id)
+        self.os_cinderclient(context).check_delete_snapshot_complete(
+            sub_snap.id)
 
         try:
             # delelte volume snapshot mapper
@@ -641,17 +671,69 @@ class OsVolumeDriver(driver.VolumeDriver):
     def attach_volume(self, context, volume, instance_uuid, host_name,
                       mountpoint):
         """Callback for volume attached to instance or host."""
-        pass
+        LOG.debug('start to attach volume.')
+
+        provider_instance_id = self._get_provider_instance_id(context,
+                                                              instance_uuid)
+
+        if provider_instance_id is None:
+            # NOTE(instance may be not created)
+            return
+
+        cascading_volume_id = volume.id
+        cascading_volume_name = volume.display_name
+        su_volume_name = self._get_provider_volume_name(cascading_volume_name,
+                                                        cascading_volume_id)
+
+        LOG.debug("+++hw, su_volume_name = %s", su_volume_name)
+
+        provider_volume = self._get_provider_volume(context, volume)
+        if provider_volume.status == "in-use":
+            attach_id, server_id = self._get_attachment_id_for_volume(
+                provider_volume)
+            if server_id != provider_instance_id:
+                LOG.error(_LE("provider volume(%s) has been attached to "
+                              "provider instance(%s)"), provider_volume.id,
+                          server_id)
+                raise exception_ex.VolumeAttachFailed(volume_id=volume.id)
+            else:
+                return
+
+        if provider_volume.status == 'available':
+            provider_volume.attach(provider_instance_id, mountpoint,
+                                   host_name=host_name)
+
+            self.os_cinderclient(context).check_attach_volume_complete(
+                provider_volume)
+        else:
+            raise Exception('sub volume %s of volume: %s is not available, '
+                            'status is %s' %
+                            (provider_volume.id, cascading_volume_id,
+                             provider_volume.status))
+        LOG.debug('attach volume : %s success.' % cascading_volume_id)
 
     def detach_volume(self, context, volume, mountpoint):
         """Callback for volume detached."""
-        pass
+        try:
+            provider_volume = self._get_provider_volume(context, volume)
+            if provider_volume.status == "available":
+                LOG.debug("provider volume(%s) has been detach",
+                          provider_volume.id)
+                return
+        except exception_ex.EntityNotFound:
+            return
+
+        provider_volume.detach()
+
+        self.os_cinderclient(context).check_detach_volume_complete(
+            provider_volume)
+        LOG.debug('detach volume : %s success.' % volume.id)
 
     def sub_vol_type_detail(self, context):
         """get volume type detail"""
 
         ret = []
-        sub_vol_types = self.os_cinderlient(context).get_volume_type_detail()
+        sub_vol_types = self.os_cinderclient(context).get_volume_type_detail()
         for sub_vol_type in sub_vol_types:
             ret.append(sub_vol_type._info)
 
@@ -665,8 +747,8 @@ class OsVolumeDriver(driver.VolumeDriver):
 
         provider_name = self._get_provider_volume_name(display_name,
                                                        volume.id)
-        self.os_cinderlient(ctxt).update_volume(provider_uuid,
-                                                display_name=provider_name)
+        self.os_cinderclient(ctxt).update_volume(provider_uuid,
+                                                 display_name=provider_name)
 
     def rename_snapshot(self, ctxt, snapshot, display_name=None):
         provider_uuid = self._get_provider_snapshot_id(ctxt, snapshot.id)
@@ -674,5 +756,5 @@ class OsVolumeDriver(driver.VolumeDriver):
             display_name = snapshot.display_name
 
         provider_name = self._get_sub_snapshot_name(snapshot.id, display_name)
-        self.os_cinderlient(ctxt).update_snapshot(provider_uuid,
-                                                  display_name=provider_name)
+        self.os_cinderclient(ctxt).update_snapshot(provider_uuid,
+                                                   display_name=provider_name)
