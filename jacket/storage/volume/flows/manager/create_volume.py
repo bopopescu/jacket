@@ -251,8 +251,8 @@ class ExtractVolumeSpecTask(flow_utils.CinderTask):
         specs = {
             'status': volume_ref['status'],
             'type': 'raw',  # This will have the type of the volume to be
-                            # created, which should be one of [raw, snap,
-                            # source_vol, image]
+            # created, which should be one of [raw, snap,
+            # source_vol, image]
             'volume_id': volume_ref['id'],
             'volume_name': volume_name,
             'volume_size': volume_size,
@@ -580,6 +580,26 @@ class CreateVolumeFromSpecTask(flow_utils.CinderTask):
         self.db.volume_glance_metadata_bulk_create(context, volume_id,
                                                    volume_metadata)
 
+    def _hybrid_cloud_image_volume(self, context, volume_ref, image_location,
+                                   image_id, image_service):
+        if self.driver.CLOUD_DRIVER:
+            model_update = {'provider_location': 'SUB-FusionSphere'}
+            updates = dict(model_update, status='downloading')
+            try:
+                volume_ref = self.db.volume_update(context,
+                                                   volume_ref['id'], updates)
+                volume_ref = storage.Volume.get_by_id(context, volume_ref['id'])
+            except exception.CinderException:
+                LOG.exception(_LE("Failed updating volume %(volume_id)s with "
+                                  "%(updates)s"),
+                              {'volume_id': volume_ref['id'],
+                               'updates': updates})
+            self._copy_image_to_volume(context, volume_ref,
+                                       image_id, image_location, image_service)
+            return None, True
+        else:
+            return None, False
+
     def _clone_image_volume(self, context, volume, image_location, image_meta):
         """Create a volume efficiently from an existing image.
 
@@ -590,7 +610,7 @@ class CreateVolumeFromSpecTask(flow_utils.CinderTask):
             return None, False
 
         if (image_meta.get('container_format') != 'bare' or
-                image_meta.get('disk_format') != 'raw'):
+                    image_meta.get('disk_format') != 'raw'):
             LOG.info(_LI("Requested image %(id)s is not in raw format."),
                      {'id': image_meta.get('id')})
             return None, False
@@ -612,7 +632,7 @@ class CreateVolumeFromSpecTask(flow_utils.CinderTask):
                 if m['key'] == 'image_owner':
                     image_owner = m['value']
             if (image_meta['owner'] != volume['project_id'] and
-                    image_meta['owner'] != image_owner):
+                        image_meta['owner'] != image_owner):
                 LOG.info(_LI("Skipping image volume %(id)s because "
                              "it is not accessible by current Tenant."),
                          {'id': image_volume.id})
@@ -736,6 +756,14 @@ class CreateVolumeFromSpecTask(flow_utils.CinderTask):
         # download the image data and copy it into the volume.
         original_size = volume_ref['size']
         try:
+            # NOTE(laoyi) is hypercontainer
+            if not cloned:
+                model_update, cloned = self._hybrid_cloud_image_volume(
+                    context,
+                    volume_ref,
+                    image_location,
+                    image_id,
+                    image_service)
             if not cloned:
                 with image_utils.TemporaryImages.fetch(
                         image_service, context, image_id) as tmp_image:
@@ -899,7 +927,6 @@ class CreateVolumeOnFinishTask(NotifyVolumeActionTask):
 def get_flow(context, manager, db, driver, scheduler_rpcapi, host, volume_id,
              allow_reschedule, reschedule_context, request_spec,
              filter_properties, image_volume_cache=None):
-
     """Constructs and returns the manager entrypoint flow.
 
     This flow will do the following:

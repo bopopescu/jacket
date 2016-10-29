@@ -26,6 +26,7 @@ terminating it.
 """
 
 import base64
+import copy
 import contextlib
 import functools
 import inspect
@@ -1538,6 +1539,60 @@ class ComputeManager(manager.Manager):
         if self.driver.instance_exists(instance):
             raise exception.InstanceExists(name=instance.name)
 
+    def _is_hypercontainer(self, context, instance):
+        image_container_type = instance.system_metadata.get(
+            'image_container_format', None)
+        if image_container_type:
+            return image_container_type == 'hypercontainer'
+
+        def is_hypercontainer_by_image_id(image_id):
+            image = self.image_api.get(context, image_id, show_deleted=False)
+            container_type = image.get("container_format", None)
+            instance.system_metadata['image_container_format'] = container_type
+            instance.system_metadata['image_id'] = image_id
+            instance.system_metadata['image_name'] = image.get("name", None)
+            try:
+                instance.save()
+            except Exception:
+                pass
+            return container_type == 'hypercontainer'
+
+        image_id = instance.metadata.get("metering.image_id", None)
+        if image_id is not None:
+            return is_hypercontainer_by_image_id(image_id)
+
+        bdms = objects.BlockDeviceMappingList.get_by_instance_uuid(
+            context, instance.uuid)
+        root_bdm = bdms.root_bdm()
+        image_id = root_bdm.image_id
+        if image_id is not None:
+            return is_hypercontainer_by_image_id(image_id)
+
+        volume_id = root_bdm.volume_id
+        volume = self.volume_api.get(context, volume_id)
+        image_container_type = volume['volume_image_metadata'].get(
+            "container_format", None)
+        if image_container_type:
+            image_id = volume['volume_image_metadata'].get(
+                "image_id", None)
+            image_name = volume['volume_image_metadata'].get(
+                "image_name", None)
+            instance.system_metadata[
+                'image_container_format'] = image_container_type
+            instance.system_metadata['image_id'] = image_id
+            instance.system_metadata['image_name'] = image_name
+            try:
+                instance.save()
+            except Exception:
+                pass
+            return image_container_type == 'hypercontainer'
+
+        image_id = volume['volume_image_metadata'].get("image_id", None)
+        if image_id:
+            return is_hypercontainer_by_image_id(image_id)
+
+        return False
+
     def _allocate_network_async(self, context, instance, requested_networks,
                                 macs, security_groups, is_vpn, dhcp_options):
         """Method used to allocate networks in the background.
@@ -1554,9 +1609,8 @@ class ComputeManager(manager.Manager):
             retries = 0
         attempts = retries + 1
         retry_time = 1
-        image_container_type = instance.system_metadata.get(
-            'image_container_format')
-        if image_container_type == 'hypercontainer':
+
+        if self._is_hypercontainer(context, instance):
             bind_host_id = None
         else:
             bind_host_id = self.driver.network_binding_host_id(context,
@@ -2076,7 +2130,7 @@ class ComputeManager(manager.Manager):
                     LOG.debug('Start spawning the instance on the hypervisor.',
                               instance=instance)
                     with timeutils.StopWatch() as timer:
-                        if image.get('container_format') == 'hypercontainer':
+                        if self._is_hypercontainer(context, instance):
                             LOG.debug("begin to hypercontainer to spawn",
                                       instance=instance)
                             self._do_hybrid_vm_spawn(context, instance, image,
@@ -2322,9 +2376,8 @@ class ComputeManager(manager.Manager):
         timeout, retry_interval = self._get_power_off_values(context,
                                                              instance,
                                                              clean_shutdown)
-        image_container_type = instance.system_metadata.get(
-            'image_container_format')
-        if image_container_type == 'hypercontainer':
+
+        if self._is_hypercontainer(context, instance):
             try:
                 self.jacketdriver.stop_container(instance)
                 self.jacketdriver.wait_container_in_specified_status(instance,
@@ -2375,9 +2428,8 @@ class ComputeManager(manager.Manager):
                                 block_device_info)
             LOG.info(_LI('Took %0.2f seconds to destroy the instance on the '
                          'hypervisor.'), timer.elapsed(), instance=instance)
-            image_container_type = instance.system_metadata.get(
-                'image_container_format')
-            if image_container_type == 'hypercontainer':
+
+            if self._is_hypercontainer(context, instance):
                 try:
                     self.driver.volume_delete(context, instance)
                 except Exception:
@@ -2627,9 +2679,8 @@ class ComputeManager(manager.Manager):
         self.driver.power_on(context, instance,
                              network_info,
                              block_device_info)
-        image_container_type = instance.system_metadata.get(
-            'image_container_format')
-        if image_container_type == 'hypercontainer':
+
+        if self._is_hypercontainer(context, instance):
             try:
                 self.jacketdriver.start_container(instance, network_info,
                                                   block_device_info)
@@ -3128,9 +3179,8 @@ class ComputeManager(manager.Manager):
                 instance.task_state = task_states.REBOOT_STARTED_HARD
                 expected_state = task_states.REBOOT_PENDING_HARD
             instance.save(expected_task_state=expected_state)
-            image_container_type = instance.system_metadata.get(
-                'image_container_format')
-            if image_container_type == 'hypercontainer':
+
+            if self._is_hypercontainer(context, instance):
                 self.jacketdriver.restart_container(instance, network_info,
                                                     block_device_info)
             self.driver.reboot(context, instance,
@@ -4187,9 +4237,7 @@ class ComputeManager(manager.Manager):
         context = context.elevated()
         LOG.info(_LI('Pausing'), context=context, instance=instance)
         self._notify_about_instance_usage(context, instance, 'pause.start')
-        image_container_type = instance.system_metadata.get(
-            'image_container_format')
-        if image_container_type == 'hypercontainer':
+        if self._is_hypercontainer(context, instance):
             self.jacketdriver.pause(instance)
             self.jacketdriver.wait_container_in_specified_status(instance,
                                                                  constants.FROZEN)
@@ -4210,9 +4258,7 @@ class ComputeManager(manager.Manager):
         LOG.info(_LI('Unpausing'), context=context, instance=instance)
         self._notify_about_instance_usage(context, instance, 'unpause.start')
         self.driver.unpause(instance)
-        image_container_type = instance.system_metadata.get(
-            'image_container_format')
-        if image_container_type == 'hypercontainer':
+        if self._is_hypercontainer(context, instance):
             self.jacketdriver.unpause(instance)
             self.jacketdriver.wait_container_in_specified_status(instance,
                                                                  constants.RUNNING)
@@ -4815,9 +4861,7 @@ class ComputeManager(manager.Manager):
                 with excutils.save_and_reraise_exception():
                     bdm.destroy()
 
-        image_container_type = instance.system_metadata.get(
-            'image_container_format')
-        if image_container_type == 'hypercontainer':
+        if self._is_hypercontainer(context, instance):
             # self._do_hybrid_vm_attach(context, instance, bdm, mountpoint)
             volume_devices = self.jacketdriver.list_volumes(instance)
             old_volumes_list = volume_devices.get('devices')
@@ -4996,9 +5040,7 @@ class ComputeManager(manager.Manager):
     @wrap_instance_fault
     def detach_volume(self, context, volume_id, instance, attachment_id=None):
         """Detach a volume from an instance."""
-        image_container_type = instance.system_metadata.get(
-            'image_container_format')
-        if image_container_type == 'hypercontainer':
+        if self._is_hypercontainer(context, instance):
             self.jacketdriver.detach_volume(instance, volume_id)
         self._detach_volume(context, volume_id, instance,
                             attachment_id=attachment_id)
@@ -5157,9 +5199,7 @@ class ComputeManager(manager.Manager):
         image_meta = objects.ImageMeta.from_instance(instance)
 
         try:
-            image_container_type = instance.system_metadata.get(
-                'image_container_format')
-            if image_container_type == 'hypercontainer':
+            if self._is_hypercontainer(context, instance):
                 self.jacketdriver.attach_interface(instance, network_info[0])
             else:
                 self.driver.attach_interface(instance, image_meta,
@@ -5195,9 +5235,7 @@ class ComputeManager(manager.Manager):
             raise exception.PortNotFound(_("Port %s is not "
                                            "attached") % port_id)
         try:
-            image_container_type = instance.system_metadata.get(
-                'image_container_format')
-            if image_container_type == 'hypercontainer':
+            if self._is_hypercontainer(context, instance):
                 self.jacketdriver.detach_interface(instance, condemned)
             else:
                 self.driver.detach_interface(instance, condemned)
@@ -6040,7 +6078,9 @@ class ComputeManager(manager.Manager):
                                            network_info=network_info,
                                            block_device_info=block_device_info)
 
-        data = json.dumps(data)
+        data = json.dumps(data).encode('zlib')
+        data = base64.b64encode(data)
+        LOG.debug("+++hw, len = %s", len(data))
 
         new_injected_files = [('/var/lib/wormhole/settings.json', data)]
         self.driver.spawn(context, instance, image,
@@ -6181,17 +6221,38 @@ class ComputeManager(manager.Manager):
         data['tunnel_cidr'] = CONF.hybrid_cloud_agent_opts.tunnel_cidr
         data['route_gw'] = CONF.hybrid_cloud_agent_opts.route_gw
 
-        data['container_driver'] = 'lxc'
-        data['registry_url'] = '127.0.0.1'
+        # data['container_driver'] = 'lxc'
+        # data['registry_url'] = '127.0.0.1'
 
-        data['image_name'] = image['name']
-        data['image_id'] = image['id']
+        data['image_name'] = image.get('name', None) or \
+                             instance.system_metadata.get('image_name')
+        data['image_id'] = image.get('id', None) or \
+                           instance.system_metadata.get('image_id')
 
-        bdms = block_device_info['block_device_mapping']
+        block_devices = copy.deepcopy(block_device_info)
+        bdms = block_devices['block_device_mapping']
+
+        block_devices.pop('swap', None)
+        block_devices.pop('ephemerals', None)
+
         data['root_volume_id'] = None
         for bdm in bdms:
             if bdm['boot_index'] == 0:
-                data['root_volume_id'] = bdm['data']['volume_id']
+                data['root_volume_id'] = bdm['connection_info']['data'][
+                    'volume_id']
+
+            bdm.pop('boot_index', None)
+            bdm.pop('delete_on_termination', None)
+
+            connection_info = bdm.get('connection_info', {})
+            connection_info.pop('connector', None)
+            connection_info.pop('serial', None)
+            connection_info.pop('driver_volume_type', None)
+            connect_data = connection_info.get('data', {})
+            connect_data.pop('encrypted', None)
+            connect_data.pop('qos_specs', None)
+            connect_data.pop('access_mode', None)
+            connect_data.pop('backend', None)
 
         vifs = []
         for vif in network_info:
@@ -6205,16 +6266,24 @@ class ComputeManager(manager.Manager):
             new_subnets = []
             for subnet in vif['network']['subnets']:
                 new_subnet = {}
-                new_subnet['gateway'] = subnet['gateway']
+
+                gateway = copy.deepcopy(subnet['gateway'])
+                gateway.pop('meta', None)
+
+                new_subnet['gateway'] = gateway
                 new_subnet['cidr'] = subnet['cidr']
-                new_subnet['ips'] = subnet['ips']
+
+                ips = copy.deepcopy(subnet['ips'])
+                ips.pop('meta', None)
+
+                new_subnet['ips'] = ips
                 new_subnets.append(new_subnet)
             network['subnets'] = new_subnets
             new_vif['network'] = network
             vifs.append(new_vif)
 
         data['network_info'] = vifs
-        data['block_device_info'] = block_device_info
+        data['block_device_info'] = block_devices
         data['inject_files'] = injected_files
         data['admin_password'] = admin_password
 

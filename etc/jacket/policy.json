@@ -1,7 +1,10 @@
 {
-    "context_is_admin":  "role:admin",
+    "context_is_admin":  "role:admin or rule:cloud_admin_t",
     "admin_or_owner":  "is_admin:True or project_id:%(project_id)s",
     "default": "rule:admin_or_owner",
+    "cloud_admin_t": "role:op_service",
+
+    "service_admin_t":"role:op_service",
 
     "cells_scheduler_filter:TargetCellFilter": "is_admin:True",
 

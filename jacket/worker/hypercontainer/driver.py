@@ -221,10 +221,10 @@ class JacketHyperContainerDriver():
             if status_result is not None and \
                             status_result['status']['code'] == specified_status:
                 return
-        except Exception:
+        except Exception as ex:
             LOG.warning(_LW('hyper service is not online'))
         LOG.warning(_LW('hyper service is not in specified status'))
-        raise RetryException()
+        raise RetryException(error_info=ex)
 
     def _get_clients(self, ips, port):
         clients = []

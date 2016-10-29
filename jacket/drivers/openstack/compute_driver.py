@@ -26,6 +26,7 @@ import traceback
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
 from oslo_utils import excutils
+import six
 
 from jacket.compute.cloud import power_state
 from jacket.compute.cloud import task_states
@@ -325,6 +326,30 @@ class OsComputeDriver(driver.ComputeDriver):
 
         return metadata
 
+    def _get_provider_volume_id(self, context, caa_volume_id):
+        volume_mapper = self.caa_db_api.volume_mapper_get(context, caa_volume_id)
+        provider_volume_id = volume_mapper.get('provider_volume_id', None)
+        if provider_volume_id:
+            return provider_volume_id
+
+    def _get_provider_volume(self, context, hybrid_volume):
+        if isinstance(hybrid_volume, six.string_types):
+            volume_id = hybrid_volume
+        else:
+            volume_id = hybrid_volume.id
+        provider_volume_id = self._get_provider_volume_id(context,
+                                                          volume_id)
+        if provider_volume_id:
+            return self.os_cinderclient(context).get_volume(provider_volume_id)
+
+        sub_volume = self.os_cinderclient(context).get_volume_by_caa_volume_id(
+            volume_id)
+        if sub_volume is None:
+            raise exception.EntityNotFound(entity='Volume',
+                                           name=volume_id)
+
+        return sub_volume
+
     def list_instance_uuids(self):
         uuids = []
         context = req_context.RequestContext(project_id='default')
@@ -549,21 +574,6 @@ class OsComputeDriver(driver.ComputeDriver):
         LOG.debug('start to attach volume.')
 
         cascading_volume_id = connection_info['data']['volume_id']
-        cascading_volume_name = connection_info['data']['display_name']
-        su_volume_name = self._get_provider_volume_name(cascading_volume_name,
-                                                        cascading_volume_id)
-
-        LOG.debug("+++hw, su_volume_name = %s", su_volume_name)
-
-        sub_volume = self.os_cinderclient(context).get_volume_by_name(
-            su_volume_name)
-        if not sub_volume:
-            sub_volume = self.os_cinderclient(context).get_volume_by_name(
-                cascading_volume_name)
-            if not sub_volume:
-                LOG.error('Can not find volume in provider os,'
-                          'volume: %s ' % cascading_volume_id)
-                raise exception_ex.VolumeNotFoundAtProvider()
 
         sub_server = self._get_provider_instance(context, instance)
         if not sub_server:
@@ -572,17 +582,30 @@ class OsComputeDriver(driver.ComputeDriver):
             raise exception_ex.ServerNotExistException(
                 server_name=instance.display_name)
 
-        if sub_volume.status == 'available':
+        provider_volume = self._get_provider_volume(context,
+                                                    cascading_volume_id)
+        if provider_volume.status == "in-use":
+            attach_id, server_id = self._get_attachment_id_for_volume(
+                provider_volume)
+            if server_id != sub_server.id:
+                LOG.error(_LE("provider volume(%s) has been attached to "
+                              "provider instance(%s)"), provider_volume.id,
+                          server_id)
+                raise exception_ex.VolumeAttachFailed(volume_id=cascading_volume_id)
+            else:
+                return
+
+        if provider_volume.status == 'available':
             self.os_novaclient(context).attach_volume(sub_server.id,
-                                                      sub_volume.id,
+                                                      provider_volume.id,
                                                       mountpoint)
             self.os_cinderclient(context).check_attach_volume_complete(
-                sub_volume)
+                provider_volume)
         else:
             raise Exception('sub volume %s of volume: %s is not available, '
                             'status is %s' %
-                            (sub_volume.id, cascading_volume_id,
-                             sub_volume.status))
+                            (provider_volume.id, cascading_volume_id,
+                             provider_volume.status))
         LOG.debug('attach volume : %s success.' % cascading_volume_id)
 
     def destroy(self, context, instance, network_info, block_device_info=None,
@@ -626,33 +649,24 @@ class OsComputeDriver(driver.ComputeDriver):
         LOG.debug('instance: %s' % instance)
         LOG.debug('connection_info: %s' % connection_info)
 
-        cascading_volume_id = connection_info['data']['volume_id']
-        cascading_volume_name = connection_info['data']['display_name']
-        sub_volume_name = self._get_provider_volume_name(cascading_volume_name,
-                                                         cascading_volume_id)
-
         context = req_context.RequestContext(instance.project_id)
+        cascading_volume_id = connection_info['data']['volume_id']
 
-        sub_volume = self.os_cinderclient(context).get_volume_by_name(
-            sub_volume_name)
-        if not sub_volume:
-            sub_volume = self.os_cinderclient(context).get_volume_by_name(
-                cascading_volume_name)
-            if not sub_volume:
-                LOG.error('Can not find volume in provider os, '
-                          'volume: %s ' % cascading_volume_id)
-                raise exception_ex.VolumeNotFoundAtProvider()
+        provider_volume = self._get_provider_volume(context, cascading_volume_id)
+        if provider_volume.status == "available":
+            LOG.debug("provider volume(%s) has been detach", provider_volume.id)
+            return
 
         attachment_id, server_id = self._get_attachment_id_for_volume(
-            sub_volume)
+            provider_volume)
 
         LOG.debug('server_id: %s' % server_id)
         LOG.debug('submit detach task')
-        self.os_novaclient(context).detach_volume(server_id, sub_volume.id)
+        self.os_novaclient(context).detach_volume(server_id, provider_volume.id)
 
         LOG.debug('wait for volume in available status.')
         self.os_cinderclient(context).check_detach_volume_complete(
-            sub_volume)
+            provider_volume)
 
     def _get_attachment_id_for_volume(self, sub_volume):
         LOG.debug('start to _get_attachment_id_for_volume: %s' % sub_volume)
@@ -1256,3 +1270,9 @@ class OsComputeDriver(driver.ComputeDriver):
         """Returns the result of calling "uptime"."""
         out, err = utils.execute('env', 'LANG=C', 'uptime')
         return out
+
+    def attach_interface(self, instance, image_meta, vif):
+        pass
+
+    def detach_interface(self, instance, vif):
+        pass
