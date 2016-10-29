@@ -2121,3 +2121,7 @@ class BuildRequestNotFound(NotFound):
 
 class RetryException(NovaException):
     msg_fmt = _('Need to retry, error info: %(error_info)s')
+
+
+class LxcVolumeListFailed(Invalid):
+    msg_fmt = _("get lxc volume list failed!")

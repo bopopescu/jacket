@@ -506,7 +506,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         return self.check_opt_server_complete(server, opt, task_states,
                                               wait_statuses)
 
-    @retry(stop_max_attempt_number=300,
+    @retry(stop_max_attempt_number=900,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=client_plugin.retry_if_ignore_exe)
@@ -521,7 +521,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         return self.check_opt_server_complete(server, opt, task_states,
                                               wait_statuses, True)
 
-    @retry(stop_max_attempt_number=600,
+    @retry(stop_max_attempt_number=900,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=client_plugin.retry_if_ignore_exe)
@@ -538,7 +538,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         return self.check_opt_server_complete(server, opt, task_states,
                                               wait_statuses)
 
-    @retry(stop_max_attempt_number=300,
+    @retry(stop_max_attempt_number=900,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=client_plugin.retry_if_ignore_exe)
@@ -553,7 +553,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
         return self.check_opt_server_complete(server, opt, task_states,
                                               wait_statuses)
 
-    @retry(stop_max_attempt_number=300,
+    @retry(stop_max_attempt_number=900,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=client_plugin.retry_if_ignore_exe)
@@ -791,7 +791,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
     def rescue(self, server, password=None, image=None):
         self.client().servers.rescue(server, password=password, image=image)
 
-    @retry(stop_max_attempt_number=60,
+    @retry(stop_max_attempt_number=900,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=client_plugin.retry_if_ignore_exe)
@@ -814,7 +814,7 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
     def unrescue(self, server):
         self.client().servers.unrescue(server)
 
-    @retry(stop_max_attempt_number=60,
+    @retry(stop_max_attempt_number=900,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=client_plugin.retry_if_ignore_exe)

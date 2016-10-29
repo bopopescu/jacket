@@ -81,7 +81,7 @@ class ImageMapperController(wsgi.Controller):
         if 'image_id' not in image_mapper:
             raise exc.HTTPUnprocessableEntity()
 
-        if 'dest_image_id' not in image_mapper:
+        if 'provider_image_id' not in image_mapper:
             raise exc.HTTPUnprocessableEntity()
 
         image_id = image_mapper.pop('image_id')

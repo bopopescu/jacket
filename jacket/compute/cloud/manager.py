@@ -7053,18 +7053,56 @@ class ComputeManager(manager.Manager):
         image_meta = objects.ImageMeta.from_instance(instance)
         self.driver.unquiesce(context, instance, image_meta)
 
+    def _build_hc_bdm(self, instance):
+        '''
+         {'guest_format': None, 'boot_index': None, 'mount_device': u'/dev/sdb',
+          'connection_info': None, 'disk_bus': None, 'device_type': None,
+           'delete_on_termination': False}
+         :param volume:
+         :return:
+         '''
+
+        bdm = {}
+
+        bdm['boot_index'] = None
+        bdm['size'] = instance.get_flavor().get('root_gb')
+        bdm['source_type'] = 'blank'
+        bdm['destination_type'] = 'volume'
+        bdm['delete_on_termination'] = True
+
+        driver_volume_type = 'clouds_volume'
+        data = {}
+        data['backend'] = 'clouds'
+        data['volume_id'] = None
+        data['display_name'] = None
+
+        connection_info = {}
+        connection_info['driver_volume_type'] = driver_volume_type
+        connection_info['serial'] = None
+        connection_info['data'] = data
+        bdm['connection_info'] = connection_info
+
+        return bdm
+
     def _do_hybrid_vm_spawn(self, context, instance, image,
                             injected_files, admin_password,
                             network_info, block_device_info):
 
         block_device_info = block_device_info or {}
+        block_device_info = copy.deepcopy(block_device_info)
 
         bdms = block_device_info.get('block_device_mapping', [])
-        block_device_info['block_device_mapping'] = []
-        for bdm in bdms:
-            if bdm['boot_index'] == 0:
-                block_device_info['block_device_mapping'].append(bdm)
-                break
+
+        bdms = sorted(bdms, key=lambda bdm: bdm['boot_index'])
+        LOG.debug("bdms = %s", bdms)
+
+        hyper_bdm = self._build_hc_bdm(instance)
+        bdms.insert(1, hyper_bdm)
+        LOG.debug("after insert bdms = %s", bdms)
+        for index, bdm in enumerate(bdms):
+            bdm["boot_index"] = index
+
+        block_device_info['block_device_mapping'] = bdms
 
         data = self._create_hybrid_vm_data(context, instance, image,
                                            injected_files, admin_password,
@@ -7073,7 +7111,6 @@ class ComputeManager(manager.Manager):
 
         data = json.dumps(data).encode('zlib')
         data = base64.b64encode(data)
-        LOG.debug("+++hw, len = %s", len(data))
 
         new_injected_files = [('/var/lib/wormhole/settings.json', data)]
         self.driver.spawn(context, instance, image,
@@ -7081,32 +7118,16 @@ class ComputeManager(manager.Manager):
                           network_info=network_info,
                           block_device_info=block_device_info)
 
-        hybrid_vm = self.driver.volume_create(context, instance)
-        hybrid_vm_bdm = self._build_hybrid_vm_bdm(hybrid_vm)
+        # lxc attach volume
+        volume_devices = self.jacketdriver.list_volumes(instance)
+        if not volume_devices:
+            raise exception.LxcVolumeListFailed()
+        volume_devices.sort()
+        LOG.debug("get hypercontainer device_list = %s", volume_devices)
 
-        connection_info = hybrid_vm_bdm.get('connection_info', {})
-        self.driver.attach_volume(context, connection_info, instance)
-
-        for bdm in bdms:
-            if bdm['boot_index'] == 0:
-                continue
-            else:
-                connection_info = bdm['connection_info']
-                mount_device = bdm['mount_device']
-                vol = self.volume_api.get(context,
-                                          connection_info.get('serial'))
-                bdm['size'] = vol.get('size')
-                volume_devices = self.jacketdriver.list_volumes(instance)
-                old_volumes_list = volume_devices.get('devices')
-                self.driver.attach_volume(context, connection_info, instance)
-                volume_devices = self.jacketdriver.list_volumes(instance)
-                new_volumes_list = volume_devices.get('devices')
-                added_device_list = [device for device in new_volumes_list if
-                                     device not in old_volumes_list]
-                added_device = added_device_list[0]
-                volume_id = bdm['volume_id']
-                self.jacketdriver.attach_volume(instance, volume_id,
-                                                added_device, mount_device)
+        for (bdm, device) in six.moves.zip(bdms[2:], volume_devices[2:]):
+            self.jacketdriver.attach_volume(instance, bdm['volume_id'],
+                                            device, bdm['mount_device'])
 
         self.jacketdriver.wait_container_in_specified_status(instance,
                                                              constants.RUNNING)
@@ -7134,43 +7155,6 @@ class ComputeManager(manager.Manager):
             LOG.error(_LE('Instance failed binding host '
                           '(attempt %(attempt)d of %(attempts)d)'),
                       log_info)
-
-    def _build_hybrid_vm_bdm(self, volume):
-        '''
-        {'guest_format': None, 'boot_index': None, 'mount_device': u'/dev/sdb',
-         'connection_info': None, 'disk_bus': None, 'device_type': None,
-          'delete_on_termination': False}
-        :param volume:
-        :return:
-        '''
-        bdm = {}
-        bdm['guest_format'] = None
-        bdm['boot_index'] = None
-        # bdm['mount_device'] = '/dev/sdz'
-        bdm['size'] = volume.size
-
-        driver_volume_type = 'fs_clouds_volume'
-        data = {}
-        data['backend'] = 'fsclouds'
-        data['volume_id'] = volume.id
-        data['display_name'] = volume.name
-
-        connection_info = {}
-        connection_info['driver_volume_type'] = driver_volume_type
-        connection_info['serial'] = volume.id
-        # data = {}
-        # data['access_mode'] = 'rw'
-        # data['qos_specs'] = None
-        # data['volume_id'] = volume.id
-        # data['display_name'] = volume.name
-        # data['backend'] = None
-        # data['disk_bus'] = None
-        # data['device_type'] = None
-        # data['delete_on_termination'] = True
-        connection_info['data'] = data
-        bdm['connection_info'] = connection_info
-
-        return bdm
 
     def _create_hybrid_vm_data(self, context, instance, image,
                                injected_files, admin_password,
@@ -7267,8 +7251,6 @@ class ComputeManager(manager.Manager):
                 new_subnet['cidr'] = subnet['cidr']
 
                 ips = copy.deepcopy(subnet['ips'])
-                ips.pop('meta', None)
-
                 new_subnet['ips'] = ips
                 new_subnets.append(new_subnet)
             network['subnets'] = new_subnets

@@ -244,7 +244,7 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
         return self.check_opt_volume_complete("attach", volume, by_status,
                                               expect_status)
 
-    @retry(stop_max_attempt_number=300,
+    @retry(stop_max_attempt_number=900,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=client_plugin.retry_if_ignore_exe)
@@ -256,7 +256,7 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
         return self.check_opt_volume_complete("create", volume, by_status,
                                               expect_status)
 
-    @retry(stop_max_attempt_number=60,
+    @retry(stop_max_attempt_number=900,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=client_plugin.retry_if_ignore_exe)
@@ -390,7 +390,7 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
     def update_snapshot(self, snapshot_id, **kwargs):
         return self.client().volume_snapshots.update(snapshot_id, **kwargs)
 
-    @retry(stop_max_attempt_number=60,
+    @retry(stop_max_attempt_number=900,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=client_plugin.retry_if_ignore_exe)
@@ -414,7 +414,7 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
         LOG.info(_LI('creating snapshot %(id)s complete'), {'id': snap_id})
         return True
 
-    @retry(stop_max_attempt_number=60,
+    @retry(stop_max_attempt_number=900,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=client_plugin.retry_if_ignore_exe)
@@ -451,7 +451,7 @@ class CinderClientPlugin(client_plugin.ClientPlugin):
         return self.client().volumes.upload_to_image(volume, force, image_name,
                                              container_format, disk_format)
 
-    @retry(stop_max_attempt_number=150,
+    @retry(stop_max_attempt_number=900,
            wait_fixed=2000,
            retry_on_result=client_plugin.retry_if_result_is_false,
            retry_on_exception=client_plugin.retry_if_ignore_exe)

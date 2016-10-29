@@ -21,16 +21,14 @@ Driver base-classes:
 
 from oslo_log import log as logging
 from oslo_utils import excutils
-import six
 
 from jacket import conf
 from jacket import context as req_context
 from jacket import exception
+from jacket.compute import image
 from jacket.db.extend import api as caa_db_api
 from jacket.db.storage import api as storage_db_api
-from jacket.drivers.openstack.clients import os_context
-from jacket.drivers.openstack.clients import cinder as cinderclient
-from jacket.drivers.openstack.clients import glance as glanceclient
+from jacket.drivers.openstack import base
 from jacket.drivers.openstack import exception_ex
 from jacket.i18n import _LE, _LI
 from jacket.storage.volume import driver
@@ -40,97 +38,20 @@ LOG = logging.getLogger(__name__)
 CONF = conf.CONF
 
 
-class OsVolumeDriver(driver.VolumeDriver):
+class OsVolumeDriver(driver.VolumeDriver, base.OsDriver):
     CLOUD_DRIVER = True
 
     def __init__(self, *args, **kwargs):
         super(OsVolumeDriver, self).__init__(*args, **kwargs)
-
+        self._os_novaclient = None
         self._os_cinderclient = None
         self._os_glanceclient = None
+        self.caa_db_api = caa_db_api
+        self._image_api = image.API()
         self.storage_db = storage_db_api
-        self.caa_db = caa_db_api
-
-    def os_cinderclient(self, context=None):
-        if self._os_cinderclient is None:
-            oscontext = os_context.OsClientContext(
-                context, version='2')
-            self._os_cinderclient = cinderclient.CinderClientPlugin(oscontext)
-
-        return self._os_cinderclient
-
-    def os_glanceclient(self, context=None):
-        if self._os_glanceclient is None:
-            oscontext = os_context.OsClientContext(
-                context, version='2')
-            self._os_glanceclient = glanceclient.GlanceClientPlugin(oscontext)
-
-        return self._os_glanceclient
 
     def check_for_setup_error(self):
         return
-
-    def _get_provider_volume_name(self, volume_name, volume_id):
-        if not volume_name:
-            volume_name = "volume"
-        return '@'.join([volume_name, volume_id])
-
-    def _get_provider_volume_id(self, context, caa_volume_id):
-        volume_mapper = self.caa_db.volume_mapper_get(context, caa_volume_id)
-        provider_volume_id = volume_mapper.get('provider_volume_id', None)
-        if provider_volume_id:
-            return provider_volume_id
-
-        provider_volume = self.os_cinderclient(
-            context).get_volume_by_caa_volume_id(
-            caa_volume_id)
-        if provider_volume is None:
-            raise exception.EntityNotFound(entity='Volume',
-                                           name=caa_volume_id)
-
-        return provider_volume.id
-
-    def _get_provider_volume(self, context, hybrid_volume):
-        if isinstance(hybrid_volume, six.string_types):
-            volume_id = hybrid_volume
-        else:
-            volume_id = hybrid_volume.id
-        provider_volume_id = self._get_provider_volume_id(context,
-                                                          volume_id)
-        if provider_volume_id:
-            return self.os_cinderclient(context).get_volume(provider_volume_id)
-
-        sub_volume = self.os_cinderclient(context).get_volume_by_caa_volume_id(
-            volume_id)
-        if sub_volume is None:
-            raise exception.EntityNotFound(entity='Volume',
-                                           name=volume_id)
-
-        return sub_volume
-
-    def _get_project_mapper(self, context, project_id=None):
-        if project_id is None:
-            project_id = 'default'
-
-        project_mapper = self.caa_db.project_mapper_get(context, project_id)
-        if not project_mapper:
-            project_mapper = self.caa_db.project_mapper_get(context,
-                                                            'default')
-
-        if not project_mapper:
-            raise exception_ex.AccountNotConfig()
-
-        return project_mapper
-
-    def _get_sub_image_id(self, context, image_id):
-
-        project_mapper = self._get_project_mapper(context, context.project_id)
-        base_linux_image = project_mapper.get("base_linux_image", None)
-
-        image_mapper = self.caa_db.image_mapper_get(context, image_id)
-        sub_image_id = image_mapper.get("dest_image_id", base_linux_image)
-
-        return sub_image_id
 
     def _get_type_name(self, context, type_id):
         found = False
@@ -170,7 +91,7 @@ class OsVolumeDriver(driver.VolumeDriver):
         return "@".join([snap_name, snap_id])
 
     def _get_provider_snapshot_id(self, context, caa_snapshot_id):
-        snapshot_mapper = self.caa_db.volume_snapshot_mapper_get(context,
+        snapshot_mapper = self.caa_db_api.volume_snapshot_mapper_get(context,
                                                                  caa_snapshot_id)
         provider_snapshot_id = snapshot_mapper.get('provider_snapshot_id', None)
         if provider_snapshot_id:
@@ -201,30 +122,6 @@ class OsVolumeDriver(driver.VolumeDriver):
 
         return sub_snap
 
-    def _get_provider_instance_id(self, context, caa_instance_id):
-        instance_mapper = self.caa_db.instance_mapper_get(context,
-                                                          caa_instance_id)
-        return instance_mapper.get('provider_instance_id', None)
-
-    def _get_attachment_id_for_volume(self, sub_volume):
-        LOG.debug('start to _get_attachment_id_for_volume: %s' % sub_volume)
-        attachment_id = None
-        server_id = None
-        attachments = sub_volume.attachments
-        LOG.debug('attachments: %s' % attachments)
-        for attachment in attachments:
-            volume_id = attachment.get('volume_id')
-            tmp_attachment_id = attachment.get('attachment_id')
-            tmp_server_id = attachment.get('server_id')
-            if volume_id == sub_volume.id:
-                attachment_id = tmp_attachment_id
-                server_id = tmp_server_id
-                break
-            else:
-                continue
-
-        return attachment_id, server_id
-
     def copy_image_to_volume(self, context, volume, image_service, image_id):
         LOG.debug('dir volume: %s' % dir(volume))
         LOG.debug('volume: %s' % volume)
@@ -237,7 +134,7 @@ class OsVolumeDriver(driver.VolumeDriver):
 
         try:
             sub_image = self.os_glanceclient(context).get_image(
-                self._get_sub_image_id(context, image_id))
+                self._get_provider_image_id(context, image_id))
         except Exception as ex:
             LOG.exception(_LE("get image(%(image_id)s) failed, "
                               "ex = %(ex)s"), image_id=image_id,
@@ -277,7 +174,7 @@ class OsVolumeDriver(driver.VolumeDriver):
         try:
             # create volume mapper
             values = {"provider_volume_id": sub_volume.id}
-            self.caa_db.volume_mapper_create(context, volume.id,
+            self.caa_db_api.volume_mapper_create(context, volume.id,
                                              context.project_id, values)
         except Exception as ex:
             LOG.exception(_LE("volume_mapper_create failed! ex = %s"), ex)
@@ -321,7 +218,7 @@ class OsVolumeDriver(driver.VolumeDriver):
 
             # create image mapper
             values = {"provider_image_id": provider_image["image_id"]}
-            self.caa_db.image_mapper_create(context, image_id,
+            self.caa_db_api.image_mapper_create(context, image_id,
                                             context.project_id,
                                             values)
 
@@ -380,7 +277,7 @@ class OsVolumeDriver(driver.VolumeDriver):
         try:
             # create volume mapper
             values = {"provider_volume_id": sub_volume.id}
-            self.caa_db.volume_mapper_create(context, volume.id,
+            self.caa_db_api.volume_mapper_create(context, volume.id,
                                              context.project_id, values)
         except Exception as ex:
             LOG.exception(_LE("volume_mapper_create failed! ex = %s"), ex)
@@ -437,7 +334,7 @@ class OsVolumeDriver(driver.VolumeDriver):
         try:
             # create volume mapper
             values = {"provider_volume_id": sub_volume.id}
-            self.caa_db.volume_mapper_create(context, volume.id,
+            self.caa_db_api.volume_mapper_create(context, volume.id,
                                              context.project_id, values)
         except Exception as ex:
             LOG.exception(_LE("volume_mapper_create failed! ex = %s"), ex)
@@ -465,7 +362,7 @@ class OsVolumeDriver(driver.VolumeDriver):
 
         try:
             # delelte volume snapshot mapper
-            self.caa_db.volume_mapper_delete(context, volume.id,
+            self.caa_db_api.volume_mapper_delete(context, volume.id,
                                              context.project_id)
         except Exception as ex:
             LOG.error(_LE("volume_mapper_delete failed! ex = %s"), ex)
@@ -537,7 +434,7 @@ class OsVolumeDriver(driver.VolumeDriver):
         try:
             # create volume mapper
             values = {"provider_volume_id": sub_volume.id}
-            self.caa_db.volume_mapper_create(context, volume.id,
+            self.caa_db_api.volume_mapper_create(context, volume.id,
                                              context.project_id, values)
         except Exception as ex:
             LOG.exception(_LE("volume_mapper_create failed! ex = %s"), ex)
@@ -580,7 +477,7 @@ class OsVolumeDriver(driver.VolumeDriver):
         try:
             # create volume snapshot mapper
             values = {"provider_snapshot_id": sub_snapshot.id}
-            self.caa_db.volume_snapshot_mapper_create(context, snapshot.id,
+            self.caa_db_api.volume_snapshot_mapper_create(context, snapshot.id,
                                                       context.project_id,
                                                       values)
         except Exception as ex:
@@ -608,7 +505,7 @@ class OsVolumeDriver(driver.VolumeDriver):
 
         try:
             # delelte volume snapshot mapper
-            self.caa_db.volume_snapshot_mapper_delete(context, snapshot.id,
+            self.caa_db_api.volume_snapshot_mapper_delete(context, snapshot.id,
                                                       context.project_id)
         except Exception as ex:
             LOG.error(_LE("volume_snapshot_mapper_delete failed! ex = %s"), ex)
@@ -720,7 +617,7 @@ class OsVolumeDriver(driver.VolumeDriver):
                 LOG.debug("provider volume(%s) has been detach",
                           provider_volume.id)
                 return
-        except exception_ex.EntityNotFound:
+        except exception.EntityNotFound:
             return
 
         provider_volume.detach()

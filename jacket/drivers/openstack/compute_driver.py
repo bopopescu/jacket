@@ -26,22 +26,18 @@ import traceback
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
 from oslo_utils import excutils
-import six
 
 from jacket.compute.cloud import power_state
 from jacket.compute.cloud import task_states
 from jacket.compute.cloud import vm_states
-from jacket.compute import image
 from jacket.compute.virt import driver
 from jacket.compute.virt import hardware
 from jacket import conf
 from jacket import context as req_context
+from jacket.compute import image
 from jacket.db.extend import api as caa_db_api
+from jacket.drivers.openstack import base
 from jacket.drivers.openstack import exception_ex
-from jacket.drivers.openstack.clients import os_context
-from jacket.drivers.openstack.clients import nova as novaclient
-from jacket.drivers.openstack.clients import cinder as cinderclient
-from jacket.drivers.openstack.clients import glance as glanceclient
 from jacket import exception
 from jacket.i18n import _LE
 from jacket import utils
@@ -71,42 +67,14 @@ FS_POWER_STATE = {
 }
 
 
-class OsComputeDriver(driver.ComputeDriver):
+class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
     def __init__(self, virtapi):
-        super(OsComputeDriver, self).__init__(virtapi)
-
         self._os_novaclient = None
         self._os_cinderclient = None
         self._os_glanceclient = None
         self.caa_db_api = caa_db_api
         self._image_api = image.API()
-
-    def os_novaclient(self, context=None):
-        if self._os_novaclient is None:
-            oscontext = os_context.OsClientContext(
-                context, version='2'
-            )
-            self._os_novaclient = novaclient.NovaClientPlugin(oscontext)
-
-        return self._os_novaclient
-
-    def os_cinderclient(self, context=None):
-        if self._os_cinderclient is None:
-            oscontext = os_context.OsClientContext(
-                context, version='2'
-            )
-            self._os_cinderclient = cinderclient.CinderClientPlugin(oscontext)
-
-        return self._os_cinderclient
-
-    def os_glanceclient(self, context=None):
-        if self._os_glanceclient is None:
-            oscontext = os_context.OsClientContext(
-                context, version='2'
-            )
-            self._os_glanceclient = glanceclient.GlanceClientPlugin(oscontext)
-
-        return self._os_glanceclient
+        super(OsComputeDriver, self).__init__(virtapi)
 
     def after_detach_volume_fail(self, job_detail_info, **kwargs):
         pass
@@ -160,37 +128,37 @@ class OsComputeDriver(driver.ComputeDriver):
                             "delete_on_termination": "False"}]
         """
         sub_bdms = []
-        bdm_list = block_device_mapping.get('block_device_mapping')
-        if bdm_list:
-            for bdm in bdm_list:
-                bdm_info_dict = {}
-                device_name = bdm.get('mount_device')
-                delete_on_termination = bdm.get('delete_on_termination')
-                boot_index = bdm.get('boot_index')
+        bdm_list = block_device_mapping.get('block_device_mapping', [])
+        for bdm in bdm_list:
+            bdm_info_dict = {}
+            # bdm_info_dict['delete_on_termination'] = bdm.get(
+            #    'delete_on_termination', False)
+            bdm_info_dict['boot_index'] = bdm.get('boot_index')
+            bdm_info_dict['destination_type'] = 'volume'
+
+            source_type = bdm.get('source_type', None)
+            # NOTE(laoyi) Now, only support blank
+            if source_type == 'blank':
+                bdm_info_dict['source_type'] = source_type
+                bdm_info_dict['volume_size'] = str(bdm.get('size'))
+                bdm_info_dict['delete_on_termination'] = bdm.get(
+                    'delete_on_termination', False)
+            else:
                 volume_id = bdm.get('connection_info').get('data').get(
                     'volume_id')
                 if volume_id:
-                    volume_display_name = bdm.get('connection_info').get(
-                        'data').get('display_name')
-                    sub_volume_name = self._get_provider_volume_name(
-                        volume_display_name, volume_id)
-                    sub_volume = self.os_cinderclient(
-                        context).get_volume_by_name(sub_volume_name)
-                    if boot_index is not None:
-                        bdm_info_dict['boot_index'] = boot_index
-                    bdm_info_dict['uuid'] = sub_volume.id
-                    bdm_info_dict['volume_size'] = str(sub_volume.size)
-                    bdm_info_dict['device_name'] = device_name
+                    provider_volume = self._get_provider_volume(context,
+                                                                volume_id)
+                    bdm_info_dict['uuid'] = provider_volume.id
+                    bdm_info_dict['volume_size'] = str(provider_volume.size)
+                    # bdm_info_dict['device_name'] = device_name
                     bdm_info_dict['source_type'] = 'volume'
-                    bdm_info_dict['destination_type'] = 'volume'
-                    bdm_info_dict['delete_on_termination'] = str(
-                        delete_on_termination)
+                    bdm_info_dict['delete_on_termination'] = False
                 else:
                     # TODO: need to support snapshot id
                     continue
-                sub_bdms.append(bdm_info_dict)
-        else:
-            sub_bdms = []
+
+            sub_bdms.append(bdm_info_dict)
 
         if not sub_bdms:
             sub_bdms = None
@@ -237,38 +205,7 @@ class OsComputeDriver(driver.ComputeDriver):
         """
         return '@'.join([instance_name, instance_id])
 
-    def _get_provider_instance_id(self, context, caa_instance_id):
-        instance_mapper = self.caa_db_api.instance_mapper_get(context,
-                                                              caa_instance_id)
-        return instance_mapper.get('provider_instance_id', None)
-
-    def _get_provider_instance(self, context=None, hybrid_instance=None):
-        if not context:
-            context = req_context.RequestContext(hybrid_instance.project_id)
-
-        provider_instance_id = self._get_provider_instance_id(context,
-                                                              hybrid_instance.uuid)
-        if provider_instance_id:
-            return self.os_novaclient(context).get_server(provider_instance_id)
-
-        server = self.os_novaclient(context).get_server_by_caa_instance_id(
-            hybrid_instance.uuid)
-        if server is None:
-            raise exception.EntityNotFound(entity='Server',
-                                           name=hybrid_instance.uuid)
-        return server
-
-    def _get_sub_image_id(self, context, image_id):
-
-        project_mapper = self._get_project_mapper(context, context.project_id)
-        base_linux_image = project_mapper.get("base_linux_image", None)
-
-        image_mapper = self.caa_db_api.image_mapper_get(context, image_id)
-        sub_image_id = image_mapper.get("provider_image_id", base_linux_image)
-
-        return sub_image_id
-
-    def _get_sub_flavor_id(self, context, flavor_id):
+    def _get_provider_flavor_id(self, context, flavor_id):
 
         # get dest flavor id
         flavor_mapper = self.caa_db_api.flavor_mapper_get(context,
@@ -278,25 +215,6 @@ class OsComputeDriver(driver.ComputeDriver):
         dest_flavor_id = flavor_mapper.get("dest_flavor_id", flavor_id)
 
         return dest_flavor_id
-
-    def _get_project_mapper(self, context, project_id=None):
-        if project_id is None:
-            project_id = 'default'
-
-        project_mapper = self.caa_db_api.project_mapper_get(context, project_id)
-        if not project_mapper:
-            project_mapper = self.caa_db_api.project_mapper_get(context,
-                                                                'default')
-
-        if not project_mapper:
-            raise exception_ex.AccountNotConfig()
-
-        return project_mapper
-
-    def _get_provider_volume_name(self, volume_name, volume_id):
-        if not volume_name:
-            volume_name = 'volume'
-        return '@'.join([volume_name, volume_id])
 
     def _create_snapshot_metadata(self, image_meta, instance,
                                   img_fmt, snp_name):
@@ -325,30 +243,6 @@ class OsComputeDriver(driver.ComputeDriver):
             metadata['container_format'] = "bare"
 
         return metadata
-
-    def _get_provider_volume_id(self, context, caa_volume_id):
-        volume_mapper = self.caa_db_api.volume_mapper_get(context, caa_volume_id)
-        provider_volume_id = volume_mapper.get('provider_volume_id', None)
-        if provider_volume_id:
-            return provider_volume_id
-
-    def _get_provider_volume(self, context, hybrid_volume):
-        if isinstance(hybrid_volume, six.string_types):
-            volume_id = hybrid_volume
-        else:
-            volume_id = hybrid_volume.id
-        provider_volume_id = self._get_provider_volume_id(context,
-                                                          volume_id)
-        if provider_volume_id:
-            return self.os_cinderclient(context).get_volume(provider_volume_id)
-
-        sub_volume = self.os_cinderclient(context).get_volume_by_caa_volume_id(
-            volume_id)
-        if sub_volume is None:
-            raise exception.EntityNotFound(entity='Volume',
-                                           name=volume_id)
-
-        return sub_volume
 
     def list_instance_uuids(self):
         uuids = []
@@ -578,7 +472,8 @@ class OsComputeDriver(driver.ComputeDriver):
                 LOG.error(_LE("provider volume(%s) has been attached to "
                               "provider instance(%s)"), provider_volume.id,
                           server_id)
-                raise exception_ex.VolumeAttachFailed(volume_id=cascading_volume_id)
+                raise exception_ex.VolumeAttachFailed(
+                    volume_id=cascading_volume_id)
             else:
                 return
 
@@ -639,7 +534,8 @@ class OsComputeDriver(driver.ComputeDriver):
         context = req_context.RequestContext(instance.project_id)
         cascading_volume_id = connection_info['data']['volume_id']
 
-        provider_volume = self._get_provider_volume(context, cascading_volume_id)
+        provider_volume = self._get_provider_volume(context,
+                                                    cascading_volume_id)
         if provider_volume.status == "available":
             LOG.debug("provider volume(%s) has been detach", provider_volume.id)
             return
@@ -654,25 +550,6 @@ class OsComputeDriver(driver.ComputeDriver):
         LOG.debug('wait for volume in available status.')
         self.os_cinderclient(context).check_detach_volume_complete(
             provider_volume)
-
-    def _get_attachment_id_for_volume(self, sub_volume):
-        LOG.debug('start to _get_attachment_id_for_volume: %s' % sub_volume)
-        attachment_id = None
-        server_id = None
-        attachments = sub_volume.attachments
-        LOG.debug('attachments: %s' % attachments)
-        for attachment in attachments:
-            volume_id = attachment.get('volume_id')
-            tmp_attachment_id = attachment.get('attachment_id')
-            tmp_server_id = attachment.get('server_id')
-            if volume_id == sub_volume.id:
-                attachment_id = tmp_attachment_id
-                server_id = tmp_server_id
-                break
-            else:
-                continue
-
-        return attachment_id, server_id
 
     def get_available_nodes(self, refresh=False):
         """Returns nodenames of all nodes managed by the compute service.
@@ -927,7 +804,8 @@ class OsComputeDriver(driver.ComputeDriver):
             flavor = instance.get_flavor()
             LOG.debug('flavor: %s' % flavor)
 
-            sub_flavor_id = self._get_sub_flavor_id(context, flavor.flavorid)
+            sub_flavor_id = self._get_provider_flavor_id(context,
+                                                         flavor.flavorid)
 
             name = self._generate_provider_instance_name(instance.display_name,
                                                          instance.uuid)
@@ -936,8 +814,8 @@ class OsComputeDriver(driver.ComputeDriver):
             image_ref = None
 
             if instance.image_ref:
-                sub_image_id = self._get_sub_image_id(context,
-                                                      instance.image_ref)
+                sub_image_id = self._get_provider_image_id(context,
+                                                           instance.image_ref)
                 try:
                     image_ref = self.os_glanceclient(context).get_image(
                         sub_image_id)
@@ -1218,7 +1096,7 @@ class OsComputeDriver(driver.ComputeDriver):
         image_id = (rescue_image_id or CONF.libvirt.rescue_image_id or
                     instance.image_ref)
 
-        provider_image_id = self._get_sub_image_id(context, image_id)
+        provider_image_id = self._get_provider_image_id(context, image_id)
 
         LOG.debug("+++image id = %s", provider_image_id)
 

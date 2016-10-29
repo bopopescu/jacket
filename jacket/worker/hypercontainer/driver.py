@@ -192,7 +192,8 @@ class JacketHyperContainerDriver():
 
         list_result = []
         if version:
-            list_result = wormhole.list_volume()
+            volumes = wormhole.list_volume()
+            list_result = volumes.get("devices", [])
         LOG.info(_LI('List Volume result is: %s') % list_result)
         return list_result
 
