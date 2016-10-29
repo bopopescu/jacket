@@ -351,6 +351,19 @@ class OsComputeDriver(driver.ComputeDriver):
         LOG.debug('list_instance: %s' % instances)
         return instances
 
+    def list_instances_stats(self):
+        """List VM instances from all nodes.
+        :return: list of instance id. e.g.['id_001', 'id_002', ...]
+        """
+        stats = {}
+        context = req_context.RequestContext(project_id='default')
+        servers = self.os_novaclient(context).list()
+        for server in servers:
+            uuid = server.uuid
+            stats[uuid] = server.state
+
+        return stats
+
     def get_console_output(self, context, instance):
         provider_uuid = self._get_provider_instance_id(context, instance.uuid)
         return self.os_novaclient(context).get_console_output(provider_uuid)

@@ -10,6 +10,7 @@ terminating it.
 
 
 import functools
+import eventlet.event
 
 from oslo_utils import timeutils
 
@@ -22,8 +23,9 @@ from jacket.i18n import _LI
 from jacket.i18n import _LW
 from jacket.objects import compute as objects
 from jacket.compute import utils
-from jacket.compute.virt import driver
+from jacket.compute.cloud import power_state
 from jacket.compute.cloud.manager import ComputeVirtAPI
+from jacket.compute.virt import driver
 
 from oslo_config import cfg
 from oslo_log import log as logging
@@ -67,6 +69,8 @@ class ControllerManager(manager.Manager):
         """Load configuration options and connect to the cloud."""
         self.virtapi = ComputeVirtAPI(self)
         self.driver = driver.load_compute_driver(self.virtapi, compute_driver)
+        self._sync_power_pool = eventlet.GreenPool()
+        self._syncs_in_progress = {}
 
         super(ControllerManager, self).__init__(service_name="controller", *args, **kwargs)
 
@@ -371,7 +375,9 @@ class ControllerManager(manager.Manager):
                                                         expected_attrs=[],
                                                         use_slave=True)
 
-        num_vm_instances = self.driver.get_num_instances()
+        #num_vm_instances = self.driver.get_num_instances()
+        vm_instances_stats = self.driver.list_instances_stats()
+        num_vm_instances = len(vm_instances_stats)
         num_db_instances = len(db_instances)
 
         if num_vm_instances != num_db_instances:
@@ -382,13 +388,13 @@ class ControllerManager(manager.Manager):
                         {'num_db_instances': num_db_instances,
                          'num_vm_instances': num_vm_instances})
 
-        def _sync(db_instance):
+        def _sync(db_instance, state):
             # NOTE(melwitt): This must be synchronized as we query state from
             #                two separate sources, the driver and the database.
             #                They are set (in stop_instance) and read, in sync.
             @utils.synchronized(db_instance.uuid)
             def query_driver_power_state_and_sync():
-                self._query_driver_power_state_and_sync(context, db_instance)
+                self._query_driver_power_state_and_sync(context, db_instance, state)
 
             try:
                 query_driver_power_state_and_sync()
@@ -407,8 +413,198 @@ class ControllerManager(manager.Manager):
                 LOG.debug('Sync already in progress for %s' % uuid)
             else:
                 LOG.debug('Triggering sync for uuid %s' % uuid)
+                provider_instance_id = self._get_provider_instance_id(uuid)
+                provider_instance_state = vm_instances_stats.get(provider_instance_id, power_state.NOSTATE)
+
                 self._syncs_in_progress[uuid] = True
-                self._sync_power_pool.spawn_n(_sync, db_instance)
+                self._sync_power_pool.spawn_n(_sync, db_instance, provider_instance_state)
+
+    def _query_driver_power_state_and_sync(self, context, db_instance, vm_power_state):
+        if db_instance.task_state is not None:
+            LOG.info(_LI("During sync_power_state the instance has a "
+                         "pending task (%(task)s). Skip."),
+                     {'task': db_instance.task_state}, instance=db_instance)
+            return
+        # No pending tasks. Now try to figure out the real vm_power_state.
+        # try:
+        #     vm_instance = self.driver.get_info(db_instance)
+        #     vm_power_state = vm_instance.state
+        # except exception.InstanceNotFound:
+        #     vm_power_state = power_state.NOSTATE
+        # Note(maoy): the above get_info call might take a long time,
+        # for example, because of a broken libvirt driver.
+        try:
+            self._sync_instance_power_state(context,
+                                            db_instance,
+                                            vm_power_state,
+                                            use_slave=True)
+        except exception.InstanceNotFound:
+            # NOTE(hanlind): If the instance gets deleted during sync,
+            # silently ignore.
+            pass
+
+    def _sync_instance_power_state(self, context, db_instance, vm_power_state,
+                                   use_slave=False):
+        """Align instance power state between the database and hypervisor.
+
+        If the instance is not found on the hypervisor, but is in the database,
+        then a stop() API will be called on the instance.
+        """
+
+        # We re-query the DB to get the latest instance info to minimize
+        # (not eliminate) race condition.
+        db_instance.refresh(use_slave=use_slave)
+        db_power_state = db_instance.power_state
+        vm_state = db_instance.vm_state
+
+        if self.host != db_instance.host:
+            # on the sending end of cloud-cloud _sync_power_state
+            # may have yielded to the greenthread performing a live
+            # migration; this in turn has changed the resident-host
+            # for the VM; However, the instance is still active, it
+            # is just in the process of migrating to another host.
+            # This implies that the cloud source must relinquish
+            # control to the cloud destination.
+            LOG.info(_LI("During the sync_power process the "
+                         "instance has moved from "
+                         "host %(src)s to host %(dst)s"),
+                     {'src': db_instance.host,
+                      'dst': self.host},
+                     instance=db_instance)
+            return
+        elif db_instance.task_state is not None:
+            # on the receiving end of cloud-cloud, it could happen
+            # that the DB instance already report the new resident
+            # but the actual VM has not showed up on the hypervisor
+            # yet. In this case, let's allow the loop to continue
+            # and run the state sync in a later round
+            LOG.info(_LI("During sync_power_state the instance has a "
+                         "pending task (%(task)s). Skip."),
+                     {'task': db_instance.task_state},
+                     instance=db_instance)
+            return
+
+        orig_db_power_state = db_power_state
+        if vm_power_state != db_power_state:
+            LOG.info(_LI('During _sync_instance_power_state the DB '
+                         'power_state (%(db_power_state)s) does not match '
+                         'the vm_power_state from the hypervisor '
+                         '(%(vm_power_state)s). Updating power_state in the '
+                         'DB to match the hypervisor.'),
+                     {'db_power_state': db_power_state,
+                      'vm_power_state': vm_power_state},
+                     instance=db_instance)
+            # power_state is always updated from hypervisor to db
+            db_instance.power_state = vm_power_state
+            db_instance.save()
+            db_power_state = vm_power_state
+
+        # Note(maoy): Now resolve the discrepancy between vm_state and
+        # vm_power_state. We go through all possible vm_states.
+        if vm_state in (vm_states.BUILDING,
+                        vm_states.RESCUED,
+                        vm_states.RESIZED,
+                        vm_states.SUSPENDED,
+                        vm_states.ERROR):
+            # TODO(maoy): we ignore these vm_state for now.
+            pass
+        elif vm_state == vm_states.ACTIVE:
+            # The only rational power state should be RUNNING
+            if vm_power_state in (power_state.SHUTDOWN,
+                                  power_state.CRASHED):
+                LOG.warning(_LW("Instance shutdown by itself. Calling the "
+                                "stop API. Current vm_state: %(vm_state)s, "
+                                "current task_state: %(task_state)s, "
+                                "original DB power_state: %(db_power_state)s, "
+                                "current VM power_state: %(vm_power_state)s"),
+                            {'vm_state': vm_state,
+                             'task_state': db_instance.task_state,
+                             'db_power_state': orig_db_power_state,
+                             'vm_power_state': vm_power_state},
+                            instance=db_instance)
+                try:
+                    # Note(maoy): here we call the API instead of
+                    # brutally updating the vm_state in the database
+                    # to allow all the hooks and checks to be performed.
+                    if db_instance.shutdown_terminate:
+                        self.compute_api.delete(context, db_instance)
+                    else:
+                        self.compute_api.stop(context, db_instance)
+                except Exception:
+                    # Note(maoy): there is no need to propagate the error
+                    # because the same power_state will be retrieved next
+                    # time and retried.
+                    # For example, there might be another task scheduled.
+                    LOG.exception(_LE("error during stop() in "
+                                      "sync_power_state."),
+                                  instance=db_instance)
+            elif vm_power_state == power_state.SUSPENDED:
+                LOG.warning(_LW("Instance is suspended unexpectedly. Calling "
+                                "the stop API."), instance=db_instance)
+                try:
+                    self.compute_api.stop(context, db_instance)
+                except Exception:
+                    LOG.exception(_LE("error during stop() in "
+                                      "sync_power_state."),
+                                  instance=db_instance)
+            elif vm_power_state == power_state.PAUSED:
+                # Note(maoy): a VM may get into the paused state not only
+                # because the user request via API calls, but also
+                # due to (temporary) external instrumentations.
+                # Before the virt layer can reliably report the reason,
+                # we simply ignore the state discrepancy. In many cases,
+                # the VM state will go back to running after the external
+                # instrumentation is done. See bug 1097806 for details.
+                LOG.warning(_LW("Instance is paused unexpectedly. Ignore."),
+                            instance=db_instance)
+            elif vm_power_state == power_state.NOSTATE:
+                # Occasionally, depending on the status of the hypervisor,
+                # which could be restarting for example, an instance may
+                # not be found.  Therefore just log the condition.
+                LOG.warning(_LW("Instance is unexpectedly not found. Ignore."),
+                            instance=db_instance)
+        elif vm_state == vm_states.STOPPED:
+            if vm_power_state not in (power_state.NOSTATE,
+                                      power_state.SHUTDOWN,
+                                      power_state.CRASHED):
+                LOG.warning(_LW("Instance is not stopped. Calling "
+                                "the stop API. Current vm_state: %(vm_state)s,"
+                                " current task_state: %(task_state)s, "
+                                "original DB power_state: %(db_power_state)s, "
+                                "current VM power_state: %(vm_power_state)s"),
+                            {'vm_state': vm_state,
+                             'task_state': db_instance.task_state,
+                             'db_power_state': orig_db_power_state,
+                             'vm_power_state': vm_power_state},
+                            instance=db_instance)
+                try:
+                    # NOTE(russellb) Force the stop, because normally the
+                    # cloud API would not allow an attempt to stop a stopped
+                    # instance.
+                    self.compute_api.force_stop(context, db_instance)
+                except Exception:
+                    LOG.exception(_LE("error during stop() in "
+                                      "sync_power_state."),
+                                  instance=db_instance)
+        elif vm_state == vm_states.PAUSED:
+            if vm_power_state in (power_state.SHUTDOWN,
+                                  power_state.CRASHED):
+                LOG.warning(_LW("Paused instance shutdown by itself. Calling "
+                                "the stop API."), instance=db_instance)
+                try:
+                    self.compute_api.force_stop(context, db_instance)
+                except Exception:
+                    LOG.exception(_LE("error during stop() in "
+                                      "sync_power_state."),
+                                  instance=db_instance)
+        elif vm_state in (vm_states.SOFT_DELETED,
+                          vm_states.DELETED):
+            if vm_power_state not in (power_state.NOSTATE,
+                                      power_state.SHUTDOWN):
+                # Note(maoy): this should be taken care of periodically in
+                # _cleanup_running_deleted_instances().
+                LOG.warning(_LW("Instance is not (soft-)deleted."),
+                            instance=db_instance)
 
     @periodic_task.periodic_task
     def _reclaim_queued_deletes(self, context):
@@ -566,3 +762,8 @@ class ControllerManager(manager.Manager):
                                         migration.id, context=context,
                                         instance=instance)
                         break
+
+    def _get_provider_instance_id(self, context, caa_instance_id):
+        instance_mapper = self.caa_db_api.instance_mapper_get(context,
+                                                              caa_instance_id)
+        return instance_mapper.get('provider_instance_id', None)
