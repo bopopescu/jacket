@@ -199,3 +199,23 @@ def volume_snapshot_mapper_update(context, snapshot_id, project_id, values,
 
 def volume_snapshot_mapper_delete(context, snapshot_id, project_id=None):
     return IMPL.volume_snapshot_mapper_delete(context, snapshot_id, project_id)
+
+
+def image_sync_create(context, values):
+    return IMPL.image_sync_create(context, values)
+
+
+def image_sync_update(context, image_id, values):
+    return IMPL.image_sync_update(context, image_id, values)
+
+
+def image_sync_get(context, image_id):
+    return IMPL.image_sync_get(context, image_id)
+
+
+def image_sync_get_all_by_filters(context, filters):
+    return IMPL.image_sync_all(context, filters)
+
+
+def image_sync_delete(context, image_id):
+    return IMPL.image_sync_all(context, image_id)

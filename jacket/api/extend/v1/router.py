@@ -26,8 +26,8 @@ from jacket.api.extend.v1 import image_mapper
 from jacket.api.extend.v1 import instance_mapper
 from jacket.api.extend.v1 import flavor_mapper
 from jacket.api.extend.v1 import project_mapper
-from jacket.api.extend.v1 import sub_flavor
-from jacket.api.extend.v1 import sub_volume_type
+from jacket.api.extend.v1 import provider_flavor
+from jacket.api.extend.v1 import provider_volume_type
 
 
 class APIRouter(jacket.api.openstack.APIRouter):
@@ -58,14 +58,14 @@ class APIRouter(jacket.api.openstack.APIRouter):
                         controller=self.resources['project_mapper'],
                         collection={'detail': 'GET'})
 
-        self.resources['sub_flavor'] = sub_flavor.create_resource(ext_mgr)
+        self.resources['sub_flavor'] = provider_flavor.create_resource(ext_mgr)
         mapper.connect("sub_flavor", '/{project_id}/sub_flavor/detail',
                        controller=self.resources['sub_flavor'],
                        action="detail",
                        conditions={"method": ['GET']})
 
         self.resources['sub_volume_type'] = \
-            sub_volume_type.create_resource(ext_mgr)
+            provider_volume_type.create_resource(ext_mgr)
         mapper.connect("sub_volume_type",
                        '/{project_id}/sub_volume_type/detail',
                        controller=self.resources['sub_volume_type'],

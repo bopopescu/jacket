@@ -61,6 +61,7 @@ from jacket.compute.cloudpipe import pipelib
 from jacket.compute import cloud
 from jacket.compute.cloud import build_results
 from jacket.compute.cloud import claims
+from jacket.compute.cloud import flavors
 from jacket.compute.cloud import power_state
 from jacket.compute.cloud import resource_tracker
 from jacket.compute.cloud import rpcapi as compute_rpcapi
@@ -212,6 +213,9 @@ interval_opts = [
                     'at the default periodic interval. Setting it to any '
                     'positive value will cause it to run at approximately '
                     'that number of seconds.'),
+    cfg.IntOpt('hc_root_size',
+               default=10,
+               help="hyper container root size(G), default 10G."),
 ]
 
 timeout_opts = [
@@ -1355,7 +1359,7 @@ class ComputeManager(manager.Manager):
         the service up by listening on RPC queues, make sure to update
         our available resources (and indirectly our available nodes).
         """
-        self.update_available_resource(jacket.context.get_admin_context())
+        # self.update_available_resource(jacket.context.get_admin_context())
 
     def _get_power_state(self, context, instance):
         """Retrieve the power state for the given instance."""
@@ -1539,6 +1543,32 @@ class ComputeManager(manager.Manager):
         if self.driver.instance_exists(instance):
             raise exception.InstanceExists(name=instance.name)
 
+    def _get_image_id(self, context, instance):
+        image_id = instance.system_metadata.get(
+            'image_id', None)
+        if image_id:
+            return image_id
+
+        image_id = instance.metadata.get("metering.image_id", None)
+        if image_id:
+            return image_id
+
+        bdms = objects.BlockDeviceMappingList.get_by_instance_uuid(
+            context, instance.uuid)
+        root_bdm = bdms.root_bdm()
+        image_id = root_bdm.image_id
+        if image_id:
+            return image_id
+
+        volume_id = root_bdm.volume_id
+        volume = self.volume_api.get(context, volume_id)
+        image_id = volume['volume_image_metadata'].get(
+            "image_id", None)
+        if image_id:
+            return image_id
+
+        return None
+
     def _is_hypercontainer(self, context, instance):
         image_container_type = instance.system_metadata.get(
             'image_container_format', None)
@@ -1551,10 +1581,7 @@ class ComputeManager(manager.Manager):
             instance.system_metadata['image_container_format'] = container_type
             instance.system_metadata['image_id'] = image_id
             instance.system_metadata['image_name'] = image.get("name", None)
-            try:
-                instance.save()
-            except Exception:
-                pass
+            instance.save()
             return container_type == 'hypercontainer'
 
         image_id = instance.metadata.get("metering.image_id", None)
@@ -1581,10 +1608,9 @@ class ComputeManager(manager.Manager):
                 'image_container_format'] = image_container_type
             instance.system_metadata['image_id'] = image_id
             instance.system_metadata['image_name'] = image_name
-            try:
-                instance.save()
-            except Exception:
-                pass
+
+            instance.save()
+
             return image_container_type == 'hypercontainer'
 
         image_id = volume['volume_image_metadata'].get("image_id", None)
@@ -2133,11 +2159,12 @@ class ComputeManager(manager.Manager):
                         if self._is_hypercontainer(context, instance):
                             LOG.debug("begin to hypercontainer to spawn",
                                       instance=instance)
-                            self._do_hybrid_vm_spawn(context, instance, image,
-                                                     injected_files,
-                                                     admin_password,
-                                                     network_info=network_info,
-                                                     block_device_info=block_device_info)
+                            LOG.debug("+++hw, instance = %s", instance)
+                            self._do_hc_spawn(context, instance, image,
+                                              injected_files,
+                                              admin_password,
+                                              network_info=network_info,
+                                              block_device_info=block_device_info)
                             self._binding_host(context, instance, network_info)
                         else:
                             self.driver.spawn(context, instance, image_meta,
@@ -2191,6 +2218,17 @@ class ComputeManager(manager.Manager):
                                               'create.error', fault=e)
             raise exception.BuildAbortException(instance_uuid=instance.uuid,
                                                 reason=e.format_message())
+
+        except (exception.LxcVolumeListFailed,
+                exception.LxcVolumeAttachFailed,
+                exception.RetryException) as ex:
+            LOG.exception(_LE("lxc operation failed! ex = %s"), ex)
+            self._notify_about_instance_usage(context, instance,
+                                              'create.error', fault=ex)
+            msg = _('Failed to operation lxc, not rescheduling.')
+            raise exception.BuildAbortException(instance_uuid=instance.uuid,
+                                                reason=msg)
+
         except Exception as e:
             self._notify_about_instance_usage(context, instance,
                                               'create.error', fault=e)
@@ -6060,7 +6098,9 @@ class ComputeManager(manager.Manager):
         image_meta = objects.ImageMeta.from_instance(instance)
         self.driver.unquiesce(context, instance, image_meta)
 
-    def _build_hc_bdm(self, instance):
+    def _build_hc_bdm(self, instance=None, image_id=None, boot_index=None,
+                      size=None, source_type='blank',
+                      delete_on_termination=True):
         '''
          {'guest_format': None, 'boot_index': None, 'mount_device': u'/dev/sdb',
           'connection_info': None, 'disk_bus': None, 'device_type': None,
@@ -6071,11 +6111,18 @@ class ComputeManager(manager.Manager):
 
         bdm = {}
 
-        bdm['boot_index'] = None
-        bdm['size'] = instance.get_flavor().get('root_gb')
-        bdm['source_type'] = 'blank'
+        root_gb = None
+        if instance:
+            root_gb = instance.get_flavor().get('root_gb')
+        size = size or root_gb
+
+        bdm['boot_index'] = boot_index
+        bdm['size'] = size
+        bdm['source_type'] = source_type
         bdm['destination_type'] = 'volume'
-        bdm['delete_on_termination'] = True
+        bdm['delete_on_termination'] = delete_on_termination
+        if image_id:
+            bdm['image_id'] = image_id
 
         driver_volume_type = 'clouds_volume'
         data = {}
@@ -6091,10 +6138,7 @@ class ComputeManager(manager.Manager):
 
         return bdm
 
-    def _do_hybrid_vm_spawn(self, context, instance, image,
-                            injected_files, admin_password,
-                            network_info, block_device_info):
-
+    def _do_hc_bdm_tranfer(self, context, instance, block_device_info):
         block_device_info = block_device_info or {}
         block_device_info = copy.deepcopy(block_device_info)
 
@@ -6103,21 +6147,50 @@ class ComputeManager(manager.Manager):
         bdms = sorted(bdms, key=lambda bdm: bdm['boot_index'])
         LOG.debug("bdms = %s", bdms)
 
-        hyper_bdm = self._build_hc_bdm(instance)
+        # NOTE(laoyi) insert lxc volume
+        image_id = self._get_image_id(context, instance)
+        hyper_bdm = self._build_hc_bdm(instance=instance, image_id=image_id,
+                                       source_type='image')
         bdms.insert(1, hyper_bdm)
         LOG.debug("after insert bdms = %s", bdms)
         for index, bdm in enumerate(bdms):
             bdm["boot_index"] = index
 
         block_device_info['block_device_mapping'] = bdms
+        return block_device_info
+
+    def _do_hc_lxc_spawn(self, instance, bdms):
+        # lxc attach volume
+        volume_devices = self.jacketdriver.list_volumes(instance)
+        if not volume_devices:
+            raise exception.LxcVolumeListFailed(instance_uuid=instance.uuid)
+        volume_devices.sort()
+        LOG.debug("get hypercontainer device_list = %s", volume_devices)
+
+        for (bdm, device) in six.moves.zip(bdms[2:], volume_devices[2:]):
+            try:
+                self.jacketdriver.attach_volume(instance, bdm['volume_id'],
+                                                device, bdm['mount_device'])
+            except Exception as ex:
+                LOG.exception(_LE("LXC attach volume failed! ex = %s"), ex)
+                raise exception.LxcVolumeAttachFailed(
+                    instance_uuid=instance.uuid)
+
+        self.jacketdriver.wait_container_in_specified_status(instance,
+                                                             constants.RUNNING)
+    def _do_hc_spawn(self, context, instance, image,
+                     injected_files, admin_password,
+                     network_info, block_device_info):
+
+        block_device_info = self._do_hc_bdm_tranfer(context, instance,
+                                                    block_device_info)
+
+        bdms = block_device_info.get('block_device_mapping')
 
         data = self._create_hybrid_vm_data(context, instance, image,
                                            injected_files, admin_password,
                                            network_info=network_info,
                                            block_device_info=block_device_info)
-
-        data = json.dumps(data).encode('zlib')
-        data = base64.b64encode(data)
 
         new_injected_files = [('/var/lib/wormhole/settings.json', data)]
         self.driver.spawn(context, instance, image,
@@ -6125,19 +6198,14 @@ class ComputeManager(manager.Manager):
                           network_info=network_info,
                           block_device_info=block_device_info)
 
-        # lxc attach volume
-        volume_devices = self.jacketdriver.list_volumes(instance)
-        if not volume_devices:
-            raise exception.LxcVolumeListFailed()
-        volume_devices.sort()
-        LOG.debug("get hypercontainer device_list = %s", volume_devices)
-
-        for (bdm, device) in six.moves.zip(bdms[2:], volume_devices[2:]):
-            self.jacketdriver.attach_volume(instance, bdm['volume_id'],
-                                            device, bdm['mount_device'])
-
-        self.jacketdriver.wait_container_in_specified_status(instance,
-                                                             constants.RUNNING)
+        try:
+            self._do_hc_lxc_spawn(instance, bdms)
+        except Exception as ex:
+            # rollback
+            with excutils.save_and_reraise_exception():
+                LOG.exception(_LE("lxc operation failed! ex = %s"), ex)
+                self.driver.destroy(context, instance, network_info,
+                                    block_device_info)
 
     def _binding_host(self, context, instance, network_info):
         retries = 10
@@ -6227,6 +6295,7 @@ class ComputeManager(manager.Manager):
 
             bdm.pop('boot_index', None)
             bdm.pop('delete_on_termination', None)
+            bdm.pop('source_type', None)
 
             connection_info = bdm.get('connection_info', {})
             connection_info.pop('connector', None)
@@ -6239,38 +6308,88 @@ class ComputeManager(manager.Manager):
             connect_data.pop('backend', None)
 
         vifs = []
-        for vif in network_info:
-            new_vif = {}
-            new_vif['id'] = vif['id']
-            new_vif['type'] = vif['type']
-            new_vif['address'] = vif['address']
-            network = {}
-            # network['bridge'] = vif['network']['bridge']
-            network['bridge'] = 'br-int'
-            new_subnets = []
-            for subnet in vif['network']['subnets']:
-                new_subnet = {}
+        if network_info:
+            for vif in network_info:
+                new_vif = {}
+                new_vif['id'] = vif['id']
+                new_vif['type'] = vif['type']
+                new_vif['address'] = vif['address']
+                network = {}
+                # network['bridge'] = vif['network']['bridge']
+                network['bridge'] = 'br-int'
+                new_subnets = []
+                for subnet in vif['network']['subnets']:
+                    new_subnet = {}
 
-                gateway = copy.deepcopy(subnet['gateway'])
-                gateway.pop('meta', None)
+                    gateway = copy.deepcopy(subnet['gateway'])
+                    gateway.pop('meta', None)
 
-                new_subnet['gateway'] = gateway
-                new_subnet['cidr'] = subnet['cidr']
+                    new_subnet['gateway'] = gateway
+                    new_subnet['cidr'] = subnet['cidr']
 
-                ips = copy.deepcopy(subnet['ips'])
-                new_subnet['ips'] = ips
-                new_subnets.append(new_subnet)
-            network['subnets'] = new_subnets
-            new_vif['network'] = network
-            vifs.append(new_vif)
+                    ips = copy.deepcopy(subnet['ips'])
+                    new_subnet['ips'] = ips
+                    new_subnets.append(new_subnet)
+                network['subnets'] = new_subnets
+                new_vif['network'] = network
+                vifs.append(new_vif)
 
         data['network_info'] = vifs
         data['block_device_info'] = block_devices
         data['inject_files'] = injected_files
         data['admin_password'] = admin_password
 
+        data = json.dumps(data).encode('zlib')
+        data = base64.b64encode(data)
         return data
 
     def rename_instance(self, ctxt, instance, display_name=None):
         if hasattr(self.driver, "rename"):
             return self.driver.rename(ctxt, instance, display_name)
+
+    def image_sync(self, context, image, flavor=None, networks=None):
+
+        instance = objects.Instance(context=context)
+        instance.uuid = str(uuid.uuid4())
+        instance.project_id = context.project_id
+        bdms = []
+
+        lxc_volume_size = 0
+        if flavor:
+            if isinstance(flavor, six.string_types):
+                flavor = flavors.get_flavor_by_flavor_id(
+                    flavor, ctxt=context, read_deleted="no")
+            lxc_volume_size = flavor.get('root_gb', 0)
+
+        if isinstance(image, six.string_types):
+            image = self.image_api.get(context, image, show_deleted=False)
+
+        root_size = CONF.hc_root_size
+        lxc_volume_size = lxc_volume_size or int(image.get('min_disk', 0)) or 5
+
+        bdms.append(self._build_hc_bdm(boot_index=0, size=root_size,
+                                       source_type='image',
+                                       delete_on_termination=True))
+        #bdms.append(self._build_hc_bdm(boot_index=1, size=lxc_volume_size,
+        #                               source_type='blank',
+        #                               delete_on_termination=True))
+
+        block_device_info = {}
+        block_device_info['block_device_mapping'] = bdms
+
+        instance.flavor = flavor
+        instance.system_metadata['image_id'] = image.id
+        instance.system_metadata['image_name'] = image.name
+
+        # 1 create hypercontainer vm
+        self._do_hc_spawn(context, instance, image, None, "1234", None, block_device_info)
+
+        # 2 stop vm
+        self.driver.power_off(instance)
+
+        #3 upload image
+        self.driver.upload_image(context, instance)
+
+        # 4 delete hypercontainer vm
+        self.driver.destroy(context, instance, None,
+                            block_device_info)

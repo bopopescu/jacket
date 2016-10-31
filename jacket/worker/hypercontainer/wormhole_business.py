@@ -143,7 +143,8 @@ class WormHoleBusiness(object):
     def status(self):
         return self._run_function_of_clients('status')
 
-    @RetryDecorator(max_retry_count=50, inc_sleep_time=5, max_sleep_time=60, exceptions=(RetryException))
+    @RetryDecorator(max_retry_count=1, inc_sleep_time=5, max_sleep_time=60,
+                    exceptions=(RetryException))
     def _run_function_of_clients(self, function_name, *args, **kwargs):
         result = None
         tmp_except = Exception('tmp exception when doing function: %s' % function_name)

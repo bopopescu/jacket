@@ -28,7 +28,6 @@ from sqlalchemy import Column, Index, Integer, String, Text, schema
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import ForeignKey, DateTime, Boolean, UniqueConstraint
 
-
 CONF = cfg.CONF
 BASE = declarative_base()
 
@@ -167,3 +166,21 @@ class VolumeSnapshotsMapper(BASE, JacketBase, models.SoftDeleteMixin):
     project_id = Column(String(255))
     key = Column(String(255))
     value = Column(String(255))
+
+
+class ImageSync(BASE, JacketBase, models.SoftDeleteMixin):
+    """Represents a mapper key/value pair for image sync"""
+
+    __tablename__ = "imge_sync"
+
+    __table_args__ = (
+        Index('image_id_deleted_idx', 'image_id', 'deleted'),
+        Index('image_id_az_deleted_idx', 'image_id', 'project_id',
+              'deleted'),
+        UniqueConstraint('image_id', 'project_id', 'deleted'),
+    )
+
+    id = Column(Integer, primary_key=True)
+    image_id = Column(String(36), nullable=False)
+    project_id = Column(String(255))
+    status = Column(String(36))

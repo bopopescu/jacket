@@ -212,7 +212,7 @@ class JacketHyperContainerDriver():
         LOG.info(_LI('Get container status result is: %s') % status_result)
         return status_result
 
-    @RetryDecorator(max_retry_count=50, inc_sleep_time=5, max_sleep_time=30,
+    @RetryDecorator(max_retry_count=60, inc_sleep_time=5, max_sleep_time=30,
                     exceptions=(RetryException))
     def wait_container_in_specified_status(self, instance, specified_status):
         LOG.debug('Wait container in specified status')

@@ -276,3 +276,7 @@ class Error(JacketException):
 
     def __init__(self, msg):
         super(Error, self).__init__(message=msg)
+
+
+class ImageSyncNotFound(JacketException):
+    msg_fmt = _("image(%(image_id)s sync not found.")

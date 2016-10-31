@@ -18,7 +18,6 @@
 
 """Implementation of SQLAlchemy backend."""
 
-
 import collections
 import datetime as dt
 import functools
@@ -36,6 +35,7 @@ from oslo_db import options
 from oslo_db.sqlalchemy import session as db_session
 from oslo_log import log as logging
 from oslo_utils import importutils
+
 osprofiler_sqlalchemy = importutils.try_import('osprofiler.sqlalchemy')
 import sqlalchemy
 from sqlalchemy import or_, and_, case
@@ -46,7 +46,6 @@ import jacket.context
 from jacket.db.extend.sqlalchemy import models
 from jacket import exception
 from jacket.i18n import _, _LW, _LE, _LI
-
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
@@ -94,6 +93,7 @@ def get_session(**kwargs):
 def dispose_engine():
     get_engine().dispose()
 
+
 _DEFAULT_QUOTA_NAME = 'default'
 
 
@@ -105,6 +105,7 @@ def get_backend():
 
 def _retry_on_deadlock(f):
     """Decorator to retry a DB API call if Deadlock was received."""
+
     @functools.wraps(f)
     def wrapped(*args, **kwargs):
         while True:
@@ -117,6 +118,7 @@ def _retry_on_deadlock(f):
                 # Retry!
                 time.sleep(0.5)
                 continue
+
     functools.update_wrapper(wrapped, f)
     return wrapped
 
@@ -148,6 +150,7 @@ def require_context(f):
     def wrapper(*args, **kwargs):
         jacket.context.require_context(args[0])
         return f(*args, **kwargs)
+
     return wrapper
 
 
@@ -183,7 +186,7 @@ def model_query(context, model,
         pass
     else:
         raise ValueError(_("Unrecognized read_deleted value '%s'")
-                           % read_deleted)
+                         % read_deleted)
 
     query = sqlalchemyutils.model_query(
         model, session or get_session(), args, **query_kwargs)
@@ -192,7 +195,7 @@ def model_query(context, model,
     # us to return both our projects and unowned projects.
     if jacket.context.is_user_context(context) and project_only:
         if project_only == 'allow_none':
-            query = query.\
+            query = query. \
                 filter(or_(model.project_id == context.project_id,
                            model.project_id == null()))
         else:
@@ -228,7 +231,8 @@ def _mapper_convert_dict(key_values):
 def image_mapper_all(context):
     query = model_query(context, models.ImagesMapper, read_deleted="no")
     images_mapper = query.all()
-    image_ids = set([image_mapper['image_id'] for image_mapper in images_mapper])
+    image_ids = set(
+        [image_mapper['image_id'] for image_mapper in images_mapper])
     ret = []
     for image_id in image_ids:
         key_values = query.filter_by(image_id=image_id).all()
@@ -273,7 +277,7 @@ def image_mapper_create(context, image_id, project_id, values):
 def image_mapper_update(context, image_id, project_id, values, delete=False):
     session = get_session()
     query = model_query(context, models.ImagesMapper, read_deleted="no",
-                        session=session).\
+                        session=session). \
         filter_by(image_id=image_id)
     all_keys = values.keys()
 
@@ -285,7 +289,7 @@ def image_mapper_update(context, image_id, project_id, values, delete=False):
         query.update({'project_id': cur_project_id})
 
     if delete:
-        query.filter(~models.ImagesMapper.key.in_(all_keys)).\
+        query.filter(~models.ImagesMapper.key.in_(all_keys)). \
             soft_delete(synchronize_session=False)
 
     already_existing_keys = []
@@ -315,7 +319,8 @@ def image_mapper_delete(context, image_id, project_id=None):
 def flavor_mapper_all(context):
     query = model_query(context, models.FlavorsMapper, read_deleted="no")
     flavors_mapper = query.all()
-    flavor_ids = set([flavor_mapper['flavor_id'] for flavor_mapper in flavors_mapper])
+    flavor_ids = set(
+        [flavor_mapper['flavor_id'] for flavor_mapper in flavors_mapper])
     ret = []
     for flavor_id in flavor_ids:
         key_values = query.filter_by(flavor_id=flavor_id).all()
@@ -360,7 +365,7 @@ def flavor_mapper_create(context, flavor_id, project_id, values):
 def flavor_mapper_update(context, flavor_id, project_id, values, delete=False):
     session = get_session()
     query = model_query(context, models.FlavorsMapper, read_deleted="no",
-                        session=session).\
+                        session=session). \
         filter_by(flavor_id=flavor_id)
     all_keys = values.keys()
 
@@ -372,7 +377,7 @@ def flavor_mapper_update(context, flavor_id, project_id, values, delete=False):
         query.update({'project_id': cur_project_id})
 
     if delete:
-        query.filter(~models.FlavorsMapper.key.in_(all_keys)).\
+        query.filter(~models.FlavorsMapper.key.in_(all_keys)). \
             soft_delete(synchronize_session=False)
 
     already_existing_keys = []
@@ -402,7 +407,8 @@ def flavor_mapper_delete(context, flavor_id, project_id):
 def project_mapper_all(context):
     query = model_query(context, models.ProjectsMapper, read_deleted="no")
     projects_mapper = query.all()
-    project_ids = set([project_mapper['project_id'] for project_mapper in projects_mapper])
+    project_ids = set(
+        [project_mapper['project_id'] for project_mapper in projects_mapper])
     ret = []
     for project_id in project_ids:
         key_values = query.filter_by(project_id=project_id).all()
@@ -445,11 +451,11 @@ def project_mapper_create(context, project_id, values):
 def project_mapper_update(context, project_id, values, delete=False):
     session = get_session()
     query = model_query(context, models.ProjectsMapper, read_deleted="no",
-                        session=session).\
+                        session=session). \
         filter_by(project_id=project_id)
     all_keys = values.keys()
     if delete:
-        query.filter(~models.ProjectsMapper.key.in_(all_keys)).\
+        query.filter(~models.ProjectsMapper.key.in_(all_keys)). \
             soft_delete(synchronize_session=False)
 
     already_existing_keys = []
@@ -479,7 +485,7 @@ def instance_mapper_all(context):
     query = model_query(context, models.InstancesMapper, read_deleted="no")
     instances_mapper = query.all()
     instance_ids = set([instance_mapper['instance_id'] for instance_mapper in
-                     instances_mapper])
+                        instances_mapper])
     ret = []
     for instance_id in instance_ids:
         key_values = query.filter_by(instance_id=instance_id).all()
@@ -521,10 +527,11 @@ def instance_mapper_create(context, instance_id, project_id, values):
 
 @require_context
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-def instance_mapper_update(context, instance_id, project_id, values, delete=False):
+def instance_mapper_update(context, instance_id, project_id, values,
+                           delete=False):
     session = get_session()
     query = model_query(context, models.InstancesMapper, read_deleted="no",
-                        session=session).\
+                        session=session). \
         filter_by(instance_id=instance_id)
     all_keys = values.keys()
 
@@ -536,7 +543,7 @@ def instance_mapper_update(context, instance_id, project_id, values, delete=Fals
         query.update({'project_id': cur_project_id})
 
     if delete:
-        query.filter(~models.InstancesMapper.key.in_(all_keys)).\
+        query.filter(~models.InstancesMapper.key.in_(all_keys)). \
             soft_delete(synchronize_session=False)
 
     already_existing_keys = []
@@ -567,7 +574,7 @@ def volume_mapper_all(context):
     query = model_query(context, models.VolumesMapper, read_deleted="no")
     volumes_mapper = query.all()
     volume_ids = set([volume_mapper['volume_id'] for volume_mapper in
-                     volumes_mapper])
+                      volumes_mapper])
     ret = []
     for volume_id in volume_ids:
         key_values = query.filter_by(volume_id=volume_id).all()
@@ -613,7 +620,7 @@ def volume_mapper_create(context, volume_id, project_id, values):
 def volume_mapper_update(context, volume_id, project_id, values, delete=False):
     session = get_session()
     query = model_query(context, models.VolumesMapper, read_deleted="no",
-                        session=session).\
+                        session=session). \
         filter_by(volume_id=volume_id)
     all_keys = values.keys()
 
@@ -625,7 +632,7 @@ def volume_mapper_update(context, volume_id, project_id, values, delete=False):
         query.update({'project_id': cur_project_id})
 
     if delete:
-        query.filter(~models.VolumesMapper.key.in_(all_keys)).\
+        query.filter(~models.VolumesMapper.key.in_(all_keys)). \
             soft_delete(synchronize_session=False)
 
     already_existing_keys = []
@@ -653,7 +660,8 @@ def volume_mapper_delete(context, volume_id, project_id=None):
 
 
 def volume_snapshot_mapper_all(context):
-    query = model_query(context, models.VolumeSnapshotsMapper, read_deleted="no")
+    query = model_query(context, models.VolumeSnapshotsMapper,
+                        read_deleted="no")
     volume_snapshots_mapper = query.all()
     volume_snapshot_ids = set([volume_snapshot_mapper['volume_snapshot_id']
                                for volume_snapshot_mapper in
@@ -666,7 +674,8 @@ def volume_snapshot_mapper_all(context):
 
 
 def volume_snapshot_mapper_get(context, snapshot_id, project_id=None):
-    query = model_query(context, models.VolumeSnapshotsMapper, read_deleted="no")
+    query = model_query(context, models.VolumeSnapshotsMapper,
+                        read_deleted="no")
     key_values = query.filter_by(snapshot_id=snapshot_id).all()
     return _mapper_convert_dict(key_values)
 
@@ -689,6 +698,8 @@ def _volume_snapshot_mapper_convert_objs(snapshot_id, project_id, values_dict):
     return value_refs
 
 
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_snapshot_mapper_create(context, snapshot_id, project_id, values):
     value_refs = _volume_snapshot_mapper_convert_objs(snapshot_id, project_id,
                                                       values)
@@ -703,8 +714,9 @@ def volume_snapshot_mapper_create(context, snapshot_id, project_id, values):
 def volume_snapshot_mapper_update(context, snapshot_id, project_id, values,
                                   delete=False):
     session = get_session()
-    query = model_query(context, models.VolumeSnapshotsMapper, read_deleted="no",
-                        session=session).\
+    query = model_query(context, models.VolumeSnapshotsMapper,
+                        read_deleted="no",
+                        session=session). \
         filter_by(snapshot_id=snapshot_id)
     all_keys = values.keys()
 
@@ -716,11 +728,12 @@ def volume_snapshot_mapper_update(context, snapshot_id, project_id, values,
         query.update({'project_id': cur_project_id})
 
     if delete:
-        query.filter(~models.VolumeSnapshotsMapper.key.in_(all_keys)).\
+        query.filter(~models.VolumeSnapshotsMapper.key.in_(all_keys)). \
             soft_delete(synchronize_session=False)
 
     already_existing_keys = []
-    mod_refs = query.filter(models.VolumeSnapshotsMapper.key.in_(all_keys)).all()
+    mod_refs = query.filter(
+        models.VolumeSnapshotsMapper.key.in_(all_keys)).all()
     for one in mod_refs:
         already_existing_keys.append(one.key)
         one.update({"value": values[one.key]})
@@ -739,5 +752,59 @@ def volume_snapshot_mapper_update(context, snapshot_id, project_id, values,
 
 
 def volume_snapshot_mapper_delete(context, snapshot_id, project_id=None):
-    query = model_query(context, models.VolumeSnapshotsMapper, read_deleted="no")
+    query = model_query(context, models.VolumeSnapshotsMapper,
+                        read_deleted="no")
     query.filter_by(snapshot_id=snapshot_id).soft_delete()
+
+
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+def image_sync_create(context, values):
+    session = get_session()
+    image_sync = models.ImageSync()
+    image_sync.update(values)
+    image_sync.save(session)
+    return image_sync
+
+
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+def image_sync_update(context, image_id, values):
+    image_sync = image_sync_get(context, image_id)
+    image_sync.update(values)
+
+    return image_sync
+
+
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+def image_sync_get(context, image_id):
+    result = model_query(context, models.ImageSync, read_deleted="no"). \
+        filter_by(image_id=image_id).first()
+
+    if not result:
+        raise exception.ImageSyncNotFound(image_id=image_id)
+
+    return result
+
+
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+def image_sync_get_all_by_filters(context, filters):
+    query = model_query(context, models.ImageSync, read_deleted="no")
+    if "status" in filters:
+        status = filters["status"]
+        status = [status] if isinstance(status, str) else status
+        query = query.filter(models.ImageSync.status.in_(status))
+    elif "image_id" in filters:
+        image_id = filters['image_id']
+        query = query.filter(models.ImageSync.image_id == image_id)
+
+    return query.all()
+
+
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+def image_sync_delete(context, image_id):
+    model_query(context, models.ImageSync, read_deleted="no"). \
+        filter_by(image_id=image_id).soft_delete()

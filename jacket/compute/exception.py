@@ -2124,4 +2124,8 @@ class RetryException(NovaException):
 
 
 class LxcVolumeListFailed(Invalid):
-    msg_fmt = _("get lxc volume list failed!")
+    msg_fmt = _("instance(%(instance_uuid)s), get lxc volume list failed!")
+
+
+class LxcVolumeAttachFailed(Invalid):
+    msg_fmt = _("instance(%(instance_uuid)s), lxc volume attach failed!")

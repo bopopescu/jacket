@@ -89,7 +89,7 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
         metadata['tag:caa_instance_id'] = caa_instance_id
         return metadata
 
-    def _transfer_to_sub_block_device_mapping_v2(self, context,
+    def _transfer_to_sub_block_device_mapping_v2(self, context, instance,
                                                  block_device_mapping):
         """
 
@@ -138,7 +138,18 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
 
             source_type = bdm.get('source_type', None)
             # NOTE(laoyi) Now, only support blank
-            if source_type == 'blank':
+            if source_type == 'image':
+                provider_image_id = self._get_provider_image_id(context,
+                                                                bdm['image_id'])
+                if provider_image_id:
+                    bdm_info_dict['source_type'] = 'image'
+                    bdm_info_dict['uuid'] = provider_image_id
+                else:
+                    bdm_info_dict['source_type'] = 'blank'
+                bdm_info_dict['volume_size'] = str(bdm.get('size'))
+                bdm_info_dict['delete_on_termination'] = bdm.get(
+                    'delete_on_termination', False)
+            elif source_type == 'blank':
                 bdm_info_dict['source_type'] = source_type
                 bdm_info_dict['volume_size'] = str(bdm.get('size'))
                 bdm_info_dict['delete_on_termination'] = bdm.get(
@@ -855,7 +866,7 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
                                                              injected_files)
 
             sub_bdm = self._transfer_to_sub_block_device_mapping_v2(
-                context, block_device_info)
+                context, instance, block_device_info)
             LOG.debug('sub_bdm: %s' % sub_bdm)
 
             project_mapper = self._get_project_mapper(context,
