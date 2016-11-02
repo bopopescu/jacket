@@ -17,7 +17,6 @@
 
 """Utilities and helper functions."""
 
-
 import abc
 import contextlib
 import datetime
@@ -51,9 +50,10 @@ import retrying
 import six
 import webob.exc
 
+from jacket.db.extend import api as caa_db_api
 from jacket import exception
+from jacket import objects
 from jacket.i18n import _, _LE, _LW
-
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
@@ -634,7 +634,6 @@ class ComparableMixin(object):
 
 def retry(exceptions, interval=1, retries=3, backoff_rate=2,
           wait_random=False):
-
     def _retry_on_exception(e):
         return isinstance(e, exceptions)
 
@@ -697,21 +696,25 @@ def convert_str(text):
 
 def trace_method(f):
     """Decorates a function if TRACE_METHOD is true."""
+
     @functools.wraps(f)
     def trace_method_logging_wrapper(*args, **kwargs):
         if TRACE_METHOD:
             return trace(f)(*args, **kwargs)
         return f(*args, **kwargs)
+
     return trace_method_logging_wrapper
 
 
 def trace_api(f):
     """Decorates a function if TRACE_API is true."""
+
     @functools.wraps(f)
     def trace_api_logging_wrapper(*args, **kwargs):
         if TRACE_API:
             return trace(f)(*args, **kwargs)
         return f(*args, **kwargs)
+
     return trace_api_logging_wrapper
 
 
@@ -768,6 +771,7 @@ def trace(f):
                       'time': total_time,
                       'result': result})
         return result
+
     return trace_logging_wrapper
 
 
@@ -781,6 +785,7 @@ class TraceWrapperMetaclass(type):
     @six.add_metaclass(utils.TraceWrapperMetaclass)
     class MyClass(object):
     """
+
     def __new__(meta, classname, bases, classDict):
         newClassDict = {}
         for attributeName, attribute in classDict.items():
@@ -858,41 +863,6 @@ def build_or_str(elements, str_format=None):
     return elements
 
 
-def calculate_virtual_free_capacity(total_capacity,
-                                    free_capacity,
-                                    provisioned_capacity,
-                                    thin_provisioning_support,
-                                    max_over_subscription_ratio,
-                                    reserved_percentage):
-    """Calculate the virtual free capacity based on thin provisioning support.
-
-    :param total_capacity:  total_capacity_gb of a host_state or pool.
-    :param free_capacity:   free_capacity_gb of a host_state or pool.
-    :param provisioned_capacity:    provisioned_capacity_gb of a host_state
-                                    or pool.
-    :param thin_provisioning_support:   thin_provisioning_support of
-                                        a host_state or a pool.
-    :param max_over_subscription_ratio: max_over_subscription_ratio of
-                                        a host_state or a pool
-    :param reserved_percentage: reserved_percentage of a host_state or
-                                a pool.
-    :returns: the calculated virtual free capacity.
-    """
-
-    total = float(total_capacity)
-    reserved = float(reserved_percentage) / 100
-
-    if thin_provisioning_support:
-        free = (total * max_over_subscription_ratio
-                - provisioned_capacity
-                - math.floor(total * reserved))
-    else:
-        # Calculate how much free space is left after taking into
-        # account the reserved space.
-        free = free_capacity - math.floor(total * reserved)
-    return free
-
-
 def validate_integer(value, name, min_value=None, max_value=None):
     """Make sure that value is a valid integer, potentially within range.
 
@@ -943,3 +913,28 @@ def service_expired_time(with_timezone=False):
 
 def strtime(at):
     return at.strftime("%Y-%m-%dT%H:%M:%S.%f")
+
+
+def is_image_sync(context, image_id):
+    # NOTE(laoyi) whether need to upload image
+
+    if caa_db_api.image_mapper_get(context, image_id):
+        return False
+
+    try:
+        image_sync = objects.ImageSync.get_by_image_id(
+            context, image_id)
+        if image_sync.status in ['error', 'success']:
+            image_sync.destroy()
+        else:
+            LOG.debug(
+                "image(%s) sync is running, cur status = %s, no need to image "
+                "sync.", image_id, image_sync.status)
+            return False
+    except exception.ImageSyncNotFound:
+        LOG.debug("image sync not found, need to image sync!")
+    except Exception as ex:
+        LOG.exception("get image sync info failed! ex = %s", ex)
+        return False
+
+    return True

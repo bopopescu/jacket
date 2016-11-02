@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo_utils import versionutils
+from oslo_log import log as logging
 
 from jacket.db import extend as db
 from jacket import exception
@@ -20,15 +20,19 @@ from jacket.objects import base
 from jacket.objects import extend as objects
 from jacket.objects import fields
 
+LOG = logging.getLogger(__name__)
+
 
 @base.JacketObjectRegistry.register
-class ImageSync(base.JacketPersistentObject, base.JacketObject):
+class ImageSync(base.JacketPersistentObject, base.JacketObject,
+                base.JacketObjectDictCompat):
     VERSION = '1.0'
 
     fields = {
         'id': fields.IntegerField(),
         'image_id': fields.StringField(nullable=True),
         'project_id': fields.StringField(nullable=True),
+        'status': fields.StringField(nullable=True),
     }
 
     @staticmethod
@@ -41,7 +45,7 @@ class ImageSync(base.JacketPersistentObject, base.JacketObject):
         image_sync.obj_reset_changes()
         return image_sync
 
-    @base.remotable_classmethod
+    @classmethod
     def get_by_image_id(cls, context, image_id):
         db_image_sync = db.image_sync_get(context, image_id)
         return cls._from_db_object(context, cls(), db_image_sync)
@@ -52,21 +56,23 @@ class ImageSync(base.JacketPersistentObject, base.JacketObject):
             raise exception.ObjectActionError(action='create',
                                               reason='already created')
         updates = self.obj_get_changes()
-        db_image_sync = db.image_mapper_create(self._context, updates)
+        db_image_sync = db.image_sync_create(self._context, updates)
         self._from_db_object(self._context, self, db_image_sync)
 
-    @base.remotable
     def save(self):
         updates = self.obj_get_changes()
         updates.pop('id', None)
+        LOG.debug("updates = %s", updates)
         db_image_sync = db.image_sync_update(self._context, self.image_id,
                                              updates)
         self._from_db_object(self._context, self, db_image_sync)
-        self.obj_reset_changes
+        self.obj_reset_changes()
 
+    def destroy(self):
+        db.image_sync_delete(self._context, self.image_id)
 
 @base.JacketObjectRegistry.register
-class MigrationList(base.ObjectListBase, base.JacketObject):
+class ImageSyncList(base.ObjectListBase, base.JacketObject):
     # Version 1.0: Initial version
 
     VERSION = '1.0'

@@ -43,7 +43,7 @@ clients_opts = [
 
 client_http_log_debug_opts = [
     cfg.BoolOpt('http_log_debug',
-                default=False,
+                default=True,
                 help=_("Allow client's debug log output."))]
 
 hybrid_cloud_agent_opts = [

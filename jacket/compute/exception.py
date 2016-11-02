@@ -79,6 +79,7 @@ def wrap_exception(notifier=None, get_notifier=None):
     get thrown. It also optionally sends the exception to the notification
     system.
     """
+
     def inner(f):
         def wrapped(self, context, *args, **kw):
             # Don't store self or context in the payload, it now seems to
@@ -108,6 +109,7 @@ def wrap_exception(notifier=None, get_notifier=None):
                                                            payload)
 
         return functools.wraps(f)(wrapped)
+
     return inner
 
 
@@ -143,7 +145,7 @@ class NovaException(Exception):
                 # log the issue and the kwargs
                 LOG.exception(_LE('Exception in string format operation'))
                 for name, value in six.iteritems(kwargs):
-                    LOG.error("%s: %s" % (name, value))    # noqa
+                    LOG.error("%s: %s" % (name, value))  # noqa
 
                 if CONF.fatal_exception_format_errors:
                     six.reraise(*exc_info)
@@ -187,7 +189,7 @@ class VirtualInterfacePlugException(NovaException):
 
 class GlanceConnectionFailed(NovaException):
     msg_fmt = _("Connection to glance host %(server)s failed: "
-        "%(reason)s")
+                "%(reason)s")
 
 
 class CinderConnectionFailed(NovaException):
@@ -2119,6 +2121,7 @@ class OsInfoNotFound(NotFound):
 class BuildRequestNotFound(NotFound):
     msg_fmt = _("BuildRequest not found for instance %(uuid)s")
 
+
 class RetryException(NovaException):
     msg_fmt = _('Need to retry, error info: %(error_info)s')
 
@@ -2129,3 +2132,19 @@ class LxcVolumeListFailed(Invalid):
 
 class LxcVolumeAttachFailed(Invalid):
     msg_fmt = _("instance(%(instance_uuid)s), lxc volume attach failed!")
+
+
+class LxcVolumeNotFound(NovaException):
+    msg_fmt = _("instance(%(instance_uuid)s), can not find lxc volume.")
+
+
+class LxcStopFailed(NovaException):
+    msg_fmt = _("instance(%(instance_uuid)s), stop container failed.")
+
+
+class LxcStartFailed(NovaException):
+    msg_fmt = _("instance(%(instance_uuid)s), start container failed.")
+
+
+class InstanceSaveFailed(NovaException):
+    msg_fmt = _("instance(%(instance_uuid)s) save failed.")

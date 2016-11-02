@@ -911,3 +911,12 @@ class NovaClientPlugin(client_plugin.ClientPlugin):
 
         return self.check_opt_server_complete(server, opt, task_states,
                                               wait_statuses)
+
+
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           wait_fixed=2000,
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
+    def get_server_volumes(self, server):
+        return self.client().volumes.get_server_volumes(server)
+

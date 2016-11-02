@@ -41,6 +41,7 @@ from jacket.drivers.openstack import exception_ex
 from jacket import exception
 from jacket.i18n import _LE
 from jacket import utils
+from jacket.objects import compute as objects
 
 LOG = logging.getLogger(__name__)
 
@@ -88,6 +89,14 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
 
         metadata['tag:caa_instance_id'] = caa_instance_id
         return metadata
+
+    def _is_booted_from_volume(self, instance, disk_mapping=None):
+        """Determines whether the VM is booting from volume
+
+        Determines whether the disk mapping indicates that the VM
+        is booting from a volume.
+        """
+        return (not bool(instance.get('image_ref')))
 
     def _transfer_to_sub_block_device_mapping_v2(self, context, instance,
                                                  block_device_mapping):
@@ -137,15 +146,21 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
             bdm_info_dict['destination_type'] = 'volume'
 
             source_type = bdm.get('source_type', None)
-            # NOTE(laoyi) Now, only support blank
+            # NOTE(laoyi) Now, only support image and blank
             if source_type == 'image':
-                provider_image_id = self._get_provider_image_id(context,
-                                                                bdm['image_id'])
+                image_id = bdm.get('image_id', None)
+                if image_id:
+                    provider_image_id = self._get_provider_image_id(context,
+                                                                    image_id)
+                else:
+                    provider_image_id = self._get_provider_base_image_id(
+                        context)
                 if provider_image_id:
                     bdm_info_dict['source_type'] = 'image'
                     bdm_info_dict['uuid'] = provider_image_id
                 else:
                     bdm_info_dict['source_type'] = 'blank'
+
                 bdm_info_dict['volume_size'] = str(bdm.get('size'))
                 bdm_info_dict['delete_on_termination'] = bdm.get(
                     'delete_on_termination', False)
@@ -214,6 +229,8 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
         :param instance_id: type string
         :return: type string, e.g. 'my_vm@97988012-4f48-4463-a150-d7e6b0a321d9'
         """
+        if not instance_name:
+            instance_name = 'server'
         return '@'.join([instance_name, instance_id])
 
     def _get_provider_flavor_id(self, context, flavor_id):
@@ -257,7 +274,8 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
 
     def list_instance_uuids(self):
         uuids = []
-        context = req_context.RequestContext(project_id='default')
+        context = req_context.RequestContext(is_admin=True,
+                                             project_id='default')
         servers = self.os_novaclient(context).list()
         for server in servers:
             server_id = server.id
@@ -272,7 +290,8 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
         """
 
         instances = []
-        context = req_context.RequestContext(project_id='default')
+        context = req_context.RequestContext(is_admin=True,
+                                             project_id='default')
         servers = self.os_novaclient(context).list()
         for server in servers:
             server_name = server.name
@@ -286,7 +305,8 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
         :return: list of instance id. e.g.['id_001', 'id_002', ...]
         """
         stats = {}
-        context = req_context.RequestContext(project_id='default')
+        context = req_context.RequestContext(is_admin=True,
+                                             project_id='default')
         servers = self.os_novaclient(context).list()
         for server in servers:
             uuid = server.uuid
@@ -316,6 +336,38 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
                 self.os_cinderclient(context).delete_volume(volume)
             self.os_cinderclient(context).check_delete_volume_complete(
                 volume.id)
+
+    def _attach_volume(self, context, instance, provider_volume, mountpoint):
+        provider_server = self._get_provider_instance(context, instance)
+        if not provider_server:
+            LOG.error('Can not find server in provider os, '
+                      'server: %s' % instance.uuid)
+            raise exception_ex.ServerNotExistException(
+                server_name=instance.display_name)
+
+        if provider_volume.status == "in-use":
+            attach_id, server_id = self._get_attachment_id_for_volume(
+                provider_volume)
+            if server_id != provider_server.id:
+                LOG.error(_LE("provider volume(%s) has been attached to "
+                              "provider instance(%s)"), provider_volume.id,
+                          server_id)
+                raise exception_ex.VolumeAttachFailed(
+                    volume_id=provider_volume.id)
+            else:
+                return
+
+        if provider_volume.status == 'available':
+            self.os_novaclient(context).attach_volume(provider_server.id,
+                                                      provider_volume.id,
+                                                      mountpoint)
+            self.os_cinderclient(context).check_attach_volume_complete(
+                provider_volume)
+        else:
+            raise Exception('provider volume %s is not available, '
+                            'status is %s' %
+                            (provider_volume.id,
+                             provider_volume.status))
 
     def attach_volume(self, context, connection_info, instance, mountpoint=None,
                       disk_bus=None, device_type=None,
@@ -480,38 +532,10 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
 
         cascading_volume_id = connection_info['data']['volume_id']
 
-        sub_server = self._get_provider_instance(context, instance)
-        if not sub_server:
-            LOG.error('Can not find server in provider os, '
-                      'server: %s' % instance.uuid)
-            raise exception_ex.ServerNotExistException(
-                server_name=instance.display_name)
-
         provider_volume = self._get_provider_volume(context,
                                                     cascading_volume_id)
-        if provider_volume.status == "in-use":
-            attach_id, server_id = self._get_attachment_id_for_volume(
-                provider_volume)
-            if server_id != sub_server.id:
-                LOG.error(_LE("provider volume(%s) has been attached to "
-                              "provider instance(%s)"), provider_volume.id,
-                          server_id)
-                raise exception_ex.VolumeAttachFailed(
-                    volume_id=cascading_volume_id)
-            else:
-                return
+        self._attach_volume(context, instance, provider_volume, mountpoint)
 
-        if provider_volume.status == 'available':
-            self.os_novaclient(context).attach_volume(sub_server.id,
-                                                      provider_volume.id,
-                                                      mountpoint)
-            self.os_cinderclient(context).check_attach_volume_complete(
-                provider_volume)
-        else:
-            raise Exception('sub volume %s of volume: %s is not available, '
-                            'status is %s' %
-                            (provider_volume.id, cascading_volume_id,
-                             provider_volume.status))
         LOG.debug('attach volume : %s success.' % cascading_volume_id)
 
     def destroy(self, context, instance, network_info, block_device_info=None,
@@ -540,6 +564,15 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
             # raise exception_ex.ServerNotExistException(server_name=instance.display_name)
 
         try:
+            provider_lxc_volume_id = instance.system_metadata.get(
+                'provider_lxc_volume_id', None)
+            if provider_lxc_volume_id:
+                self.os_cinderclient(context).delete_volume(
+                    provider_lxc_volume_id)
+        except Exception as ex:
+            pass
+
+        try:
             # delete instance mapper
             self.caa_db_api.instance_mapper_delete(context,
                                                    instance.uuid,
@@ -549,17 +582,7 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
 
         LOG.debug('success to delete instance: %s' % instance.uuid)
 
-    def detach_volume(self, connection_info, instance, mountpoint,
-                      encryption=None):
-        LOG.debug('start to detach volume.')
-        LOG.debug('instance: %s' % instance)
-        LOG.debug('connection_info: %s' % connection_info)
-
-        context = req_context.RequestContext(instance.project_id)
-        cascading_volume_id = connection_info['data']['volume_id']
-
-        provider_volume = self._get_provider_volume(context,
-                                                    cascading_volume_id)
+    def _detach_volume(self, context, provider_volume):
         if provider_volume.status == "available":
             LOG.debug("provider volume(%s) has been detach", provider_volume.id)
             return
@@ -574,6 +597,21 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
         LOG.debug('wait for volume in available status.')
         self.os_cinderclient(context).check_detach_volume_complete(
             provider_volume)
+
+    def detach_volume(self, connection_info, instance, mountpoint,
+                      encryption=None):
+        LOG.debug('start to detach volume.')
+        LOG.debug('instance: %s' % instance)
+        LOG.debug('connection_info: %s' % connection_info)
+
+        context = req_context.RequestContext(is_admin=True,
+                                             project_id=instance.project_id)
+        cascading_volume_id = connection_info['data']['volume_id']
+
+        provider_volume = self._get_provider_volume(context,
+                                                    cascading_volume_id)
+        self._detach_volume(context, provider_volume)
+        LOG.debug("detach volume success!", instance=instance)
 
     def get_available_nodes(self, refresh=False):
         """Returns nodenames of all nodes managed by the compute service.
@@ -622,9 +660,12 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
                 'numa_topology': None,}
 
     def get_info(self, instance):
-        LOG.debug('get_info: %s' % instance)
         STATUS = power_state.NOSTATE
-        server = self._get_provider_instance(None, instance)
+
+        context = req_context.RequestContext(is_admin=True,
+                                             project_id=instance.project_id)
+
+        server = self._get_provider_instance(context, instance)
         LOG.debug('server: %s' % server)
         if server:
             instance_power_state = getattr(server, 'OS-EXT-STS:power_state')
@@ -663,7 +704,8 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
             raise exception_ex.ServerNotExistException(
                 server_name=instance.display_name)
 
-        context = req_context.RequestContext(project_id=instance.project_id)
+        context = req_context.RequestContext(is_admin=True,
+                                             project_id=instance.project_id)
 
         LOG.debug('server: %s status is: %s' % (server.id, server.status))
         if server.status == vm_states.ACTIVE.upper():
@@ -697,7 +739,7 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
             server.start()
             LOG.debug('submit start task')
             self.os_novaclient(context).check_start_server_complete(server)
-            LOG.debug('stop server: %s success' % instance.uuid)
+            LOG.debug('start server: %s success' % instance.uuid)
         elif server.status == vm_states.ACTIVE.upper():
             LOG.debug('sub instance status is already ACTIVE.')
             return
@@ -819,6 +861,26 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
             with excutils.save_and_reraise_exception():
                 self.os_glanceclient(context).delete(provider_image_id)
 
+    def get_provider_lxc_volume_id(self, context, instance, index):
+        lxc_volume_id = instance.system_metadata.get('provider_lxc_volume_id',
+                                                     None)
+        if lxc_volume_id:
+            return lxc_volume_id
+
+        provider_instance_uuid = self._get_provider_instance_id(
+            context, instance.uuid)
+        if provider_instance_uuid is None:
+            return
+        volumes = self.os_novaclient(context).get_server_volumes(
+            provider_instance_uuid)
+        volumes = sorted(volumes, key=lambda volume: volume.device)
+        LOG.debug("+++hw, volumes = %s", volumes)
+        lxc_volume = None
+        if len(volumes) > index:
+            lxc_volume = volumes[index]
+        if lxc_volume is not None:
+            return lxc_volume.volumeId
+
     def _spawn(self, context, instance, image_meta, injected_files,
                admin_password, network_info=None, block_device_info=None):
         try:
@@ -838,8 +900,7 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
             image_ref = None
 
             if instance.image_ref:
-                sub_image_id = self._get_provider_image_id(context,
-                                                           instance.image_ref)
+                sub_image_id = self._get_provider_base_image_id(context)
                 try:
                     image_ref = self.os_glanceclient(context).get_image(
                         sub_image_id)
@@ -861,7 +922,6 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
             app_security_groups = instance.security_groups
             LOG.debug('app_security_groups: %s' % app_security_groups)
 
-            LOG.debug('injected files: %s' % injected_files)
             agent_inject_files = self._get_agent_inject_file(instance,
                                                              injected_files)
 
@@ -886,8 +946,13 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
                 block_device_mapping_v2=sub_bdm)
 
             LOG.debug('wait for server active')
-            self.os_novaclient(context).check_create_server_complete(
-                provider_server)
+            try:
+                self.os_novaclient(context).check_create_server_complete(
+                    provider_server)
+            except Exception as ex:
+                # rollback
+                with excutils.save_and_reraise_exception():
+                    provider_server.delete()
             LOG.debug('create server success.............!!!')
 
             try:
@@ -912,8 +977,13 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
             LOG.debug('luorui debug instance_ips %s' % instance_ips)
             instance.system_metadata['instance_ips'] = instance_ips
             instance.system_metadata['instance_id'] = provider_server.id
-            instance.save()
-
+            try:
+                instance.save()
+            except Exception:
+                raise exception_ex.InstanceSaveFailed(
+                    instance_uuid=instance.uuid)
+        except exception_ex.InstanceSaveFailed:
+            raise
         except Exception as e:
             LOG.error(
                 'Exception when spawn, exception: %s' % traceback.format_exc(e))
@@ -1047,14 +1117,16 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
         # self._binding_host(context, network_info, instance.uuid)
 
     def pause(self, instance):
-        context = req_context.RequestContext(project_id=instance.project_id)
+        context = req_context.RequestContext(is_admin=True,
+                                             project_id=instance.project_id)
         provider_instance = self._get_provider_instance(context, instance)
         self.os_novaclient(context).pause(provider_instance)
         self.os_novaclient(context).check_pause_server_complete(
             provider_instance)
 
     def unpause(self, instance):
-        context = req_context.RequestContext(project_id=instance.project_id)
+        context = req_context.RequestContext(is_admin=True,
+                                             project_id=instance.project_id)
         provider_instance = self._get_provider_instance(context, instance)
         self.os_novaclient(context).unpause(provider_instance)
         self.os_novaclient(context).check_unpause_server_complete(
@@ -1080,12 +1152,14 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
         self.os_novaclient(ctxt).rename(provider_uuid, provider_name)
 
     def get_diagnostics(self, instance):
-        context = req_context.RequestContext(project_id=instance.project_id)
+        context = req_context.RequestContext(is_admin=True,
+                                             project_id=instance.project_id)
         provider_uuid = self._get_provider_instance_id(context, instance.uuid)
         return self.os_novaclient(context).get_diagnostics(provider_uuid)
 
     def get_instance_diagnostics(self, instance):
-        context = req_context.RequestContext(project_id=instance.project_id)
+        context = req_context.RequestContext(is_admin=True,
+                                             project_id=instance.project_id)
         provider_uuid = self._get_provider_instance_id(context, instance.uuid)
         return self.os_novaclient(context).get_diagnostics(provider_uuid)
 
@@ -1131,7 +1205,8 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
 
     def unrescue(self, instance, network_info):
 
-        context = req_context.RequestContext(project_id=instance.project_id)
+        context = req_context.RequestContext(is_admin=True,
+                                             project_id=instance.project_id)
 
         provider_instance = self._get_provider_instance(context, instance)
         provider_instance.unrescue()
@@ -1140,7 +1215,8 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
             provider_instance)
 
     def trigger_crash_dump(self, instance):
-        context = req_context.RequestContext(project_id=instance.project_id)
+        context = req_context.RequestContext(is_admin=True,
+                                             project_id=instance.project_id)
 
         provider_instance_uuid = self._get_provider_instance_id(context,
                                                                 instance.uuid)
@@ -1148,7 +1224,8 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
             provider_instance_uuid)
 
     def set_admin_password(self, instance, new_pass):
-        context = req_context.RequestContext(project_id=instance.project_id)
+        context = req_context.RequestContext(is_admin=True,
+                                             project_id=instance.project_id)
 
         provider_instance_uuid = self._get_provider_instance_id(context,
                                                                 instance.uuid)
@@ -1165,3 +1242,63 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
 
     def detach_interface(self, instance, vif):
         pass
+
+    def upload_image(self, context, instance, image_meta):
+
+        LOG.debug("begin to upload image", instance=instance)
+
+        image_id = image_meta['id']
+        lxc_provider_volume_id = \
+            instance.system_metadata.get('provider_lxc_volume_id', None)
+        if not lxc_provider_volume_id:
+            raise exception_ex.LxcVolumeNotFound(instance_uuid=instance.uuid)
+
+        LOG.debug("lxc volume id = %s", lxc_provider_volume_id,
+                  instance=instance)
+        image = self._image_api.get(context, image_id)
+        provider_volume = self.os_cinderclient(context).get_volume(
+            lxc_provider_volume_id)
+        mountpoint = self._get_mountpoint_for_volume(provider_volume)
+
+        # detach volume, can upload image
+        try:
+            self._detach_volume(context, provider_volume)
+        except Exception as ex:
+            LOG.exception(_LE("detach provider volume(%s) failed. ex = %s"),
+                          lxc_provider_volume_id, ex)
+            raise
+
+        try:
+            # provider create image
+            provider_image = provider_volume.upload_to_image(
+                True, image["name"],
+                image_meta.get("container-format", "bare"),
+                image_meta.get("disk_format", "raw"))
+        except Exception as ex:
+            LOG.exception(_LE("upload image failed! ex = %s"), ex)
+            with excutils.save_and_reraise_exception():
+                self._attach_volume(context, instance, provider_volume,
+                                    mountpoint)
+        provider_image = provider_image[1]["os-volume_upload_image"]
+
+        try:
+            # wait upload image success
+            self.os_cinderclient(context).check_upload_image_volume_complete(
+                provider_volume.id)
+
+            # wait image status active
+            self.os_glanceclient(context).check_image_active_complete(
+                provider_image["image_id"])
+
+            # create image mapper
+            values = {"provider_image_id": provider_image["image_id"]}
+            self.caa_db_api.image_mapper_create(context, image_id,
+                                                context.project_id,
+                                                values)
+
+        except Exception as ex:
+            LOG.exception(_LE("upload image failed! ex = %s"), ex)
+            with excutils.save_and_reraise_exception():
+                self._attach_volume(context, instance, provider_volume,
+                                    mountpoint)
+                self.os_glanceclient(context).delete(provider_image["image_id"])

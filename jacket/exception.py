@@ -280,3 +280,7 @@ class Error(JacketException):
 
 class ImageSyncNotFound(JacketException):
     msg_fmt = _("image(%(image_id)s sync not found.")
+
+
+class ImageSyncFailed(JacketException):
+    msg_fmt = _("image(%(image_id)s sync failed.")

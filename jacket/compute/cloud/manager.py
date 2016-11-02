@@ -48,7 +48,6 @@ from oslo_log import log as logging
 import oslo_messaging as messaging
 from oslo_serialization import jsonutils
 from oslo_service import loopingcall
-from oslo_service import periodic_task
 from oslo_utils import excutils
 from oslo_utils import strutils
 from oslo_utils import timeutils
@@ -86,6 +85,7 @@ from jacket.compute.network import base_api as base_net_api
 from jacket.compute.network import model as network_model
 from jacket.compute.network.security_group import openstack_driver
 from jacket.objects import compute as objects
+from jacket import objects as jacket_objects
 from jacket.objects.compute import base as obj_base
 # from jacket.objects.compute import instance as obj_instance
 from jacket.objects.compute import migrate_data as migrate_data_obj
@@ -102,6 +102,9 @@ from jacket.compute.virt import storage_users
 from jacket.compute.virt import virtapi
 from jacket.compute import volume
 from jacket.compute.volume import encryptors
+from jacket import exception as jacket_exception
+from jacket import utils as jacket_utils
+from jacket.db.extend import api as caa_db_api
 
 from jacket.worker.hypercontainer.driver import JacketHyperContainerDriver
 from wormholeclient import constants
@@ -214,7 +217,7 @@ interval_opts = [
                     'positive value will cause it to run at approximately '
                     'that number of seconds.'),
     cfg.IntOpt('hc_root_size',
-               default=10,
+               default=1,
                help="hyper container root size(G), default 10G."),
 ]
 
@@ -1543,7 +1546,10 @@ class ComputeManager(manager.Manager):
         if self.driver.instance_exists(instance):
             raise exception.InstanceExists(name=instance.name)
 
-    def _get_image_id(self, context, instance):
+    def _get_image_id(self, context, instance, image):
+        image_id = image.get('id', None)
+        if image_id:
+            return image_id
         image_id = instance.system_metadata.get(
             'image_id', None)
         if image_id:
@@ -2018,6 +2024,8 @@ class ComputeManager(manager.Manager):
             return build_results.ACTIVE
         except exception.RescheduledException as e:
             retry = filter_properties.get('retry')
+            # NOTE(laoyi), not reschedule
+            retry = False
             if not retry:
                 # no retry information, do not reschedule.
                 LOG.debug("Retry info not present, will not reschedule",
@@ -2159,12 +2167,12 @@ class ComputeManager(manager.Manager):
                         if self._is_hypercontainer(context, instance):
                             LOG.debug("begin to hypercontainer to spawn",
                                       instance=instance)
-                            LOG.debug("+++hw, instance = %s", instance)
-                            self._do_hc_spawn(context, instance, image,
-                                              injected_files,
-                                              admin_password,
-                                              network_info=network_info,
-                                              block_device_info=block_device_info)
+                            self._do_hc_spawn_and_image_sync(context, instance,
+                                                             image,
+                                                             injected_files,
+                                                             admin_password,
+                                                             network_info,
+                                                             block_device_info)
                             self._binding_host(context, instance, network_info)
                         else:
                             self.driver.spawn(context, instance, image_meta,
@@ -2213,7 +2221,8 @@ class ComputeManager(manager.Manager):
                 exception.FlavorMemoryTooSmall,
                 exception.ImageNotActive,
                 exception.ImageUnacceptable,
-                exception.InvalidDiskInfo) as e:
+                exception.InvalidDiskInfo,
+                exception.InstanceSaveFailed) as e:
             self._notify_about_instance_usage(context, instance,
                                               'create.error', fault=e)
             raise exception.BuildAbortException(instance_uuid=instance.uuid,
@@ -2221,7 +2230,9 @@ class ComputeManager(manager.Manager):
 
         except (exception.LxcVolumeListFailed,
                 exception.LxcVolumeAttachFailed,
-                exception.RetryException) as ex:
+                exception.RetryException,
+                exception.LxcStartFailed,
+                exception.LxcStopFailed) as ex:
             LOG.exception(_LE("lxc operation failed! ex = %s"), ex)
             self._notify_about_instance_usage(context, instance,
                                               'create.error', fault=ex)
@@ -2417,9 +2428,7 @@ class ComputeManager(manager.Manager):
 
         if self._is_hypercontainer(context, instance):
             try:
-                self.jacketdriver.stop_container(instance)
-                self.jacketdriver.wait_container_in_specified_status(instance,
-                                                                     constants.STOPPED)
+                self.stop_container(context, instance)
             except Exception, e:
                 pass
         self.driver.power_off(instance, timeout, retry_interval)
@@ -2720,10 +2729,8 @@ class ComputeManager(manager.Manager):
 
         if self._is_hypercontainer(context, instance):
             try:
-                self.jacketdriver.start_container(instance, network_info,
-                                                  block_device_info)
-                self.jacketdriver.wait_container_in_specified_status(instance,
-                                                                     constants.RUNNING)
+                self.start_container(context, instance, network_info,
+                                     block_device_info)
             except Exception, e:
                 pass
 
@@ -6098,6 +6105,18 @@ class ComputeManager(manager.Manager):
         image_meta = objects.ImageMeta.from_instance(instance)
         self.driver.unquiesce(context, instance, image_meta)
 
+    def stop_container(self, context, instance):
+        self.jacketdriver.stop_container(instance)
+        self.jacketdriver.wait_container_in_specified_status(instance,
+                                                             constants.STOPPED)
+
+    def start_container(self, context, instance, network_info=None,
+                        block_device_info=None):
+        self.jacketdriver.start_container(instance, network_info,
+                                          block_device_info)
+        self.jacketdriver.wait_container_in_specified_status(instance,
+                                                             constants.RUNNING)
+
     def _build_hc_bdm(self, instance=None, image_id=None, boot_index=None,
                       size=None, source_type='blank',
                       delete_on_termination=True):
@@ -6138,6 +6157,14 @@ class ComputeManager(manager.Manager):
 
         return bdm
 
+    def _is_booted_from_volume(self, instance, disk_mapping):
+        """Determines whether the VM is booting from volume
+
+        Determines whether the disk mapping indicates that the VM
+        is booting from a volume.
+        """
+        return (not bool(instance.get('image_ref')))
+
     def _do_hc_bdm_tranfer(self, context, instance, block_device_info):
         block_device_info = block_device_info or {}
         block_device_info = copy.deepcopy(block_device_info)
@@ -6148,13 +6175,20 @@ class ComputeManager(manager.Manager):
         LOG.debug("bdms = %s", bdms)
 
         # NOTE(laoyi) insert lxc volume
-        image_id = self._get_image_id(context, instance)
-        hyper_bdm = self._build_hc_bdm(instance=instance, image_id=image_id,
-                                       source_type='image')
-        bdms.insert(1, hyper_bdm)
+        if self._is_booted_from_volume(instance, bdms):
+            image_id = None
+            flag = 0
+        else:
+            image_id = instance.image_ref
+            flag = 1
+        hyper_bdm = self._build_hc_bdm(instance=instance,
+                                       source_type='image',
+                                       image_id=image_id,
+                                       size=CONF.hc_root_size)
+        bdms.insert(0, hyper_bdm)
         LOG.debug("after insert bdms = %s", bdms)
         for index, bdm in enumerate(bdms):
-            bdm["boot_index"] = index
+            bdm["boot_index"] = index + flag
 
         block_device_info['block_device_mapping'] = bdms
         return block_device_info
@@ -6167,7 +6201,13 @@ class ComputeManager(manager.Manager):
         volume_devices.sort()
         LOG.debug("get hypercontainer device_list = %s", volume_devices)
 
-        for (bdm, device) in six.moves.zip(bdms[2:], volume_devices[2:]):
+        if bdms[0]['boot_index'] == 0:
+            index = 2
+        else:
+            index = 1
+
+        for (bdm, device) in six.moves.zip(bdms[index:],
+                                           volume_devices[index:]):
             try:
                 self.jacketdriver.attach_volume(instance, bdm['volume_id'],
                                                 device, bdm['mount_device'])
@@ -6178,9 +6218,10 @@ class ComputeManager(manager.Manager):
 
         self.jacketdriver.wait_container_in_specified_status(instance,
                                                              constants.RUNNING)
+
     def _do_hc_spawn(self, context, instance, image,
-                     injected_files, admin_password,
-                     network_info, block_device_info):
+                     injected_files=None, admin_password=None,
+                     network_info=None, block_device_info=None):
 
         block_device_info = self._do_hc_bdm_tranfer(context, instance,
                                                     block_device_info)
@@ -6199,6 +6240,13 @@ class ComputeManager(manager.Manager):
                           block_device_info=block_device_info)
 
         try:
+            if self._is_booted_from_volume(instance, bdms):
+                index = 1
+            else:
+                index = 0
+            instance.system_metadata[
+                'provider_lxc_volume_id'] = \
+                self.driver.get_provider_lxc_volume_id(context, instance, index)
             self._do_hc_lxc_spawn(instance, bdms)
         except Exception as ex:
             # rollback
@@ -6207,10 +6255,72 @@ class ComputeManager(manager.Manager):
                 self.driver.destroy(context, instance, network_info,
                                     block_device_info)
 
+    def _do_hc_spawn_and_image_sync(self, context, instance, image,
+                                    injected_files=None, admin_password=None,
+                                    network_info=None, block_device_info=None,
+                                    image_sync=None):
+
+        def image_sync_destory(obj):
+            try:
+                obj.destroy()
+            except Exception:
+                pass
+
+        self._do_hc_spawn(context, instance, image, injected_files,
+                          admin_password, network_info, block_device_info)
+
+        image_id = self._get_image_id(context, instance, image)
+        if not jacket_utils.is_image_sync(context, image_id):
+            return
+
+        if not image_sync:
+            try:
+                # 1 create image sync
+                image_sync = jacket_objects.ImageSync(context,
+                                                      image_id=image_id,
+                                                      project_id=context.project_id,
+                                                      status="uploading")
+                image_sync.create()
+            except Exception as ex:
+                LOG.exception("create image sync failed. ex = %s", ex)
+                return
+
+        try:
+            # 2 stop container
+            self.stop_container(context, instance)
+        except Exception as ex:
+            LOG.exception("power off instance failed. not image sync.ex = %s",
+                          ex)
+            image_sync_destory(image_sync)
+
+        try:
+            # 3 upload image
+            self.driver.upload_image(context, instance, {'id': image_id})
+        except Exception as ex:
+            LOG.exception("upload image failed. ex = %s", ex)
+            with excutils.save_and_reraise_exception():
+                image_sync_destory(image_sync)
+                self.start_container(context, instance, network_info,
+                                     block_device_info)
+        try:
+            image_sync.status = "finished"
+            image_sync.save()
+        except Exception:
+            pass
+
+        try:
+            self.start_container(context, instance, network_info,
+                                 block_device_info)
+        except Exception as ex:
+            LOG.exception(_LE("start lxc container failed. ex = %s"), ex)
+            self.driver.destroy(context, instance, network_info,
+                                block_device_info)
+            raise exception.LxcStartFailed(instance_uuid=instance.uuid)
+
     def _binding_host(self, context, instance, network_info):
-        retries = 10
+        retries = 30
         attempts = retries + 1
-        retry_time = 30
+        retry_time = 2
         for attempt in range(1, attempts + 1):
             log_info = {'attempt': attempt,
                         'attempts': attempts}
@@ -6338,7 +6448,7 @@ class ComputeManager(manager.Manager):
         data['block_device_info'] = block_devices
         data['inject_files'] = injected_files
         data['admin_password'] = admin_password
-
+        LOG.debug("inject data  = %s", data)
         data = json.dumps(data).encode('zlib')
         data = base64.b64encode(data)
         return data
@@ -6347,49 +6457,108 @@ class ComputeManager(manager.Manager):
         if hasattr(self.driver, "rename"):
             return self.driver.rename(ctxt, instance, display_name)
 
-    def image_sync(self, context, image, flavor=None, networks=None):
+    def image_sync(self, context, image, flavor=None, image_sync=None):
 
-        instance = objects.Instance(context=context)
-        instance.uuid = str(uuid.uuid4())
-        instance.project_id = context.project_id
+        instance = objects.Instance(context=context, uuid=str(uuid.uuid4()),
+                                    project_id=context.project_id)
+
         bdms = []
-
-        lxc_volume_size = 0
-        if flavor:
-            if isinstance(flavor, six.string_types):
-                flavor = flavors.get_flavor_by_flavor_id(
-                    flavor, ctxt=context, read_deleted="no")
-            lxc_volume_size = flavor.get('root_gb', 0)
 
         if isinstance(image, six.string_types):
             image = self.image_api.get(context, image, show_deleted=False)
 
-        root_size = CONF.hc_root_size
-        lxc_volume_size = lxc_volume_size or int(image.get('min_disk', 0)) or 5
+        lxc_volume_size = int(image.get('min_disk', 0)) or 0
+        if flavor:
+            if isinstance(flavor, six.string_types):
+                flavor = flavors.get_flavor_by_flavor_id(
+                    flavor, ctxt=context, read_deleted="no")
 
-        bdms.append(self._build_hc_bdm(boot_index=0, size=root_size,
-                                       source_type='image',
-                                       delete_on_termination=True))
-        #bdms.append(self._build_hc_bdm(boot_index=1, size=lxc_volume_size,
-        #                               source_type='blank',
-        #                               delete_on_termination=True))
+        else:
+            flavor_list = flavors.get_all_flavors_sorted_list(context,
+                                                              sort_key='root_gb',
+                                                              sort_dir="desc")
+            for one in flavor_list:
+                if int(one.root_gb) > lxc_volume_size:
+                    flavor = one
+
+        if not flavor:
+            raise exception.FlavorNotFound(flavor_id='default')
 
         block_device_info = {}
         block_device_info['block_device_mapping'] = bdms
 
         instance.flavor = flavor
-        instance.system_metadata['image_id'] = image.id
-        instance.system_metadata['image_name'] = image.name
+        instance.image_ref = None
+        instance.display_name = None
+        instance.metadata = {}
+        instance.system_metadata = {}
+        instance.reservation_id = instance.uuid
+        # instance.system_metadata['image_id'] = image['id']
+        # instance.system_metadata['image_name'] = image['name']
 
-        # 1 create hypercontainer vm
-        self._do_hc_spawn(context, instance, image, None, "1234", None, block_device_info)
+        # bdms.append(self._build_hc_bdm(boot_index=0, size=root_size,
+        #                               source_type='image',
+        #                               delete_on_termination=True))
+        bdms.append(self._build_hc_bdm(instance, boot_index=1,
+                                       source_type='blank',
+                                       delete_on_termination=True))
 
-        # 2 stop vm
-        self.driver.power_off(instance)
+        if not image_sync:
+            image_sync = jacket_objects.ImageSync.get_by_image_id(context,
+                                                                  image['id'])
 
-        #3 upload image
-        self.driver.upload_image(context, instance)
+        def image_sync_status(status):
+            image_sync.status = status
+            image_sync.save()
 
-        # 4 delete hypercontainer vm
-        self.driver.destroy(context, instance, None,
-                            block_device_info)
+        image_sync_status("spawning")
+
+        try:
+            self._do_hc_spawn(context, instance, image,
+                              block_device_info=block_device_info)
+        except exception.InstanceSaveFailed:
+            LOG.debug("instance save failed, this error can skip!")
+        except Exception as ex:
+            with excutils.save_and_reraise_exception():
+                LOG.exception(_LE("_do_hc_spawn_and_image_sync failed! ex = "
+                                  "%s"), ex)
+                with excutils.save_and_reraise_exception():
+                    image_sync_status("error")
+
+        try:
+            # 2 stop vm
+            timeout, retry_interval = self._get_power_off_values(context,
+                                                                 instance,
+                                                                 True)
+            self.driver.power_off(instance, timeout, retry_interval)
+        except Exception as ex:
+            LOG.exception("power off instance failed. not image sync.ex = %s",
+                          ex)
+            with excutils.save_and_reraise_exception():
+                image_sync_status("error")
+                self.driver.destroy(context, instance, None,
+                                    block_device_info)
+
+        image_sync_status("uploading")
+        try:
+            # 3 upload image
+            self.driver.upload_image(context, instance, {'id': image['id']})
+        except Exception as ex:
+            LOG.exception("upload image failed. ex = %s", ex)
+            with excutils.save_and_reraise_exception():
+                image_sync_status("error")
+                self.driver.destroy(context, instance, None,
+                                    block_device_info)
+        try:
+            image_sync_status("finished")
+        except Exception:
+            LOG.exception("image_sync_status failed. ex = %s", ex)
+            self.driver.destroy(context, instance, None,
+                                block_device_info)
+        try:
+            self.driver.destroy(context, instance, None,
+                                block_device_info)
+        except Exception:
+            LOG.debug("destroy instance failed. but image sync suceess",
+                      instance=instance)
+        LOG.debug("image sync success!", instance=instance)

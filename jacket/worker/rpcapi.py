@@ -20,17 +20,16 @@ CONF = cfg.CONF
 CONF.register_opts(rpcapi_opts)
 
 rpcapi_cap_opt = cfg.StrOpt('jacket',
-        help='Set a version cap for messages sent to jacket services. '
-             'Set this option to "auto" if you want to let the jacket RPC '
-             'module automatically determine what version to use based on '
-             'the service versions in the deployment. '
-             'Otherwise, you can set this to a specific version to pin this '
-             'service to messages at a particular level. '
-             'All services of a single type (i.e. jacket) should be '
-             'configured to use the same version, and it should be set '
-             'to the minimum commonly-supported version of all those '
-             'services in the deployment.')
-
+                            help='Set a version cap for messages sent to jacket services. '
+                                 'Set this option to "auto" if you want to let the jacket RPC '
+                                 'module automatically determine what version to use based on '
+                                 'the service versions in the deployment. '
+                                 'Otherwise, you can set this to a specific version to pin this '
+                                 'service to messages at a particular level. '
+                                 'All services of a single type (i.e. jacket) should be '
+                                 'configured to use the same version, and it should be set '
+                                 'to the minimum commonly-supported version of all those '
+                                 'services in the deployment.')
 
 CONF.register_opt(rpcapi_cap_opt, 'upgrade_levels')
 
@@ -87,3 +86,8 @@ class JacketAPI(object):
     def sub_vol_type_detail(self, ctxt):
         version = "1.0"
         return self.client.call(ctxt, 'sub_vol_type_detail')
+
+    def image_sync(self, ctxt, image, flavor=None, image_sync=None):
+        version = "1.0"
+        return self.client.cast(ctxt, 'image_sync', image=image,
+                                flavor=flavor, image_sync=image_sync)

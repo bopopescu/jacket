@@ -214,8 +214,8 @@ def image_sync_get(context, image_id):
 
 
 def image_sync_get_all_by_filters(context, filters):
-    return IMPL.image_sync_all(context, filters)
+    return IMPL.image_sync_get_all_by_filters(context, filters)
 
 
 def image_sync_delete(context, image_id):
-    return IMPL.image_sync_all(context, image_id)
+    return IMPL.image_sync_delete(context, image_id)

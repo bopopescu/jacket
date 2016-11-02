@@ -18,6 +18,8 @@ from oslo_concurrency import processutils
 from oslo_log import log as logging
 from oslo_utils import timeutils
 from oslo_utils import units
+from oslo_config import cfg
+from retrying import retry
 from taskflow.patterns import linear_flow
 from taskflow.types import failure as ft
 
@@ -30,7 +32,9 @@ from jacket.storage.i18n import _, _LE, _LI, _LW
 from jacket.storage.image import image_utils, glance
 from jacket.storage.volume import utils as volume_utils
 from jacket.storage.volume.flows import common
-from oslo_config import cfg
+from jacket import utils as jacket_utils
+from jacket.worker import api as worker_api
+from jacket import exception as jacket_exception
 
 LOG = logging.getLogger(__name__)
 
@@ -580,6 +584,24 @@ class CreateVolumeFromSpecTask(flow_utils.CinderTask):
         self.db.volume_glance_metadata_bulk_create(context, volume_id,
                                                    volume_metadata)
 
+    @retry(stop_max_attempt_number=900,
+           wait_fixed=2000,
+           retry_on_result=lambda ret: ret is False,
+           retry_on_exception=lambda ex: False)
+    def check_image_sync_complete(self, context, api, image_id):
+        image_sync = api.image_sync_get(context, image_id)
+        status = image_sync['image_sync'].get('status')
+        LOG.info(_LI("wait image(%s) image sync complete, cur_status = %s"),
+                 image_id, status)
+        if status == 'finished':
+            LOG.debug("image(%s) sync finished.", image_id)
+            return True
+        if status == "error":
+            LOG.debug("image(%s) sync failed.", image_id)
+            raise jacket_exception.ImageSyncFailed(image_id=image_id)
+
+        return False
+
     def _hybrid_cloud_image_volume(self, context, volume_ref, image_location,
                                    image_id, image_service):
         if self.driver.CLOUD_DRIVER:
@@ -594,6 +616,13 @@ class CreateVolumeFromSpecTask(flow_utils.CinderTask):
                                   "%(updates)s"),
                               {'volume_id': volume_ref['id'],
                                'updates': updates})
+
+            # NOTE(laoyi) whether need to image sync
+            run_api = worker_api.API()
+            if jacket_utils.is_image_sync(context, image_id):
+                run_api.image_sync(context, image_id)
+            self.check_image_sync_complete(context, run_api, image_id)
+
             self._copy_image_to_volume(context, volume_ref,
                                        image_id, image_location, image_service)
             return None, True

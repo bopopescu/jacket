@@ -16,11 +16,14 @@ import functools
 
 from oslo_config import cfg
 from oslo_log import log as logging
+import six
 
-import jacket.policy
-from jacket import rpc
+from jacket.compute import image
 from jacket.db import base
 from jacket.db.extend import api as db_api
+from jacket import objects
+import jacket.policy
+from jacket import rpc
 from jacket.worker import rpcapi as worker_rpcapi
 
 LOG = logging.getLogger(__name__)
@@ -77,6 +80,7 @@ class API(base.Base):
         self.skip_policy_check = skip_policy_check
         self.db_api = db_api
         self.worker_rpcapi = worker_rpcapi.JacketAPI()
+        self.image_api = image.API()
 
         super(API, self).__init__(**kwargs)
 
@@ -285,3 +289,21 @@ class API(base.Base):
         return self.db_api.volume_snapshot_mapper_delete(context,
                                                          volume_snapshot_id,
                                                          project_id)
+
+    def image_sync(self, context, image, flavor=None):
+        if isinstance(image, six.string_types):
+            image = self.image_api.get(context, image, show_deleted=False)
+
+        LOG.debug("image = %s", image)
+
+        image_sync = objects.ImageSync(context, image_id=image['id'],
+                                       project_id=context.project_id,
+                                       status="creating")
+        image_sync.create()
+        return self.worker_rpcapi.image_sync(context, image, flavor, image_sync)
+
+    def image_sync_get(self, context, image_id):
+        image_sync = objects.ImageSync.get_by_image_id(context, image_id)
+        return {'image_sync': {'image_id': image_sync.image_id,
+                               'project_id': image_sync.project_id,
+                               'status': image_sync.status}}

@@ -228,6 +228,8 @@ def _mapper_convert_dict(key_values):
     return ret
 
 
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def image_mapper_all(context):
     query = model_query(context, models.ImagesMapper, read_deleted="no")
     images_mapper = query.all()
@@ -240,6 +242,8 @@ def image_mapper_all(context):
     return ret
 
 
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def image_mapper_get(context, image_id, project_id=None):
     query = model_query(context, models.ImagesMapper, read_deleted="no")
     key_values = query.filter_by(image_id=image_id).all()
@@ -264,6 +268,8 @@ def _image_mapper_convert_objs(image_id, project_id, values_dict):
     return value_refs
 
 
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def image_mapper_create(context, image_id, project_id, values):
     value_refs = _image_mapper_convert_objs(image_id, project_id, values)
     for value in value_refs:
@@ -311,11 +317,15 @@ def image_mapper_update(context, image_id, project_id, values, delete=False):
     return image_mapper_get(context, image_id, project_id)
 
 
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def image_mapper_delete(context, image_id, project_id=None):
     query = model_query(context, models.ImagesMapper, read_deleted="no")
     query.filter_by(image_id=image_id).soft_delete()
 
 
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def flavor_mapper_all(context):
     query = model_query(context, models.FlavorsMapper, read_deleted="no")
     flavors_mapper = query.all()
@@ -328,6 +338,8 @@ def flavor_mapper_all(context):
     return ret
 
 
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def flavor_mapper_get(context, flavor_id, project_id=None):
     query = model_query(context, models.FlavorsMapper, read_deleted="no")
     key_values = query.filter_by(flavor_id=flavor_id).all()
@@ -352,6 +364,8 @@ def _flavor_mapper_convert_objs(flavor_id, project_id, values_dict):
     return value_refs
 
 
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def flavor_mapper_create(context, flavor_id, project_id, values):
     value_refs = _flavor_mapper_convert_objs(flavor_id, project_id, values)
     for value in value_refs:
@@ -399,11 +413,15 @@ def flavor_mapper_update(context, flavor_id, project_id, values, delete=False):
     return flavor_mapper_get(context, flavor_id, project_id)
 
 
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def flavor_mapper_delete(context, flavor_id, project_id):
     query = model_query(context, models.FlavorsMapper, read_deleted="no")
     query.filter_by(flavor_id=flavor_id, project_id=project_id).soft_delete()
 
 
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def project_mapper_all(context):
     query = model_query(context, models.ProjectsMapper, read_deleted="no")
     projects_mapper = query.all()
@@ -416,6 +434,8 @@ def project_mapper_all(context):
     return ret
 
 
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def project_mapper_get(context, project_id):
     query = model_query(context, models.ProjectsMapper, read_deleted="no")
     key_values = query.filter_by(project_id=project_id).all()
@@ -438,6 +458,8 @@ def _project_mapper_convert_objs(project_id, values_dict):
     return value_refs
 
 
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def project_mapper_create(context, project_id, values):
     value_refs = _project_mapper_convert_objs(project_id, values)
     for value in value_refs:
@@ -476,11 +498,15 @@ def project_mapper_update(context, project_id, values, delete=False):
     return project_mapper_get(context, project_id)
 
 
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def project_mapper_delete(context, project_id):
     query = model_query(context, models.ProjectsMapper, read_deleted="no")
     query.filter_by(project_id=project_id).soft_delete()
 
 
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def instance_mapper_all(context):
     query = model_query(context, models.InstancesMapper, read_deleted="no")
     instances_mapper = query.all()
@@ -493,6 +519,8 @@ def instance_mapper_all(context):
     return ret
 
 
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def instance_mapper_get(context, instance_id, project_id=None):
     query = model_query(context, models.InstancesMapper, read_deleted="no")
     key_values = query.filter_by(instance_id=instance_id).all()
@@ -517,6 +545,8 @@ def _instance_mapper_convert_objs(instance_id, project_id, values_dict):
     return value_refs
 
 
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def instance_mapper_create(context, instance_id, project_id, values):
     value_refs = _instance_mapper_convert_objs(instance_id, project_id, values)
     for value in value_refs:
@@ -570,6 +600,8 @@ def instance_mapper_delete(context, instance_id, project_id=None):
     query.filter_by(instance_id=instance_id).soft_delete()
 
 
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_mapper_all(context):
     query = model_query(context, models.VolumesMapper, read_deleted="no")
     volumes_mapper = query.all()
@@ -582,6 +614,8 @@ def volume_mapper_all(context):
     return ret
 
 
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_mapper_get(context, volume_id, project_id=None):
     query = model_query(context, models.VolumesMapper, read_deleted="no")
     key_values = query.filter_by(volume_id=volume_id).all()
@@ -659,6 +693,8 @@ def volume_mapper_delete(context, volume_id, project_id=None):
     query.filter_by(volume_id=volume_id).soft_delete()
 
 
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_snapshot_mapper_all(context):
     query = model_query(context, models.VolumeSnapshotsMapper,
                         read_deleted="no")
@@ -673,6 +709,8 @@ def volume_snapshot_mapper_all(context):
     return ret
 
 
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_snapshot_mapper_get(context, snapshot_id, project_id=None):
     query = model_query(context, models.VolumeSnapshotsMapper,
                         read_deleted="no")
@@ -751,6 +789,8 @@ def volume_snapshot_mapper_update(context, snapshot_id, project_id, values,
     return volume_snapshot_mapper_get(context, snapshot_id, project_id)
 
 
+@require_context
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def volume_snapshot_mapper_delete(context, snapshot_id, project_id=None):
     query = model_query(context, models.VolumeSnapshotsMapper,
                         read_deleted="no")
@@ -770,8 +810,12 @@ def image_sync_create(context, values):
 @require_context
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 def image_sync_update(context, image_id, values):
-    image_sync = image_sync_get(context, image_id)
+    session = get_session()
+    image_sync = model_query(context, models.ImageSync, read_deleted="no",
+                             session=session). \
+        filter_by(image_id=image_id).first()
     image_sync.update(values)
+    image_sync.save(session)
 
     return image_sync
 

@@ -92,7 +92,7 @@ class OsVolumeDriver(driver.VolumeDriver, base.OsDriver):
 
     def _get_provider_snapshot_id(self, context, caa_snapshot_id):
         snapshot_mapper = self.caa_db_api.volume_snapshot_mapper_get(context,
-                                                                 caa_snapshot_id)
+                                                                     caa_snapshot_id)
         provider_snapshot_id = snapshot_mapper.get('provider_snapshot_id', None)
         if provider_snapshot_id:
             return provider_snapshot_id
@@ -168,14 +168,20 @@ class OsVolumeDriver(driver.VolumeDriver, base.OsDriver):
 
         LOG.debug('start to wait for volume %s in status '
                   'available' % sub_volume.id)
-        self.os_cinderclient(context).check_create_volume_complete(
-            sub_volume)
+        try:
+            self.os_cinderclient(context).check_create_volume_complete(
+                sub_volume)
+        except Exception as ex:
+            LOG.exception(_LE("volume(%s), check_create_volume_complete "
+                              "failed! ex = %s"), volume.id, ex)
+            with excutils.save_and_reraise_exception():
+                sub_volume.delete()
 
         try:
             # create volume mapper
             values = {"provider_volume_id": sub_volume.id}
             self.caa_db_api.volume_mapper_create(context, volume.id,
-                                             context.project_id, values)
+                                                 context.project_id, values)
         except Exception as ex:
             LOG.exception(_LE("volume_mapper_create failed! ex = %s"), ex)
             sub_volume.delete()
@@ -219,8 +225,8 @@ class OsVolumeDriver(driver.VolumeDriver, base.OsDriver):
             # create image mapper
             values = {"provider_image_id": provider_image["image_id"]}
             self.caa_db_api.image_mapper_create(context, image_id,
-                                            context.project_id,
-                                            values)
+                                                context.project_id,
+                                                values)
 
         except Exception as ex:
             LOG.exception(_LE("upload image failed! ex = %s"), ex)
@@ -237,7 +243,8 @@ class OsVolumeDriver(driver.VolumeDriver, base.OsDriver):
         volume_args['display_name'] = self._get_provider_volume_name(
             volume.display_name, volume.id)
 
-        context = req_context.RequestContext(project_id=volume.project_id)
+        context = req_context.RequestContext(is_admin=True,
+                                             project_id=volume.project_id)
         volume_type_id = volume.volume_type_id
         volume_type_name = None
         LOG.debug('volume type id %s ' % volume_type_id)
@@ -271,14 +278,20 @@ class OsVolumeDriver(driver.VolumeDriver, base.OsDriver):
 
         LOG.debug('start to wait for volume %s in status '
                   'available' % sub_volume.id)
-        self.os_cinderclient(context).check_create_volume_complete(
-            sub_volume)
+        try:
+            self.os_cinderclient(context).check_create_volume_complete(
+                sub_volume)
+        except Exception as ex:
+            LOG.exception(_LE("volume(%s), check_create_volume_complete "
+                              "failed! ex = %s"), volume.id, ex)
+            with excutils.save_and_reraise_exception():
+                sub_volume.delete()
 
         try:
             # create volume mapper
             values = {"provider_volume_id": sub_volume.id}
             self.caa_db_api.volume_mapper_create(context, volume.id,
-                                             context.project_id, values)
+                                                 context.project_id, values)
         except Exception as ex:
             LOG.exception(_LE("volume_mapper_create failed! ex = %s"), ex)
             sub_volume.delete()
@@ -303,7 +316,8 @@ class OsVolumeDriver(driver.VolumeDriver, base.OsDriver):
         volume_args['display_name'] = self._get_provider_volume_name(
             volume.display_name, volume.id)
 
-        context = req_context.RequestContext(project_id=volume.project_id)
+        context = req_context.RequestContext(is_admin=True,
+                                             project_id=volume.project_id)
         volume_type_id = volume.volume_type_id
         volume_type_name = None
         LOG.debug('volume type id %s ' % volume_type_id)
@@ -328,14 +342,20 @@ class OsVolumeDriver(driver.VolumeDriver, base.OsDriver):
 
         LOG.debug('start to wait for volume %s in status '
                   'available' % sub_volume.id)
-        self.os_cinderclient(context).check_create_volume_complete(
-            sub_volume)
+        try:
+            self.os_cinderclient(context).check_create_volume_complete(
+                sub_volume)
+        except Exception as ex:
+            LOG.exception(_LE("volume(%s), check_create_volume_complete "
+                              "failed! ex = %s"), volume.id, ex)
+            with excutils.save_and_reraise_exception():
+                sub_volume.delete()
 
         try:
             # create volume mapper
             values = {"provider_volume_id": sub_volume.id}
             self.caa_db_api.volume_mapper_create(context, volume.id,
-                                             context.project_id, values)
+                                                 context.project_id, values)
         except Exception as ex:
             LOG.exception(_LE("volume_mapper_create failed! ex = %s"), ex)
             sub_volume.delete()
@@ -346,7 +366,8 @@ class OsVolumeDriver(driver.VolumeDriver, base.OsDriver):
         return {'provider_location': 'SUB-FusionSphere'}
 
     def delete_volume(self, volume):
-        context = req_context.RequestContext(project_id=volume.project_id)
+        context = req_context.RequestContext(is_admin=True,
+                                             project_id=volume.project_id)
         try:
             sub_volume = self._get_provider_volume(context, volume)
         except exception.EntityNotFound:
@@ -363,14 +384,15 @@ class OsVolumeDriver(driver.VolumeDriver, base.OsDriver):
         try:
             # delelte volume snapshot mapper
             self.caa_db_api.volume_mapper_delete(context, volume.id,
-                                             context.project_id)
+                                                 context.project_id)
         except Exception as ex:
             LOG.error(_LE("volume_mapper_delete failed! ex = %s"), ex)
 
     def extend_volume(self, volume, new_size):
         """Extend a volume."""
 
-        context = req_context.RequestContext(project_id=volume.project_id)
+        context = req_context.RequestContext(is_admin=True,
+                                             project_id=volume.project_id)
 
         try:
             sub_volume = self._get_provider_volume(context, volume)
@@ -394,7 +416,8 @@ class OsVolumeDriver(driver.VolumeDriver, base.OsDriver):
         volume_args['display_name'] = self._get_provider_volume_name(
             volume.display_name, volume.id)
 
-        context = req_context.RequestContext(project_id=volume.project_id)
+        context = req_context.RequestContext(is_admin=True,
+                                             project_id=volume.project_id)
         volume_type_id = volume.volume_type_id
         volume_type_name = None
         LOG.debug('volume type id %s ' % volume_type_id)
@@ -428,14 +451,20 @@ class OsVolumeDriver(driver.VolumeDriver, base.OsDriver):
 
         LOG.debug('start to wait for volume %s in status '
                   'available' % sub_volume.id)
-        self.os_cinderclient(context).check_create_volume_complete(
-            sub_volume)
+        try:
+            self.os_cinderclient(context).check_create_volume_complete(
+                sub_volume)
+        except Exception as ex:
+            LOG.exception(_LE("volume(%s), check_create_volume_complete "
+                              "failed! ex = %s"), volume.id, ex)
+            with excutils.save_and_reraise_exception():
+                sub_volume.delete()
 
         try:
             # create volume mapper
             values = {"provider_volume_id": sub_volume.id}
             self.caa_db_api.volume_mapper_create(context, volume.id,
-                                             context.project_id, values)
+                                                 context.project_id, values)
         except Exception as ex:
             LOG.exception(_LE("volume_mapper_create failed! ex = %s"), ex)
             sub_volume.delete()
@@ -478,13 +507,13 @@ class OsVolumeDriver(driver.VolumeDriver, base.OsDriver):
             # create volume snapshot mapper
             values = {"provider_snapshot_id": sub_snapshot.id}
             self.caa_db_api.volume_snapshot_mapper_create(context, snapshot.id,
-                                                      context.project_id,
-                                                      values)
+                                                          context.project_id,
+                                                          values)
         except Exception as ex:
             LOG.exception(_LE("volume_snapshot_mapper_create failed! ex = %s"),
                           ex)
-            sub_snapshot.delete()
-            raise
+            with excutils.save_and_reraise_exception():
+                sub_snapshot.delete()
 
         LOG.info(_LI("create snapshot(%(id)s) success!"), sub_snapshot.id)
 
@@ -506,7 +535,7 @@ class OsVolumeDriver(driver.VolumeDriver, base.OsDriver):
         try:
             # delelte volume snapshot mapper
             self.caa_db_api.volume_snapshot_mapper_delete(context, snapshot.id,
-                                                      context.project_id)
+                                                          context.project_id)
         except Exception as ex:
             LOG.error(_LE("volume_snapshot_mapper_delete failed! ex = %s"), ex)
 

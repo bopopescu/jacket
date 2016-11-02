@@ -57,7 +57,7 @@ class WorkerManager(manager.Manager):
         self.storage_driver = self.storage_manager.storage_driver
 
         # use storage manage rpc version
-        #self.RPC_API_VERSION = self.storage_manager.RPC_API_VERSION
+        # self.RPC_API_VERSION = self.storage_manager.RPC_API_VERSION
 
     def init_host(self):
         """Initialization for a standalone cloud service."""
@@ -111,3 +111,8 @@ class WorkerManager(manager.Manager):
     def sub_vol_type_detail(self, context):
         self._require_driver_support(self.storage_driver, 'sub_vol_type_detail')
         return self.storage_driver.sub_vol_type_detail(context)
+
+    def image_sync(self, context, image, flavor=None, image_sync=None):
+        self._require_driver_support(self.compute_manager, 'image_sync')
+        return self.compute_manager.image_sync(context, image, flavor,
+                                              image_sync)

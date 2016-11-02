@@ -89,7 +89,8 @@ class OsDriver(object):
 
     def _get_provider_instance(self, context=None, hybrid_instance=None):
         if not context:
-            context = req_context.RequestContext(hybrid_instance.project_id)
+            context = req_context.RequestContext(
+                is_admin=True, project_id=hybrid_instance.project_id)
 
         provider_instance_id = self._get_provider_instance_id(context,
                                                               hybrid_instance.uuid)
@@ -103,13 +104,14 @@ class OsDriver(object):
                                            name=hybrid_instance.uuid)
         return server
 
-    def _get_provider_image_id(self, context, image_id):
-
+    def _get_provider_base_image_id(self, context, image_id=None):
+        
         project_mapper = self._get_project_mapper(context, context.project_id)
-        base_linux_image = project_mapper.get("base_linux_image", None)
+        return project_mapper.get("base_linux_image", None)
 
+    def _get_provider_image_id(self, context, image_id):
         image_mapper = self.caa_db_api.image_mapper_get(context, image_id)
-        sub_image_id = image_mapper.get("provider_image_id", base_linux_image)
+        sub_image_id = image_mapper.get("provider_image_id")
 
         return sub_image_id
 
@@ -161,3 +163,19 @@ class OsDriver(object):
                 continue
 
         return attachment_id, server_id
+
+    def _get_mountpoint_for_volume(self, provider_volume):
+        LOG.debug('start to _get_mountpoint_for_volume: %s' % provider_volume)
+        device = None
+        attachments = provider_volume.attachments
+        LOG.debug('attachments: %s' % attachments)
+        for attachment in attachments:
+            volume_id = attachment.get('volume_id')
+            tmp_device = attachment.get('device')
+            if volume_id == provider_volume.id:
+                device = tmp_device
+                break
+            else:
+                continue
+
+        return device

@@ -11,12 +11,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from retrying import retry
 
 from oslo_log import log as logging
 
 from jacket import conf
 from jacket.i18n import _LI, _LW
-from jacket.worker.hypercontainer.wormhole_business import RetryDecorator
 from jacket.worker.hypercontainer.wormhole_business import WormHoleBusiness
 from jacket.worker.hypercontainer.wormhole_business import RetryException
 from wormholeclient.client import Client
@@ -24,6 +24,14 @@ from wormholeclient.client import Client
 LOG = logging.getLogger(__name__)
 
 CONF = conf.CONF
+
+
+def retry_if_ignore_exe(exception):
+    return isinstance(exception, RetryException)
+
+
+def retry_if_result_is_false(result):
+    return result is False
 
 
 class JacketHyperContainerDriver():
@@ -212,20 +220,26 @@ class JacketHyperContainerDriver():
         LOG.info(_LI('Get container status result is: %s') % status_result)
         return status_result
 
-    @RetryDecorator(max_retry_count=60, inc_sleep_time=5, max_sleep_time=30,
-                    exceptions=(RetryException))
+    @retry(stop_max_attempt_number=300,
+           wait_fixed=2000,
+           retry_on_result=retry_if_result_is_false,
+           retry_on_exception=retry_if_ignore_exe)
     def wait_container_in_specified_status(self, instance, specified_status):
-        LOG.debug('Wait container in specified status')
         wormhole = self._create_wormhole(instance)
         try:
             status_result = wormhole.status()
             if status_result is not None and \
                             status_result['status']['code'] == specified_status:
-                return
-        except Exception as ex:
-            LOG.warning(_LW('hyper service is not online'))
-        LOG.warning(_LW('hyper service is not in specified status'))
-        raise RetryException(error_info=ex)
+                LOG.debug("wait_container_in_specified_status %s success!",
+                          specified_status, instance=instance)
+                return True
+            else:
+                LOG.debug("current status = %s, expect status(%s)",
+                          status_result, specified_status, instance=instance)
+                return False
+        except RetryException:
+            LOG.warning(_LW('hyper service is not online'), instance=instance)
+            return False
 
     def _get_clients(self, ips, port):
         clients = []
