@@ -77,6 +77,7 @@ class ViewBuilder(common.ViewBuilder):
                 'replication_status': volume.get('replication_status'),
                 'consistencygroup_id': volume.get('consistencygroup_id'),
                 'multiattach': volume.get('multiattach'),
+                'shareable': 'false',
             }
         }
         if request.environ['storage.context'].is_admin:
