@@ -211,12 +211,12 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
                                                       context.project_id)
         provider_net_data = project_mapper.get('net_data', None)
         provider_net_api = project_mapper.get('net_api', None)
-
-        nics = [{
-            'net-id': provider_net_data
-        }, {
-            'net-id': provider_net_api
-        }]
+        provider_net_external = project_mapper.get('net_external', None)
+        nics = []
+        if provider_net_external:
+            nics.append({'net-id': provider_net_external})
+        nics.append({'net-id': provider_net_data})
+        nics.append({'net-id': provider_net_api})
 
         return nics
 
@@ -574,7 +574,7 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
 
             if provider_lxc_volume_del and provider_lxc_volume_id:
                 self.os_cinderclient(context).delete_volume(
-            provider_lxc_volume_id)
+                    provider_lxc_volume_id)
         except Exception:
             pass
 
