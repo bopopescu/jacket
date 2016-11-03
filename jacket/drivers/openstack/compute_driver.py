@@ -26,6 +26,7 @@ import traceback
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
 from oslo_utils import excutils
+from oslo_utils import strutils
 
 from jacket.compute.cloud import power_state
 from jacket.compute.cloud import task_states
@@ -566,10 +567,15 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
         try:
             provider_lxc_volume_id = instance.system_metadata.get(
                 'provider_lxc_volume_id', None)
-            if provider_lxc_volume_id:
+            provider_lxc_volume_del = instance.system_metadata.get(
+                'provider_lxc_volume_del', False)
+            provider_lxc_volume_del = strutils.bool_from_string(
+                provider_lxc_volume_del, strict=True)
+
+            if provider_lxc_volume_del and provider_lxc_volume_id:
                 self.os_cinderclient(context).delete_volume(
-                    provider_lxc_volume_id)
-        except Exception as ex:
+            provider_lxc_volume_id)
+        except Exception:
             pass
 
         try:
@@ -980,8 +986,9 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
             try:
                 instance.save()
             except Exception:
-                raise exception_ex.InstanceSaveFailed(
-                    instance_uuid=instance.uuid)
+                pass
+                # raise exception_ex.InstanceSaveFailed(
+                #    instance_uuid=instance.uuid)
         except exception_ex.InstanceSaveFailed:
             raise
         except Exception as e:

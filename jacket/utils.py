@@ -922,6 +922,15 @@ def is_image_sync(context, image_id):
         return False
 
     try:
+        from jacket.compute import image
+        image_api = image.API()
+        image = image_api.get(context, image_id, show_deleted=False)
+        if image.get("container_format", None) != "hypercontainer":
+            return False
+    except Exception:
+        return False
+
+    try:
         image_sync = objects.ImageSync.get_by_image_id(
             context, image_id)
         if image_sync.status in ['error', 'success']:

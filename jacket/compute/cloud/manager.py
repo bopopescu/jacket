@@ -6247,6 +6247,7 @@ class ComputeManager(manager.Manager):
             instance.system_metadata[
                 'provider_lxc_volume_id'] = \
                 self.driver.get_provider_lxc_volume_id(context, instance, index)
+            instance.system_metadata['provider_lxc_volume_del'] = not index
             self._do_hc_lxc_spawn(instance, bdms)
         except Exception as ex:
             # rollback
@@ -6516,6 +6517,7 @@ class ComputeManager(manager.Manager):
         try:
             self._do_hc_spawn(context, instance, image,
                               block_device_info=block_device_info)
+            instance.system_metadata['provider_lxc_volume_del'] = 1
         except exception.InstanceSaveFailed:
             LOG.debug("instance save failed, this error can skip!")
         except Exception as ex:
