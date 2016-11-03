@@ -217,7 +217,7 @@ interval_opts = [
                     'positive value will cause it to run at approximately '
                     'that number of seconds.'),
     cfg.IntOpt('hc_root_size',
-               default=1,
+               default=5,
                help="hyper container root size(G), default 10G."),
 ]
 
@@ -2222,7 +2222,8 @@ class ComputeManager(manager.Manager):
                 exception.ImageNotActive,
                 exception.ImageUnacceptable,
                 exception.InvalidDiskInfo,
-                exception.InstanceSaveFailed) as e:
+                exception.InstanceSaveFailed,
+                jacket_exception.ResourceInError) as e:
             self._notify_about_instance_usage(context, instance,
                                               'create.error', fault=e)
             raise exception.BuildAbortException(instance_uuid=instance.uuid,
@@ -6178,13 +6179,15 @@ class ComputeManager(manager.Manager):
         if self._is_booted_from_volume(instance, bdms):
             image_id = None
             flag = 0
+            size = CONF.hc_root_size
         else:
             image_id = instance.image_ref
             flag = 1
+            size = instance.get_flavor().get('root_gb')
         hyper_bdm = self._build_hc_bdm(instance=instance,
                                        source_type='image',
                                        image_id=image_id,
-                                       size=CONF.hc_root_size)
+                                       size=size)
         bdms.insert(0, hyper_bdm)
         LOG.debug("after insert bdms = %s", bdms)
         for index, bdm in enumerate(bdms):
@@ -6399,10 +6402,14 @@ class ComputeManager(manager.Manager):
         block_devices.pop('ephemerals', None)
 
         data['root_volume_id'] = None
+        tmp_bdms = []
         for bdm in bdms:
             if bdm['boot_index'] == 0:
                 data['root_volume_id'] = bdm['connection_info']['data'][
                     'volume_id']
+                continue
+            if bdm['boot_index'] == 1:
+                continue
 
             bdm.pop('boot_index', None)
             bdm.pop('delete_on_termination', None)
@@ -6417,6 +6424,9 @@ class ComputeManager(manager.Manager):
             connect_data.pop('qos_specs', None)
             connect_data.pop('access_mode', None)
             connect_data.pop('backend', None)
+            tmp_bdms.append(bdm)
+
+        block_devices['block_device_mapping'] = tmp_bdms
 
         vifs = []
         if network_info:

@@ -1268,12 +1268,12 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
         mountpoint = self._get_mountpoint_for_volume(provider_volume)
 
         # detach volume, can upload image
-        try:
-            self._detach_volume(context, provider_volume)
-        except Exception as ex:
-            LOG.exception(_LE("detach provider volume(%s) failed. ex = %s"),
-                          lxc_provider_volume_id, ex)
-            raise
+        # try:
+        #     self._detach_volume(context, provider_volume)
+        # except Exception as ex:
+        #     LOG.exception(_LE("detach provider volume(%s) failed. ex = %s"),
+        #                   lxc_provider_volume_id, ex)
+        #     raise
 
         try:
             # provider create image
@@ -1283,9 +1283,10 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
                 image_meta.get("disk_format", "raw"))
         except Exception as ex:
             LOG.exception(_LE("upload image failed! ex = %s"), ex)
-            with excutils.save_and_reraise_exception():
-                self._attach_volume(context, instance, provider_volume,
-                                    mountpoint)
+            raise
+            # with excutils.save_and_reraise_exception():
+            #    self._attach_volume(context, instance, provider_volume,
+            #                        mountpoint)
         provider_image = provider_image[1]["os-volume_upload_image"]
 
         try:
@@ -1306,6 +1307,6 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
         except Exception as ex:
             LOG.exception(_LE("upload image failed! ex = %s"), ex)
             with excutils.save_and_reraise_exception():
-                self._attach_volume(context, instance, provider_volume,
-                                    mountpoint)
+                # self._attach_volume(context, instance, provider_volume,
+                #                    mountpoint)
                 self.os_glanceclient(context).delete(provider_image["image_id"])
