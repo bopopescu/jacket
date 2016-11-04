@@ -1280,7 +1280,7 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
             provider_image = provider_volume.upload_to_image(
                 True, image["name"],
                 image_meta.get("container-format", "bare"),
-                image_meta.get("disk_format", "raw"))
+                image_meta.get("disk_format", image.get('disk_format', 'raw')))
         except Exception as ex:
             LOG.exception(_LE("upload image failed! ex = %s"), ex)
             raise
@@ -1297,6 +1297,19 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
             # wait image status active
             self.os_glanceclient(context).check_image_active_complete(
                 provider_image["image_id"])
+
+            # update image property
+            kwargs = {}
+            if image.get('__os_bit', None):
+                kwargs['__os_bit'] = image.get('__os_bit')
+            if image.get('__os_type', None):
+                kwargs['__os_type'] = image.get('__os_type')
+            if image.get('__os_version', None):
+                kwargs['__os_version'] = image.get('__os_version')
+            if image.get('__paltform', None):
+                kwargs['__paltform'] = image.get('__paltform')
+            self.os_glanceclient(context).update(provider_image["image_id"],
+                                                 remove_props=None, **kwargs)
 
             # create image mapper
             values = {"provider_image_id": provider_image["image_id"]}

@@ -2244,7 +2244,7 @@ class ComputeManager(manager.Manager):
         except Exception as e:
             self._notify_about_instance_usage(context, instance,
                                               'create.error', fault=e)
-            raise exception.RescheduledException(
+            raise exception.BuildAbortException(
                 instance_uuid=instance.uuid, reason=six.text_type(e))
 
         # NOTE(alaski): This is only useful during reschedules, remove it now.
@@ -6235,7 +6235,7 @@ class ComputeManager(manager.Manager):
                                            injected_files, admin_password,
                                            network_info=network_info,
                                            block_device_info=block_device_info)
-
+        LOG.debug("inject data len = %s", len(data))
         new_injected_files = [('/var/lib/wormhole/settings.json', data)]
         self.driver.spawn(context, instance, image,
                           new_injected_files, admin_password=None,
@@ -6245,12 +6245,14 @@ class ComputeManager(manager.Manager):
         try:
             if self._is_booted_from_volume(instance, bdms):
                 index = 1
+                provider_lxc_volume_del = False
             else:
                 index = 0
+                provider_lxc_volume_del = True
             instance.system_metadata[
                 'provider_lxc_volume_id'] = \
                 self.driver.get_provider_lxc_volume_id(context, instance, index)
-            instance.system_metadata['provider_lxc_volume_del'] = not index
+            instance.system_metadata['provider_lxc_volume_del'] = provider_lxc_volume_del
             self._do_hc_lxc_spawn(instance, bdms)
         except Exception as ex:
             # rollback
@@ -6291,21 +6293,25 @@ class ComputeManager(manager.Manager):
 
         try:
             # 2 stop container
-            self.stop_container(context, instance)
+            # self.stop_container(context, instance)
+            self._power_off_instance(context, instance)
         except Exception as ex:
             LOG.exception("power off instance failed. not image sync.ex = %s",
                           ex)
             image_sync_destory(image_sync)
+            return
 
         try:
             # 3 upload image
             self.driver.upload_image(context, instance, {'id': image_id})
         except Exception as ex:
             LOG.exception("upload image failed. ex = %s", ex)
-            with excutils.save_and_reraise_exception():
-                image_sync_destory(image_sync)
-                self.start_container(context, instance, network_info,
-                                     block_device_info)
+            image_sync_destory(image_sync)
+            self._power_on(context, instance)
+            # self.start_container(context, instance, network_info,
+            #                     block_device_info)
+            return
+
         try:
             image_sync.status = "finished"
             image_sync.save()
@@ -6313,8 +6319,9 @@ class ComputeManager(manager.Manager):
             pass
 
         try:
-            self.start_container(context, instance, network_info,
-                                 block_device_info)
+            self._power_on(context, instance)
+            # self.start_container(context, instance, network_info,
+            #                     block_device_info)
         except Exception as ex:
             LOG.exception(_LE("start lxc container failed. ex = %s"), ex)
             self.driver.destroy(context, instance, network_info,

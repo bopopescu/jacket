@@ -307,9 +307,6 @@ class GlanceClientPlugin(client_plugin.ClientPlugin):
         if not image_ref:
             return False
 
-        LOG.debug("-------------image_ref = %s, type = %s", image_ref,
-                  type(image_ref))
-
         status = image_ref.status
         LOG.debug("+++hw, wait image(%s), current status = %s", image_id,
                   status)
@@ -340,6 +337,13 @@ class GlanceClientPlugin(client_plugin.ClientPlugin):
         py_logging.getLogger('keystoneauth1').setLevel(py_logging.WARNING)
         image_data = self.client().images.data(image_id)
         return DataFile(image_data)
+
+    @retry(stop_max_attempt_number=max(CLIENT_RETRY_LIMIT + 1, 0),
+           retry_on_exception=client_plugin.retry_if_ignore_exe)
+    @wrap_auth_failed
+    def update(self, image_id, remove_props=None, **kwargs):
+        return self.client().images.update(image_id,
+                                           remove_props=remove_props, **kwargs)
 
 
 class DataFile(object):
