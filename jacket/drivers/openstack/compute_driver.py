@@ -1310,11 +1310,13 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
                 kwargs['__os_version'] = image_properties.get('__os_version')
             if image_properties.get('__paltform', None):
                 kwargs['__paltform'] = image_properties.get('__paltform')
+
             self.os_glanceclient(context).update(provider_image["image_id"],
                                                  remove_props=None, **kwargs)
 
             # create image mapper
-            values = {"provider_image_id": provider_image["image_id"]}
+            values = {"provider_image_id": provider_image["image_id"],
+                      'provider_checksum': provider_image.get("checksum", None)}
             self.caa_db_api.image_mapper_create(context, image_id,
                                                 context.project_id,
                                                 values)

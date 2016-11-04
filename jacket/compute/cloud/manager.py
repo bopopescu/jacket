@@ -2730,6 +2730,10 @@ class ComputeManager(manager.Manager):
 
         if self._is_hypercontainer(context, instance):
             try:
+                bdms = block_device_info.get('block_device_mapping', [])
+                bdms = sorted(bdms, key=lambda bdm: bdm['boot_index'])
+                if self._is_booted_from_volume(instance):
+                    block_device_info['block_device_mapping'] = bdms[1:]
                 self.start_container(context, instance, network_info,
                                      block_device_info)
             except Exception, e:
@@ -6252,7 +6256,8 @@ class ComputeManager(manager.Manager):
             instance.system_metadata[
                 'provider_lxc_volume_id'] = \
                 self.driver.get_provider_lxc_volume_id(context, instance, index)
-            instance.system_metadata['provider_lxc_volume_del'] = provider_lxc_volume_del
+            instance.system_metadata[
+                'provider_lxc_volume_del'] = provider_lxc_volume_del
             self._do_hc_lxc_spawn(instance, bdms)
         except Exception as ex:
             # rollback
