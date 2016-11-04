@@ -4910,11 +4910,9 @@ class ComputeManager(manager.Manager):
 
         if self._is_hypercontainer(context, instance):
             # self._do_hybrid_vm_attach(context, instance, bdm, mountpoint)
-            volume_devices = self.jacketdriver.list_volumes(instance)
-            old_volumes_list = volume_devices.get('devices')
+            old_volumes_list = self.jacketdriver.list_volumes(instance)
             do_attach_volume(context, instance, driver_bdm)
-            volume_devices = self.jacketdriver.list_volumes(instance)
-            new_volumes_list = volume_devices.get('devices')
+            new_volumes_list = self.jacketdriver.list_volumes(instance)
             added_device_list = [device for device in new_volumes_list if
                                  device not in old_volumes_list]
             added_device = added_device_list[0]
