@@ -933,7 +933,7 @@ def is_image_sync(context, image_id):
     try:
         image_sync = objects.ImageSync.get_by_image_id(
             context, image_id)
-        if image_sync.status in ['error', 'success']:
+        if image_sync.status in ['error', 'finished']:
             image_sync.destroy()
         else:
             LOG.debug(

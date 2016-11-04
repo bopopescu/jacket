@@ -1263,6 +1263,7 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
         LOG.debug("lxc volume id = %s", lxc_provider_volume_id,
                   instance=instance)
         image = self._image_api.get(context, image_id)
+        LOG.debug("+++hw, image = %s", image)
         provider_volume = self.os_cinderclient(context).get_volume(
             lxc_provider_volume_id)
         mountpoint = self._get_mountpoint_for_volume(provider_volume)
@@ -1300,14 +1301,15 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
 
             # update image property
             kwargs = {}
-            if image.get('__os_bit', None):
-                kwargs['__os_bit'] = image.get('__os_bit')
-            if image.get('__os_type', None):
-                kwargs['__os_type'] = image.get('__os_type')
-            if image.get('__os_version', None):
-                kwargs['__os_version'] = image.get('__os_version')
-            if image.get('__paltform', None):
-                kwargs['__paltform'] = image.get('__paltform')
+            image_properties = image.get("properties", {})
+            if image_properties.get('__os_bit', None):
+                kwargs['__os_bit'] = image_properties.get('__os_bit')
+            if image_properties.get('__os_type', None):
+                kwargs['__os_type'] = image_properties.get('__os_type')
+            if image_properties.get('__os_version', None):
+                kwargs['__os_version'] = image_properties.get('__os_version')
+            if image_properties.get('__paltform', None):
+                kwargs['__paltform'] = image_properties.get('__paltform')
             self.os_glanceclient(context).update(provider_image["image_id"],
                                                  remove_props=None, **kwargs)
 
