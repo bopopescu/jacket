@@ -6162,7 +6162,7 @@ class ComputeManager(manager.Manager):
 
         return bdm
 
-    def _is_booted_from_volume(self, instance, disk_mapping):
+    def _is_booted_from_volume(self, instance, disk_mapping=None):
         """Determines whether the VM is booting from volume
 
         Determines whether the disk mapping indicates that the VM
