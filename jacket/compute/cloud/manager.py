@@ -2730,10 +2730,6 @@ class ComputeManager(manager.Manager):
 
         if self._is_hypercontainer(context, instance):
             try:
-                bdms = block_device_info.get('block_device_mapping', [])
-                bdms = sorted(bdms, key=lambda bdm: bdm['boot_index'])
-                if self._is_booted_from_volume(instance):
-                    block_device_info['block_device_mapping'] = bdms[1:]
                 self.start_container(context, instance, network_info,
                                      block_device_info)
             except Exception, e:
@@ -3233,11 +3229,12 @@ class ComputeManager(manager.Manager):
             if self._is_hypercontainer(context, instance):
                 self.jacketdriver.restart_container(instance, network_info,
                                                     block_device_info)
-            self.driver.reboot(context, instance,
-                               network_info,
-                               reboot_type,
-                               block_device_info=block_device_info,
-                               bad_volumes_callback=bad_volumes_callback)
+
+            try:
+                self.start_container(context, instance, network_info,
+                                     block_device_info)
+            except Exception as ex:
+                pass
 
         except Exception as error:
             with excutils.save_and_reraise_exception() as ctxt:
@@ -6117,6 +6114,13 @@ class ComputeManager(manager.Manager):
 
     def start_container(self, context, instance, network_info=None,
                         block_device_info=None):
+        if block_device_info is None:
+            block_device_info = {}
+        block_device_info = copy.deepcopy(block_device_info)
+        bdms = block_device_info.get('block_device_mapping', [])
+        bdms = sorted(bdms, key=lambda bdm: bdm['boot_index'])
+        if self._is_booted_from_volume(instance):
+            block_device_info['block_device_mapping'] = bdms[1:]
         self.jacketdriver.start_container(instance, network_info,
                                           block_device_info)
         self.jacketdriver.wait_container_in_specified_status(instance,
