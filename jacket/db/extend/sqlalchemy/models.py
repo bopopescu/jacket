@@ -183,4 +183,5 @@ class ImageSync(BASE, JacketBase, models.SoftDeleteMixin):
     id = Column(Integer, primary_key=True)
     image_id = Column(String(36), nullable=False)
     project_id = Column(String(255))
+    volume_id = Column(String(36))
     status = Column(String(36))
