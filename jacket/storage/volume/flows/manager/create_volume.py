@@ -620,8 +620,12 @@ class CreateVolumeFromSpecTask(flow_utils.CinderTask):
             # NOTE(laoyi) whether need to image sync
             run_api = worker_api.API()
             if jacket_utils.is_image_sync(context, image_id):
-                run_api.image_sync(context, image_id)
+                run_api.image_sync(context, image_id, ret_volume=True)
             self.check_image_sync_complete(context, run_api, image_id)
+
+            image_sync = run_api.image_sync_get(context, image_id)
+            if image_sync.volume_id:
+                LOG.debug("+++hw, volume id = %s", image_sync.volume_id)
 
             self._copy_image_to_volume(context, volume_ref,
                                        image_id, image_location, image_service)

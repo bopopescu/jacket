@@ -112,7 +112,8 @@ class WorkerManager(manager.Manager):
         self._require_driver_support(self.storage_driver, 'sub_vol_type_detail')
         return self.storage_driver.sub_vol_type_detail(context)
 
-    def image_sync(self, context, image, flavor=None, image_sync=None):
+    def image_sync(self, context, image, flavor=None, image_sync=None,
+                   ret_volume=False):
         self._require_driver_support(self.compute_manager, 'image_sync')
         return self.compute_manager.image_sync(context, image, flavor,
-                                              image_sync)
+                                              image_sync, ret_volume=ret_volume)

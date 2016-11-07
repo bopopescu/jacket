@@ -2479,10 +2479,13 @@ class ComputeManager(manager.Manager):
 
             if self._is_hypercontainer(context, instance):
                 try:
-                    self.driver.volume_delete(context, instance)
+                    lxc_volume_id = instance.system_metadata.get(
+                        'lxc_volume_id', None)
+                    if lxc_volume_id:
+                        self.driver.volume_delete(context, instance,
+                                                  lxc_volume_id)
                 except Exception:
-                    LOG.warn(_LW('Failed to delete volume: %(volume_id)s '),
-                             {'volume_id': bdm.volume_id})
+                    LOG.warn(_LW('Failed to delete lxc volume'))
         except exception.InstancePowerOffFailure:
             # if the instance can't power off, don't release the ip
             with excutils.save_and_reraise_exception():
@@ -6125,7 +6128,7 @@ class ComputeManager(manager.Manager):
                                                              constants.RUNNING)
 
     def _build_hc_bdm(self, instance=None, image_id=None, boot_index=None,
-                      size=None, source_type='blank',
+                      size=None, source_type='blank', volume_id=None,
                       delete_on_termination=True):
         '''
          {'guest_format': None, 'boot_index': None, 'mount_device': u'/dev/sdb',
@@ -6144,6 +6147,7 @@ class ComputeManager(manager.Manager):
 
         bdm['boot_index'] = boot_index
         bdm['size'] = size
+        bdm['volume_id'] = volume_id
         bdm['source_type'] = source_type
         bdm['destination_type'] = 'volume'
         bdm['delete_on_termination'] = delete_on_termination
@@ -6153,7 +6157,7 @@ class ComputeManager(manager.Manager):
         driver_volume_type = 'clouds_volume'
         data = {}
         data['backend'] = 'clouds'
-        data['volume_id'] = None
+        data['volume_id'] = volume_id
         data['display_name'] = None
 
         connection_info = {}
@@ -6172,101 +6176,94 @@ class ComputeManager(manager.Manager):
         """
         return (not bool(instance.get('image_ref')))
 
-    def _do_hc_bdm_tranfer(self, context, instance, block_device_info):
-        block_device_info = block_device_info or {}
-        block_device_info = copy.deepcopy(block_device_info)
+    def _do_hc_attach(self, context, instance, bdm):
+        # old_volumes_list = self.jacketdriver.list_volumes(instance)
+        self.driver.attach_volume(context, bdm['connection_info'], instance)
 
-        bdms = block_device_info.get('block_device_mapping', [])
-
-        bdms = sorted(bdms, key=lambda bdm: bdm['boot_index'])
-        LOG.debug("bdms = %s", bdms)
-
-        # NOTE(laoyi) insert lxc volume
-        if self._is_booted_from_volume(instance, bdms):
-            image_id = None
-            flag = 0
-            size = CONF.hc_root_size
-        else:
-            image_id = instance.image_ref
-            flag = 1
-            size = instance.get_flavor().get('root_gb')
-        hyper_bdm = self._build_hc_bdm(instance=instance,
-                                       source_type='image',
-                                       image_id=image_id,
-                                       size=size)
-        bdms.insert(0, hyper_bdm)
-        LOG.debug("after insert bdms = %s", bdms)
-        for index, bdm in enumerate(bdms):
-            bdm["boot_index"] = index + flag
-
-        block_device_info['block_device_mapping'] = bdms
-        return block_device_info
-
-    def _do_hc_lxc_spawn(self, instance, bdms):
-        # lxc attach volume
-        volume_devices = self.jacketdriver.list_volumes(instance)
-        if not volume_devices:
-            raise exception.LxcVolumeListFailed(instance_uuid=instance.uuid)
-        volume_devices.sort()
-        LOG.debug("get hypercontainer device_list = %s", volume_devices)
-
-        if bdms[0]['boot_index'] == 0:
-            index = 2
-        else:
-            index = 1
-
-        for (bdm, device) in six.moves.zip(bdms[index:],
-                                           volume_devices[index:]):
-            try:
-                self.jacketdriver.attach_volume(instance, bdm['volume_id'],
-                                                device, bdm['mount_device'])
-            except Exception as ex:
-                LOG.exception(_LE("LXC attach volume failed! ex = %s"), ex)
-                raise exception.LxcVolumeAttachFailed(
-                    instance_uuid=instance.uuid)
-
-        self.jacketdriver.wait_container_in_specified_status(instance,
-                                                             constants.RUNNING)
+        # try:
+        #     new_volumes_list = self.jacketdriver.list_volumes(instance)
+        #     added_device_list = [device for device in new_volumes_list if
+        #                          device not in old_volumes_list]
+        #     added_device = added_device_list[0]
+        #     volume_id = bdm['volume_id']
+        #     mountpoint = bdm.get('mount_device')
+        #     self.jacketdriver.attach_volume(instance, volume_id, added_device,
+        #                                     mountpoint)
+        # except Exception as ex:
+        #     LOG.exception(_LE("lxc attach volume failed! ex = %s"), ex)
+        #     # rollback
+        #     self.driver.detach_volume(bdm['connection_info'], instance, None)
+        #     raise exception.LxcVolumeAttachFailed(instance_uuid=instance.uuid)
 
     def _do_hc_spawn(self, context, instance, image,
                      injected_files=None, admin_password=None,
                      network_info=None, block_device_info=None):
 
-        block_device_info = self._do_hc_bdm_tranfer(context, instance,
-                                                    block_device_info)
+        new_block_device_info = copy.deepcopy(block_device_info)
+        new_block_device_info['block_device_mapping'] = []
+        create_args = {}
 
-        bdms = block_device_info.get('block_device_mapping')
+        if self._is_booted_from_volume(instance):
+            size = CONF.hc_root_size
+            image_id = 'base'
+            source_type = 'volume'
 
-        data = self._create_hybrid_vm_data(context, instance, image,
-                                           injected_files, admin_password,
-                                           network_info=network_info,
-                                           block_device_info=block_device_info)
-        LOG.debug("inject data len = %s", len(data))
-        new_injected_files = [('/var/lib/wormhole/settings.json', data)]
-        self.driver.spawn(context, instance, image,
-                          new_injected_files, admin_password=None,
-                          network_info=network_info,
-                          block_device_info=block_device_info)
+        else:
+            size = instance.get_flavor().get('root_gb')
+            image_id = instance.image_ref
+            source_type = 'image'
+
+        create_args['size'] = size
+        create_args['image_id'] = image_id
+        # 1 create volume
+        volume_id = self.driver.volume_create(context, instance, **create_args)
 
         try:
-            if self._is_booted_from_volume(instance, bdms):
-                index = 1
-                provider_lxc_volume_del = False
-            else:
-                index = 0
-                provider_lxc_volume_del = True
-            instance.system_metadata[
-                'provider_lxc_volume_id'] = \
-                self.driver.get_provider_lxc_volume_id(context, instance, index)
-            instance.system_metadata[
-                'provider_lxc_volume_del'] = provider_lxc_volume_del
-            self._do_hc_lxc_spawn(instance, bdms)
+            # 2 build hyper bdm
+            hyper_kwargs = {'boot_index': 0,
+                            'size': size,
+                            'source_type': source_type,
+                            'volume_id': volume_id}
+
+            hyper_bdm = self._build_hc_bdm(instance=instance, **hyper_kwargs)
+
+            data = self._create_hybrid_vm_data(context, instance, image,
+                                               injected_files, admin_password,
+                                               network_info=network_info,
+                                               block_device_info=block_device_info)
+
+            if self._is_booted_from_volume(instance):
+                new_block_device_info['block_device_mapping'].append(hyper_bdm)
+
+            LOG.debug("inject data len = %s", len(data))
+            new_injected_files = [('/var/lib/wormhole/settings.json', data)]
+            self.driver.spawn(context, instance, image,
+                              new_injected_files, admin_password=None,
+                              network_info=network_info,
+                              block_device_info=new_block_device_info)
         except Exception as ex:
-            # rollback
+            LOG.exception(_LE("build hc bdm failed! ex = %s"), ex)
             with excutils.save_and_reraise_exception():
-                LOG.exception(_LE("lxc operation failed! ex = %s"), ex)
+                self.driver.volume_delete(context, instance, volume_id)
+
+        try:
+            bdms = block_device_info.get('block_device_mapping', [])
+            bdms = sorted(bdms, key=lambda bdm: bdm['boot_index'])
+
+            if not self._is_booted_from_volume(instance):
+                self._do_hc_attach(context, instance, hyper_bdm)
+                instance.system_metadata['lxc_volume_id'] = volume_id
+            else:
+                instance.system_metadata['lxc_volume_id'] = bdms[0]['volume_id']
+
+            for bdm in bdms:
+                self._do_hc_attach(context, instance, bdm)
+        except Exception as ex:
+            LOG.exception(_LE("attach volume failed! ex = %s"), ex)
+            with excutils.save_and_reraise_exception():
                 self.driver.destroy(context, instance, network_info,
                                     block_device_info)
+                self.driver.volume_delete(context, instance, volume_id)
 
     def _do_hc_spawn_and_image_sync(self, context, instance, image,
                                     injected_files=None, admin_password=None,
@@ -6482,7 +6479,8 @@ class ComputeManager(manager.Manager):
         if hasattr(self.driver, "rename"):
             return self.driver.rename(ctxt, instance, display_name)
 
-    def image_sync(self, context, image, flavor=None, image_sync=None):
+    def image_sync(self, context, image, flavor=None, image_sync=None,
+                   ret_volume=False):
 
         instance = objects.Instance(context=context, uuid=str(uuid.uuid4()),
                                     project_id=context.project_id)
@@ -6492,7 +6490,7 @@ class ComputeManager(manager.Manager):
         if isinstance(image, six.string_types):
             image = self.image_api.get(context, image, show_deleted=False)
 
-        lxc_volume_size = int(image.get('min_disk', 0)) or 0
+        lxc_volume_size = int(image.get('min_disk', 0)) or 5
         if flavor:
             if isinstance(flavor, six.string_types):
                 flavor = flavors.get_flavor_by_flavor_id(
@@ -6518,30 +6516,35 @@ class ComputeManager(manager.Manager):
         instance.metadata = {}
         instance.system_metadata = {}
         instance.reservation_id = instance.uuid
-        # instance.system_metadata['image_id'] = image['id']
-        # instance.system_metadata['image_name'] = image['name']
 
-        # bdms.append(self._build_hc_bdm(boot_index=0, size=root_size,
-        #                               source_type='image',
-        #                               delete_on_termination=True))
-        bdms.append(self._build_hc_bdm(instance, boot_index=1,
-                                       source_type='blank',
-                                       delete_on_termination=True))
+        create_args = {}
+        create_args['size'] = lxc_volume_size
 
-        if not image_sync:
-            image_sync = jacket_objects.ImageSync.get_by_image_id(context,
-                                                                  image['id'])
+        # 1 create volume
+        volume_id = self.driver.volume_create(context, instance, **create_args)
 
-        def image_sync_status(status):
+        def image_sync_status(status, volume_id=None):
             image_sync.status = status
+            if volume_id:
+                image_sync.volume_id = volume_id
             image_sync.save()
 
-        image_sync_status("spawning")
-
         try:
+            bdms.append(self._build_hc_bdm(instance,
+                                           size=lxc_volume_size,
+                                           source_type='volume',
+                                           volume_id=volume_id,
+                                           delete_on_termination=False))
+
+            if not image_sync:
+                image_sync = jacket_objects.ImageSync.get_by_image_id(context,
+                                                                      image[
+                                                                          'id'])
+
+            image_sync_status("spawning")
+
             self._do_hc_spawn(context, instance, image,
                               block_device_info=block_device_info)
-            instance.system_metadata['provider_lxc_volume_del'] = 1
         except exception.InstanceSaveFailed:
             LOG.debug("instance save failed, this error can skip!")
         except Exception as ex:
@@ -6550,6 +6553,7 @@ class ComputeManager(manager.Manager):
                                   "%s"), ex)
                 with excutils.save_and_reraise_exception():
                     image_sync_status("error")
+                    self.driver.volume_delete(context, instance, volume_id)
 
         try:
             # 2 stop vm
@@ -6564,10 +6568,11 @@ class ComputeManager(manager.Manager):
                 image_sync_status("error")
                 self.driver.destroy(context, instance, None,
                                     block_device_info)
+                self.driver.volume_delete(context, instance, volume_id)
 
-        image_sync_status("uploading")
         try:
             # 3 upload image
+            image_sync_status("uploading")
             self.driver.upload_image(context, instance, {'id': image['id']})
         except Exception as ex:
             LOG.exception("upload image failed. ex = %s", ex)
@@ -6575,16 +6580,31 @@ class ComputeManager(manager.Manager):
                 image_sync_status("error")
                 self.driver.destroy(context, instance, None,
                                     block_device_info)
+                self.driver.volume_delete(context, instance, volume_id)
+
         try:
-            image_sync_status("finished")
+            if ret_volume:
+                image_sync_status("finished", volume_id)
+            else:
+                image_sync_status("finished")
         except Exception:
             LOG.exception("image_sync_status failed. ex = %s", ex)
             self.driver.destroy(context, instance, None,
                                 block_device_info)
+            self.driver.volume_delete(context, instance, volume_id)
+
         try:
             self.driver.destroy(context, instance, None,
                                 block_device_info)
         except Exception:
             LOG.debug("destroy instance failed. but image sync suceess",
                       instance=instance)
+
+        if not ret_volume:
+            try:
+                self.driver.volume_delete(context, instance, volume_id)
+            except Exception:
+                LOG.debug("delete volume failed. but image sync suceess",
+                          instance=instance)
+
         LOG.debug("image sync success!", instance=instance)

@@ -32,6 +32,7 @@ class ImageSync(base.JacketPersistentObject, base.JacketObject,
         'id': fields.IntegerField(),
         'image_id': fields.StringField(nullable=True),
         'project_id': fields.StringField(nullable=True),
+        'volume_id': fields.StringField(nullable=True),
         'status': fields.StringField(nullable=True),
     }
 

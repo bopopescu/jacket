@@ -87,7 +87,9 @@ class JacketAPI(object):
         version = "1.0"
         return self.client.call(ctxt, 'sub_vol_type_detail')
 
-    def image_sync(self, ctxt, image, flavor=None, image_sync=None):
+    def image_sync(self, ctxt, image, flavor=None, image_sync=None,
+                   ret_volume=False):
         version = "1.0"
         return self.client.cast(ctxt, 'image_sync', image=image,
-                                flavor=flavor, image_sync=image_sync)
+                                flavor=flavor, image_sync=image_sync,
+                                ret_volume=ret_volume)

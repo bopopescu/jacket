@@ -143,7 +143,7 @@ class WormHoleBusiness(object):
     def status(self):
         return self._run_function_of_clients('status')
 
-    @RetryDecorator(max_retry_count=60, inc_sleep_time=5, max_sleep_time=60,
+    @RetryDecorator(max_retry_count=1, inc_sleep_time=5, max_sleep_time=60,
                     exceptions=(RetryException))
     def _run_function_of_clients(self, function_name, *args, **kwargs):
         result = None
@@ -170,7 +170,7 @@ class WormHoleBusiness(object):
 
         return result
 
-    @RetryDecorator(max_retry_count=50, inc_sleep_time=5, max_sleep_time=60,
+    @RetryDecorator(max_retry_count=1, inc_sleep_time=5, max_sleep_time=60,
                     exceptions=(RetryException))
     def wait_for_task_finish(self, task):
         task_finish = False

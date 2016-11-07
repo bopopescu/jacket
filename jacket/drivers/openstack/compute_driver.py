@@ -22,6 +22,7 @@ Driver base-classes:
 import copy
 import socket
 import traceback
+import uuid
 
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
@@ -180,7 +181,8 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
                     bdm_info_dict['volume_size'] = str(provider_volume.size)
                     # bdm_info_dict['device_name'] = device_name
                     bdm_info_dict['source_type'] = 'volume'
-                    bdm_info_dict['delete_on_termination'] = False
+                    bdm_info_dict['delete_on_termination'] = bdm.get(
+                        'delete_on_termination', False)
                 else:
                     # TODO: need to support snapshot id
                     continue
@@ -319,24 +321,68 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
         provider_uuid = self._get_provider_instance_id(context, instance.uuid)
         return self.os_novaclient(context).get_console_output(provider_uuid)
 
-    def volume_create(self, context, instance):
-        size = instance.get_flavor().get('root_gb')
-        volume_name = instance.uuid
-        self.os_cinderclient(context).create_volume(size,
-                                                    display_name=volume_name)
-        volume = self.os_cinderclient(context).get_volume_by_name(volume_name)
-        self.os_cinderclient(context).check_create_volume_complete(volume.id)
+    def volume_create(self, context, instance, image_id=None, size=None):
+        if image_id and image_id == "base":
+            provider_image_id = self._get_provider_base_image_id(context)
+        elif image_id:
+            provider_image_id = self._get_provider_image_id(context, image_id)
+        else:
+            provider_image_id = None
+        volume_id = str(uuid.uuid4())
+        kwargs = {}
 
-        return volume
-
-    def volume_delete(self, context, instance):
+        if not size:
+            size = instance.get_flavor().get('root_gb')
         volume_name = instance.uuid
-        volume = self.os_cinderclient(context).get_volume_by_name(volume_name)
-        if volume:
-            if volume.status != "deleting":
-                self.os_cinderclient(context).delete_volume(volume)
-            self.os_cinderclient(context).check_delete_volume_complete(
-                volume.id)
+        kwargs['display_name'] = volume_name
+        if provider_image_id:
+            kwargs['imageRef'] = provider_image_id
+
+        provider_volume = self.os_cinderclient(context).create_volume(size,
+                                                                      **kwargs)
+
+        try:
+            self.os_cinderclient(context).check_create_volume_complete(
+                provider_volume)
+        except Exception as ex:
+            LOG.exception(_LE("provider volume(%s), "
+                              "check_create_volume_complete "
+                              "failed! ex = %s"), provider_volume.id, ex)
+            with excutils.save_and_reraise_exception():
+                provider_volume.delete()
+
+        try:
+            # create volume mapper
+            values = {"provider_volume_id": provider_volume.id}
+            self.caa_db_api.volume_mapper_create(context, volume_id,
+                                                 context.project_id, values)
+        except Exception as ex:
+            LOG.exception(_LE("volume_mapper_create failed! ex = %s"), ex)
+            with excutils.save_and_reraise_exception():
+                provider_volume.delete()
+
+        return volume_id
+
+    def volume_delete(self, context, instance, volume_id):
+        try:
+            provider_volume = self._get_provider_volume(context, volume_id)
+        except exception.EntityNotFound:
+            LOG.debug('no sub-volume exist, '
+                      'no need to delete provider volume')
+            return
+
+        LOG.debug('submit delete-volume task')
+        provider_volume.delete()
+        LOG.debug('wait for volume delete')
+        self.os_cinderclient(context).check_delete_volume_complete(
+            provider_volume)
+
+        try:
+            # delelte volume mapper
+            self.caa_db_api.volume_mapper_delete(context, volume_id,
+                                                 context.project_id)
+        except Exception as ex:
+            LOG.error(_LE("volume_mapper_delete failed! ex = %s"), ex)
 
     def _attach_volume(self, context, instance, provider_volume, mountpoint):
         provider_server = self._get_provider_instance(context, instance)
@@ -563,20 +609,6 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
         else:
             LOG.error('Can not found server to delete.')
             # raise exception_ex.ServerNotExistException(server_name=instance.display_name)
-
-        try:
-            provider_lxc_volume_id = instance.system_metadata.get(
-                'provider_lxc_volume_id', None)
-            provider_lxc_volume_del = instance.system_metadata.get(
-                'provider_lxc_volume_del', False)
-            provider_lxc_volume_del = strutils.bool_from_string(
-                provider_lxc_volume_del, strict=True)
-
-            if provider_lxc_volume_del and provider_lxc_volume_id:
-                self.os_cinderclient(context).delete_volume(
-                    provider_lxc_volume_id)
-        except Exception:
-            pass
 
         try:
             # delete instance mapper
@@ -1255,26 +1287,16 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
         LOG.debug("begin to upload image", instance=instance)
 
         image_id = image_meta['id']
-        lxc_provider_volume_id = \
-            instance.system_metadata.get('provider_lxc_volume_id', None)
-        if not lxc_provider_volume_id:
+        lxc_volume_id = \
+            instance.system_metadata.get('lxc_volume_id', None)
+        if not lxc_volume_id:
             raise exception_ex.LxcVolumeNotFound(instance_uuid=instance.uuid)
+        provider_volume = self._get_provider_volume(context, lxc_volume_id)
 
-        LOG.debug("lxc volume id = %s", lxc_provider_volume_id,
+        LOG.debug("lxc volume id = %s", provider_volume.id,
                   instance=instance)
         image = self._image_api.get(context, image_id)
         LOG.debug("+++hw, image = %s", image)
-        provider_volume = self.os_cinderclient(context).get_volume(
-            lxc_provider_volume_id)
-        mountpoint = self._get_mountpoint_for_volume(provider_volume)
-
-        # detach volume, can upload image
-        # try:
-        #     self._detach_volume(context, provider_volume)
-        # except Exception as ex:
-        #     LOG.exception(_LE("detach provider volume(%s) failed. ex = %s"),
-        #                   lxc_provider_volume_id, ex)
-        #     raise
 
         try:
             # provider create image
@@ -1285,9 +1307,7 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
         except Exception as ex:
             LOG.exception(_LE("upload image failed! ex = %s"), ex)
             raise
-            # with excutils.save_and_reraise_exception():
-            #    self._attach_volume(context, instance, provider_volume,
-            #                        mountpoint)
+
         provider_image = provider_image[1]["os-volume_upload_image"]
 
         try:
@@ -1324,6 +1344,4 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
         except Exception as ex:
             LOG.exception(_LE("upload image failed! ex = %s"), ex)
             with excutils.save_and_reraise_exception():
-                # self._attach_volume(context, instance, provider_volume,
-                #                    mountpoint)
                 self.os_glanceclient(context).delete(provider_image["image_id"])

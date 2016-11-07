@@ -220,7 +220,7 @@ class JacketHyperContainerDriver():
         LOG.info(_LI('Get container status result is: %s') % status_result)
         return status_result
 
-    @retry(stop_max_attempt_number=300,
+    @retry(stop_max_attempt_number=1,
            wait_fixed=2000,
            retry_on_result=retry_if_result_is_false,
            retry_on_exception=retry_if_ignore_exe)

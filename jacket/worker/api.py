@@ -290,7 +290,10 @@ class API(base.Base):
                                                          volume_snapshot_id,
                                                          project_id)
 
-    def image_sync(self, context, image, flavor=None):
+    def image_sync_get(self, context, image_id):
+        return objects.ImageSync.get_by_image_id(context, image_id)
+
+    def image_sync(self, context, image, flavor=None, ret_volume=False):
         if isinstance(image, six.string_types):
             image = self.image_api.get(context, image, show_deleted=False)
 
@@ -300,7 +303,8 @@ class API(base.Base):
                                        project_id=context.project_id,
                                        status="creating")
         image_sync.create()
-        return self.worker_rpcapi.image_sync(context, image, flavor, image_sync)
+        return self.worker_rpcapi.image_sync(context, image, flavor,
+                                             image_sync, ret_volume)
 
     def image_sync_get(self, context, image_id):
         image_sync = objects.ImageSync.get_by_image_id(context, image_id)
