@@ -58,7 +58,8 @@ LOG = logging.getLogger(__name__)
 
 backup_manager_opts = [
     cfg.StrOpt('backup_driver',
-               default='jacket.storage.backup.drivers.swift',
+               #default='jacket.storage.backup.drivers.swift',
+               default='jacket.drivers.openstack.volume_driver',
                help='Driver to use for backups.',),
     cfg.BoolOpt('backup_service_inithost_offload',
                 default=False,
@@ -424,6 +425,10 @@ class BackupManager(manager.SchedulerDependentManager):
 
     def _run_backup(self, context, backup, volume):
         backup_service = self.service.get_backup_driver(context)
+        try:
+            backup_service.create_backup(context, backup, volume)
+        except Exception:
+            raise
 
         properties = utils.brick_get_connector_properties()
         backup_dic = self.jacket_rpcapi.get_backup_device(context,

@@ -21,6 +21,7 @@ from jacket.i18n import _LE
 from jacket import manager
 from jacket import rpc
 from jacket.storage.volume import manager as vol_manager
+from jacket.storage.backup import manager as bak_manager
 
 CONF = cfg.CONF
 
@@ -50,8 +51,10 @@ class WorkerManager(manager.Manager):
                 break
 
         self.storage_manager = vol_manager.VolumeManager(service_name=backend)
+        self.backup_manager = bak_manager.BackupManager()
         self.additional_endpoints.append(self.compute_manager)
         self.additional_endpoints.append(self.storage_manager)
+        self.additional_endpoints.append(self.backup_manager)
 
         self.compute_driver = self.compute_manager.driver
         self.storage_driver = self.storage_manager.storage_driver
@@ -67,6 +70,7 @@ class WorkerManager(manager.Manager):
 
         self.compute_manager.init_host()
         self.storage_manager.init_host()
+        self.backup_manager.init_host()
 
     def cleanup_host(self):
         # super(WorkerManager, self).cleanup_host()
@@ -94,6 +98,7 @@ class WorkerManager(manager.Manager):
         # jacket post_start_hook TODO
         self.compute_manager.reset()
         self.storage_manager.reset()
+        self.backup_manager.reset()
 
     def _require_driver_support(self, driver, method):
         if not hasattr(driver, method):

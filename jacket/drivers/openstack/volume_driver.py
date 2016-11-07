@@ -684,3 +684,32 @@ class OsVolumeDriver(driver.VolumeDriver, base.OsDriver):
         provider_name = self._get_sub_snapshot_name(snapshot.id, display_name)
         self.os_cinderclient(ctxt).update_snapshot(provider_uuid,
                                                    display_name=provider_name)
+
+class BackupDriver(OsVolumeDriver):
+    def __init__(self, context):
+        self.context = context
+        super(OsVolumeDriver, self).__init__(context)
+
+    def create_backup(self, context, backup, volume):
+        """Make the RPC call to create a volume backup."""
+        pass
+
+    def delete_backup(self, context, backup, force=False):
+        """Make the RPC call to delete a volume backup.
+
+        Call backup manager to execute backup delete or force delete operation.
+        :param context: running context
+        :param backup: the dict of backup that is got from DB.
+        :param force: indicate force delete or not
+        :raises: InvalidBackup
+        :raises: BackupDriverException
+        :raises: ServiceNotFound
+        """
+        pass
+
+    def restore_backup(self, context, backup, volume):
+        """Make the RPC call to restore a volume backup."""
+        pass
+
+def get_backup_driver(context):
+    return BackupDriver(context)
