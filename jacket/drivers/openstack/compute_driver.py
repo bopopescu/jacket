@@ -1263,29 +1263,31 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
         LOG.debug("lxc volume id = %s", lxc_provider_volume_id,
                   instance=instance)
         image = self._image_api.get(context, image_id)
+        LOG.debug("+++hw, image = %s", image)
         provider_volume = self.os_cinderclient(context).get_volume(
             lxc_provider_volume_id)
         mountpoint = self._get_mountpoint_for_volume(provider_volume)
 
         # detach volume, can upload image
-        try:
-            self._detach_volume(context, provider_volume)
-        except Exception as ex:
-            LOG.exception(_LE("detach provider volume(%s) failed. ex = %s"),
-                          lxc_provider_volume_id, ex)
-            raise
+        # try:
+        #     self._detach_volume(context, provider_volume)
+        # except Exception as ex:
+        #     LOG.exception(_LE("detach provider volume(%s) failed. ex = %s"),
+        #                   lxc_provider_volume_id, ex)
+        #     raise
 
         try:
             # provider create image
             provider_image = provider_volume.upload_to_image(
                 True, image["name"],
                 image_meta.get("container-format", "bare"),
-                image_meta.get("disk_format", "raw"))
+                image_meta.get("disk_format", image.get('disk_format', 'raw')))
         except Exception as ex:
             LOG.exception(_LE("upload image failed! ex = %s"), ex)
-            with excutils.save_and_reraise_exception():
-                self._attach_volume(context, instance, provider_volume,
-                                    mountpoint)
+            raise
+            # with excutils.save_and_reraise_exception():
+            #    self._attach_volume(context, instance, provider_volume,
+            #                        mountpoint)
         provider_image = provider_image[1]["os-volume_upload_image"]
 
         try:
@@ -1297,8 +1299,24 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
             self.os_glanceclient(context).check_image_active_complete(
                 provider_image["image_id"])
 
+            # update image property
+            kwargs = {}
+            image_properties = image.get("properties", {})
+            if image_properties.get('__os_bit', None):
+                kwargs['__os_bit'] = image_properties.get('__os_bit')
+            if image_properties.get('__os_type', None):
+                kwargs['__os_type'] = image_properties.get('__os_type')
+            if image_properties.get('__os_version', None):
+                kwargs['__os_version'] = image_properties.get('__os_version')
+            if image_properties.get('__paltform', None):
+                kwargs['__paltform'] = image_properties.get('__paltform')
+
+            self.os_glanceclient(context).update(provider_image["image_id"],
+                                                 remove_props=None, **kwargs)
+
             # create image mapper
-            values = {"provider_image_id": provider_image["image_id"]}
+            values = {"provider_image_id": provider_image["image_id"],
+                      'provider_checksum': provider_image.get("checksum", None)}
             self.caa_db_api.image_mapper_create(context, image_id,
                                                 context.project_id,
                                                 values)
@@ -1306,6 +1324,6 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
         except Exception as ex:
             LOG.exception(_LE("upload image failed! ex = %s"), ex)
             with excutils.save_and_reraise_exception():
-                self._attach_volume(context, instance, provider_volume,
-                                    mountpoint)
+                # self._attach_volume(context, instance, provider_volume,
+                #                    mountpoint)
                 self.os_glanceclient(context).delete(provider_image["image_id"])

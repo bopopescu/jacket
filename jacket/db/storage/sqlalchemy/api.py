@@ -1676,6 +1676,7 @@ def _process_volume_filters(query, filters):
     :returns: updated query or None
     """
     filters = filters.copy()
+    filters.pop('changes-since', None)
 
     # 'no_migration_targets' is unique, must be either NULL or
     # not start with 'target:'

@@ -217,7 +217,7 @@ interval_opts = [
                     'positive value will cause it to run at approximately '
                     'that number of seconds.'),
     cfg.IntOpt('hc_root_size',
-               default=1,
+               default=5,
                help="hyper container root size(G), default 10G."),
 ]
 
@@ -2222,7 +2222,8 @@ class ComputeManager(manager.Manager):
                 exception.ImageNotActive,
                 exception.ImageUnacceptable,
                 exception.InvalidDiskInfo,
-                exception.InstanceSaveFailed) as e:
+                exception.InstanceSaveFailed,
+                jacket_exception.ResourceInError) as e:
             self._notify_about_instance_usage(context, instance,
                                               'create.error', fault=e)
             raise exception.BuildAbortException(instance_uuid=instance.uuid,
@@ -2243,7 +2244,7 @@ class ComputeManager(manager.Manager):
         except Exception as e:
             self._notify_about_instance_usage(context, instance,
                                               'create.error', fault=e)
-            raise exception.RescheduledException(
+            raise exception.BuildAbortException(
                 instance_uuid=instance.uuid, reason=six.text_type(e))
 
         # NOTE(alaski): This is only useful during reschedules, remove it now.
@@ -3228,11 +3229,12 @@ class ComputeManager(manager.Manager):
             if self._is_hypercontainer(context, instance):
                 self.jacketdriver.restart_container(instance, network_info,
                                                     block_device_info)
-            self.driver.reboot(context, instance,
-                               network_info,
-                               reboot_type,
-                               block_device_info=block_device_info,
-                               bad_volumes_callback=bad_volumes_callback)
+
+            try:
+                self.start_container(context, instance, network_info,
+                                     block_device_info)
+            except Exception as ex:
+                pass
 
         except Exception as error:
             with excutils.save_and_reraise_exception() as ctxt:
@@ -4908,11 +4910,9 @@ class ComputeManager(manager.Manager):
 
         if self._is_hypercontainer(context, instance):
             # self._do_hybrid_vm_attach(context, instance, bdm, mountpoint)
-            volume_devices = self.jacketdriver.list_volumes(instance)
-            old_volumes_list = volume_devices.get('devices')
+            old_volumes_list = self.jacketdriver.list_volumes(instance)
             do_attach_volume(context, instance, driver_bdm)
-            volume_devices = self.jacketdriver.list_volumes(instance)
-            new_volumes_list = volume_devices.get('devices')
+            new_volumes_list = self.jacketdriver.list_volumes(instance)
             added_device_list = [device for device in new_volumes_list if
                                  device not in old_volumes_list]
             added_device = added_device_list[0]
@@ -6112,6 +6112,13 @@ class ComputeManager(manager.Manager):
 
     def start_container(self, context, instance, network_info=None,
                         block_device_info=None):
+        if block_device_info is None:
+            block_device_info = {}
+        block_device_info = copy.deepcopy(block_device_info)
+        bdms = block_device_info.get('block_device_mapping', [])
+        bdms = sorted(bdms, key=lambda bdm: bdm['boot_index'])
+        if self._is_booted_from_volume(instance):
+            block_device_info['block_device_mapping'] = bdms[1:]
         self.jacketdriver.start_container(instance, network_info,
                                           block_device_info)
         self.jacketdriver.wait_container_in_specified_status(instance,
@@ -6157,7 +6164,7 @@ class ComputeManager(manager.Manager):
 
         return bdm
 
-    def _is_booted_from_volume(self, instance, disk_mapping):
+    def _is_booted_from_volume(self, instance, disk_mapping=None):
         """Determines whether the VM is booting from volume
 
         Determines whether the disk mapping indicates that the VM
@@ -6178,13 +6185,15 @@ class ComputeManager(manager.Manager):
         if self._is_booted_from_volume(instance, bdms):
             image_id = None
             flag = 0
+            size = CONF.hc_root_size
         else:
             image_id = instance.image_ref
             flag = 1
+            size = instance.get_flavor().get('root_gb')
         hyper_bdm = self._build_hc_bdm(instance=instance,
                                        source_type='image',
                                        image_id=image_id,
-                                       size=CONF.hc_root_size)
+                                       size=size)
         bdms.insert(0, hyper_bdm)
         LOG.debug("after insert bdms = %s", bdms)
         for index, bdm in enumerate(bdms):
@@ -6232,7 +6241,7 @@ class ComputeManager(manager.Manager):
                                            injected_files, admin_password,
                                            network_info=network_info,
                                            block_device_info=block_device_info)
-
+        LOG.debug("inject data len = %s", len(data))
         new_injected_files = [('/var/lib/wormhole/settings.json', data)]
         self.driver.spawn(context, instance, image,
                           new_injected_files, admin_password=None,
@@ -6242,12 +6251,15 @@ class ComputeManager(manager.Manager):
         try:
             if self._is_booted_from_volume(instance, bdms):
                 index = 1
+                provider_lxc_volume_del = False
             else:
                 index = 0
+                provider_lxc_volume_del = True
             instance.system_metadata[
                 'provider_lxc_volume_id'] = \
                 self.driver.get_provider_lxc_volume_id(context, instance, index)
-            instance.system_metadata['provider_lxc_volume_del'] = not index
+            instance.system_metadata[
+                'provider_lxc_volume_del'] = provider_lxc_volume_del
             self._do_hc_lxc_spawn(instance, bdms)
         except Exception as ex:
             # rollback
@@ -6288,21 +6300,25 @@ class ComputeManager(manager.Manager):
 
         try:
             # 2 stop container
-            self.stop_container(context, instance)
+            # self.stop_container(context, instance)
+            self._power_off_instance(context, instance)
         except Exception as ex:
             LOG.exception("power off instance failed. not image sync.ex = %s",
                           ex)
             image_sync_destory(image_sync)
+            return
 
         try:
             # 3 upload image
             self.driver.upload_image(context, instance, {'id': image_id})
         except Exception as ex:
             LOG.exception("upload image failed. ex = %s", ex)
-            with excutils.save_and_reraise_exception():
-                image_sync_destory(image_sync)
-                self.start_container(context, instance, network_info,
-                                     block_device_info)
+            image_sync_destory(image_sync)
+            self._power_on(context, instance)
+            # self.start_container(context, instance, network_info,
+            #                     block_device_info)
+            return
+
         try:
             image_sync.status = "finished"
             image_sync.save()
@@ -6310,8 +6326,9 @@ class ComputeManager(manager.Manager):
             pass
 
         try:
-            self.start_container(context, instance, network_info,
-                                 block_device_info)
+            self._power_on(context, instance)
+            # self.start_container(context, instance, network_info,
+            #                     block_device_info)
         except Exception as ex:
             LOG.exception(_LE("start lxc container failed. ex = %s"), ex)
             self.driver.destroy(context, instance, network_info,
@@ -6399,10 +6416,14 @@ class ComputeManager(manager.Manager):
         block_devices.pop('ephemerals', None)
 
         data['root_volume_id'] = None
+        tmp_bdms = []
         for bdm in bdms:
             if bdm['boot_index'] == 0:
                 data['root_volume_id'] = bdm['connection_info']['data'][
                     'volume_id']
+                continue
+            if bdm['boot_index'] == 1:
+                continue
 
             bdm.pop('boot_index', None)
             bdm.pop('delete_on_termination', None)
@@ -6417,6 +6438,9 @@ class ComputeManager(manager.Manager):
             connect_data.pop('qos_specs', None)
             connect_data.pop('access_mode', None)
             connect_data.pop('backend', None)
+            tmp_bdms.append(bdm)
+
+        block_devices['block_device_mapping'] = tmp_bdms
 
         vifs = []
         if network_info:
