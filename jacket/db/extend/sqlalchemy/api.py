@@ -294,6 +294,11 @@ def image_mapper_update(context, image_id, project_id, values, delete=False):
         cur_project_id = values.pop('project_id')
         query.update({'project_id': cur_project_id})
 
+    if 'image_id' in all_keys:
+        all_keys.remove('image_id')
+        image_id = values.pop('image_id')
+        query.update({'image_id': image_id})
+
     if delete:
         query.filter(~models.ImagesMapper.key.in_(all_keys)). \
             soft_delete(synchronize_session=False)
@@ -664,6 +669,11 @@ def volume_mapper_update(context, volume_id, project_id, values, delete=False):
         all_keys.remove('project_id')
         cur_project_id = values.pop('project_id')
         query.update({'project_id': cur_project_id})
+
+    if 'volume_id' in all_keys:
+        all_keys.remove('volume_id')
+        volume_id = values.pop('volume_id')
+        query.update({'volume_id': volume_id})
 
     if delete:
         query.filter(~models.VolumesMapper.key.in_(all_keys)). \

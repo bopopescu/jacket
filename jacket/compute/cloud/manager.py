@@ -6177,23 +6177,23 @@ class ComputeManager(manager.Manager):
         return (not bool(instance.get('image_ref')))
 
     def _do_hc_attach(self, context, instance, bdm):
-        # old_volumes_list = self.jacketdriver.list_volumes(instance)
+        old_volumes_list = self.jacketdriver.list_volumes(instance)
         self.driver.attach_volume(context, bdm['connection_info'], instance)
 
-        # try:
-        #     new_volumes_list = self.jacketdriver.list_volumes(instance)
-        #     added_device_list = [device for device in new_volumes_list if
-        #                          device not in old_volumes_list]
-        #     added_device = added_device_list[0]
-        #     volume_id = bdm['volume_id']
-        #     mountpoint = bdm.get('mount_device')
-        #     self.jacketdriver.attach_volume(instance, volume_id, added_device,
-        #                                     mountpoint)
-        # except Exception as ex:
-        #     LOG.exception(_LE("lxc attach volume failed! ex = %s"), ex)
-        #     # rollback
-        #     self.driver.detach_volume(bdm['connection_info'], instance, None)
-        #     raise exception.LxcVolumeAttachFailed(instance_uuid=instance.uuid)
+        try:
+            new_volumes_list = self.jacketdriver.list_volumes(instance)
+            added_device_list = [device for device in new_volumes_list if
+                                 device not in old_volumes_list]
+            added_device = added_device_list[0]
+            volume_id = bdm['volume_id']
+            mountpoint = bdm.get('mount_device')
+            self.jacketdriver.attach_volume(instance, volume_id, added_device,
+                                            mountpoint)
+        except Exception as ex:
+            LOG.exception(_LE("lxc attach volume failed! ex = %s"), ex)
+            # rollback
+            self.driver.detach_volume(bdm['connection_info'], instance, None)
+            raise exception.LxcVolumeAttachFailed(instance_uuid=instance.uuid)
 
     def _do_hc_spawn(self, context, instance, image,
                      injected_files=None, admin_password=None,
@@ -6254,7 +6254,8 @@ class ComputeManager(manager.Manager):
                 self._do_hc_attach(context, instance, hyper_bdm)
                 instance.system_metadata['lxc_volume_id'] = volume_id
             else:
-                instance.system_metadata['lxc_volume_id'] = bdms[0]['volume_id']
+                instance.system_metadata['lxc_volume_id'] = bdms[0][
+                    'connection_info']['data']['volume_id']
 
             for bdm in bdms:
                 self._do_hc_attach(context, instance, bdm)

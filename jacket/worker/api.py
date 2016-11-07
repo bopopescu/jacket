@@ -105,8 +105,8 @@ class API(base.Base):
             if key in image_info:
                 del image_info[key]
 
-        del image_info['image_id']
-        del image_info['project_id']
+        # del image_info['image_id']
+        # del image_info['project_id']
 
         return self.db_api.image_mapper_update(context, image_id, project_id,
                                                image_info, delete=True)
@@ -233,9 +233,6 @@ class API(base.Base):
         for key in unset_properties.keys():
             if key in volume_info:
                 del volume_info[key]
-
-        del volume_info['volume_id']
-        del volume_info['project_id']
 
         return self.db_api.volume_mapper_update(context, volume_id,
                                                 project_id,
