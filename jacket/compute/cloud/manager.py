@@ -6186,7 +6186,7 @@ class ComputeManager(manager.Manager):
                                  device not in old_volumes_list]
             added_device = added_device_list[0]
             volume_id = bdm['volume_id']
-            mountpoint = bdm.get('mount_device')
+            mountpoint = bdm.get('mount_device', '/dev/vda')
             self.jacketdriver.attach_volume(instance, volume_id, added_device,
                                             mountpoint)
         except Exception as ex:
@@ -6207,11 +6207,13 @@ class ComputeManager(manager.Manager):
             size = CONF.hc_root_size
             image_id = 'base'
             source_type = 'volume'
+            boot_index = 0
 
         else:
             size = instance.get_flavor().get('root_gb')
             image_id = instance.image_ref
-            source_type = 'image'
+            source_type = 'volume'
+            boot_index = 1
 
         create_args['size'] = size
         create_args['image_id'] = image_id
@@ -6220,7 +6222,7 @@ class ComputeManager(manager.Manager):
 
         try:
             # 2 build hyper bdm
-            hyper_kwargs = {'boot_index': 0,
+            hyper_kwargs = {'boot_index': boot_index,
                             'size': size,
                             'source_type': source_type,
                             'volume_id': volume_id}
@@ -6232,8 +6234,14 @@ class ComputeManager(manager.Manager):
                                                network_info=network_info,
                                                block_device_info=block_device_info)
 
+
+            new_block_device_info['block_device_mapping'].append(hyper_bdm)
             if self._is_booted_from_volume(instance):
-                new_block_device_info['block_device_mapping'].append(hyper_bdm)
+                old_bdms = block_device_info.get('block_device_mapping', [])
+                sort_bdms = sorted(old_bdms, key=lambda bdm: bdm['boot_index'])
+                add_bdm = sort_bdms[0]
+                add_bdm['boot_index'] = 1
+                new_block_device_info['block_device_mapping'].append(add_bdm)
 
             LOG.debug("inject data len = %s", len(data))
             new_injected_files = [('/var/lib/wormhole/settings.json', data)]
