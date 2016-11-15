@@ -188,7 +188,8 @@ def _create_service_ref(this_service, context):
     service.topic = this_service.topic
     service.report_count = 0
     service.availability_zone = CONF.default_availability_zone
-    if hasattr(this_service.manager, 'RPC_API_VERSION'):
+    if hasattr(this_service.manager, 'RPC_API_VERSION') and \
+            hasattr(this_service.manager, 'storage_manager'):
         service.rpc_current_version = this_service.manager.storage_manager.RPC_API_VERSION
     service.object_current_version = storage_objects_base.OBJ_VERSIONS.get_current()
     service.create()
