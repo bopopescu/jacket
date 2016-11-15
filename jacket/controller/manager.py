@@ -33,6 +33,8 @@ import oslo_messaging as messaging
 from oslo_service import periodic_task
 
 from jacket.compute import exception
+from jacket.compute import network
+from jacket.compute.cloud import resource_tracker
 from jacket import rpc
 from jacket import manager
 
@@ -67,8 +69,10 @@ class ControllerManager(manager.Manager):
 
     def __init__(self, compute_driver=None, *args, **kwargs):
         """Load configuration options and connect to the cloud."""
+        self.network_api = network.API()
         self.virtapi = ComputeVirtAPI(self)
         self.driver = driver.load_compute_driver(self.virtapi, compute_driver)
+        self._resource_tracker_dict = {}
         self._sync_power_pool = eventlet.GreenPool()
         self._syncs_in_progress = {}
 
@@ -414,7 +418,8 @@ class ControllerManager(manager.Manager):
             else:
                 LOG.debug('Triggering sync for uuid %s' % uuid)
                 provider_instance_id = self._get_provider_instance_id(uuid)
-                provider_instance_state = vm_instances_stats.get(provider_instance_id, power_state.NOSTATE)
+                provider_instance_state = vm_instances_stats.get(provider_instance_id,
+                                                                 power_state.NOSTATE)
 
                 self._syncs_in_progress[uuid] = True
                 self._sync_power_pool.spawn_n(_sync, db_instance, provider_instance_state)
@@ -762,6 +767,73 @@ class ControllerManager(manager.Manager):
                                         migration.id, context=context,
                                         instance=instance)
                         break
+
+    @periodic_task.periodic_task(spacing=CONF.update_resources_interval)
+    def update_available_resource(self, context):
+        """See driver.get_available_resource()
+
+        Periodic process that keeps that the compute host's understanding of
+        resource availability and usage in sync with the underlying hypervisor.
+
+        :param context: security context
+        """
+        new_resource_tracker_dict = {}
+
+        compute_nodes_in_db = self._get_compute_nodes_in_db(context,
+                                                            use_slave=True)
+        nodenames = set(self.driver.get_available_nodes())
+        for nodename in nodenames:
+            rt = self._get_resource_tracker(nodename)
+            try:
+                rt.update_available_resource(context)
+            except exception.ComputeHostNotFound:
+                # NOTE(comstud): We can get to this case if a node was
+                # marked 'deleted' in the DB and then re-added with a
+                # different auto-increment id. The cached resource
+                # tracker tried to update a deleted record and failed.
+                # Don't add this resource tracker to the new dict, so
+                # that this will resolve itself on the next run.
+                LOG.info(_LI("Compute node '%s' not found in "
+                             "update_available_resource."), nodename)
+                continue
+            except Exception:
+                LOG.exception(_LE("Error updating resources for node "
+                                  "%(node)s."), {'node': nodename})
+            new_resource_tracker_dict[nodename] = rt
+
+        # NOTE(comstud): Replace the RT cache before looping through
+        # compute nodes to delete below, as we can end up doing greenthread
+        # switches there. Best to have everyone using the newest cache
+        # ASAP.
+        self._resource_tracker_dict = new_resource_tracker_dict
+
+        # Delete orphan compute node not reported by driver but still in db
+        for cn in compute_nodes_in_db:
+            if cn.hypervisor_hostname not in nodenames:
+                LOG.info(_LI("Deleting orphan compute node %s"), cn.id)
+                cn.destroy()
+
+    def _get_compute_nodes_in_db(self, context, use_slave=False):
+        try:
+            return objects.ComputeNodeList.get_all_by_host(context, self.host,
+                                                           use_slave=use_slave)
+        except exception.NotFound:
+            LOG.error(_LE("No compute node record for host %s"), self.host)
+            return []
+
+    def _get_resource_tracker(self, nodename):
+        rt = self._resource_tracker_dict.get(nodename)
+        if not rt:
+            if not self.driver.node_is_available(nodename):
+                raise exception.NovaException(
+                    _("%s is not a valid node managed by this "
+                      "compute host.") % nodename)
+
+            rt = resource_tracker.ResourceTracker(self.host,
+                                                  self.driver,
+                                                  nodename)
+            self._resource_tracker_dict[nodename] = rt
+        return rt
 
     def _get_provider_instance_id(self, context, caa_instance_id):
         instance_mapper = self.caa_db_api.instance_mapper_get(context,

@@ -4911,7 +4911,7 @@ class ComputeManager(manager.Manager):
                 with excutils.save_and_reraise_exception():
                     bdm.destroy()
 
-        if self._is_hypercontainer(context, instance):
+        if self._is_hypercontainer(context, instance) and instance.vm_state is vm_states.ACTIVE:
             # self._do_hybrid_vm_attach(context, instance, bdm, mountpoint)
             old_volumes_list = self.jacketdriver.list_volumes(instance)
             do_attach_volume(context, instance, driver_bdm)
@@ -5088,7 +5088,7 @@ class ComputeManager(manager.Manager):
     @wrap_instance_fault
     def detach_volume(self, context, volume_id, instance, attachment_id=None):
         """Detach a volume from an instance."""
-        if self._is_hypercontainer(context, instance):
+        if self._is_hypercontainer(context, instance) and instance.vm_state is vm_states.ACTIVE:
             self.jacketdriver.detach_volume(instance, volume_id)
         self._detach_volume(context, volume_id, instance,
                             attachment_id=attachment_id)

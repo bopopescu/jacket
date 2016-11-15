@@ -312,8 +312,9 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
                                              project_id='default')
         servers = self.os_novaclient(context).list()
         for server in servers:
-            uuid = server.uuid
-            stats[uuid] = server.state
+            server_id = server.id
+            instance_power_state = getattr(server, 'OS-EXT-STS:power_state')
+            stats[server_id] = FS_POWER_STATE[instance_power_state]
 
         return stats
 
@@ -603,9 +604,15 @@ class OsComputeDriver(driver.ComputeDriver, base.OsDriver):
             return
 
         if provider_server:
-            self.os_novaclient(context).delete(provider_server)
-            self.os_novaclient(context).check_delete_server_complete(
-                provider_server)
+            try:
+                self.os_novaclient(context).delete(provider_server)
+                self.os_novaclient(context).check_delete_server_complete(
+                    provider_server)
+            except exception.ResourceInError:
+                import time; time.sleep(30)
+                self.os_novaclient(context).check_delete_server_complete(
+                    provider_server)
+
         else:
             LOG.error('Can not found server to delete.')
             # raise exception_ex.ServerNotExistException(server_name=instance.display_name)
