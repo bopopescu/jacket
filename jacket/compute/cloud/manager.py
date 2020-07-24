@@ -817,7 +817,7 @@ class ComputeManager(manager.Manager):
                 return objects.InstanceList()
             filters['uuid'] = driver_uuids
             local_instances = objects.InstanceList.get_by_filters(
-                context, filters, use_slave=True)
+                context, filters, use_subordinate=True)
             return local_instances
         except NotImplementedError:
             pass
@@ -826,7 +826,7 @@ class ComputeManager(manager.Manager):
         # to brute force.
         driver_instances = self.driver.list_instances()
         instances = objects.InstanceList.get_by_filters(context, filters,
-                                                        use_slave=True)
+                                                        use_subordinate=True)
         name_map = {instance.name: instance for instance in instances}
         local_instances = []
         for driver_instance in driver_instances:
@@ -1896,7 +1896,7 @@ class ComputeManager(manager.Manager):
     #     context = context.elevated()
     #     instances = cloud.InstanceList.get_by_host(context, self.host,
     #                                                  expected_attrs=[],
-    #                                                  use_slave=True)
+    #                                                  use_subordinate=True)
     #     uuids = [instance.uuid for instance in instances]
     #     self.scheduler_client.sync_instance_info(context, self.host, uuids)
 
@@ -5968,11 +5968,11 @@ class ComputeManager(manager.Manager):
                 self._set_instance_obj_error_state(context, instance)
 
     @wrap_exception()
-    def add_aggregate_host(self, context, aggregate, host, slave_info):
+    def add_aggregate_host(self, context, aggregate, host, subordinate_info):
         """Notify hypervisor of change (for hypervisor pools)."""
         try:
             self.driver.add_to_aggregate(context, aggregate, host,
-                                         slave_info=slave_info)
+                                         subordinate_info=subordinate_info)
         except NotImplementedError:
             LOG.debug('Hypervisor driver does not support '
                       'add_aggregate_host')
@@ -5984,11 +5984,11 @@ class ComputeManager(manager.Manager):
                     aggregate, host)
 
     @wrap_exception()
-    def remove_aggregate_host(self, context, host, slave_info, aggregate):
+    def remove_aggregate_host(self, context, host, subordinate_info, aggregate):
         """Removes a host from a physical hypervisor pool."""
         try:
             self.driver.remove_from_aggregate(context, aggregate, host,
-                                              slave_info=slave_info)
+                                              subordinate_info=subordinate_info)
         except NotImplementedError:
             LOG.debug('Hypervisor driver does not support '
                       'remove_aggregate_host')

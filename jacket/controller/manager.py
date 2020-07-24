@@ -104,7 +104,7 @@ class ControllerManager(manager.Manager):
                    'host': self.host}
 
         building_insts = objects.InstanceList.get_by_filters(context,
-                                                             filters, expected_attrs=[], use_slave=True)
+                                                             filters, expected_attrs=[], use_subordinate=True)
 
         for instance in building_insts:
             if timeutils.is_older_than(instance.created_at, timeout):
@@ -138,7 +138,7 @@ class ControllerManager(manager.Manager):
             # The list of instances to heal is empty so rebuild it
             LOG.debug('Rebuilding the list of instances to heal')
             db_instances = objects.InstanceList.get_by_host(
-                context, self.host, expected_attrs=[], use_slave=True)
+                context, self.host, expected_attrs=[], use_subordinate=True)
             for inst in db_instances:
                 # We don't want to refresh the cache for instances
                 # which are building or deleting so don't put them
@@ -169,7 +169,7 @@ class ControllerManager(manager.Manager):
                         context, instance_uuids.pop(0),
                         expected_attrs=['system_metadata', 'info_cache',
                                         'flavor'],
-                        use_slave=True)
+                        use_subordinate=True)
                 except exception.InstanceNotFound:
                     # Instance is gone.  Try to grab another.
                     continue
@@ -220,7 +220,7 @@ class ControllerManager(manager.Manager):
                             task_states.REBOOT_PENDING],
                        'host': self.host}
             rebooting = objects.InstanceList.get_by_filters(
-                context, filters, expected_attrs=[], use_slave=True)
+                context, filters, expected_attrs=[], use_subordinate=True)
 
             to_poll = []
             for instance in rebooting:
@@ -237,7 +237,7 @@ class ControllerManager(manager.Manager):
                        'host': self.host}
             rescued_instances = objects.InstanceList.get_by_filters(
                 context, filters, expected_attrs=["system_metadata"],
-                use_slave=True)
+                use_subordinate=True)
 
             to_unrescue = []
             for instance in rescued_instances:
@@ -255,7 +255,7 @@ class ControllerManager(manager.Manager):
 
         migrations = objects.MigrationList.get_unconfirmed_by_dest_compute(
             context, CONF.resize_confirm_window, self.host,
-            use_slave=True)
+            use_subordinate=True)
 
         migrations_info = dict(migration_count=len(migrations),
                                confirm_window=CONF.resize_confirm_window)
@@ -284,7 +284,7 @@ class ControllerManager(manager.Manager):
             try:
                 instance = objects.Instance.get_by_uuid(context,
                                                         instance_uuid, expected_attrs=expected_attrs,
-                                                        use_slave=True)
+                                                        use_subordinate=True)
             except exception.InstanceNotFound:
                 reason = (_("Instance %s not found") %
                           instance_uuid)
@@ -345,7 +345,7 @@ class ControllerManager(manager.Manager):
                    'host': self.host}
         shelved_instances = objects.InstanceList.get_by_filters(
             context, filters=filters, expected_attrs=['system_metadata'],
-            use_slave=True)
+            use_subordinate=True)
 
         to_gc = []
         for instance in shelved_instances:
@@ -377,7 +377,7 @@ class ControllerManager(manager.Manager):
         """
         db_instances = objects.InstanceList.get_by_host(context, self.host,
                                                         expected_attrs=[],
-                                                        use_slave=True)
+                                                        use_subordinate=True)
 
         #num_vm_instances = self.driver.get_num_instances()
         vm_instances_stats = self.driver.list_instances_stats()
@@ -442,14 +442,14 @@ class ControllerManager(manager.Manager):
             self._sync_instance_power_state(context,
                                             db_instance,
                                             vm_power_state,
-                                            use_slave=True)
+                                            use_subordinate=True)
         except exception.InstanceNotFound:
             # NOTE(hanlind): If the instance gets deleted during sync,
             # silently ignore.
             pass
 
     def _sync_instance_power_state(self, context, db_instance, vm_power_state,
-                                   use_slave=False):
+                                   use_subordinate=False):
         """Align instance power state between the database and hypervisor.
 
         If the instance is not found on the hypervisor, but is in the database,
@@ -458,7 +458,7 @@ class ControllerManager(manager.Manager):
 
         # We re-query the DB to get the latest instance info to minimize
         # (not eliminate) race condition.
-        db_instance.refresh(use_slave=use_slave)
+        db_instance.refresh(use_subordinate=use_subordinate)
         db_power_state = db_instance.power_state
         vm_state = db_instance.vm_state
 
@@ -633,7 +633,7 @@ class ControllerManager(manager.Manager):
         instances = objects.InstanceList.get_by_filters(
             context, filters,
             expected_attrs=objects.instance.INSTANCE_DEFAULT_FIELDS,
-            use_slave=True)
+            use_subordinate=True)
         for instance in instances:
             if self._deleted_old_enough(instance, interval):
                 bdms = objects.BlockDeviceMappingList.get_by_instance_uuid(
@@ -708,7 +708,7 @@ class ControllerManager(manager.Manager):
                                  "DELETED but still present on host."),
                              instance.name, instance=instance)
                     bdms = objects.BlockDeviceMappingList.get_by_instance_uuid(
-                        context, instance.uuid, use_slave=True)
+                        context, instance.uuid, use_subordinate=True)
                     self.instance_events.clear_events_for_instance(instance)
                     try:
                         self._shutdown_instance(context, instance, bdms,
@@ -748,7 +748,7 @@ class ControllerManager(manager.Manager):
         attrs = ['info_cache', 'security_groups', 'system_metadata']
         with utils.temporary_mutation(context, read_deleted='yes'):
             instances = objects.InstanceList.get_by_filters(
-                context, inst_filters, expected_attrs=attrs, use_slave=True)
+                context, inst_filters, expected_attrs=attrs, use_subordinate=True)
 
         for instance in instances:
             if instance.host != CONF.host:
@@ -780,7 +780,7 @@ class ControllerManager(manager.Manager):
         new_resource_tracker_dict = {}
 
         compute_nodes_in_db = self._get_compute_nodes_in_db(context,
-                                                            use_slave=True)
+                                                            use_subordinate=True)
         nodenames = set(self.driver.get_available_nodes())
         for nodename in nodenames:
             rt = self._get_resource_tracker(nodename)
@@ -813,10 +813,10 @@ class ControllerManager(manager.Manager):
                 LOG.info(_LI("Deleting orphan compute node %s"), cn.id)
                 cn.destroy()
 
-    def _get_compute_nodes_in_db(self, context, use_slave=False):
+    def _get_compute_nodes_in_db(self, context, use_subordinate=False):
         try:
             return objects.ComputeNodeList.get_all_by_host(context, self.host,
-                                                           use_slave=use_slave)
+                                                           use_subordinate=use_subordinate)
         except exception.NotFound:
             LOG.error(_LE("No compute node record for host %s"), self.host)
             return []
